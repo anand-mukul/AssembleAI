@@ -32,12 +32,12 @@ final class LocalFirstProjectRepository: ProjectRepository, @unchecked Sendable 
         
         // Asynchronously sync from CloudKit if available
         if let cloudKitService = cloudKitService {
-            Task {
+            Task { @MainActor in
                 do {
                     let remoteProjects = try await cloudKitService.fetchProjects()
                     for remote in remoteProjects {
                         let targetId = remote.id
-                        let fetchLocal = FetchDescriptor<LocalProject>(predicate: #Predicate { $0.id == targetId })
+                        let fetchLocal = FetchDescriptor<LocalProject>(predicate: #Predicate<LocalProject> { $0.id == targetId })
                         if let existing = try self.modelContext.fetch(fetchLocal).first {
                             existing.title = remote.title
                             existing.projectDescription = remote.description
@@ -64,7 +64,7 @@ final class LocalFirstProjectRepository: ProjectRepository, @unchecked Sendable 
     
     @MainActor
     func fetchProject(id: UUID) async throws -> Project? {
-        let fetchLocal = FetchDescriptor<LocalProject>(predicate: #Predicate { $0.id == id })
+        let fetchLocal = FetchDescriptor<LocalProject>(predicate: #Predicate<LocalProject> { $0.id == id })
         if let local = try modelContext.fetch(fetchLocal).first {
             return local.toDomainModel()
         }
@@ -74,7 +74,7 @@ final class LocalFirstProjectRepository: ProjectRepository, @unchecked Sendable 
     @MainActor
     func saveProject(_ project: Project) async throws {
         let targetId = project.id
-        let fetchLocal = FetchDescriptor<LocalProject>(predicate: #Predicate { $0.id == targetId })
+        let fetchLocal = FetchDescriptor<LocalProject>(predicate: #Predicate<LocalProject> { $0.id == targetId })
         
         if let existing = try modelContext.fetch(fetchLocal).first {
             existing.title = project.title
@@ -94,7 +94,7 @@ final class LocalFirstProjectRepository: ProjectRepository, @unchecked Sendable 
         
         // Background push to CloudKit if available
         if let cloudKitService = cloudKitService {
-            Task {
+            Task { @MainActor in
                 do {
                     try await cloudKitService.saveProject(project)
                     if let existing = try self.modelContext.fetch(fetchLocal).first {
@@ -110,7 +110,7 @@ final class LocalFirstProjectRepository: ProjectRepository, @unchecked Sendable 
     
     @MainActor
     func deleteProject(id: UUID) async throws {
-        let fetchLocal = FetchDescriptor<LocalProject>(predicate: #Predicate { $0.id == id })
+        let fetchLocal = FetchDescriptor<LocalProject>(predicate: #Predicate<LocalProject> { $0.id == id })
         if let existing = try modelContext.fetch(fetchLocal).first {
             modelContext.delete(existing)
             try modelContext.save()

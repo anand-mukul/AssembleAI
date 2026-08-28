@@ -40,7 +40,7 @@ final class SyncCoordinator: ObservableObject {
         
         do {
             let fetchPendingProjects = FetchDescriptor<LocalProject>(
-                predicate: #Predicate { $0.syncStateRaw == "pendingUpload" }
+                predicate: #Predicate<LocalProject> { $0.syncStateRaw == "pendingUpload" }
             )
             let pendingProjects = try modelContext.fetch(fetchPendingProjects)
             

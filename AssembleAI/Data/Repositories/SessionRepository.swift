@@ -22,7 +22,7 @@ final class LocalFirstSessionRepository: SessionRepository, @unchecked Sendable 
     @MainActor
     func fetchSessions(userId: UUID) async throws -> [AssemblySession] {
         let descriptor = FetchDescriptor<LocalAssemblySession>(
-            predicate: #Predicate { $0.userId == userId },
+            predicate: #Predicate<LocalAssemblySession> { $0.userId == userId },
             sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
         )
         let localSessions = try modelContext.fetch(descriptor)
@@ -31,14 +31,14 @@ final class LocalFirstSessionRepository: SessionRepository, @unchecked Sendable 
     
     @MainActor
     func fetchSession(id: UUID) async throws -> AssemblySession? {
-        let fetchLocal = FetchDescriptor<LocalAssemblySession>(predicate: #Predicate { $0.id == id })
+        let fetchLocal = FetchDescriptor<LocalAssemblySession>(predicate: #Predicate<LocalAssemblySession> { $0.id == id })
         return try modelContext.fetch(fetchLocal).first?.toDomainModel()
     }
     
     @MainActor
     func saveSession(_ session: AssemblySession) async throws {
         let targetId = session.id
-        let fetchLocal = FetchDescriptor<LocalAssemblySession>(predicate: #Predicate { $0.id == targetId })
+        let fetchLocal = FetchDescriptor<LocalAssemblySession>(predicate: #Predicate<LocalAssemblySession> { $0.id == targetId })
         
         if let existing = try modelContext.fetch(fetchLocal).first {
             existing.statusRaw = session.status.rawValue
