@@ -6,14 +6,14 @@
 import Foundation
 
 /// Represents the authentication provider used by the user.
-enum AuthProvider: String, Codable, Equatable {
+enum AuthProvider: String, Codable, Equatable, Sendable {
     case apple
     case email
     case guest
 }
 
 /// Represents an authenticated or guest user session in AssembleAI.
-struct User: Identifiable, Codable, Equatable {
+struct User: Identifiable, Codable, Equatable, Sendable {
     let id: String
     let name: String?
     let email: String?
@@ -22,7 +22,7 @@ struct User: Identifiable, Codable, Equatable {
     let createdAt: Date
     let updatedAt: Date
     
-    init(
+    nonisolated init(
         id: String,
         name: String?,
         email: String?,

@@ -5,14 +5,14 @@
 
 import Foundation
 
-enum AttemptStatus: String, Codable, Equatable {
+enum AttemptStatus: String, Codable, Equatable, Sendable {
     case correct
     case incorrect
     case uncertain
 }
 
 /// Verification attempt record for an assembly step.
-struct Attempt: Identifiable, Codable, Equatable {
+struct Attempt: Identifiable, Codable, Equatable, Sendable {
     let id: UUID
     let sessionId: UUID
     let stepId: UUID
@@ -23,7 +23,7 @@ struct Attempt: Identifiable, Codable, Equatable {
     var explanation: String?
     let createdAt: Date
     
-    init(
+    nonisolated init(
         id: UUID = UUID(),
         sessionId: UUID,
         stepId: UUID,

@@ -19,8 +19,8 @@ final class CloudKitAuthService: AuthenticationService {
     private let cloudKitManager: CloudKitManager
     private let mockFallbackService: MockAuthenticationService
     
-    init(cloudKitManager: CloudKitManager = .shared) {
-        self.cloudKitManager = cloudKitManager
+    init(cloudKitManager: CloudKitManager? = nil) {
+        self.cloudKitManager = cloudKitManager ?? CloudKitManager.shared
         self.mockFallbackService = MockAuthenticationService()
         
         Task {

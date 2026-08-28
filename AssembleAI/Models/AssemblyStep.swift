@@ -6,7 +6,7 @@
 import Foundation
 
 /// Sequential step within an assembly project.
-struct AssemblyStep: Identifiable, Codable, Equatable {
+struct AssemblyStep: Identifiable, Codable, Equatable, Sendable {
     let id: UUID
     let projectId: UUID
     var stepOrder: Int
@@ -16,7 +16,7 @@ struct AssemblyStep: Identifiable, Codable, Equatable {
     let createdAt: Date
     var updatedAt: Date
     
-    init(
+    nonisolated init(
         id: UUID = UUID(),
         projectId: UUID,
         stepOrder: Int,

@@ -28,7 +28,8 @@ struct ForgotPasswordView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
     
-    private var requestStateView: View {
+    @ViewBuilder
+    private var requestStateView: some View {
         VStack(spacing: AppSpacing.lg) {
             Spacer(minLength: AppSpacing.md)
             
@@ -87,7 +88,8 @@ struct ForgotPasswordView: View {
         }
     }
     
-    private var successStateView: View {
+    @ViewBuilder
+    private var successStateView: some View {
         VStack(spacing: AppSpacing.lg) {
             Spacer()
             

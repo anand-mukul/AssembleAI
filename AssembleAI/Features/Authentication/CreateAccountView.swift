@@ -50,7 +50,7 @@ struct CreateAccountView: View {
                         keyboardType: .namePhonePad,
                         submitLabel: .next
                     )
-                    .onChange(of: name) { _ in
+                    .onChange(of: name) {
                         if hasSubmitted { validateForm() }
                     }
                     
@@ -63,7 +63,7 @@ struct CreateAccountView: View {
                         keyboardType: .emailAddress,
                         submitLabel: .next
                     )
-                    .onChange(of: email) { _ in
+                    .onChange(of: email) {
                         if hasSubmitted { validateForm() }
                     }
                     
@@ -76,7 +76,7 @@ struct CreateAccountView: View {
                         errorMessage: passwordError,
                         submitLabel: .next
                     )
-                    .onChange(of: password) { _ in
+                    .onChange(of: password) {
                         if hasSubmitted { validateForm() }
                     }
                     
@@ -90,7 +90,7 @@ struct CreateAccountView: View {
                         submitLabel: .done,
                         onCommit: handleCreateAccount
                     )
-                    .onChange(of: confirmPassword) { _ in
+                    .onChange(of: confirmPassword) {
                         if hasSubmitted { validateForm() }
                     }
                 }

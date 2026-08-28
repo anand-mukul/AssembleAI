@@ -46,7 +46,7 @@ struct EmailSignInView: View {
                         keyboardType: .emailAddress,
                         submitLabel: .next
                     )
-                    .onChange(of: email) { _ in
+                    .onChange(of: email) {
                         if hasSubmitted { validateForm() }
                     }
                     
@@ -61,7 +61,7 @@ struct EmailSignInView: View {
                             submitLabel: .done,
                             onCommit: handleSignIn
                         )
-                        .onChange(of: password) { _ in
+                        .onChange(of: password) {
                             if hasSubmitted { validateForm() }
                         }
                         

@@ -116,7 +116,7 @@ struct HomePlaceholderView: View {
                         .padding(.horizontal, AppSpacing.lg)
                     } else {
                         VStack(spacing: AppSpacing.md) {
-                            ForEach(projects) { project in
+                            ForEach(projects, id: \.id) { project in
                                 HStack {
                                     VStack(alignment: .leading, spacing: AppSpacing.xs) {
                                         HStack {
@@ -181,7 +181,8 @@ struct HomePlaceholderView: View {
         }
     }
     
-    private var createProjectSheet: View {
+    @ViewBuilder
+    private var createProjectSheet: some View {
         NavigationStack {
             Form {
                 Section("Project Details") {
@@ -235,6 +236,22 @@ struct HomePlaceholderView: View {
             newProjectTitle = ""
             newProjectDescription = ""
         }
+    }
+}
+
+struct BadgeView: View {
+    let text: String
+    let color: Color
+    
+    var body: some View {
+        Text(text)
+            .font(.caption2)
+            .fontWeight(.bold)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(color.opacity(0.12))
+            .foregroundColor(color)
+            .clipShape(Capsule())
     }
 }
 

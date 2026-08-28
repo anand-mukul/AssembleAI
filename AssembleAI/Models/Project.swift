@@ -6,7 +6,7 @@
 import Foundation
 
 /// Synchronization state for local-first records.
-enum SyncState: String, Codable, Equatable {
+enum SyncState: String, Codable, Equatable, Sendable {
     case synced
     case pendingUpload
     case pendingDelete
@@ -14,7 +14,7 @@ enum SyncState: String, Codable, Equatable {
 }
 
 /// Project Domain Model representing an electronics or physical task assembly workflow.
-struct Project: Identifiable, Codable, Equatable {
+struct Project: Identifiable, Codable, Equatable, Sendable {
     let id: UUID
     let ownerId: UUID
     var title: String
@@ -26,7 +26,7 @@ struct Project: Identifiable, Codable, Equatable {
     var updatedAt: Date
     var syncState: SyncState
     
-    init(
+    nonisolated init(
         id: UUID = UUID(),
         ownerId: UUID,
         title: String,

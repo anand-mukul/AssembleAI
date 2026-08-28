@@ -10,7 +10,7 @@ import CloudKit
 actor CloudKitProjectService {
     private let cloudKitManager: CloudKitManager
     
-    init(cloudKitManager: CloudKitManager = .shared) {
+    init(cloudKitManager: CloudKitManager) {
         self.cloudKitManager = cloudKitManager
     }
     
@@ -27,7 +27,7 @@ actor CloudKitProjectService {
     
     /// Fetches all Projects stored in the user's private CloudKit database.
     func fetchProjects() async throws -> [Project] {
-        guard cloudKitManager.isAvailable else { return [] }
+        guard await cloudKitManager.isAvailable else { return [] }
         
         let query = CKQuery(recordType: RecordType.project, predicate: NSPredicate(value: true))
         query.sortDescriptors = [NSSortDescriptor(key: "updatedAt", ascending: false)]
@@ -46,7 +46,7 @@ actor CloudKitProjectService {
     
     /// Saves or updates a Project record in CloudKit.
     func saveProject(_ project: Project) async throws {
-        guard cloudKitManager.isAvailable else { return }
+        guard await cloudKitManager.isAvailable else { return }
         
         let recordID = CKRecord.ID(recordName: project.id.uuidString)
         let record: CKRecord
@@ -70,7 +70,7 @@ actor CloudKitProjectService {
     
     /// Deletes a Project record from CloudKit.
     func deleteProject(id: UUID) async throws {
-        guard cloudKitManager.isAvailable else { return }
+        guard await cloudKitManager.isAvailable else { return }
         let recordID = CKRecord.ID(recordName: id.uuidString)
         try await cloudKitManager.privateDatabase.deleteRecord(withID: recordID)
     }
@@ -79,7 +79,7 @@ actor CloudKitProjectService {
     
     /// Fetches AssemblySteps for a specific project.
     func fetchAssemblySteps(projectId: UUID) async throws -> [AssemblyStep] {
-        guard cloudKitManager.isAvailable else { return [] }
+        guard await cloudKitManager.isAvailable else { return [] }
         
         let predicate = NSPredicate(format: "projectId == %@", projectId.uuidString)
         let query = CKQuery(recordType: RecordType.assemblyStep, predicate: predicate)
@@ -99,7 +99,7 @@ actor CloudKitProjectService {
     
     /// Saves an AssemblyStep record in CloudKit.
     func saveAssemblyStep(_ step: AssemblyStep) async throws {
-        guard cloudKitManager.isAvailable else { return }
+        guard await cloudKitManager.isAvailable else { return }
         
         let recordID = CKRecord.ID(recordName: step.id.uuidString)
         let record: CKRecord

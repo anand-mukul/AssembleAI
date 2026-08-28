@@ -19,12 +19,13 @@ final class SyncCoordinator: ObservableObject {
     
     init(
         modelContext: ModelContext,
-        cloudKitManager: CloudKitManager = .shared,
-        cloudKitService: CloudKitProjectService = CloudKitProjectService()
+        cloudKitManager: CloudKitManager? = nil,
+        cloudKitService: CloudKitProjectService? = nil
     ) {
+        let manager = cloudKitManager ?? CloudKitManager.shared
         self.modelContext = modelContext
-        self.cloudKitManager = cloudKitManager
-        self.cloudKitService = cloudKitService
+        self.cloudKitManager = manager
+        self.cloudKitService = cloudKitService ?? CloudKitProjectService(cloudKitManager: manager)
     }
     
     /// Synchronizes all pending local SwiftData modifications to CloudKit.

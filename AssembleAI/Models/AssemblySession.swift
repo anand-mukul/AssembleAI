@@ -5,7 +5,7 @@
 
 import Foundation
 
-enum SessionStatus: String, Codable, Equatable {
+enum SessionStatus: String, Codable, Equatable, Sendable {
     case notStarted = "not_started"
     case inProgress = "in_progress"
     case paused = "paused"
@@ -14,7 +14,7 @@ enum SessionStatus: String, Codable, Equatable {
 }
 
 /// Assembly Execution Session domain model.
-struct AssemblySession: Identifiable, Codable, Equatable {
+struct AssemblySession: Identifiable, Codable, Equatable, Sendable {
     let id: UUID
     let userId: UUID
     let projectId: UUID
@@ -26,7 +26,7 @@ struct AssemblySession: Identifiable, Codable, Equatable {
     var updatedAt: Date
     var syncState: SyncState
     
-    init(
+    nonisolated init(
         id: UUID = UUID(),
         userId: UUID,
         projectId: UUID,
