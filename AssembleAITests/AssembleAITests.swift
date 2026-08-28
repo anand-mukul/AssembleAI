@@ -2,18 +2,48 @@
 //  AssembleAITests.swift
 //  AssembleAITests
 //
-//  Created by Mukul on 24/08/26.
-//
 
 import Testing
+import Foundation
+import CloudKit
 @testable import AssembleAI
 
 struct AssembleAITests {
 
-    @Test func example() async throws {
-        // Write your test here and use APIs like `#expect(...)` to check expected conditions.
-        // Swift Testing Documentation
-        // https://developer.apple.com/documentation/testing
+    @Test func testCloudKitAuthServiceGuestFlow() async throws {
+        let authService = await CloudKitAuthService()
+        await authService.continueAsGuest()
+        
+        let isAuth = await authService.isAuthenticated
+        let user = await authService.currentUser
+        
+        #expect(isAuth == true)
+        #expect(user?.isGuest == true)
+        #expect(user?.provider == .guest)
     }
 
+    @Test func testProjectDomainModelCreation() throws {
+        let id = UUID()
+        let ownerId = UUID()
+        let now = Date()
+        
+        let project = Project(
+            id: id,
+            ownerId: ownerId,
+            title: "Solder PCB Component",
+            description: "Step-by-step surface mount component assembly",
+            difficulty: "Intermediate",
+            estimatedMinutes: 45,
+            thumbnailPath: nil,
+            createdAt: now,
+            updatedAt: now,
+            syncState: .pendingUpload
+        )
+        
+        #expect(project.id == id)
+        #expect(project.ownerId == ownerId)
+        #expect(project.title == "Solder PCB Component")
+        #expect(project.estimatedMinutes == 45)
+        #expect(project.syncState == .pendingUpload)
+    }
 }
