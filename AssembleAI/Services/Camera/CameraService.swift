@@ -197,8 +197,9 @@ extension CameraService: AVCapturePhotoCaptureDelegate {
     ) {
         if let error = error {
             Task { @MainActor in
-                self.photoContinuation?.resume(throwing: error)
+                let continuation = self.photoContinuation
                 self.photoContinuation = nil
+                continuation?.resume(throwing: error)
             }
             return
         }
@@ -206,15 +207,17 @@ extension CameraService: AVCapturePhotoCaptureDelegate {
         guard let data = photo.fileDataRepresentation(),
               let image = UIImage(data: data) else {
             Task { @MainActor in
-                self.photoContinuation?.resume(throwing: NSError(domain: "CameraService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Couldn't capture image"]))
+                let continuation = self.photoContinuation
                 self.photoContinuation = nil
+                continuation?.resume(throwing: NSError(domain: "CameraService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Couldn't capture image"]))
             }
             return
         }
         
         Task { @MainActor in
-            self.photoContinuation?.resume(returning: image)
+            let continuation = self.photoContinuation
             self.photoContinuation = nil
+            continuation?.resume(returning: image)
         }
     }
 }

@@ -9,7 +9,7 @@ import SwiftData
 @Model
 final class LocalAssemblySession {
     @Attribute(.unique) var id: UUID
-    var userId: UUID
+    var userId: UUID?
     var projectId: UUID
     var startedAt: Date
     var completedAt: Date?
@@ -21,7 +21,7 @@ final class LocalAssemblySession {
     
     init(
         id: UUID = UUID(),
-        userId: UUID,
+        userId: UUID? = nil,
         projectId: UUID,
         startedAt: Date = Date(),
         completedAt: Date? = nil,

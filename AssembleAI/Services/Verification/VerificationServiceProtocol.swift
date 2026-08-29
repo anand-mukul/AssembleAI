@@ -7,14 +7,14 @@ import Foundation
 import UIKit
 
 /// Outcome status for state-aware visual task verification.
-enum VerificationStatus: String, Codable, Sendable {
+enum VerificationStatus: String, Codable, Hashable, Equatable, Sendable {
     case correct
     case incorrect
     case uncertain
 }
 
 /// Structured result returned by a verification service after analyzing physical assembly image state.
-struct VerificationResult: Identifiable, Equatable, Sendable {
+struct VerificationResult: Identifiable, Hashable, Codable, Equatable, Sendable {
     let id: UUID
     let status: VerificationStatus
     let confidence: Double

@@ -8,7 +8,7 @@ import Combine
 import UIKit
 
 /// Verification execution mode selector.
-enum VerificationMode: String, CaseIterable, Identifiable {
+enum VerificationMode: String, CaseIterable, Identifiable, Codable, Hashable, Equatable, Sendable {
     case mock = "Mock Verification"
     case vision = "Vision Pipeline"
     case hybrid = "Hybrid Foundation"
@@ -17,7 +17,7 @@ enum VerificationMode: String, CaseIterable, Identifiable {
 }
 
 /// High-level phase state driving the single task flow assembly experience.
-enum AssemblyPhase: Equatable {
+enum AssemblyPhase: Equatable, Hashable, Sendable {
     case intro
     case instruction
     case camera

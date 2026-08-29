@@ -5,14 +5,14 @@
 
 import Foundation
 
-enum AttemptStatus: String, Codable, Equatable, Sendable {
+enum AttemptStatus: String, Codable, Hashable, Equatable, Sendable {
     case correct
     case incorrect
     case uncertain
 }
 
 /// Verification attempt record for an assembly step.
-struct Attempt: Identifiable, Codable, Equatable, Sendable {
+struct Attempt: Identifiable, Hashable, Codable, Equatable, Sendable {
     let id: UUID
     let sessionId: UUID
     let stepId: UUID

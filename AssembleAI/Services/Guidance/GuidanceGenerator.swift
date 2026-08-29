@@ -4,10 +4,12 @@
 //
 
 import Foundation
+#if canImport(FoundationModels)
 import FoundationModels
+#endif
 
 /// Structured natural-language guidance response produced by the guidance engine.
-struct GuidanceResponse: Sendable, Equatable {
+struct GuidanceResponse: Hashable, Codable, Equatable, Sendable {
     let title: String
     let explanation: String
     let action: String
@@ -86,6 +88,7 @@ struct MockGuidanceGenerator: GuidanceGenerating {
     }
 }
 
+#if canImport(FoundationModels)
 /// On-device Foundation Models guidance generator using Apple's `FoundationModels` framework (`LanguageModelSession`).
 ///
 /// HARD ARCHITECTURAL RULE:
@@ -150,6 +153,7 @@ actor FoundationModelGuidanceGenerator: GuidanceGenerating {
         }
     }
 }
+#endif
 
 /// Hybrid guidance generator routing requests to Foundation Models when available on device, falling back to local template generator.
 struct HybridGuidanceGenerator: GuidanceGenerating {
@@ -160,6 +164,7 @@ struct HybridGuidanceGenerator: GuidanceGenerating {
         expectedState: ExpectedAssemblyState,
         observedState: ObservedAssemblyState
     ) async throws -> GuidanceResponse {
+        #if canImport(FoundationModels)
         if #available(iOS 26.0, *) {
             let generator = FoundationModelGuidanceGenerator()
             do {
@@ -170,12 +175,16 @@ struct HybridGuidanceGenerator: GuidanceGenerating {
         } else {
             return try await mockGenerator.generateGuidance(issue: issue, expectedState: expectedState, observedState: observedState)
         }
+        #else
+        return try await mockGenerator.generateGuidance(issue: issue, expectedState: expectedState, observedState: observedState)
+        #endif
     }
     
     func generateWhyExplanation(
         step: AssemblyStep,
         issue: StateIssue
     ) async throws -> String {
+        #if canImport(FoundationModels)
         if #available(iOS 26.0, *) {
             let generator = FoundationModelGuidanceGenerator()
             do {
@@ -186,5 +195,8 @@ struct HybridGuidanceGenerator: GuidanceGenerating {
         } else {
             return try await mockGenerator.generateWhyExplanation(step: step, issue: issue)
         }
+        #else
+        return try await mockGenerator.generateWhyExplanation(step: step, issue: issue)
+        #endif
     }
 }

@@ -73,6 +73,8 @@ struct EmailSignInView: View {
                                 .font(.caption)
                                 .fontWeight(.semibold)
                                 .foregroundColor(.assembleBrandPrimary)
+                                .frame(minHeight: 44)
+                                .contentShape(Rectangle())
                         }
                         .padding(.top, AppSpacing.xxs)
                         .accessibilityLabel("Forgot password")

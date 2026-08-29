@@ -7,7 +7,7 @@ import Foundation
 import CoreGraphics
 
 /// Visual style classification for camera guidance overlays.
-enum GuidanceStyle: String, Codable, Equatable, Sendable {
+enum GuidanceStyle: String, Codable, Hashable, Equatable, Sendable {
     case target
     case move
     case warning
@@ -15,7 +15,7 @@ enum GuidanceStyle: String, Codable, Equatable, Sendable {
 }
 
 /// Structured visual guidance specification rendered over the live camera preview.
-struct GuidanceOverlay: Identifiable, Equatable, Sendable {
+struct GuidanceOverlay: Identifiable, Hashable, Codable, Equatable, Sendable {
     let id: UUID
     let title: String
     let message: String

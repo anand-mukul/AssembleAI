@@ -7,7 +7,7 @@ import Foundation
 import Combine
 
 /// Filter segment choices for the Projects list.
-enum ProjectFilterTab: String, CaseIterable, Identifiable {
+enum ProjectFilterTab: String, CaseIterable, Identifiable, Codable, Hashable, Equatable, Sendable {
     case all = "All"
     case inProgress = "In Progress"
     case completed = "Completed"

@@ -40,7 +40,7 @@ struct ExpectedVsObservedView: View {
                     }
                     .padding(AppSpacing.xs)
                 }
-                .frame(height: 90)
+                .frame(minHeight: 90)
             }
             .frame(maxWidth: .infinity)
             
@@ -77,7 +77,7 @@ struct ExpectedVsObservedView: View {
                     }
                     .padding(AppSpacing.xs)
                 }
-                .frame(height: 90)
+                .frame(minHeight: 90)
             }
             .frame(maxWidth: .infinity)
         }

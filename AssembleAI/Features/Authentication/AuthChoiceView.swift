@@ -67,6 +67,8 @@ struct AuthChoiceView: View {
                         .font(.subheadline)
                         .fontWeight(.medium)
                         .foregroundColor(AppColors.secondaryText)
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                 }
                 .padding(.top, AppSpacing.xs)
                 .accessibilityLabel("Continue without an account")

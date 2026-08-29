@@ -8,6 +8,7 @@ import SwiftUI
 /// Simple, elegant placeholder for the Scan tab destination.
 struct ScanPlaceholderView: View {
     @EnvironmentObject private var router: AppRouter
+    var onLaunchInspection: ((AssemblyProject) -> Void)? = nil
     
     var body: some View {
         VStack(spacing: AppSpacing.lg) {
@@ -38,13 +39,12 @@ struct ScanPlaceholderView: View {
             }
             
             PrimaryButton(title: "Launch Camera Inspection", iconName: "camera.fill") {
-                let defaultStep = AssemblyStep(
-                    projectId: UUID(),
-                    stepOrder: 1,
-                    title: "Attach 10K Resistor to R1 Pin Header",
-                    instruction: "Insert resistor leads into R1 slots and verify orientation."
-                )
-                router.navigateToCamera(step: defaultStep)
+                let defaultProject = MockProjectData.sampleProjects[0]
+                if let onLaunchInspection = onLaunchInspection {
+                    onLaunchInspection(defaultProject)
+                } else {
+                    router.navigateToAssembly(project: defaultProject)
+                }
             }
             .padding(.horizontal, AppSpacing.lg)
             .padding(.top, AppSpacing.sm)

@@ -7,7 +7,7 @@ import Foundation
 import CoreGraphics
 
 /// Detected text observation extracted by Apple Vision OCR.
-struct DetectedText: Identifiable, Hashable, Sendable {
+struct DetectedText: Identifiable, Hashable, Codable, Sendable {
     let id: UUID
     let text: String
     let confidence: Float
@@ -22,7 +22,7 @@ struct DetectedText: Identifiable, Hashable, Sendable {
 }
 
 /// Detected physical component/region feature observation.
-struct DetectedRegion: Identifiable, Hashable, Sendable {
+struct DetectedRegion: Identifiable, Hashable, Codable, Sendable {
     let id: UUID
     let label: String
     let confidence: Float
@@ -37,7 +37,7 @@ struct DetectedRegion: Identifiable, Hashable, Sendable {
 }
 
 /// Structured output returned by `VisionAnalyzing` without exposing raw Vision framework types to the UI.
-struct VisualObservation: Identifiable, Sendable {
+struct VisualObservation: Identifiable, Hashable, Codable, Sendable {
     let id: UUID
     let imageSize: CGSize
     let detectedText: [DetectedText]

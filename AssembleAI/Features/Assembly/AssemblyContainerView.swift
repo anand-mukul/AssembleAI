@@ -11,7 +11,6 @@ struct AssemblyContainerView: View {
     @EnvironmentObject private var router: AppRouter
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var viewModel: AssemblyViewModel
-    @StateObject private var cameraService = CameraService()
     
     init(project: AssemblyProject) {
         _viewModel = StateObject(wrappedValue: AssemblyViewModel(project: project))
@@ -52,15 +51,10 @@ struct AssemblyContainerView: View {
                     AssemblyCameraView(
                         currentStep: viewModel.currentStep,
                         activeGuidance: viewModel.activeGuidance,
-                        onAnalyze: {
-                            Task {
-                                let capturedPhoto = try? await cameraService.capturePhoto()
-                                cameraService.stopSession()
-                                viewModel.triggerAnalysis(capturedImage: capturedPhoto, viewSize: geo.size)
-                            }
+                        onAnalyze: { capturedPhoto in
+                            viewModel.triggerAnalysis(capturedImage: capturedPhoto, viewSize: geo.size)
                         },
                         onClose: {
-                            cameraService.stopSession()
                             router.pop()
                         }
                     )
@@ -83,6 +77,7 @@ struct AssemblyContainerView: View {
                 case .verification(let result):
                     VerificationResultView(
                         result: result,
+                        currentStep: viewModel.currentStep,
                         onContinue: {
                             viewModel.proceedFromVerification(result: result)
                         },
@@ -121,7 +116,7 @@ struct AssemblyContainerView: View {
                         project: viewModel.project,
                         session: viewModel.session,
                         onDone: {
-                            router.transitionToHome()
+                            router.pop()
                         }
                     )
                     .transition(.opacity)
@@ -130,15 +125,6 @@ struct AssemblyContainerView: View {
         }
         .navigationBarBackButtonHidden(true)
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
-        .onChange(of: scenePhase) { _, newPhase in
-            if newPhase == .background || newPhase == .inactive {
-                cameraService.stopSession()
-            } else if newPhase == .active && viewModel.phase == .camera {
-                if cameraService.authorizationStatus == .authorized {
-                    cameraService.startSession()
-                }
-            }
-        }
     }
 }
 

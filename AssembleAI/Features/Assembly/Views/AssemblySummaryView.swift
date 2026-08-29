@@ -7,9 +7,10 @@ import SwiftUI
 
 /// Assembly session summary screen displaying completion stats, elapsed time, retry attempts, and corrections.
 struct AssemblySummaryView: View {
+    @Environment(\.dismiss) private var dismiss
     let project: AssemblyProject
     let session: AssemblySession
-    let onDone: () -> Void
+    var onDone: (() -> Void)? = nil
     
     var body: some View {
         ScrollView {
@@ -72,7 +73,11 @@ struct AssemblySummaryView: View {
                 Spacer(minLength: 40)
                 
                 PrimaryButton(title: "Done", iconName: "checkmark") {
-                    onDone()
+                    if let onDone = onDone {
+                        onDone()
+                    } else {
+                        dismiss()
+                    }
                 }
                 .padding(.bottom, AppSpacing.xl)
             }

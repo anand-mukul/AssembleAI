@@ -9,7 +9,7 @@ import UIKit
 /// Verification outcome screen presenting pass/fail/uncertain analysis results with contextual "Why?" explanations.
 struct VerificationResultView: View {
     let result: VerificationResult
-    let currentStep: AssemblyStep? = nil
+    var currentStep: AssemblyStep? = nil
     let onContinue: () -> Void
     let onShowErrorGuidance: () -> Void
     let onRetry: () -> Void

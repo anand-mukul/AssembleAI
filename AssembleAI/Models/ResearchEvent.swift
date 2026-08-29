@@ -6,7 +6,7 @@
 import Foundation
 
 /// Event lifecycle type for research evaluation telemetry.
-enum ResearchEventType: String, Codable, Sendable {
+enum ResearchEventType: String, Codable, Hashable, Equatable, Sendable {
     case sessionStarted
     case instructionViewed
     case cameraOpened
@@ -21,7 +21,7 @@ enum ResearchEventType: String, Codable, Sendable {
 }
 
 /// Anonymized pseudonymous telemetry record for research metric calculation.
-struct ResearchEvent: Identifiable, Codable, Sendable {
+struct ResearchEvent: Identifiable, Hashable, Codable, Equatable, Sendable {
     let id: UUID
     let timestamp: Date
     let sessionID: UUID

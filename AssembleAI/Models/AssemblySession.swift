@@ -6,7 +6,7 @@
 import Foundation
 
 /// Lifecycle status for an assembly session.
-enum SessionStatus: String, Codable, Sendable {
+enum SessionStatus: String, Codable, Hashable, Equatable, Sendable {
     case notStarted = "not_started"
     case inProgress = "in_progress"
     case completed = "completed"
@@ -14,7 +14,7 @@ enum SessionStatus: String, Codable, Sendable {
 }
 
 /// Session tracking metrics for an active or completed physical assembly flow.
-struct AssemblySession: Identifiable, Sendable {
+struct AssemblySession: Identifiable, Hashable, Codable, Equatable, Sendable {
     let id: UUID
     var userId: UUID?
     let projectId: UUID
@@ -107,6 +107,12 @@ struct AssemblySession: Identifiable, Sendable {
     /// Formatted duration alias matching summary views
     var durationFormatted: String {
         timeElapsedText
+    }
+    
+    /// Completion timestamp alias for SwiftData persistence mappings
+    var completedAt: Date? {
+        get { endedAt }
+        set { endedAt = newValue }
     }
     
     /// Accuracy percentage metric

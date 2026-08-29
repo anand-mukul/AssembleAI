@@ -102,7 +102,9 @@ struct AssemblyCompletedView: View {
         }
         .background(AppColors.appBackground.ignoresSafeArea())
         .sheet(isPresented: $showSummarySheet) {
-            AssemblySummaryView(project: project, session: session)
+            AssemblySummaryView(project: project, session: session, onDone: {
+                showSummarySheet = false
+            })
         }
         .onAppear {
             UINotificationFeedbackGenerator().notificationOccurred(.success)

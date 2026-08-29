@@ -8,6 +8,7 @@ import SwiftData
 
 protocol SessionRepository: Sendable {
     func fetchSessions(userId: UUID) async throws -> [AssemblySession]
+    func fetchAllSessions() async throws -> [AssemblySession]
     func fetchSession(id: UUID) async throws -> AssemblySession?
     func saveSession(_ session: AssemblySession) async throws
 }
@@ -23,6 +24,15 @@ final class LocalFirstSessionRepository: SessionRepository, @unchecked Sendable 
     func fetchSessions(userId: UUID) async throws -> [AssemblySession] {
         let descriptor = FetchDescriptor<LocalAssemblySession>(
             predicate: #Predicate<LocalAssemblySession> { $0.userId == userId },
+            sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
+        )
+        let localSessions = try modelContext.fetch(descriptor)
+        return localSessions.map { $0.toDomainModel() }
+    }
+    
+    @MainActor
+    func fetchAllSessions() async throws -> [AssemblySession] {
+        let descriptor = FetchDescriptor<LocalAssemblySession>(
             sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
         )
         let localSessions = try modelContext.fetch(descriptor)

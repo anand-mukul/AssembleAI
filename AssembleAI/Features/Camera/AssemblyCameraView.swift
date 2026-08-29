@@ -14,7 +14,7 @@ struct AssemblyCameraView: View {
     
     let currentStep: AssemblyStep
     var activeGuidance: GuidanceOverlay? = nil
-    var onAnalyze: (() -> Void)? = nil
+    var onAnalyze: ((UIImage?) -> Void)? = nil
     var onClose: (() -> Void)? = nil
     
     @State private var reticleVisible = false
@@ -40,7 +40,7 @@ struct AssemblyCameraView: View {
             VStack(spacing: 0) {
                 // Top Header Overlay: Assembly Step & Cancel Button
                 topStepOverlay
-                    .padding(.top, AppSpacing.sm)
+                    .padding(.top, 54)
                     .opacity(overlayVisible ? 1 : 0)
                     .offset(y: overlayVisible ? 0 : -20)
                 
@@ -188,11 +188,14 @@ struct AssemblyCameraView: View {
             title: activeGuidance != nil ? "Scan Again" : "Analyze Step",
             iconName: "viewfinder"
         ) {
-            cameraService.stopSession()
-            if let onAnalyze = onAnalyze {
-                onAnalyze()
-            } else {
-                router.navigateToAnalyzing(step: currentStep)
+            Task {
+                let photo = try? await cameraService.capturePhoto()
+                cameraService.stopSession()
+                if let onAnalyze = onAnalyze {
+                    onAnalyze(photo)
+                } else {
+                    router.navigateToAnalyzing(step: currentStep)
+                }
             }
         }
     }

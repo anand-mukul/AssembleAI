@@ -60,7 +60,7 @@ struct ObservedPosition: Identifiable, Hashable, Codable, Sendable {
 }
 
 /// Higher-level observed physical state converted from `VisualObservation`.
-struct ObservedAssemblyState: Identifiable, Sendable {
+struct ObservedAssemblyState: Identifiable, Hashable, Codable, Sendable {
     let id: UUID
     let detectedComponents: [ObservedComponent]
     let detectedConnections: [ObservedConnection]

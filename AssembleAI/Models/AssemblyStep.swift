@@ -6,7 +6,7 @@
 import Foundation
 
 /// Sequential step within an assembly project.
-nonisolated struct AssemblyStep: Identifiable, Codable, Equatable, Sendable {
+nonisolated struct AssemblyStep: Identifiable, Hashable, Codable, Sendable {
     let id: UUID
     let projectId: UUID
     var stepOrder: Int

@@ -70,7 +70,14 @@ struct MainTabView: View {
             
             // Tab 2: Scan
             NavigationStack(path: $scanPath) {
-                ScanPlaceholderView()
+                ScanPlaceholderView(
+                    onLaunchInspection: { project in
+                        scanPath.append(AppRouteAssembly(project: project))
+                    }
+                )
+                .navigationDestination(for: AppRouteAssembly.self) { assembly in
+                    AssemblyContainerView(project: assembly.project)
+                }
             }
             .tabItem {
                 Label("Scan", systemImage: "viewfinder")
@@ -88,7 +95,19 @@ struct MainTabView: View {
             
             // Tab 4: Profile
             NavigationStack(path: $profilePath) {
-                ProfilePlaceholderView()
+                ProfileView()
+                    .navigationDestination(for: ProfileNavigationDestination.self) { dest in
+                        switch dest {
+                        case .appSettings:
+                            AppSettingsView(viewModel: ProfileViewModel())
+                        case .dataPrivacy:
+                            DataPrivacySettingsView(viewModel: ProfileViewModel())
+                        case .notifications:
+                            NotificationsSettingsView(viewModel: ProfileViewModel())
+                        case .help:
+                            HelpAndSupportView()
+                        }
+                    }
             }
             .tabItem {
                 Label("Profile", systemImage: "person.crop.circle")
@@ -101,11 +120,11 @@ struct MainTabView: View {
 
 // MARK: - Local Navigation Hashable Wrappers
 
-struct AppRouteDetail: Hashable {
+struct AppRouteDetail: Hashable, Sendable {
     let project: AssemblyProject
 }
 
-struct AppRouteAssembly: Hashable {
+struct AppRouteAssembly: Hashable, Sendable {
     let project: AssemblyProject
 }
 
