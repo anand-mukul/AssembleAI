@@ -5,6 +5,7 @@
 
 import Foundation
 import AVFoundation
+import Combine
 
 /// Concrete voice output service orchestrating `AVSpeechSynthesizer` and `AVAudioSession`.
 ///

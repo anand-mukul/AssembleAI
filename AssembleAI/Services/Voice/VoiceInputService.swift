@@ -6,6 +6,7 @@
 import Foundation
 import AVFoundation
 import Speech
+import Combine
 
 /// Concrete on-device speech recognition service using Apple's `Speech` framework and `AVAudioEngine`.
 ///
@@ -20,8 +21,7 @@ final class VoiceInputService: NSObject, ObservableObject, VoiceInputServiceProt
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
     
-    private let streamLock = NSLock()
-    private var continuations: [UUID: AsyncStream<UserVoiceMessage>.Continuation] = [:]
+    nonisolated private let broadcaster = TranscriptStreamBroadcaster()
     
     override init() {
         super.init()
@@ -29,13 +29,7 @@ final class VoiceInputService: NSObject, ObservableObject, VoiceInputServiceProt
     }
     
     deinit {
-        streamLock.lock()
-        let conts = Array(continuations.values)
-        continuations.removeAll()
-        streamLock.unlock()
-        for c in conts {
-            c.finish()
-        }
+        broadcaster.finishAll()
     }
     
     // MARK: - Transcript Stream API
@@ -43,15 +37,10 @@ final class VoiceInputService: NSObject, ObservableObject, VoiceInputServiceProt
     nonisolated var transcriptStream: AsyncStream<UserVoiceMessage> {
         AsyncStream(UserVoiceMessage.self, bufferingPolicy: .bufferingNewest(10)) { continuation in
             let id = UUID()
-            self.streamLock.lock()
-            self.continuations[id] = continuation
-            self.streamLock.unlock()
+            self.broadcaster.addContinuation(continuation, id: id)
             
             continuation.onTermination = { [weak self] _ in
-                guard let self = self else { return }
-                self.streamLock.lock()
-                self.continuations.removeValue(forKey: id)
-                self.streamLock.unlock()
+                self?.broadcaster.removeContinuation(id: id)
             }
         }
     }
@@ -115,7 +104,7 @@ final class VoiceInputService: NSObject, ObservableObject, VoiceInputServiceProt
                 
                 Task { @MainActor in
                     self.latestTranscript = text
-                    self.emitTranscript(text: text, isFinal: isFinal)
+                    self.broadcaster.broadcast(UserVoiceMessage(transcript: text, isFinal: isFinal))
                     
                     if isFinal {
                         await self.stopListening()
@@ -166,20 +155,6 @@ final class VoiceInputService: NSObject, ObservableObject, VoiceInputServiceProt
         latestTranscript = ""
     }
     
-    // MARK: - Internal Emission Helper
-    
-    private func emitTranscript(text: String, isFinal: Bool) {
-        let message = UserVoiceMessage(transcript: text, isFinal: isFinal)
-        
-        streamLock.lock()
-        let activeContinuations = Array(continuations.values)
-        streamLock.unlock()
-        
-        for continuation in activeContinuations {
-            continuation.yield(message)
-        }
-    }
-    
     private func requestSpeechAuthorization() async -> SFSpeechRecognizerAuthorizationStatus {
         await withCheckedContinuation { continuation in
             SFSpeechRecognizer.requestAuthorization { status in
@@ -197,6 +172,46 @@ extension VoiceInputService: SFSpeechRecognizerDelegate {
             Task { @MainActor in
                 await self.stopListening()
             }
+        }
+    }
+}
+
+// MARK: - Thread-Safe Transcript Stream Broadcaster
+
+private final class TranscriptStreamBroadcaster: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuations: [UUID: AsyncStream<UserVoiceMessage>.Continuation] = [:]
+    
+    func addContinuation(_ continuation: AsyncStream<UserVoiceMessage>.Continuation, id: UUID) {
+        lock.lock()
+        defer { lock.unlock() }
+        continuations[id] = continuation
+    }
+    
+    func removeContinuation(id: UUID) {
+        lock.lock()
+        defer { lock.unlock() }
+        continuations.removeValue(forKey: id)
+    }
+    
+    func broadcast(_ message: UserVoiceMessage) {
+        lock.lock()
+        let active = Array(continuations.values)
+        lock.unlock()
+        
+        for cont in active {
+            cont.yield(message)
+        }
+    }
+    
+    func finishAll() {
+        lock.lock()
+        let active = Array(continuations.values)
+        continuations.removeAll()
+        lock.unlock()
+        
+        for cont in active {
+            cont.finish()
         }
     }
 }
