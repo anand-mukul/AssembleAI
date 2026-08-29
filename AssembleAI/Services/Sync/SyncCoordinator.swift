@@ -19,12 +19,13 @@ final class SyncCoordinator: ObservableObject {
     
     init(
         modelContext: ModelContext,
-        supabaseManager: SupabaseManager = .shared,
-        supabaseService: SupabaseProjectService = SupabaseProjectService()
+        supabaseManager: SupabaseManager? = nil,
+        supabaseService: SupabaseProjectService? = nil
     ) {
+        let resolvedSupabaseManager = supabaseManager ?? .shared
         self.modelContext = modelContext
-        self.supabaseManager = supabaseManager
-        self.supabaseService = supabaseService
+        self.supabaseManager = resolvedSupabaseManager
+        self.supabaseService = supabaseService ?? SupabaseProjectService(supabaseManager: resolvedSupabaseManager)
     }
     
     /// Synchronizes all pending local SwiftData modifications to Supabase.

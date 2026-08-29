@@ -268,17 +268,22 @@ struct PrimaryButton: View {
                     Text(title)
                         .font(.headline)
                         .fontWeight(.semibold)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
                 }
             }
             .foregroundColor(.white)
             .frame(maxWidth: .infinity)
-            .frame(height: 50)
+            .frame(height: 52)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(isDisabled ? Color.gray.opacity(0.4) : Color.assembleBrandPrimary)
+                    .fill(isDisabled ? AppColors.tertiaryText.opacity(0.28) : Color.assembleBrandPrimary)
             )
+            .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
+        .buttonStyle(.plain)
         .disabled(isDisabled || isLoading)
+        .opacity(isDisabled ? 0.78 : 1)
         .accessibilityLabel(title)
         .accessibilityHint(isDisabled ? "Button is disabled" : "Tap to proceed")
     }
@@ -303,21 +308,49 @@ struct SecondaryButton: View {
                 Text(title)
                     .font(.headline)
                     .fontWeight(.medium)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
             }
             .foregroundColor(AppColors.primaryText)
             .frame(maxWidth: .infinity)
-            .frame(height: 50)
+            .frame(height: 52)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(AppColors.secondaryBackground)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(AppColors.border, lineWidth: 1)
+                    .strokeBorder(AppColors.border.opacity(0.75), lineWidth: 1)
             )
+            .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
+        .buttonStyle(.plain)
         .disabled(isDisabled)
+        .opacity(isDisabled ? 0.55 : 1)
         .accessibilityLabel(title)
+    }
+}
+
+// MARK: - Badge
+
+/// Compact status badge for labels like difficulty and sync state.
+struct BadgeView: View {
+    let text: String
+    var color: Color = .assembleBrandPrimary
+    
+    var body: some View {
+        Text(text)
+            .font(.caption2)
+            .fontWeight(.semibold)
+            .foregroundColor(color)
+            .lineLimit(1)
+            .padding(.horizontal, AppSpacing.sm)
+            .padding(.vertical, AppSpacing.xxs)
+            .background(
+                Capsule()
+                    .fill(color.opacity(0.12))
+            )
+            .accessibilityLabel(text)
     }
 }
 
@@ -381,7 +414,7 @@ struct CustomTextField: View {
                 }
             }
             .padding(.horizontal, AppSpacing.md)
-            .frame(height: 48)
+            .frame(height: 50)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(AppColors.secondaryBackground)
@@ -389,7 +422,7 @@ struct CustomTextField: View {
             .overlay(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .strokeBorder(
-                        errorMessage != nil ? AppColors.error : (isFocused ? Color.assembleBrandPrimary : AppColors.border),
+                        errorMessage != nil ? AppColors.error : (isFocused ? Color.assembleBrandPrimary : AppColors.border.opacity(0.65)),
                         lineWidth: isFocused || errorMessage != nil ? 1.5 : 1
                     )
             )

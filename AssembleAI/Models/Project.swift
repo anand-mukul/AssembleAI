@@ -14,7 +14,7 @@ enum SyncState: String, Codable, Equatable, Sendable {
 }
 
 /// Project Domain Model representing an electronics or physical task assembly workflow.
-struct Project: Identifiable, Codable, Equatable, Sendable {
+nonisolated struct Project: Identifiable, Codable, Equatable, Sendable {
     let id: UUID
     let ownerId: UUID
     var title: String

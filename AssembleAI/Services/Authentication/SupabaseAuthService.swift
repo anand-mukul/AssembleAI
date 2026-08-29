@@ -5,6 +5,7 @@
 
 import Foundation
 import SwiftUI
+import SwiftData
 import Combine
 
 /// Authentication Service backed by Supabase Auth, native Sign in with Apple, and local SwiftData persistence adhering to Apple HIG security standards.

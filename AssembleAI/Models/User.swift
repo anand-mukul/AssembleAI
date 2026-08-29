@@ -13,7 +13,7 @@ enum AuthProvider: String, Codable, Equatable, Sendable {
 }
 
 /// Represents an authenticated or guest user session in AssembleAI.
-struct User: Identifiable, Codable, Equatable, Sendable {
+nonisolated struct User: Identifiable, Codable, Equatable, Sendable {
     let id: String
     let name: String?
     let email: String?

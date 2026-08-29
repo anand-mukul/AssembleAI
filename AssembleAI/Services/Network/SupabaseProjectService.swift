@@ -9,7 +9,8 @@ import Foundation
 actor SupabaseProjectService {
     private let supabaseManager: SupabaseManager
     
-    init(supabaseManager: SupabaseManager = .shared) {
+    @MainActor
+    init(supabaseManager: SupabaseManager) {
         self.supabaseManager = supabaseManager
     }
     

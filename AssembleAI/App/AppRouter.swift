@@ -11,6 +11,7 @@ enum AppRoute: Hashable, Identifiable {
     case launch
     case welcome
     case authChoice
+    case signInWithApple
     case signIn
     case createAccount
     case forgotPassword
@@ -21,6 +22,7 @@ enum AppRoute: Hashable, Identifiable {
         case .launch: return "launch"
         case .welcome: return "welcome"
         case .authChoice: return "authChoice"
+        case .signInWithApple: return "signInWithApple"
         case .signIn: return "signIn"
         case .createAccount: return "createAccount"
         case .forgotPassword: return "forgotPassword"
@@ -52,6 +54,15 @@ final class AppRouter: ObservableObject {
         }
     }
     
+    func navigateToSignInWithApple() {
+        if rootRoute == .authChoice {
+            navigationPath.append(AppRoute.signInWithApple)
+        } else {
+            rootRoute = .authChoice
+            navigationPath.append(AppRoute.signInWithApple)
+        }
+    }
+    
     func navigateToSignIn() {
         if rootRoute == .authChoice {
             navigationPath.append(AppRoute.signIn)
@@ -59,6 +70,10 @@ final class AppRouter: ObservableObject {
             rootRoute = .authChoice
             navigationPath.append(AppRoute.signIn)
         }
+    }
+    
+    func navigateToEmailSignIn() {
+        navigateToSignIn()
     }
     
     func navigateToCreateAccount() {

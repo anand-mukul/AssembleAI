@@ -87,6 +87,8 @@ struct MainContainerView: View {
         switch route {
         case .authChoice:
             AuthChoiceView()
+        case .signInWithApple:
+            SignInWithAppleView()
         case .signIn:
             EmailSignInView()
         case .createAccount:
