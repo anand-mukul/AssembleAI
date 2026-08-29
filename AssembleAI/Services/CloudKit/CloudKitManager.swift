@@ -35,6 +35,14 @@ final class CloudKitManager: ObservableObject {
     
     /// Queries the user's current iCloud account availability status.
     func checkAccountStatus() async {
+        guard AppConfig.isCloudKitEnabled else {
+            accountStatus = .couldNotDetermine
+            isAvailable = false
+            userRecordID = nil
+            error = "CloudKit is disabled for this build."
+            return
+        }
+        
         do {
             let status = try await container.accountStatus()
             self.accountStatus = status

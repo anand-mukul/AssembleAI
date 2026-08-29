@@ -123,7 +123,7 @@ struct HomePlaceholderView: View {
                                                 .font(.headline)
                                                 .foregroundColor(AppColors.primaryText)
                                             Spacer()
-                                            BadgeView(text: project.difficulty, color: .indigo)
+                                            ProjectBadgeView(text: project.difficulty, color: .indigo)
                                         }
                                         
                                         if !project.description.isEmpty {
@@ -162,7 +162,9 @@ struct HomePlaceholderView: View {
                     SecondaryButton(title: "Sign Out", iconName: "rectangle.portrait.and.arrow.right") {
                         Task {
                             await authService.signOut()
-                            router.transitionToWelcome()
+                            await MainActor.run {
+                                router.transitionToWelcome()
+                            }
                         }
                     }
                     .padding(.horizontal, AppSpacing.lg)
@@ -211,7 +213,9 @@ struct HomePlaceholderView: View {
         let repository = LocalFirstProjectRepository(modelContext: modelContext)
         Task {
             if let loaded = try? await repository.fetchProjects() {
-                self.projects = loaded
+                await MainActor.run {
+                    self.projects = loaded
+                }
             }
         }
     }
@@ -231,10 +235,30 @@ struct HomePlaceholderView: View {
         
         Task {
             try? await repository.saveProject(newProject)
-            loadLocalProjects()
-            newProjectTitle = ""
-            newProjectDescription = ""
+            await MainActor.run {
+                loadLocalProjects()
+                newProjectTitle = ""
+                newProjectDescription = ""
+            }
         }
+    }
+}
+
+private struct ProjectBadgeView: View {
+    let text: String
+    let color: Color
+    
+    var body: some View {
+        Text(text)
+            .font(.caption2)
+            .fontWeight(.semibold)
+            .foregroundColor(color)
+            .padding(.horizontal, AppSpacing.sm)
+            .padding(.vertical, 4)
+            .background(
+                Capsule()
+                    .fill(color.opacity(0.12))
+            )
     }
 }
 
@@ -242,4 +266,5 @@ struct HomePlaceholderView: View {
     HomePlaceholderView()
         .environmentObject(AppRouter())
         .environmentObject(CloudKitAuthService())
+        .modelContainer(for: [LocalProject.self], inMemory: true)
 }
