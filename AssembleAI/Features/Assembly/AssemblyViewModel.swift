@@ -7,6 +7,7 @@ import Foundation
 import Combine
 import SwiftUI
 import UIKit
+import CoreVideo
 
 /// Verification execution mode selector.
 enum VerificationMode: String, CaseIterable, Identifiable, Codable, Hashable, Equatable, Sendable {
@@ -30,7 +31,7 @@ enum AssemblyPhase: Equatable, Hashable, Sendable {
     case completed
 }
 
-/// Central state-driven View Model orchestrating physical assembly steps, camera triggers, Vision analysis, and visual guidance overlays.
+/// Central state-driven View Model orchestrating physical assembly steps, live vision observation, conversational tutor guidance, automatic step progression, and research instrumentation.
 @MainActor
 final class AssemblyViewModel: ObservableObject {
     @Published var phase: AssemblyPhase = .intro
@@ -43,20 +44,61 @@ final class AssemblyViewModel: ObservableObject {
     @Published var verificationMode: VerificationMode = .hybrid
     @Published var showVisionDebugInDev: Bool = false
     
+    // MARK: - Live Tutor HUD State (Phases 9-11)
+    @Published var liveTutorEnabled: Bool = true
+    @Published var isLivePaused: Bool = false
+    @Published var liveStatus: LiveTutorStatus = .live
+    @Published var currentTutorMessage: TutorResponse? = nil
+    @Published var currentVerificationResult: VerificationResult? = nil
+    @Published var isListening: Bool = false
+    @Published var liveUserTranscript: String = ""
+    
+    // Double-Advancement & Stale Progression Guard
+    private var transitioningStepID: UUID? = nil
+    
     private let verificationService: VerificationServiceProtocol
     private let visionAnalyzer: VisionAnalyzing
     private let guidanceProvider: GuidanceProviding
+    
+    // Live Tutor Services
+    private let frameSampler: FrameSamplingServiceProtocol
+    private let observationCoordinator: LiveObservationCoordinating
+    private let interventionPolicy: AssistantInterventionPolicing
+    private let conversationalTutor: ConversationalTutorProviding
+    private let voiceOutput: VoiceOutputServiceProtocol
+    private let voiceInput: VoiceInputServiceProtocol
+    private let intentParser: VoiceIntentParser
+    private let researchLogger: ResearchLogging
+    
+    private var liveObservationTask: Task<Void, Never>?
+    private var voiceInputTask: Task<Void, Never>?
+    private var autoProgressTask: Task<Void, Never>?
     
     init(
         project: AssemblyProject,
         verificationService: VerificationServiceProtocol? = nil,
         visionAnalyzer: VisionAnalyzing? = nil,
-        guidanceProvider: GuidanceProviding? = nil
+        guidanceProvider: GuidanceProviding? = nil,
+        frameSampler: FrameSamplingServiceProtocol? = nil,
+        observationCoordinator: LiveObservationCoordinating? = nil,
+        interventionPolicy: AssistantInterventionPolicing? = nil,
+        conversationalTutor: ConversationalTutorProviding? = nil,
+        voiceOutput: VoiceOutputServiceProtocol? = nil,
+        voiceInput: VoiceInputServiceProtocol? = nil,
+        researchLogger: ResearchLogging? = nil
     ) {
         self.project = project
         self.verificationService = verificationService ?? StateAwareVerificationService()
         self.visionAnalyzer = visionAnalyzer ?? VisionService()
         self.guidanceProvider = guidanceProvider ?? DefaultGuidanceProvider()
+        self.frameSampler = frameSampler ?? FrameSamplingService()
+        self.observationCoordinator = observationCoordinator ?? LiveObservationCoordinator()
+        self.interventionPolicy = interventionPolicy ?? AssistantInterventionPolicy()
+        self.conversationalTutor = conversationalTutor ?? HybridTutorResponseProvider()
+        self.voiceOutput = voiceOutput ?? VoiceOutputService()
+        self.voiceInput = voiceInput ?? VoiceInputService()
+        self.intentParser = VoiceIntentParser()
+        self.researchLogger = researchLogger ?? ResearchLogger.shared
         self.session = AssemblySession(projectId: project.id, currentStepIndex: project.completedSteps)
         self.currentStepIndex = max(0, min(project.completedSteps, max(0, project.steps.count - 1)))
     }
@@ -92,9 +134,286 @@ final class AssemblyViewModel: ObservableObject {
         currentStepIndex + 1
     }
     
-    // MARK: - Intent Actions
+    // MARK: - Telemetry Logging Helper
+    
+    private func logResearchEvent(_ type: ResearchEventType, durationMs: Int? = nil, status: String? = nil, metadata: [String: String] = [:]) {
+        let event = ResearchEvent(
+            sessionID: session.id,
+            projectID: project.id,
+            stepID: currentStep.id,
+            mode: liveTutorEnabled ? .liveTutor : .manual,
+            eventType: type,
+            durationMilliseconds: durationMs,
+            verificationStatus: status,
+            metadata: metadata
+        )
+        Task { [weak self] in
+            await self?.researchLogger.logEvent(event)
+        }
+    }
+    
+    // MARK: - Live Tutor Pipeline Orchestration
+    
+    /// Connects camera frame stream to the end-to-end Live Tutor observation, verification, speech, auto-progression, and research logging loop.
+    func startLiveTutor(frameStream: AsyncStream<CVPixelBuffer>) {
+        guard liveTutorEnabled else { return }
+        stopLiveTutor()
+        
+        liveStatus = isLivePaused ? .paused : .live
+        logResearchEvent(.stepStarted, metadata: ["stepOrder": "\(currentStep.stepOrder)"])
+        
+        liveObservationTask = Task { [weak self] in
+            guard let self = self else { return }
+            
+            let sampledFrames = await self.frameSampler.sample(stream: frameStream)
+            for await frame in sampledFrames {
+                if Task.isCancelled { break }
+                if self.isLivePaused { continue }
+                
+                let activeStep = self.currentStep
+                let startTime = Date()
+                
+                // 1. Vision Analysis
+                guard let observation = try? await self.visionAnalyzer.analyze(frame: frame, orientation: .right, timestamp: Date().timeIntervalSince1970) else {
+                    continue
+                }
+                
+                // 2. Coordinate Observation with State Estimation & Deterministic Verification
+                guard let verification = await self.observationCoordinator.handleObservation(observation, for: activeStep) else {
+                    continue
+                }
+                
+                // Stale step check
+                guard self.currentStep.id == activeStep.id else { continue }
+                self.currentVerificationResult = verification
+                
+                // Log Verification Research Telemetry
+                let verDurationMs = Int(Date().timeIntervalSince(startTime) * 1000)
+                let verType: ResearchEventType = verification.isCorrect ? .verificationCorrect : (verification.status == .uncertain ? .verificationUncertain : .verificationIncorrect)
+                self.logResearchEvent(verType, durationMs: verDurationMs, status: verification.status.rawValue)
+                
+                // 3. Evaluate Assistant Intervention Policy
+                let context = TutorContext(
+                    currentStep: activeStep,
+                    timeSinceStepStartedSeconds: 5.0,
+                    lastVerificationResult: verification
+                )
+                let decision = self.interventionPolicy.evaluate(event: .verificationUpdated(result: verification), context: context)
+                
+                // 4. Handle Spoken Guidance & Automatic Step Progression
+                if decision.shouldIntervene {
+                    self.logResearchEvent(.interventionTriggered, metadata: ["reason": decision.reason])
+                    
+                    let assistantContext = AssistantContext(
+                        currentStep: activeStep,
+                        sessionID: self.session.id,
+                        verificationResult: verification
+                    )
+                    
+                    let modelStartTime = Date()
+                    if let response = await self.conversationalTutor.generateResponse(for: decision, context: assistantContext) {
+                        guard self.currentStep.id == activeStep.id else { continue }
+                        let modelLatency = Int(Date().timeIntervalSince(modelStartTime) * 1000)
+                        self.logResearchEvent(.assistantResponseGenerated, durationMs: modelLatency, metadata: ["category": response.category])
+                        
+                        self.currentTutorMessage = response
+                        
+                        if self.liveStatus != .listening {
+                            self.liveStatus = .speaking
+                            self.logResearchEvent(.assistantSpeechStarted)
+                            await self.voiceOutput.speak(response)
+                            self.logResearchEvent(.assistantSpeechCompleted)
+                            if self.liveStatus == .speaking {
+                                self.liveStatus = self.isLivePaused ? .paused : .live
+                            }
+                        }
+                    }
+                    
+                    // 5. Automatic Progression Trigger on Confirmed Completion
+                    if case .confirm = decision.action, verification.isCorrect {
+                        self.triggerAutomaticStepProgression(for: activeStep)
+                    }
+                } else {
+                    self.logResearchEvent(.interventionSuppressed, metadata: ["reason": decision.reason])
+                }
+            }
+        }
+    }
+    
+    /// Executes atomic, debounced progression to the next step or assembly completion.
+    private func triggerAutomaticStepProgression(for completedStep: AssemblyStep) {
+        guard liveTutorEnabled else { return }
+        guard transitioningStepID != completedStep.id else { return }
+        guard currentStep.id == completedStep.id else { return }
+        
+        transitioningStepID = completedStep.id
+        session.completedSteps.insert(currentStepIndex)
+        logResearchEvent(.stepCompleted, metadata: ["stepOrder": "\(completedStep.stepOrder)"])
+        
+        autoProgressTask?.cancel()
+        autoProgressTask = Task { [weak self] in
+            guard let self = self else { return }
+            
+            try? await Task.sleep(nanoseconds: 1_200_000_000)
+            if Task.isCancelled { return }
+            
+            if self.currentStepIndex + 1 < self.totalStepsCount {
+                self.currentStepIndex += 1
+                self.session.currentStepIndex = self.currentStepIndex
+                self.transitioningStepID = nil
+                
+                await self.observationCoordinator.resetForStepChange()
+                await self.interventionPolicy.resetForStepChange()
+                self.currentVerificationResult = nil
+                
+                let nextStep = self.currentStep
+                self.logResearchEvent(.stepStarted, metadata: ["stepOrder": "\(nextStep.stepOrder)"])
+                
+                let introText = "Next, Step \(nextStep.stepOrder): \(nextStep.title). \(nextStep.instruction)"
+                let introResponse = TutorResponse(text: introText, priority: .normal, category: "instruction")
+                self.currentTutorMessage = introResponse
+                
+                if self.liveStatus != .listening && !self.isLivePaused {
+                    self.liveStatus = .speaking
+                    await self.voiceOutput.speak(introResponse)
+                    if self.liveStatus == .speaking {
+                        self.liveStatus = self.isLivePaused ? .paused : .live
+                    }
+                }
+            } else {
+                self.session.endedAt = Date()
+                self.transitioningStepID = nil
+                self.stopLiveTutor()
+                self.logResearchEvent(.sessionCompleted)
+                
+                let completionText = "Congratulations! You have successfully completed all assembly steps."
+                let completionResponse = TutorResponse(text: completionText, priority: .high, category: "completion")
+                await self.voiceOutput.speak(completionResponse)
+                
+                withAnimation(.easeInOut(duration: 0.4)) {
+                    self.phase = .completed
+                }
+            }
+        }
+    }
+    
+    /// Stops all live observation, speech generation, and voice input tasks.
+    func stopLiveTutor() {
+        liveObservationTask?.cancel()
+        liveObservationTask = nil
+        voiceInputTask?.cancel()
+        voiceInputTask = nil
+        autoProgressTask?.cancel()
+        autoProgressTask = nil
+        transitioningStepID = nil
+        Task {
+            await voiceOutput.stop()
+            await voiceInput.stopListening()
+        }
+    }
+    
+    /// Toggles pause state of live tutor observation and speech.
+    func toggleLivePause() {
+        isLivePaused.toggle()
+        liveStatus = isLivePaused ? .paused : .live
+        logResearchEvent(isLivePaused ? .liveTutorPaused : .liveTutorResumed)
+        if isLivePaused {
+            Task {
+                await voiceOutput.stop()
+            }
+        }
+    }
+    
+    /// Toggles microphone listening state for user voice questions.
+    func toggleVoiceInput() {
+        if isListening {
+            isListening = false
+            liveStatus = isLivePaused ? .paused : .live
+            Task {
+                await voiceInput.stopListening()
+            }
+            voiceInputTask?.cancel()
+            voiceInputTask = nil
+        } else {
+            isListening = true
+            liveStatus = .listening
+            liveUserTranscript = ""
+            logResearchEvent(.userVoiceStarted)
+            
+            voiceInputTask = Task { [weak self] in
+                guard let self = self else { return }
+                await self.voiceOutput.stop()
+                do {
+                    try await self.voiceInput.startListening()
+                    for await message in self.voiceInput.transcriptStream {
+                        if Task.isCancelled { break }
+                        self.liveUserTranscript = message.transcript
+                        if message.isFinal {
+                            let query = message.transcript
+                            let intent = self.intentParser.parse(query)
+                            self.isListening = false
+                            self.liveStatus = .speaking
+                            self.logResearchEvent(.userVoiceCompleted, metadata: ["intent": "\(intent)"])
+                            
+                            let response: TutorResponse
+                            switch intent {
+                            case .repeatInstruction:
+                                response = TutorResponse(
+                                    text: "Step \(self.currentStep.stepOrder): \(self.currentStep.title). \(self.currentStep.instruction)",
+                                    priority: .immediate,
+                                    category: "instruction"
+                                )
+                            case .askWhatNext:
+                                if self.currentStepIndex < self.totalStepsCount {
+                                    response = TutorResponse(
+                                        text: "You are on Step \(self.currentStep.stepOrder): \(self.currentStep.title). \(self.currentStep.instruction)",
+                                        priority: .immediate,
+                                        category: "instruction"
+                                    )
+                                } else {
+                                    response = TutorResponse(
+                                        text: "The assembly is complete! Great work.",
+                                        priority: .immediate,
+                                        category: "completion"
+                                    )
+                                }
+                            default:
+                                let assistantContext = AssistantContext(
+                                    currentStep: self.currentStep,
+                                    sessionID: self.session.id,
+                                    verificationResult: self.currentVerificationResult,
+                                    userIntent: intent,
+                                    userTranscript: query
+                                )
+                                response = await self.conversationalTutor.answerUserQuestion(
+                                    query: query,
+                                    intent: intent,
+                                    context: assistantContext
+                                )
+                            }
+                            
+                            self.currentTutorMessage = response
+                            self.logResearchEvent(.assistantSpeechStarted)
+                            await self.voiceOutput.speak(response)
+                            self.logResearchEvent(.assistantSpeechCompleted)
+                            if self.liveStatus == .speaking {
+                                self.liveStatus = self.isLivePaused ? .paused : .live
+                            }
+                            break
+                        }
+                    }
+                } catch {
+                    self.isListening = false
+                    self.liveStatus = self.isLivePaused ? .paused : .live
+                }
+            }
+        }
+    }
+    
+    // MARK: - Legacy Manual Intent Actions
     
     func beginAssembly() {
+        logResearchEvent(.sessionStarted)
         withAnimation(.easeInOut(duration: 0.3)) {
             phase = .instruction
         }
@@ -110,12 +429,13 @@ final class AssemblyViewModel: ObservableObject {
     func triggerAnalysis(capturedImage: UIImage? = nil, viewSize: CGSize = CGSize(width: 390, height: 844)) {
         self.capturedImage = capturedImage
         self.session.attempts += 1
+        logResearchEvent(.manualAnalysisTriggered, metadata: ["attempt": "\(session.attempts)"])
+        
         withAnimation(.easeInOut(duration: 0.3)) {
             phase = .analyzing
         }
         
         Task {
-            // 1. Run Vision Analysis
             let targetImage = capturedImage ?? createFallbackFrame()
             let observation: VisualObservation
             do {
@@ -131,7 +451,6 @@ final class AssemblyViewModel: ObservableObject {
             
             self.latestObservation = observation
             
-            // 2. Run Verification Engine
             let result: VerificationResult
             do {
                 result = try await verificationService.verifyStep(currentStep, image: targetImage)
@@ -145,7 +464,9 @@ final class AssemblyViewModel: ObservableObject {
                 )
             }
             
-            // 3. Generate Visual Guidance Overlay if incorrect
+            let verType: ResearchEventType = result.isCorrect ? .verificationCorrect : (result.status == .uncertain ? .verificationUncertain : .verificationIncorrect)
+            self.logResearchEvent(verType, status: result.status.rawValue)
+            
             let comparison = StateComparison(
                 status: result.isCorrect ? .correct : (result.status == .uncertain ? .uncertain : .incorrect),
                 confidence: result.confidence,
@@ -161,7 +482,6 @@ final class AssemblyViewModel: ObservableObject {
             
             self.activeGuidance = await guidanceProvider.guidance(for: comparison, step: currentStep, viewSize: viewSize)
             
-            // 4. Transition to Debug screen (if enabled in dev mode) or directly to Verification
             #if DEBUG
             if self.showVisionDebugInDev {
                 withAnimation(.easeInOut(duration: 0.3)) {
@@ -195,6 +515,7 @@ final class AssemblyViewModel: ObservableObject {
             if result.isCorrect {
                 session.completedSteps.insert(currentStepIndex)
                 activeGuidance = nil
+                logResearchEvent(.stepCompleted, metadata: ["stepOrder": "\(currentStep.stepOrder)"])
                 phase = .verification(result)
             } else {
                 session.errors += 1
@@ -215,15 +536,27 @@ final class AssemblyViewModel: ObservableObject {
     }
     
     func nextStep() {
+        stopLiveTutor()
         activeGuidance = nil
+        currentTutorMessage = nil
+        currentVerificationResult = nil
+        liveUserTranscript = ""
+        
+        Task {
+            await observationCoordinator.resetForStepChange()
+            await interventionPolicy.resetForStepChange()
+        }
+        
         if currentStepIndex + 1 < totalStepsCount {
             currentStepIndex += 1
             session.currentStepIndex = currentStepIndex
+            logResearchEvent(.stepStarted, metadata: ["stepOrder": "\(currentStep.stepOrder)"])
             withAnimation(.easeInOut(duration: 0.3)) {
                 phase = .instruction
             }
         } else {
             session.endedAt = Date()
+            logResearchEvent(.sessionCompleted)
             withAnimation(.easeInOut(duration: 0.4)) {
                 phase = .completed
             }
@@ -231,6 +564,16 @@ final class AssemblyViewModel: ObservableObject {
     }
     
     func retryCurrentStep() {
+        stopLiveTutor()
+        currentTutorMessage = nil
+        currentVerificationResult = nil
+        liveUserTranscript = ""
+        
+        Task {
+            await observationCoordinator.resetForStepChange()
+            await interventionPolicy.resetForStepChange()
+        }
+        
         withAnimation(.easeInOut(duration: 0.3)) {
             phase = .camera
         }

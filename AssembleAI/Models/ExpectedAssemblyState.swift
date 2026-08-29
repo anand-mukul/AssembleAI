@@ -74,3 +74,46 @@ nonisolated struct ExpectedAssemblyState: Identifiable, Hashable, Codable, Senda
         self.requiredPositions = requiredPositions
     }
 }
+
+extension ExpectedAssemblyState {
+    /// Builds the standard expected physical state specification for a given assembly step.
+    nonisolated static func forStep(_ step: AssemblyStep) -> ExpectedAssemblyState {
+        switch step.stepOrder {
+        case 1:
+            return ExpectedAssemblyState(
+                stepID: step.id,
+                stepOrder: 1,
+                requiredComponents: [ExpectedComponent(identifier: "resistor_220", name: "220Ω Resistor")],
+                requiredPositions: [ExpectedPosition(componentID: "resistor_220", targetDescription: "Row 10 to Row 15")]
+            )
+        case 2:
+            return ExpectedAssemblyState(
+                stepID: step.id,
+                stepOrder: 2,
+                requiredComponents: [ExpectedComponent(identifier: "capacitor_100uF", name: "100uF Capacitor")],
+                requiredPositions: [ExpectedPosition(componentID: "capacitor_100uF", targetDescription: "C2 Header Slot")]
+            )
+        case 3:
+            return ExpectedAssemblyState(
+                stepID: step.id,
+                stepOrder: 3,
+                requiredComponents: [ExpectedComponent(identifier: "led_red", name: "Red LED")],
+                requiredConnections: [ExpectedConnection(from: "Anode", to: "Node 12A")]
+            )
+        case 5:
+            return ExpectedAssemblyState(
+                stepID: step.id,
+                stepOrder: 5,
+                requiredComponents: [ExpectedComponent(identifier: "jumper_gnd", name: "GND Jumper Wire")],
+                requiredConnections: [ExpectedConnection(from: "GND Rail", to: "Pin Header")]
+            )
+        default:
+            return ExpectedAssemblyState(
+                stepID: step.id,
+                stepOrder: step.stepOrder,
+                requiredComponents: [ExpectedComponent(identifier: "comp_\(step.stepOrder)", name: step.title)]
+            )
+        }
+    }
+}
+

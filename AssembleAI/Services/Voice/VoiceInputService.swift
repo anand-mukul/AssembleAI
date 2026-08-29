@@ -1,0 +1,270 @@
+//
+//  VoiceInputService.swift
+//  AssembleAI
+//
+
+import Foundation
+import AVFoundation
+import Speech
+
+/// Concrete on-device speech recognition service using Apple's `Speech` framework and `AVAudioEngine`.
+///
+/// Converts microphone audio streams into real-time partial and final user transcripts.
+@MainActor
+public final class VoiceInputService: NSObject, ObservableObject, VoiceInputServiceProtocol {
+    @Published public private(set) var state: VoiceInputState = .idle
+    @Published public private(set) var latestTranscript: String = ""
+    
+    private let speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
+    private var audioEngine: AVAudioEngine?
+    private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
+    private var recognitionTask: SFSpeechRecognitionTask?
+    
+    private let streamLock = NSLock()
+    private var continuations: [UUID: AsyncStream<UserVoiceMessage>.Continuation] = [:]
+    
+    public override init() {
+        super.init()
+        self.speechRecognizer?.delegate = self
+    }
+    
+    deinit {
+        streamLock.lock()
+        let conts = Array(continuations.values)
+        continuations.removeAll()
+        streamLock.unlock()
+        for c in conts {
+            c.finish()
+        }
+    }
+    
+    // MARK: - Transcript Stream API
+    
+    public nonisolated var transcriptStream: AsyncStream<UserVoiceMessage> {
+        AsyncStream(UserVoiceMessage.self, bufferingPolicy: .bufferingNewest(10)) { continuation in
+            let id = UUID()
+            self.streamLock.lock()
+            self.continuations[id] = continuation
+            self.streamLock.unlock()
+            
+            continuation.onTermination = { [weak self] _ in
+                guard let self = self else { return }
+                self.streamLock.lock()
+                self.continuations.removeValue(forKey: id)
+                self.streamLock.unlock()
+            }
+        }
+    }
+    
+    // MARK: - VoiceInputServiceProtocol
+    
+    public func startListening() async throws {
+        guard state == .idle else { return }
+        
+        // 1. Check & Request Permissions
+        let authStatus = await requestSpeechAuthorization()
+        guard authStatus == .authorized else {
+            throw NSError(domain: "VoiceInputService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Speech recognition not authorized"])
+        }
+        
+        #if os(iOS)
+        let audioGranted = await AVAudioApplication.requestRecordPermission()
+        guard audioGranted else {
+            throw NSError(domain: "VoiceInputService", code: -2, userInfo: [NSLocalizedDescriptionKey: "Microphone access denied"])
+        }
+        
+        // 2. Configure Audio Session
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playAndRecord, mode: .spokenAudio, options: [.defaultToSpeaker, .allowBluetoothHFP])
+            try session.setActive(true, options: .notifyOthersOnDeactivation)
+        } catch {
+            throw error
+        }
+        #endif
+        
+        // 3. Setup Recognition Request & Audio Engine
+        let engine = AVAudioEngine()
+        self.audioEngine = engine
+        
+        let request = SFSpeechAudioBufferRecognitionRequest()
+        request.shouldReportPartialResults = true
+        request.requiresOnDeviceRecognition = false
+        self.recognitionRequest = request
+        
+        let inputNode = engine.inputNode
+        let recordingFormat = inputNode.outputFormat(forBus: 0)
+        
+        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
+            self?.recognitionRequest?.append(buffer)
+        }
+        
+        engine.prepare()
+        try engine.start()
+        
+        self.state = .listening
+        self.latestTranscript = ""
+        
+        // 4. Start Recognition Task
+        self.recognitionTask = speechRecognizer?.recognitionTask(with: request) { [weak self] result, error in
+            guard let self = self else { return }
+            
+            if let result = result {
+                let text = result.bestTranscription.formattedString
+                let isFinal = result.isFinal
+                
+                Task { @MainActor in
+                    self.latestTranscript = text
+                    self.emitTranscript(text: text, isFinal: isFinal)
+                    
+                    if isFinal {
+                        await self.stopListening()
+                    }
+                }
+            }
+            
+            if error != nil {
+                Task { @MainActor in
+                    await self.stopListening()
+                }
+            }
+        }
+    }
+    
+    public func stopListening() async {
+        guard state != .idle else { return }
+        
+        state = .processing
+        
+        audioEngine?.stop()
+        audioEngine?.inputNode.removeTap(onBus: 0)
+        audioEngine = nil
+        
+        recognitionRequest?.endAudio()
+        recognitionRequest = nil
+        
+        recognitionTask?.finish()
+        recognitionTask = nil
+        
+        state = .idle
+    }
+    
+    public func cancelListening() async {
+        guard state != .idle else { return }
+        
+        audioEngine?.stop()
+        audioEngine?.inputNode.removeTap(onBus: 0)
+        audioEngine = nil
+        
+        recognitionRequest?.endAudio()
+        recognitionRequest = nil
+        
+        recognitionTask?.cancel()
+        recognitionTask = nil
+        
+        state = .idle
+        latestTranscript = ""
+    }
+    
+    // MARK: - Internal Emission Helper
+    
+    private func emitTranscript(text: String, isFinal: Bool) {
+        let message = UserVoiceMessage(transcript: text, isFinal: isFinal)
+        
+        streamLock.lock()
+        let activeContinuations = Array(continuations.values)
+        streamLock.unlock()
+        
+        for continuation in activeContinuations {
+            continuation.yield(message)
+        }
+    }
+    
+    private func requestSpeechAuthorization() async -> SFSpeechRecognizerAuthorizationStatus {
+        await withCheckedContinuation { continuation in
+            SFSpeechRecognizer.requestAuthorization { status in
+                continuation.resume(returning: status)
+            }
+        }
+    }
+}
+
+// MARK: - SFSpeechRecognizerDelegate
+
+extension VoiceInputService: SFSpeechRecognizerDelegate {
+    public nonisolated func speechRecognizer(_ speechRecognizer: SFSpeechRecognizer, availabilityDidChange available: Bool) {
+        if !available {
+            Task { @MainActor in
+                await self.stopListening()
+            }
+        }
+    }
+}
+
+// MARK: - Mock Voice Input Service
+
+/// Thread-safe mock speech recognition service for unit testing and deterministic simulation.
+public final class MockVoiceInputService: VoiceInputServiceProtocol, @unchecked Sendable {
+    private let lock = NSLock()
+    
+    private var _state: VoiceInputState = .idle
+    public var state: VoiceInputState {
+        lock.lock()
+        defer { lock.unlock() }
+        return _state
+    }
+    
+    private var continuations: [UUID: AsyncStream<UserVoiceMessage>.Continuation] = [:]
+    
+    public init() {}
+    
+    public var transcriptStream: AsyncStream<UserVoiceMessage> {
+        AsyncStream(UserVoiceMessage.self, bufferingPolicy: .bufferingNewest(10)) { continuation in
+            let id = UUID()
+            self.lock.lock()
+            self.continuations[id] = continuation
+            self.lock.unlock()
+            
+            continuation.onTermination = { [weak self] _ in
+                guard let self = self else { return }
+                self.lock.lock()
+                self.continuations.removeValue(forKey: id)
+                self.lock.unlock()
+            }
+        }
+    }
+    
+    public func startListening() async throws {
+        lock.lock()
+        defer { lock.unlock() }
+        _state = .listening
+    }
+    
+    public func stopListening() async {
+        lock.lock()
+        defer { lock.unlock() }
+        _state = .idle
+    }
+    
+    public func cancelListening() async {
+        lock.lock()
+        defer { lock.unlock() }
+        _state = .idle
+    }
+    
+    /// Injects a simulated spoken transcript for unit testing.
+    public func simulateSpokenTranscript(_ text: String, isFinal: Bool) {
+        let message = UserVoiceMessage(transcript: text, isFinal: isFinal)
+        
+        lock.lock()
+        let activeContinuations = Array(continuations.values)
+        if isFinal {
+            _state = .idle
+        }
+        lock.unlock()
+        
+        for continuation in activeContinuations {
+            continuation.yield(message)
+        }
+    }
+}

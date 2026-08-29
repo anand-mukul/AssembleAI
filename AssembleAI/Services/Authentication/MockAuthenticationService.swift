@@ -53,6 +53,24 @@ final class MockAuthenticationService: AuthenticationService {
         self.isLoading = false
     }
     
+    func signInWithAppleCredential(userId: String, name: String?, email: String?) async throws {
+        isLoading = true
+        authError = nil
+        
+        defer { isLoading = false }
+        
+        let user = User(
+            id: userId,
+            name: name ?? "Alex Morgan",
+            email: email ?? "alex.morgan@icloud.com",
+            provider: .apple,
+            createdAt: Date()
+        )
+        
+        self.currentUser = user
+        self.isAuthenticated = true
+    }
+    
     func signIn(email: String, password: String) async throws {
         isLoading = true
         authError = nil

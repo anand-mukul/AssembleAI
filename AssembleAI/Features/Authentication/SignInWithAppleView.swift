@@ -6,7 +6,8 @@
 import SwiftUI
 import AuthenticationServices
 
-/// Apple HIG compliant Sign in with Apple screen with full concurrency safety.
+/// Apple HIG compliant Sign in with Apple screen with full concurrency safety and simulator fallback support.
+@MainActor
 struct SignInWithAppleView: View {
     @EnvironmentObject private var router: AppRouter
     @EnvironmentObject private var authService: SupabaseAuthService
@@ -14,6 +15,9 @@ struct SignInWithAppleView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
     @State private var contentAppeared = false
+    @State private var showErrorAlert = false
+    @State private var errorMessage = ""
+    @State private var isProcessing = false
     
     var body: some View {
         VStack(spacing: 0) {
@@ -54,15 +58,39 @@ struct SignInWithAppleView: View {
             
             // Sign in with Apple Official SwiftUI Button
             VStack(spacing: AppSpacing.mdSm) {
-                SignInWithAppleButton(.signIn) { request in
-                    request.requestedScopes = [.fullName, .email]
-                } onCompletion: { result in
-                    handleAppleSignInCompletion(result)
+                if isProcessing {
+                    ProgressView("Authenticating...")
+                        .font(.subheadline)
+                        .foregroundColor(AppColors.secondaryText)
+                        .frame(height: 50)
+                } else {
+                    SignInWithAppleButton(.signIn) { request in
+                        request.requestedScopes = [.fullName, .email]
+                    } onCompletion: { result in
+                        handleAppleSignInCompletion(result)
+                    }
+                    .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
+                    .frame(height: 50)
+                    .cornerRadius(14)
+                    .accessibilityLabel("Sign in with Apple")
                 }
-                .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
-                .frame(height: 50)
-                .cornerRadius(14)
-                .accessibilityLabel("Sign in with Apple")
+                
+                #if targetEnvironment(simulator) || DEBUG
+                // Simulator / Test Environment Bypass Button
+                Button(action: {
+                    triggerSimulatedAppleSignIn()
+                }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "apple.logo")
+                            .font(.caption)
+                        Text("Simulate Apple Sign In (Dev/Test)")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                    }
+                    .foregroundColor(AppColors.secondaryText)
+                    .padding(.vertical, 8)
+                }
+                #endif
                 
                 Button(action: {
                     router.pop()
@@ -81,6 +109,16 @@ struct SignInWithAppleView: View {
         .padding(.horizontal, AppSpacing.screenEdge)
         .background(AppColors.appBackground.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
+        .alert("Sign in with Apple", isPresented: $showErrorAlert) {
+            Button("OK", role: .cancel) {}
+            #if targetEnvironment(simulator) || DEBUG
+            Button("Continue in Simulator Mode") {
+                triggerSimulatedAppleSignIn()
+            }
+            #endif
+        } message: {
+            Text(errorMessage)
+        }
         .onAppear {
             withAnimation(reduceMotion ? .none : .spring(response: 0.5, dampingFraction: 0.8)) {
                 contentAppeared = true
@@ -89,14 +127,60 @@ struct SignInWithAppleView: View {
     }
     
     private func handleAppleSignInCompletion(_ result: Result<ASAuthorization, Error>) {
+        isProcessing = true
         Task {
             switch result {
-            case .success:
-                try? await authService.signInWithApple()
-                router.transitionToHome()
+            case .success(let authorization):
+                if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential {
+                    let userIdentifier = appleIDCredential.user
+                    let fullName = [
+                        appleIDCredential.fullName?.givenName,
+                        appleIDCredential.fullName?.familyName
+                    ].compactMap { $0 }.joined(separator: " ")
+                    let email = appleIDCredential.email
+                    
+                    do {
+                        try await authService.signInWithAppleCredential(
+                            userId: userIdentifier,
+                            name: fullName.isEmpty ? nil : fullName,
+                            email: email
+                        )
+                        isProcessing = false
+                        router.transitionToHome()
+                    } catch {
+                        isProcessing = false
+                        errorMessage = error.localizedDescription
+                        showErrorAlert = true
+                    }
+                } else {
+                    do {
+                        try await authService.signInWithApple()
+                        isProcessing = false
+                        router.transitionToHome()
+                    } catch {
+                        isProcessing = false
+                        errorMessage = error.localizedDescription
+                        showErrorAlert = true
+                    }
+                }
             case .failure(let error):
-                authService.authError = error.localizedDescription
+                isProcessing = false
+                let nsError = error as NSError
+                // Don't show alert if user simply pressed cancel (error code 1001)
+                if nsError.code != 1001 {
+                    errorMessage = "Apple authentication failed: \(error.localizedDescription)\n\nNote: If running on Simulator or without a registered Apple Developer Team, ensure 'Sign in with Apple' capability is configured."
+                    showErrorAlert = true
+                }
             }
+        }
+    }
+    
+    private func triggerSimulatedAppleSignIn() {
+        isProcessing = true
+        Task {
+            try? await authService.signInWithApple()
+            isProcessing = false
+            router.transitionToHome()
         }
     }
 }

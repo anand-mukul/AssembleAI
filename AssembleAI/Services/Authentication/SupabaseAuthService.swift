@@ -54,6 +54,20 @@ final class SupabaseAuthService: AuthenticationService {
         }
     }
     
+    func signInWithAppleCredential(userId: String, name: String?, email: String?) async throws {
+        isLoading = true
+        authError = nil
+        
+        defer { isLoading = false }
+        
+        try await mockFallbackService.signInWithAppleCredential(userId: userId, name: name, email: email)
+        if let user = mockFallbackService.currentUser {
+            self.currentUser = user
+            self.isAuthenticated = true
+            try? await userRepository.saveUser(user)
+        }
+    }
+    
     func signIn(email: String, password: String) async throws {
         isLoading = true
         authError = nil

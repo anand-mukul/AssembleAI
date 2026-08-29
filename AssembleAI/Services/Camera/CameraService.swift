@@ -6,10 +6,11 @@
 import Foundation
 @preconcurrency import AVFoundation
 import Combine
+import CoreVideo
 import SwiftUI
 import UIKit
 
-/// Isolated camera service orchestrating `AVCaptureSession`, `AVCapturePhotoOutput`, authorization, and torch controls.
+/// Isolated camera service orchestrating `AVCaptureSession`, `AVCapturePhotoOutput`, `AVCaptureVideoDataOutput`, authorization, and torch controls.
 @MainActor
 final class CameraService: NSObject, ObservableObject {
     @Published private(set) var authorizationStatus: AVAuthorizationStatus = .notDetermined
@@ -19,16 +20,58 @@ final class CameraService: NSObject, ObservableObject {
     @Published var isTorchOn: Bool = false
     @Published var errorMessage: String? = nil
     
+    #if DEBUG
+    @Published private(set) var debugFramesReceived: Int = 0
+    @Published private(set) var debugLastFrameTimestamp: Date? = nil
+    #endif
+    
     nonisolated let captureSession = AVCaptureSession()
     nonisolated private let photoOutput = AVCapturePhotoOutput()
+    nonisolated private let videoOutput = AVCaptureVideoDataOutput()
     nonisolated private let cameraQueue = DispatchQueue(label: "com.assembleai.cameraQueue")
-    private var isConfigured = false
+    nonisolated private let videoQueue = DispatchQueue(label: "com.assembleai.videoQueue", qos: .userInitiated)
     
+    nonisolated private let streamLock = NSLock()
+    nonisolated private var frameContinuations: [UUID: AsyncStream<CVPixelBuffer>.Continuation] = [:]
+    
+    private var isConfigured = false
     private var photoContinuation: CheckedContinuation<UIImage, Error>? = nil
     
     override init() {
         super.init()
         checkPermission()
+    }
+    
+    deinit {
+        streamLock.lock()
+        let continuations = Array(frameContinuations.values)
+        frameContinuations.removeAll()
+        streamLock.unlock()
+        for continuation in continuations {
+            continuation.finish()
+        }
+    }
+    
+    // MARK: - Frame Stream API
+    
+    /// Asynchronous stream of video frames delivered as `CVPixelBuffer`.
+    ///
+    /// The stream uses `.bufferingNewest(1)` to guarantee bounded memory usage,
+    /// dropping stale frames if downstream consumers process slower than the camera frame rate.
+    nonisolated var frameStream: AsyncStream<CVPixelBuffer> {
+        AsyncStream(CVPixelBuffer.self, bufferingPolicy: .bufferingNewest(1)) { continuation in
+            let id = UUID()
+            self.streamLock.lock()
+            self.frameContinuations[id] = continuation
+            self.streamLock.unlock()
+            
+            continuation.onTermination = { [weak self] _ in
+                guard let self = self else { return }
+                self.streamLock.lock()
+                self.frameContinuations.removeValue(forKey: id)
+                self.streamLock.unlock()
+            }
+        }
     }
     
     /// Queries the current video authorization status.
@@ -47,11 +90,11 @@ final class CameraService: NSObject, ObservableObject {
         }
     }
     
-    /// Configures the AVCaptureSession with video input and photo output on a background queue.
+    /// Configures the AVCaptureSession with video input, photo output, and video data output on a background queue.
     func configureSession() {
         guard !isConfigured else { return }
         
-        cameraQueue.async { [weak self, captureSession, photoOutput] in
+        cameraQueue.async { [weak self, captureSession, photoOutput, videoOutput, videoQueue] in
             guard let self = self else { return }
             
             captureSession.beginConfiguration()
@@ -72,11 +115,25 @@ final class CameraService: NSObject, ObservableObject {
             
             captureSession.addInput(videoInput)
             
-            // Photo Output
+            // Photo Output (for existing manual capture workflow)
             if captureSession.canAddOutput(photoOutput) {
                 captureSession.addOutput(photoOutput)
                 if let maxDimensions = videoDevice.activeFormat.supportedMaxPhotoDimensions.last {
                     photoOutput.maxPhotoDimensions = maxDimensions
+                }
+            }
+            
+            // Video Data Output (for continuous Live Tutor observation stream)
+            if captureSession.canAddOutput(videoOutput) {
+                videoOutput.alwaysDiscardsLateVideoFrames = true
+                videoOutput.videoSettings = [
+                    kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)
+                ]
+                videoOutput.setSampleBufferDelegate(self, queue: videoQueue)
+                captureSession.addOutput(videoOutput)
+                
+                if let connection = videoOutput.connection(with: .video), connection.isVideoOrientationSupported {
+                    connection.videoOrientation = .portrait
                 }
             }
             
@@ -161,7 +218,7 @@ final class CameraService: NSObject, ObservableObject {
     }
     
     /// Generates a synthetic test frame for Simulator testing.
-    private func createSimulatorTestImage() -> UIImage {
+    func createSimulatorTestImage() -> UIImage {
         let size = CGSize(width: 1084, height: 812)
         let renderer = UIGraphicsImageRenderer(size: size)
         return renderer.image { ctx in
@@ -185,6 +242,53 @@ final class CameraService: NSObject, ObservableObject {
             let str = NSString(string: "AssembleAI Test Circuit — 220 OHM RESISTOR R1")
             str.draw(at: CGPoint(x: 100, y: 100), withAttributes: attrs)
         }
+    }
+    
+    /// Generates a synthetic `CVPixelBuffer` for Simulator and test environments.
+    func createSimulatorPixelBuffer() -> CVPixelBuffer? {
+        let image = createSimulatorTestImage()
+        guard let cgImage = image.cgImage else { return nil }
+        
+        var pixelBuffer: CVPixelBuffer?
+        let options: [CFString: Any] = [
+            kCVPixelBufferCGImageCompatibilityKey: true,
+            kCVPixelBufferCGBitmapContextCompatibilityKey: true
+        ]
+        
+        let status = CVPixelBufferCreate(
+            kCFAllocatorDefault,
+            cgImage.width,
+            cgImage.height,
+            kCVPixelFormatType_32BGRA,
+            options as CFDictionary,
+            &pixelBuffer
+        )
+        
+        guard status == kCVReturnSuccess, let buffer = pixelBuffer else {
+            return nil
+        }
+        
+        CVPixelBufferLockBaseAddress(buffer, [])
+        defer { CVPixelBufferUnlockBaseAddress(buffer, []) }
+        
+        guard let pxdata = CVPixelBufferGetBaseAddress(buffer) else { return nil }
+        
+        let bytesPerRow = CVPixelBufferGetBytesPerRow(buffer)
+        let rgbColorSpace = CGColorSpaceCreateDeviceRGB()
+        guard let context = CGContext(
+            data: pxdata,
+            width: cgImage.width,
+            height: cgImage.height,
+            bitsPerComponent: 8,
+            bytesPerRow: bytesPerRow,
+            space: rgbColorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue
+        ) else {
+            return nil
+        }
+        
+        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: cgImage.width, height: cgImage.height))
+        return buffer
     }
 }
 
@@ -222,3 +326,33 @@ extension CameraService: AVCapturePhotoCaptureDelegate {
         }
     }
 }
+
+// MARK: - AVCaptureVideoDataOutputSampleBufferDelegate
+
+extension CameraService: AVCaptureVideoDataOutputSampleBufferDelegate {
+    nonisolated func captureOutput(
+        _ output: AVCaptureOutput,
+        didOutput sampleBuffer: CMSampleBuffer,
+        from connection: AVCaptureConnection
+    ) {
+        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+        
+        streamLock.lock()
+        let continuations = Array(frameContinuations.values)
+        streamLock.unlock()
+        
+        for continuation in continuations {
+            continuation.yield(pixelBuffer)
+        }
+        
+        #if DEBUG
+        let now = Date()
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            self.debugFramesReceived += 1
+            self.debugLastFrameTimestamp = now
+        }
+        #endif
+    }
+}
+

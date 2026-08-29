@@ -16,6 +16,7 @@ protocol AuthenticationService: ObservableObject {
     var authError: String? { get set }
     
     func signInWithApple() async throws
+    func signInWithAppleCredential(userId: String, name: String?, email: String?) async throws
     func signIn(email: String, password: String) async throws
     func createAccount(name: String, email: String, password: String) async throws
     func resetPassword(email: String) async throws

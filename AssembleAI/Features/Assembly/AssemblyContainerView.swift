@@ -51,10 +51,29 @@ struct AssemblyContainerView: View {
                     AssemblyCameraView(
                         currentStep: viewModel.currentStep,
                         activeGuidance: viewModel.activeGuidance,
+                        liveTutorEnabled: viewModel.liveTutorEnabled,
+                        liveStatus: viewModel.liveStatus,
+                        currentTutorMessage: viewModel.currentTutorMessage,
+                        userTranscript: viewModel.liveUserTranscript,
+                        isListening: viewModel.isListening,
+                        isPaused: viewModel.isLivePaused,
+                        onStartLiveStream: { stream in
+                            viewModel.startLiveTutor(frameStream: stream)
+                        },
+                        onStopLiveStream: {
+                            viewModel.stopLiveTutor()
+                        },
+                        onToggleVoice: {
+                            viewModel.toggleVoiceInput()
+                        },
+                        onTogglePause: {
+                            viewModel.toggleLivePause()
+                        },
                         onAnalyze: { capturedPhoto in
                             viewModel.triggerAnalysis(capturedImage: capturedPhoto, viewSize: geo.size)
                         },
                         onClose: {
+                            viewModel.stopLiveTutor()
                             router.pop()
                         }
                     )

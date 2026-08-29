@@ -403,6 +403,8 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "AssembleAI uses your iPhone camera to observe and verify physical assembly steps.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "AssembleAI uses your microphone to let you ask questions and talk with your live assembly tutor.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "AssembleAI uses on-device speech recognition to understand your questions and commands during assembly.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -439,6 +441,8 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "AssembleAI uses your iPhone camera to observe and verify physical assembly steps.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "AssembleAI uses your microphone to let you ask questions and talk with your live assembly tutor.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "AssembleAI uses on-device speech recognition to understand your questions and commands during assembly.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

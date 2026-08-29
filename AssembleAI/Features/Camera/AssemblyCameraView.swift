@@ -5,8 +5,9 @@
 
 import SwiftUI
 import AVFoundation
+import CoreVideo
 
-/// Full-screen camera guidance experience featuring live AVCaptureSession preview, visual guidance overlays, reticles, and Analyze triggers.
+/// Full-screen camera guidance experience featuring live AVCaptureSession preview, Live Tutor HUD, visual overlays, and fallback Analyze triggers.
 struct AssemblyCameraView: View {
     @EnvironmentObject private var router: AppRouter
     @StateObject private var cameraService = CameraService()
@@ -14,6 +15,19 @@ struct AssemblyCameraView: View {
     
     let currentStep: AssemblyStep
     var activeGuidance: GuidanceOverlay? = nil
+    
+    // Live Tutor Integration Properties (Phase 9)
+    var liveTutorEnabled: Bool = true
+    var liveStatus: LiveTutorStatus = .live
+    var currentTutorMessage: TutorResponse? = nil
+    var userTranscript: String = ""
+    var isListening: Bool = false
+    var isPaused: Bool = false
+    
+    var onStartLiveStream: ((AsyncStream<CVPixelBuffer>) -> Void)? = nil
+    var onStopLiveStream: (() -> Void)? = nil
+    var onToggleVoice: (() -> Void)? = nil
+    var onTogglePause: (() -> Void)? = nil
     var onAnalyze: ((UIImage?) -> Void)? = nil
     var onClose: (() -> Void)? = nil
     
@@ -55,11 +69,34 @@ struct AssemblyCameraView: View {
                 
                 Spacer()
                 
-                // Bottom Action Bar: Analyze Button
-                bottomActionBar
+                // Bottom Area: Live Tutor HUD or Legacy Manual Action Bar
+                if liveTutorEnabled {
+                    LiveTutorHUDView(
+                        status: liveStatus,
+                        currentStep: currentStep,
+                        currentMessage: currentTutorMessage,
+                        userTranscript: userTranscript,
+                        isListening: isListening,
+                        isPaused: isPaused,
+                        onToggleVoice: {
+                            onToggleVoice?()
+                        },
+                        onTogglePause: {
+                            onTogglePause?()
+                        },
+                        onManualFallback: {
+                            triggerManualSnapshot()
+                        }
+                    )
                     .padding(.bottom, AppSpacing.xl)
                     .opacity(overlayVisible ? 1 : 0)
                     .offset(y: overlayVisible ? 0 : 20)
+                } else {
+                    bottomActionBar
+                        .padding(.bottom, AppSpacing.xl)
+                        .opacity(overlayVisible ? 1 : 0)
+                        .offset(y: overlayVisible ? 0 : 20)
+                }
             }
             .padding(.horizontal, AppSpacing.screenEdge)
         }
@@ -71,9 +108,12 @@ struct AssemblyCameraView: View {
                     await cameraService.requestPermission()
                 } else if cameraService.authorizationStatus == .authorized {
                     cameraService.startSession()
+                    if liveTutorEnabled {
+                        onStartLiveStream?(cameraService.frameStream)
+                    }
                 }
             }
-            // Staggered entrance animation
+            
             let timing = reduceMotion ? 0.0 : 0.4
             withAnimation(.easeOut(duration: timing).delay(0.1)) {
                 overlayVisible = true
@@ -83,6 +123,9 @@ struct AssemblyCameraView: View {
             }
         }
         .onDisappear {
+            if liveTutorEnabled {
+                onStopLiveStream?()
+            }
             cameraService.stopSession()
         }
     }
@@ -110,6 +153,9 @@ struct AssemblyCameraView: View {
                 
                 // Cancel Button
                 Button(action: {
+                    if liveTutorEnabled {
+                        onStopLiveStream?()
+                    }
                     cameraService.stopSession()
                     if let onClose = onClose {
                         onClose()
@@ -155,7 +201,6 @@ struct AssemblyCameraView: View {
     
     private var cameraReticleOverlay: some View {
         ZStack {
-            // Target Bounding Box
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .stroke(
                     Color.assembleBrandPrimary.opacity(0.8),
@@ -163,13 +208,11 @@ struct AssemblyCameraView: View {
                 )
                 .frame(width: 260, height: 200)
             
-            // Four Corner Alignment Crosshairs
             CameraCornersView()
                 .frame(width: 276, height: 216)
                 .foregroundColor(Color.assembleBrandPrimary)
             
-            // Instruction Hint
-            Text("Position component in frame")
+            Text(liveTutorEnabled ? "Live observation active" : "Position component in frame")
                 .font(.caption)
                 .fontWeight(.medium)
                 .foregroundColor(.white.opacity(0.9))
@@ -181,21 +224,28 @@ struct AssemblyCameraView: View {
         .accessibilityHidden(true)
     }
     
-    // MARK: - Bottom Action Bar
+    // MARK: - Legacy Bottom Action Bar
     
     private var bottomActionBar: some View {
         PrimaryButton(
             title: activeGuidance != nil ? "Scan Again" : "Analyze Step",
             iconName: "viewfinder"
         ) {
-            Task {
-                let photo = try? await cameraService.capturePhoto()
-                cameraService.stopSession()
-                if let onAnalyze = onAnalyze {
-                    onAnalyze(photo)
-                } else {
-                    router.navigateToAnalyzing(step: currentStep)
-                }
+            triggerManualSnapshot()
+        }
+    }
+    
+    private func triggerManualSnapshot() {
+        Task {
+            let photo = try? await cameraService.capturePhoto()
+            if liveTutorEnabled {
+                onStopLiveStream?()
+            }
+            cameraService.stopSession()
+            if let onAnalyze = onAnalyze {
+                onAnalyze(photo)
+            } else {
+                router.navigateToAnalyzing(step: currentStep)
             }
         }
     }
@@ -218,7 +268,7 @@ struct AssemblyCameraView: View {
                     
                     Text(cameraService.authorizationStatus == .denied
                          ? "Enable camera access in Settings → Privacy → Camera to observe physical assembly tasks."
-                         : "Simulator mode. Tap Analyze Step to preview the verification flow.")
+                         : (liveTutorEnabled ? "Simulator mode. Live Tutor is observing mock frame stream." : "Simulator mode. Tap Analyze Step to preview."))
                         .font(.subheadline)
                         .foregroundColor(.white.opacity(0.6))
                         .multilineTextAlignment(.center)
@@ -241,7 +291,7 @@ struct AssemblyCameraView: View {
     }
 }
 
-#Preview("Assembly Camera View - With Move Guidance") {
+#Preview("Assembly Camera View - Live Tutor Mode") {
     AssemblyCameraView(
         currentStep: AssemblyStep(
             projectId: UUID(),
@@ -249,13 +299,9 @@ struct AssemblyCameraView: View {
             title: "Attach 100uF Capacitor to C2 Header",
             instruction: "Insert capacitor leads observing polarity."
         ),
-        activeGuidance: GuidanceOverlay(
-            title: "Wrong position",
-            message: "Move component lead one slot to the right (Row 15).",
-            sourceRegion: CGRect(x: 100, y: 300, width: 90, height: 60),
-            destinationRegion: CGRect(x: 230, y: 300, width: 90, height: 60),
-            style: .move
-        )
+        liveTutorEnabled: true,
+        liveStatus: .live,
+        currentTutorMessage: TutorResponse(text: "Move component lead one slot to the right.", priority: .high)
     )
     .environmentObject(AppRouter())
 }
