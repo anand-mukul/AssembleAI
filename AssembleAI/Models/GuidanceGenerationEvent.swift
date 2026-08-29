@@ -6,7 +6,7 @@
 import Foundation
 
 /// Telemetry record capturing Foundation Models generation metadata and fallback events.
-struct GuidanceGenerationEvent: Identifiable, Hashable, Codable, Sendable {
+nonisolated struct GuidanceGenerationEvent: Identifiable, Hashable, Codable, Sendable {
     let id: UUID
     let timestamp: Date
     let stepID: UUID

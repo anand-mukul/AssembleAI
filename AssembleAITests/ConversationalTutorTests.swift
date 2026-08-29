@@ -93,7 +93,7 @@ final class ConversationalTutorTests: XCTestCase {
         
         XCTAssertEqual(response.priority, .immediate)
         XCTAssertTrue(response.text.contains("power rail") || response.text.contains("circuit"))
-        XCTAssertEqual(mockProvider.answerQuestionCallCount, 1)
+        XCTAssertEqual(await mockProvider.answerQuestionCallCount, 1)
     }
     
     // MARK: - Test 4: User "What Next?" Question Answering
@@ -117,7 +117,7 @@ final class ConversationalTutorTests: XCTestCase {
         let response = await mockProvider.generateResponse(for: silentDecision, context: context)
         
         XCTAssertNil(response, "Silent decisions must produce nil tutor response")
-        XCTAssertEqual(mockProvider.generateResponseCallCount, 1)
+        XCTAssertEqual(await mockProvider.generateResponseCallCount, 1)
     }
     
     // MARK: - Test 6: Grounding Invariant — Model Output Cannot Change Verification State
@@ -132,7 +132,7 @@ final class ConversationalTutorTests: XCTestCase {
         )
         
         // Mock model returns hallucinated "Actually you did it right" text
-        mockProvider.setScriptedResponses([
+        await mockProvider.setScriptedResponses([
             TutorResponse(text: "Actually you did it right.", priority: .normal)
         ])
         
@@ -151,9 +151,9 @@ final class ConversationalTutorTests: XCTestCase {
     func testSessionMemoryReset() async {
         let context = AssistantContext(currentStep: step1)
         _ = await mockProvider.answerUserQuestion(query: "Where is R1?", intent: .askWhere, context: context)
-        XCTAssertNotNil(mockProvider.lastReceivedContext)
+        XCTAssertNotNil(await mockProvider.lastReceivedContext)
         
         await mockProvider.clearSessionContext()
-        XCTAssertNil(mockProvider.lastReceivedContext)
+        XCTAssertNil(await mockProvider.lastReceivedContext)
     }
 }

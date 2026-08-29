@@ -9,7 +9,7 @@ import AVFoundation
 // MARK: - Speech State
 
 /// Operational state of the speech output service.
-enum SpeechState: String, Sendable, Equatable {
+nonisolated enum SpeechState: String, Sendable, Equatable {
     /// No speech is currently playing.
     case idle
     /// Speech synthesizer is actively speaking an utterance.
@@ -21,7 +21,7 @@ enum SpeechState: String, Sendable, Equatable {
 // MARK: - Voice Output Configuration
 
 /// Configuration controlling speech rate, pitch, volume, and language.
-struct VoiceOutputConfiguration: Sendable, Equatable {
+nonisolated struct VoiceOutputConfiguration: Sendable, Equatable {
     /// Speech rate (0.0 to 1.0; AVSpeechUtteranceDefaultSpeechRate is ~0.50).
     var rate: Float
     /// Speech pitch multiplier (0.5 to 2.0; default 1.0).
@@ -31,7 +31,7 @@ struct VoiceOutputConfiguration: Sendable, Equatable {
     /// BCP-47 language identifier (default: "en-US").
     var language: String
     
-    init(
+    nonisolated init(
         rate: Float = AVSpeechUtteranceDefaultSpeechRate,
         pitchMultiplier: Float = 1.0,
         volume: Float = 1.0,
@@ -44,7 +44,7 @@ struct VoiceOutputConfiguration: Sendable, Equatable {
     }
     
     /// Standard natural tutor voice configuration.
-    static let `default` = VoiceOutputConfiguration()
+    nonisolated static let `default` = VoiceOutputConfiguration()
 }
 
 // MARK: - Voice Output Service Protocol

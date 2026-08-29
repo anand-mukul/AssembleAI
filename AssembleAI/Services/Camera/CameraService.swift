@@ -52,12 +52,13 @@ final class CameraService: NSObject, ObservableObject {
     /// The stream uses `.bufferingNewest(1)` to guarantee bounded memory usage,
     /// dropping stale frames if downstream consumers process slower than the camera frame rate.
     nonisolated var frameStream: AsyncStream<CVPixelBuffer> {
-        AsyncStream(CVPixelBuffer.self, bufferingPolicy: .bufferingNewest(1)) { continuation in
+        let broadcaster = self.broadcaster
+        return AsyncStream(CVPixelBuffer.self, bufferingPolicy: .bufferingNewest(1)) { continuation in
             let id = UUID()
-            self.broadcaster.addContinuation(continuation, id: id)
+            broadcaster.addContinuation(continuation, id: id)
             
-            continuation.onTermination = { [weak self] _ in
-                self?.broadcaster.removeContinuation(id: id)
+            continuation.onTermination = { _ in
+                broadcaster.removeContinuation(id: id)
             }
         }
     }
@@ -120,8 +121,16 @@ final class CameraService: NSObject, ObservableObject {
                 videoOutput.setSampleBufferDelegate(self, queue: videoQueue)
                 captureSession.addOutput(videoOutput)
                 
-                if let connection = videoOutput.connection(with: .video), connection.isVideoOrientationSupported {
-                    connection.videoOrientation = .portrait
+                if let connection = videoOutput.connection(with: .video) {
+                    if #available(iOS 17.0, *) {
+                        if connection.isVideoRotationAngleSupported(90) {
+                            connection.videoRotationAngle = 90
+                        }
+                    } else {
+                        if connection.isVideoOrientationSupported {
+                            connection.videoOrientation = .portrait
+                        }
+                    }
                 }
             }
             
@@ -344,19 +353,21 @@ private final class FrameStreamBroadcaster: @unchecked Sendable {
     private let lock = NSLock()
     private var continuations: [UUID: AsyncStream<CVPixelBuffer>.Continuation] = [:]
     
-    func addContinuation(_ continuation: AsyncStream<CVPixelBuffer>.Continuation, id: UUID) {
+    nonisolated init() {}
+    
+    nonisolated func addContinuation(_ continuation: AsyncStream<CVPixelBuffer>.Continuation, id: UUID) {
         lock.lock()
         defer { lock.unlock() }
         continuations[id] = continuation
     }
     
-    func removeContinuation(id: UUID) {
+    nonisolated func removeContinuation(id: UUID) {
         lock.lock()
         defer { lock.unlock() }
         continuations.removeValue(forKey: id)
     }
     
-    func broadcast(_ pixelBuffer: CVPixelBuffer) {
+    nonisolated func broadcast(_ pixelBuffer: CVPixelBuffer) {
         lock.lock()
         let active = Array(continuations.values)
         lock.unlock()
@@ -366,7 +377,7 @@ private final class FrameStreamBroadcaster: @unchecked Sendable {
         }
     }
     
-    func finishAll() {
+    nonisolated func finishAll() {
         lock.lock()
         let active = Array(continuations.values)
         continuations.removeAll()

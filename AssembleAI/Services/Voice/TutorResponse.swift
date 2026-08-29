@@ -8,7 +8,7 @@ import Foundation
 // MARK: - Response Priority
 
 /// Priority level governing speech queue interruption and replacement.
-enum ResponsePriority: Int, Sendable, Comparable, Codable {
+nonisolated enum ResponsePriority: Int, Sendable, Comparable, Codable {
     /// Optional or background encouragement.
     case low = 1
     /// Standard step orientation or confirmation.
@@ -18,7 +18,7 @@ enum ResponsePriority: Int, Sendable, Comparable, Codable {
     /// Direct user-requested answers or critical safety prompts.
     case immediate = 4
     
-    static func < (lhs: ResponsePriority, rhs: ResponsePriority) -> Bool {
+    nonisolated static func < (lhs: ResponsePriority, rhs: ResponsePriority) -> Bool {
         lhs.rawValue < rhs.rawValue
     }
 }
@@ -26,14 +26,14 @@ enum ResponsePriority: Int, Sendable, Comparable, Codable {
 // MARK: - Tutor Response Model
 
 /// Spoken tutor utterance with metadata for speech synthesis and telemetry.
-struct TutorResponse: Sendable, Equatable, Identifiable {
+nonisolated struct TutorResponse: Sendable, Equatable, Identifiable {
     let id: UUID
     let text: String
     let priority: ResponsePriority
     let category: String
     let timestamp: Date
     
-    init(
+    nonisolated init(
         id: UUID = UUID(),
         text: String,
         priority: ResponsePriority = .normal,
@@ -61,8 +61,8 @@ protocol TutorResponseProviding: Sendable {
 /// Concrete deterministic response provider generating concise, friendly tutor dialogue.
 ///
 /// Serves as the baseline spoken language provider before Apple Foundation Models integration in Phase 8.
-struct DeterministicTutorResponseProvider: TutorResponseProviding {
-    init() {}
+nonisolated struct DeterministicTutorResponseProvider: TutorResponseProviding {
+    nonisolated init() {}
     
     func response(for decision: InterventionDecision) -> TutorResponse? {
         guard decision.shouldIntervene else { return nil }

@@ -6,7 +6,7 @@
 import Foundation
 
 /// Lightweight research & telemetry record capturing a physical verification event.
-struct VerificationEvent: Identifiable, Hashable, Codable, Sendable {
+nonisolated struct VerificationEvent: Identifiable, Hashable, Codable, Sendable {
     let id: UUID
     let sessionID: UUID
     let stepID: UUID

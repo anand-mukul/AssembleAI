@@ -12,7 +12,7 @@ protocol AssemblyStateEstimating: Sendable {
 }
 
 /// Concrete estimator converting Vision OCR text markings and region bounding boxes into structured observed state.
-struct VisionAssemblyStateEstimator: AssemblyStateEstimating {
+nonisolated struct VisionAssemblyStateEstimator: AssemblyStateEstimating {
     
     func estimate(observation: VisualObservation) async throws -> ObservedAssemblyState {
         var observedComponents: [ObservedComponent] = []

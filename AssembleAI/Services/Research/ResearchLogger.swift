@@ -8,7 +8,7 @@ import Foundation
 // MARK: - Research Session Metrics
 
 /// Comprehensive statistical metrics calculated for an experimental evaluation session.
-struct ResearchSessionMetrics: Sendable, Equatable {
+nonisolated struct ResearchSessionMetrics: Sendable, Equatable {
     let sessionID: UUID
     let mode: InteractionMode
     let taskCompletionTimeSeconds: Double
@@ -168,28 +168,21 @@ actor ResearchLogger: ResearchLogging {
 
 // MARK: - Mock Research Logger
 
-/// Thread-safe mock research logger for unit testing.
-final class MockResearchLogger: ResearchLogging, @unchecked Sendable {
-    private let lock = NSLock()
+/// Actor-isolated mock research logger for unit testing.
+actor MockResearchLogger: ResearchLogging {
     private(set) var loggedEvents: [ResearchEvent] = []
     
     init() {}
     
     func logEvent(_ event: ResearchEvent) async {
-        lock.lock()
-        defer { lock.unlock() }
         loggedEvents.append(event)
     }
     
     func fetchEvents(for sessionID: UUID) async -> [ResearchEvent] {
-        lock.lock()
-        defer { lock.unlock() }
         return loggedEvents.filter { $0.sessionID == sessionID }
     }
     
     func calculateMetrics(for sessionID: UUID) async -> ResearchSessionMetrics {
-        lock.lock()
-        defer { lock.unlock() }
         let sessionEvents = loggedEvents.filter { $0.sessionID == sessionID }
         return ResearchSessionMetrics(
             sessionID: sessionID,
@@ -210,8 +203,6 @@ final class MockResearchLogger: ResearchLogging, @unchecked Sendable {
     }
     
     func exportCSV(for sessionID: UUID?) async -> String {
-        lock.lock()
-        defer { lock.unlock() }
         let target = sessionID != nil ? loggedEvents.filter { $0.sessionID == sessionID } : loggedEvents
         var csv = ResearchEvent.csvHeader + "\n"
         for event in target {
@@ -221,8 +212,6 @@ final class MockResearchLogger: ResearchLogging, @unchecked Sendable {
     }
     
     func clearLogs() async {
-        lock.lock()
-        defer { lock.unlock() }
         loggedEvents.removeAll()
     }
 }

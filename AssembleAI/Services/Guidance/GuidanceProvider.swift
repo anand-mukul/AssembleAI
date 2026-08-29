@@ -26,7 +26,7 @@ protocol SpatialGuidanceProviding: Sendable {
 }
 
 /// Default camera overlay guidance provider calculating 2D visual overlay coordinates for camera previews.
-struct DefaultGuidanceProvider: GuidanceProviding {
+nonisolated struct DefaultGuidanceProvider: GuidanceProviding {
     
     func guidance(
         for comparison: StateComparison,

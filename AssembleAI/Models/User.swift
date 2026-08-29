@@ -6,7 +6,7 @@
 import Foundation
 
 /// Represents the authentication provider used by the user.
-enum AuthProvider: String, Codable, Hashable, Equatable, Sendable {
+nonisolated enum AuthProvider: String, Codable, Hashable, Equatable, Sendable {
     case apple
     case email
     case guest

@@ -192,12 +192,12 @@ final class StepProgressionTests: XCTestCase {
         XCTAssertEqual(viewModel.currentStep.stepOrder, 1)
         
         viewModel.toggleVoiceInput()
-        mockVoiceInput.simulateSpokenTranscript("repeat that", isFinal: true)
+        await mockVoiceInput.simulateSpokenTranscript("repeat that", isFinal: true)
         
         try? await Task.sleep(nanoseconds: 100_000_000)
         
-        XCTAssertEqual(mockVoiceOutput.spokenResponses.count, 1)
-        XCTAssertTrue(mockVoiceOutput.spokenResponses.first?.text.contains("Insert 220Ω Resistor") == true)
+        XCTAssertEqual(await mockVoiceOutput.spokenResponses.count, 1)
+        XCTAssertTrue(await mockVoiceOutput.spokenResponses.first?.text.contains("Insert 220Ω Resistor") == true)
     }
     
     // MARK: - Helper

@@ -8,7 +8,7 @@ import Foundation
 // MARK: - User Voice Intent
 
 /// Semantic intents parsed from user spoken commands and questions.
-enum UserVoiceIntent: Sendable, Equatable {
+nonisolated enum UserVoiceIntent: Sendable, Equatable {
     /// Repeat the current instruction or last assistant response ("repeat that", "say again").
     case repeatInstruction
     
@@ -40,13 +40,13 @@ enum UserVoiceIntent: Sendable, Equatable {
 // MARK: - User Voice Message Model
 
 /// Structured user voice utterance message containing transcript text and finality status.
-struct UserVoiceMessage: Sendable, Equatable, Identifiable {
+nonisolated struct UserVoiceMessage: Sendable, Equatable, Identifiable {
     let id: UUID
     let transcript: String
     let isFinal: Bool
     let timestamp: Date
     
-    init(
+    nonisolated init(
         id: UUID = UUID(),
         transcript: String,
         isFinal: Bool,
@@ -62,8 +62,8 @@ struct UserVoiceMessage: Sendable, Equatable, Identifiable {
 // MARK: - Voice Intent Parser
 
 /// Deterministic natural language intent parser mapping raw transcripts to structured `UserVoiceIntent`s.
-struct VoiceIntentParser: Sendable {
-    init() {}
+nonisolated struct VoiceIntentParser: Sendable {
+    nonisolated init() {}
     
     /// Normalizes transcript text by trimming whitespace, lowercasing, and stripping trailing punctuation.
     func normalize(_ text: String) -> String {

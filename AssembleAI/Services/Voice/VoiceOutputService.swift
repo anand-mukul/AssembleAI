@@ -76,6 +76,16 @@ final class VoiceOutputService: NSObject, ObservableObject, VoiceOutputServicePr
             utterance.voice = voice
         }
         
+        #if os(iOS)
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
+            try session.setActive(true, options: .notifyOthersOnDeactivation)
+        } catch {
+            // Graceful fallback
+        }
+        #endif
+        
         currentResponse = response
         lastSpokenText = text
         lastSpokenTimestamp = Date()
@@ -146,16 +156,10 @@ extension VoiceOutputService: AVSpeechSynthesizerDelegate {
 
 // MARK: - Mock Voice Output Service
 
-/// Thread-safe mock voice output service recording spoken responses and state transitions for unit testing.
-final class MockVoiceOutputService: VoiceOutputServiceProtocol, @unchecked Sendable {
-    private let lock = NSLock()
-    
+/// Actor-isolated mock voice output service recording spoken responses and state transitions for unit testing.
+actor MockVoiceOutputService: VoiceOutputServiceProtocol {
     private var _state: SpeechState = .idle
-    var state: SpeechState {
-        lock.lock()
-        defer { lock.unlock() }
-        return _state
-    }
+    var state: SpeechState { _state }
     
     private(set) var spokenResponses: [TutorResponse] = []
     private(set) var stopCount: Int = 0
@@ -165,10 +169,6 @@ final class MockVoiceOutputService: VoiceOutputServiceProtocol, @unchecked Senda
     init() {}
     
     func speak(_ response: TutorResponse) async {
-        lock.lock()
-        defer { lock.unlock() }
-        
-        // Priority Preemption & Duplicate Suppression Simulation
         if let last = spokenResponses.last, last.text == response.text,
            Date().timeIntervalSince(last.timestamp) < 3.0 {
             return
@@ -176,9 +176,8 @@ final class MockVoiceOutputService: VoiceOutputServiceProtocol, @unchecked Senda
         
         if _state == .speaking, let active = spokenResponses.last {
             if response.priority < active.priority {
-                return // Lower priority discarded
+                return
             }
-            // Higher priority interrupts
             stopCount += 1
         }
         
@@ -187,29 +186,21 @@ final class MockVoiceOutputService: VoiceOutputServiceProtocol, @unchecked Senda
     }
     
     func stop() async {
-        lock.lock()
-        defer { lock.unlock() }
         stopCount += 1
         _state = .idle
     }
     
     func pause() async {
-        lock.lock()
-        defer { lock.unlock() }
         pauseCount += 1
         _state = .paused
     }
     
     func resume() async {
-        lock.lock()
-        defer { lock.unlock() }
         resumeCount += 1
         _state = .speaking
     }
     
     func reset() {
-        lock.lock()
-        defer { lock.unlock() }
         spokenResponses.removeAll()
         stopCount = 0
         pauseCount = 0

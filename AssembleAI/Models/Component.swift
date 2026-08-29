@@ -6,7 +6,7 @@
 import Foundation
 
 /// Physical component used in an assembly project.
-struct Component: Identifiable, Hashable, Codable, Equatable, Sendable {
+nonisolated struct Component: Identifiable, Hashable, Codable, Equatable, Sendable {
     let id: UUID
     let projectId: UUID
     var name: String

@@ -62,19 +62,21 @@ struct ActiveProjectCard: View {
             
             // Next Action Hint
             if let nextAction = project.nextAction, !nextAction.isEmpty {
-                HStack(alignment: .top, spacing: AppSpacing.xs) {
+                HStack(alignment: .top, spacing: 4) {
                     Image(systemName: "arrow.right.circle.fill")
                         .font(.caption)
                         .foregroundColor(.assembleBrandPrimary)
                         .padding(.top, 2)
                     
-                    Text("Next: ")
-                        .font(.caption)
-                        .fontWeight(.bold)
-                        .foregroundColor(AppColors.primaryText) +
-                    Text(nextAction)
-                        .font(.caption)
-                        .foregroundColor(AppColors.secondaryText)
+                    HStack(spacing: 2) {
+                        Text("Next: ")
+                            .font(.caption)
+                            .fontWeight(.bold)
+                            .foregroundColor(AppColors.primaryText)
+                        Text(nextAction)
+                            .font(.caption)
+                            .foregroundColor(AppColors.secondaryText)
+                    }
                 }
                 .padding(.vertical, 4)
             }

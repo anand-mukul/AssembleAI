@@ -9,7 +9,7 @@ import CoreGraphics
 // MARK: - Live Observation Configuration
 
 /// Configuration controlling stability windows and debounce thresholds for live verification.
-struct LiveObservationConfiguration: Sendable, Equatable {
+nonisolated struct LiveObservationConfiguration: Sendable, Equatable {
     /// Number of consecutive matching observation comparisons required to confirm a state change (default: 2).
     var consecutiveObservationsRequired: Int
     
@@ -19,7 +19,7 @@ struct LiveObservationConfiguration: Sendable, Equatable {
     /// Minimum visual evidence confidence below which observations are treated as `.uncertain` (default: 0.50).
     var minimumEvidenceConfidence: Double
     
-    init(
+    nonisolated init(
         consecutiveObservationsRequired: Int = 2,
         minimumStateDurationSeconds: Double = 0.3,
         minimumEvidenceConfidence: Double = 0.50
@@ -30,13 +30,13 @@ struct LiveObservationConfiguration: Sendable, Equatable {
     }
     
     /// Standard default live verification configuration.
-    static let `default` = LiveObservationConfiguration()
+    nonisolated static let `default` = LiveObservationConfiguration()
 }
 
 // MARK: - Live Observation Metrics
 
 /// Performance and state diagnostics for live observation coordination.
-struct LiveObservationMetrics: Sendable, Equatable {
+nonisolated struct LiveObservationMetrics: Sendable, Equatable {
     var observationsReceived: UInt64 = 0
     var stateEstimationsPerformed: UInt64 = 0
     var comparisonsPerformed: UInt64 = 0

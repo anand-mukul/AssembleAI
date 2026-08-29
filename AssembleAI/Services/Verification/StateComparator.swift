@@ -7,14 +7,14 @@ import Foundation
 import CoreGraphics
 
 /// Three-state outcome status for physical assembly verification.
-enum ComparisonStatus: String, Codable, Hashable, Equatable, Sendable {
+nonisolated enum ComparisonStatus: String, Codable, Hashable, Equatable, Sendable {
     case correct
     case incorrect
     case uncertain
 }
 
 /// Category of physical assembly mismatch issue.
-enum StateIssueType: String, Codable, Hashable, Equatable, Sendable {
+nonisolated enum StateIssueType: String, Codable, Hashable, Equatable, Sendable {
     case missingComponent
     case unexpectedComponent
     case wrongPosition
@@ -25,7 +25,7 @@ enum StateIssueType: String, Codable, Hashable, Equatable, Sendable {
 }
 
 /// Severity classification for a physical assembly issue.
-enum IssueSeverity: String, Codable, Hashable, Equatable, Sendable {
+nonisolated enum IssueSeverity: String, Codable, Hashable, Equatable, Sendable {
     case low
     case medium
     case high
@@ -33,7 +33,7 @@ enum IssueSeverity: String, Codable, Hashable, Equatable, Sendable {
 }
 
 /// Specific physical discrepancy discovered during state comparison.
-struct StateIssue: Identifiable, Hashable, Codable, Equatable, Sendable {
+nonisolated struct StateIssue: Identifiable, Hashable, Codable, Equatable, Sendable {
     let id: UUID
     let type: StateIssueType
     let title: String
@@ -56,7 +56,7 @@ struct StateIssue: Identifiable, Hashable, Codable, Equatable, Sendable {
 }
 
 /// Structured outcome comparing expected state against observed state.
-struct StateComparison: Hashable, Codable, Equatable, Sendable {
+nonisolated struct StateComparison: Hashable, Codable, Equatable, Sendable {
     let status: ComparisonStatus
     let confidence: Double
     let issues: [StateIssue]
@@ -67,7 +67,7 @@ struct StateComparison: Hashable, Codable, Equatable, Sendable {
 ///
 /// NOTE: These thresholds are **prototype parameters** for development testing,
 /// not validated research results.
-struct VerificationConfiguration: Hashable, Codable, Equatable, Sendable {
+nonisolated struct VerificationConfiguration: Hashable, Codable, Equatable, Sendable {
     /// Minimum visual evidence confidence required to perform state comparison (below this yields `.uncertain`).
     let minimumEvidenceConfidence: Double
     /// Minimum confidence required to pass verification as `.correct`.
@@ -80,7 +80,7 @@ struct VerificationConfiguration: Hashable, Codable, Equatable, Sendable {
 }
 
 /// Deterministic state comparison engine evaluating expected vs observed physical states.
-struct AssemblyStateComparator: Sendable {
+nonisolated struct AssemblyStateComparator: Sendable {
     let configuration: VerificationConfiguration
     
     init(configuration: VerificationConfiguration = VerificationConfiguration()) {

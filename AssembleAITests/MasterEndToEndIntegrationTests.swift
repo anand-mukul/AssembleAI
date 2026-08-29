@@ -114,7 +114,7 @@ final class MasterEndToEndIntegrationTests: XCTestCase {
         
         // Phase 3: User asks "Why?" during Step 2 -> Voice input answers grounded in Step 2
         viewModel.toggleVoiceInput()
-        mockVoiceInput.simulateSpokenTranscript("why do we use C2 header", isFinal: true)
+        await mockVoiceInput.simulateSpokenTranscript("why do we use C2 header", isFinal: true)
         
         try? await Task.sleep(nanoseconds: 200_000_000)
         XCTAssertEqual(mockTutor.answerQuestionCallCount, 1)
@@ -192,7 +192,7 @@ final class MasterEndToEndIntegrationTests: XCTestCase {
         
         let response = await mockTutor.generateResponse(for: silentDecision, context: context)
         XCTAssertNil(response, "Silent decisions must not produce tutor responses")
-        XCTAssertEqual(mockVoiceOutput.spokenResponses.count, 0)
+        XCTAssertEqual(await mockVoiceOutput.spokenResponses.count, 0)
     }
     
     // MARK: - Test 5: Research Telemetry Isolation & Privacy

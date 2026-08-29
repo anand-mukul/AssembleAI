@@ -104,7 +104,7 @@ final class VoiceInputTests: XCTestCase {
     
     // MARK: - Test 4: Partial vs Final Transcript Streaming
     func testTranscriptStreamPartialAndFinalDelivery() async {
-        let stream = mockVoiceInput.transcriptStream
+        let stream = await mockVoiceInput.transcriptStream
         var receivedMessages: [UserVoiceMessage] = []
         
         let consumerTask = Task {
@@ -117,9 +117,9 @@ final class VoiceInputTests: XCTestCase {
         }
         
         // Simulate speech recognition progression
-        mockVoiceInput.simulateSpokenTranscript("where", isFinal: false)
-        mockVoiceInput.simulateSpokenTranscript("where does this", isFinal: false)
-        mockVoiceInput.simulateSpokenTranscript("where does this go", isFinal: true)
+        await mockVoiceInput.simulateSpokenTranscript("where", isFinal: false)
+        await mockVoiceInput.simulateSpokenTranscript("where does this", isFinal: false)
+        await mockVoiceInput.simulateSpokenTranscript("where does this go", isFinal: true)
         
         _ = await consumerTask.result
         
@@ -153,8 +153,8 @@ final class VoiceInputTests: XCTestCase {
         
         // Deliver to Voice Output
         await mockVoiceOutput.speak(response)
-        XCTAssertEqual(mockVoiceOutput.spokenResponses.count, 1)
+        XCTAssertEqual(await mockVoiceOutput.spokenResponses.count, 1)
         XCTAssertEqual(await mockVoiceOutput.state, .speaking)
-        XCTAssertTrue(mockVoiceOutput.spokenResponses.first?.text.contains("where does this go?") == true)
+        XCTAssertTrue(await mockVoiceOutput.spokenResponses.first?.text.contains("where does this go?") == true)
     }
 }

@@ -12,8 +12,7 @@ import ImageIO
 /// Mock computer vision analysis service for unit testing and simulator demonstration mode.
 ///
 /// Supports predetermined observation sequences, simulated processing latencies, and synthetic detection generation.
-final class MockVisionService: VisionAnalyzing, @unchecked Sendable {
-    private let lock = NSLock()
+actor MockVisionService: VisionAnalyzing {
     private var scriptedObservations: [VisualObservation] = []
     private var simulatedLatencyMs: Double
     private var callCount: Int = 0
@@ -28,8 +27,6 @@ final class MockVisionService: VisionAnalyzing, @unchecked Sendable {
     
     /// Enqueues a predetermined sequence of observations to be emitted consecutively.
     func setScriptedObservations(_ observations: [VisualObservation]) {
-        lock.lock()
-        defer { lock.unlock() }
         self.scriptedObservations = observations
         self.callCount = 0
     }
@@ -40,9 +37,6 @@ final class MockVisionService: VisionAnalyzing, @unchecked Sendable {
         if simulatedLatencyMs > 0 {
             try await Task.sleep(nanoseconds: UInt64(simulatedLatencyMs * 1_000_000))
         }
-        
-        lock.lock()
-        defer { lock.unlock() }
         
         if !scriptedObservations.isEmpty {
             let index = min(callCount, scriptedObservations.count - 1)
@@ -73,9 +67,6 @@ final class MockVisionService: VisionAnalyzing, @unchecked Sendable {
             try await Task.sleep(nanoseconds: UInt64(simulatedLatencyMs * 1_000_000))
         }
         
-        lock.lock()
-        defer { lock.unlock() }
-        
         let width = CVPixelBufferGetWidth(frame)
         let height = CVPixelBufferGetHeight(frame)
         
@@ -105,37 +96,22 @@ final class MockVisionService: VisionAnalyzing, @unchecked Sendable {
         )
     }
     
-    func observationStream(
+    nonisolated func observationStream(
         from sampledFrames: AsyncStream<SampledFrame>,
         orientation: CGImagePropertyOrientation = .up
     ) -> AsyncStream<VisualObservation> {
         AsyncStream(VisualObservation.self, bufferingPolicy: .bufferingNewest(1)) { continuation in
             let task = Task { [weak self] in
-                for await sampledFrame in sampledFrames {
+                for await frame in sampledFrames {
                     guard !Task.isCancelled else { break }
                     guard let self = self else { break }
                     
-                    do {
-                        let observation = try await self.analyze(
-                            frame: sampledFrame.pixelBuffer,
-                            orientation: orientation,
-                            timestamp: sampledFrame.timestamp
-                        )
-                        guard !Task.isCancelled else { break }
+                    if let observation = try? await self.analyze(
+                        frame: frame.pixelBuffer,
+                        orientation: orientation,
+                        timestamp: frame.timestamp
+                    ) {
                         continuation.yield(observation)
-                    } catch is CancellationError {
-                        break
-                    } catch {
-                        let empty = VisualObservation(
-                            imageSize: CGSize(
-                                width: CVPixelBufferGetWidth(sampledFrame.pixelBuffer),
-                                height: CVPixelBufferGetHeight(sampledFrame.pixelBuffer)
-                            ),
-                            detectedText: [],
-                            regions: [],
-                            processingTimeMs: 0.0
-                        )
-                        continuation.yield(empty)
                     }
                 }
                 continuation.finish()

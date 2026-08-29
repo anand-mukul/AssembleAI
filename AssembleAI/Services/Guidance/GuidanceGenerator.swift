@@ -9,7 +9,7 @@ import FoundationModels
 #endif
 
 /// Structured natural-language guidance response produced by the guidance engine.
-struct GuidanceResponse: Hashable, Codable, Equatable, Sendable {
+nonisolated struct GuidanceResponse: Hashable, Codable, Equatable, Sendable {
     let title: String
     let explanation: String
     let action: String

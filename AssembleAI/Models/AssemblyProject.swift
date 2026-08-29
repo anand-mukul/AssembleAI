@@ -7,7 +7,7 @@ import Foundation
 import SwiftUI
 
 /// Assembly project difficulty level.
-enum Difficulty: String, CaseIterable, Codable, Hashable, Sendable {
+nonisolated enum Difficulty: String, CaseIterable, Codable, Hashable, Sendable {
     case beginner = "Beginner"
     case intermediate = "Intermediate"
     case advanced = "Advanced"
@@ -22,7 +22,7 @@ enum Difficulty: String, CaseIterable, Codable, Hashable, Sendable {
 }
 
 /// Component requirement specification for an assembly task.
-struct ComponentRequirement: Identifiable, Hashable, Codable, Sendable {
+nonisolated struct ComponentRequirement: Identifiable, Hashable, Codable, Sendable {
     let id: UUID
     let name: String
     let detail: String
@@ -37,7 +37,7 @@ struct ComponentRequirement: Identifiable, Hashable, Codable, Sendable {
 }
 
 /// Physical step summary for an assembly project.
-struct ProjectStepSummary: Identifiable, Hashable, Codable, Sendable {
+nonisolated struct ProjectStepSummary: Identifiable, Hashable, Codable, Sendable {
     let id: UUID
     let stepOrder: Int
     let title: String
@@ -54,7 +54,7 @@ struct ProjectStepSummary: Identifiable, Hashable, Codable, Sendable {
 }
 
 /// Domain model for an electronics or physical assembly project.
-struct AssemblyProject: Identifiable, Hashable, Codable, Sendable {
+nonisolated struct AssemblyProject: Identifiable, Hashable, Codable, Sendable {
     let id: UUID
     let title: String
     let subtitle: String
@@ -132,7 +132,7 @@ struct AssemblyProject: Identifiable, Hashable, Codable, Sendable {
 }
 
 /// Recent activity item entry for completed steps.
-struct ActivityItemModel: Identifiable, Hashable, Codable, Sendable {
+nonisolated struct ActivityItemModel: Identifiable, Hashable, Codable, Sendable {
     let id: UUID
     let stepOrder: Int
     let projectTitle: String

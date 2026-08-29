@@ -10,7 +10,7 @@ import CoreVideo
 // MARK: - Sampled Frame
 
 /// Represents a video frame selected by the adaptive frame sampler for downstream visual analysis.
-struct SampledFrame: @unchecked Sendable {
+nonisolated struct SampledFrame: @unchecked Sendable {
     /// The unmanaged raw video pixel buffer.
     let pixelBuffer: CVPixelBuffer
     
@@ -23,7 +23,7 @@ struct SampledFrame: @unchecked Sendable {
     /// Computed visual difference score against the previously sampled frame (0.0 = identical, 1.0 = completely different).
     let motionDifference: Double
     
-    init(
+    nonisolated init(
         pixelBuffer: CVPixelBuffer,
         timestamp: CMTime = CMTime(seconds: CFAbsoluteTimeGetCurrent(), preferredTimescale: 600),
         sequenceNumber: UInt64 = 0,
@@ -39,7 +39,7 @@ struct SampledFrame: @unchecked Sendable {
 // MARK: - Sampling Priority
 
 /// Priority level governing frame sampling evaluation.
-enum SamplingPriority: Sendable, Equatable {
+nonisolated enum SamplingPriority: Sendable, Equatable {
     /// Standard sampling subject to time-based rate limits, motion thresholds, and stability gating.
     case normal
     
@@ -50,7 +50,7 @@ enum SamplingPriority: Sendable, Equatable {
 // MARK: - Frame Sampling Configuration
 
 /// Configuration parameters controlling adaptive sampling intervals, motion thresholds, and scene stability debounce.
-struct FrameSamplingConfiguration: Sendable, Equatable {
+nonisolated struct FrameSamplingConfiguration: Sendable, Equatable {
     /// Target frame rate in frames per second under active assembly conditions (default: 5.0 FPS).
     var targetFramesPerSecond: Double
     
@@ -75,7 +75,7 @@ struct FrameSamplingConfiguration: Sendable, Equatable {
     /// Grid dimension along each axis for lightweight luminance comparison (e.g. 16 -> 16x16 = 256 sample points).
     var gridSamplingDimension: Int
     
-    init(
+    nonisolated init(
         targetFramesPerSecond: Double = 5.0,
         motionThreshold: Double = 0.05,
         rapidMotionThreshold: Double = 0.25,
@@ -92,13 +92,13 @@ struct FrameSamplingConfiguration: Sendable, Equatable {
     }
     
     /// Default standard configuration for AssembleAI Live Tutor.
-    static let `default` = FrameSamplingConfiguration()
+    nonisolated static let `default` = FrameSamplingConfiguration()
 }
 
 // MARK: - Frame Sampling Diagnostics Metrics
 
 /// Diagnostic performance metrics for engineering validation and performance tuning.
-struct FrameSamplingMetrics: Sendable, Equatable {
+nonisolated struct FrameSamplingMetrics: Sendable, Equatable {
     var framesReceived: UInt64 = 0
     var framesSampled: UInt64 = 0
     var framesDroppedByRate: UInt64 = 0
@@ -244,7 +244,7 @@ actor FrameSamplingService: FrameSampling {
     }
     
     /// Subscribes to an upstream `AsyncStream<CVPixelBuffer>` and returns an `AsyncStream<SampledFrame>` with bounded backpressure.
-    func sampledStream(
+    nonisolated func sampledStream(
         from sourceStream: AsyncStream<CVPixelBuffer>
     ) -> AsyncStream<SampledFrame> {
         AsyncStream(SampledFrame.self, bufferingPolicy: .bufferingNewest(1)) { continuation in

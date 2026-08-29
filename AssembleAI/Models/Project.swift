@@ -6,7 +6,7 @@
 import Foundation
 
 /// Synchronization state for local-first records.
-enum SyncState: String, Codable, Hashable, Equatable, Sendable {
+nonisolated enum SyncState: String, Codable, Hashable, Equatable, Sendable {
     case synced
     case pendingUpload
     case pendingDelete

@@ -11,7 +11,7 @@ import CoreMedia
 import ImageIO
 
 /// Diagnostic performance metrics for Vision processing validation.
-struct VisionServiceMetrics: Sendable, Equatable {
+nonisolated struct VisionServiceMetrics: Sendable, Equatable {
     var requestsStarted: UInt64 = 0
     var requestsCompleted: UInt64 = 0
     var requestsCancelled: UInt64 = 0

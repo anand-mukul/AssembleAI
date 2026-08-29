@@ -6,14 +6,14 @@
 import Foundation
 
 /// Application execution environment mode.
-enum AppEnvironment: String, CaseIterable, Codable, Hashable, Equatable, Sendable {
+nonisolated enum AppEnvironment: String, CaseIterable, Codable, Hashable, Equatable, Sendable {
     case demo = "Demo Mode"
     case development = "Development"
     case production = "Production"
 }
 
 /// Interaction evaluation mode for comparative research experiments.
-enum InteractionMode: String, CaseIterable, Codable, Hashable, Equatable, Sendable {
+nonisolated enum InteractionMode: String, CaseIterable, Codable, Hashable, Equatable, Sendable {
     case liveTutor = "liveTutor"
     case manual = "manual"
     case guided = "guided"
@@ -21,7 +21,7 @@ enum InteractionMode: String, CaseIterable, Codable, Hashable, Equatable, Sendab
 }
 
 /// Reproducible deterministic demo scenario selector for presentations and evaluation.
-enum DemoScenario: String, CaseIterable, Identifiable, Codable, Hashable, Equatable, Sendable {
+nonisolated enum DemoScenario: String, CaseIterable, Identifiable, Codable, Hashable, Equatable, Sendable {
     case correctPlacement = "Correct Placement"
     case wrongPosition = "Wrong Position (Step 2)"
     case missingComponent = "Missing Component"

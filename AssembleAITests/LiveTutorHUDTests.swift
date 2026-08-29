@@ -95,14 +95,14 @@ final class LiveTutorHUDTests: XCTestCase {
         XCTAssertEqual(viewModel.liveStatus, .listening)
         
         // 2. Simulate User Speech Recognition Utterance
-        mockVoiceInput.simulateSpokenTranscript("where does this go", isFinal: true)
+        await mockVoiceInput.simulateSpokenTranscript("where does this go", isFinal: true)
         
         // Allow cooperative async tasks to complete
         try? await Task.sleep(nanoseconds: 100_000_000)
         
         XCTAssertFalse(viewModel.isListening)
         XCTAssertEqual(mockTutor.answerQuestionCallCount, 1)
-        XCTAssertEqual(mockVoiceOutput.spokenResponses.count, 1)
+        XCTAssertEqual(await mockVoiceOutput.spokenResponses.count, 1)
     }
     
     // MARK: - Test 3: Step Transition Resets Live State

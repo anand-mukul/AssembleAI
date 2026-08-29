@@ -8,7 +8,7 @@ import Foundation
 // MARK: - Research Event Type Taxonomy
 
 /// Controlled event taxonomy for experimental evaluation and CSE thesis research metrics.
-enum ResearchEventType: String, Codable, Hashable, Equatable, Sendable {
+nonisolated enum ResearchEventType: String, Codable, Hashable, Equatable, Sendable {
     // Session Lifecycle
     case sessionStarted
     case sessionCompleted
@@ -53,7 +53,7 @@ enum ResearchEventType: String, Codable, Hashable, Equatable, Sendable {
 // MARK: - Research Event Model
 
 /// Anonymized, structured telemetry record capturing interaction timing and experimental metrics.
-struct ResearchEvent: Identifiable, Hashable, Codable, Equatable, Sendable {
+nonisolated struct ResearchEvent: Identifiable, Hashable, Codable, Equatable, Sendable {
     let id: UUID
     let sequence: Int
     let timestamp: Date

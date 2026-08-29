@@ -6,7 +6,7 @@
 import Foundation
 
 /// Lifecycle status for an assembly session.
-enum SessionStatus: String, Codable, Hashable, Equatable, Sendable {
+nonisolated enum SessionStatus: String, Codable, Hashable, Equatable, Sendable {
     case notStarted = "not_started"
     case inProgress = "in_progress"
     case completed = "completed"
@@ -14,7 +14,7 @@ enum SessionStatus: String, Codable, Hashable, Equatable, Sendable {
 }
 
 /// Session tracking metrics for an active or completed physical assembly flow.
-struct AssemblySession: Identifiable, Hashable, Codable, Equatable, Sendable {
+nonisolated struct AssemblySession: Identifiable, Hashable, Codable, Equatable, Sendable {
     let id: UUID
     var userId: UUID?
     let projectId: UUID

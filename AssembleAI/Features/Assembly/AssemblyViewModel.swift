@@ -265,7 +265,7 @@ final class AssemblyViewModel: ObservableObject {
                 self.transitioningStepID = nil
                 
                 await self.observationCoordinator.resetForStepChange()
-                await self.interventionPolicy.resetForStepChange()
+                self.interventionPolicy.resetForStepChange()
                 self.currentVerificationResult = nil
                 
                 let nextStep = self.currentStep
@@ -544,9 +544,9 @@ final class AssemblyViewModel: ObservableObject {
         currentVerificationResult = nil
         liveUserTranscript = ""
         
+        interventionPolicy.resetForStepChange()
         Task {
             await observationCoordinator.resetForStepChange()
-            await interventionPolicy.resetForStepChange()
         }
         
         if currentStepIndex + 1 < totalStepsCount {
@@ -571,9 +571,9 @@ final class AssemblyViewModel: ObservableObject {
         currentVerificationResult = nil
         liveUserTranscript = ""
         
+        interventionPolicy.resetForStepChange()
         Task {
             await observationCoordinator.resetForStepChange()
-            await interventionPolicy.resetForStepChange()
         }
         
         withAnimation(.easeInOut(duration: 0.3)) {

@@ -8,7 +8,7 @@ import Foundation
 // MARK: - Tutor Event Model
 
 /// Semantic events evaluated by the assistant intervention policy.
-enum TutorEvent: Sendable, Equatable {
+nonisolated enum TutorEvent: Sendable, Equatable {
     /// A new assembly step has begun.
     case stepStarted(step: AssemblyStep)
     
@@ -28,7 +28,7 @@ enum TutorEvent: Sendable, Equatable {
 // MARK: - Intervention Level & Action
 
 /// Escalating intervention detail level for repeated mistakes.
-enum InterventionLevel: String, Sendable, Equatable, Codable {
+nonisolated enum InterventionLevel: String, Sendable, Equatable, Codable {
     /// First mistake: concise reminder.
     case gentle
     /// Second mistake: explicit actionable instruction.
@@ -38,7 +38,7 @@ enum InterventionLevel: String, Sendable, Equatable, Codable {
 }
 
 /// The specific category of proactive intervention decided by the policy.
-enum InterventionAction: Sendable, Equatable {
+nonisolated enum InterventionAction: Sendable, Equatable {
     /// Remain silent; do not interrupt the user.
     case remainSilent
     
@@ -64,12 +64,12 @@ enum InterventionAction: Sendable, Equatable {
 // MARK: - Intervention Decision
 
 /// Structured outcome produced by the intervention policy determining whether to speak or remain silent.
-struct InterventionDecision: Sendable, Equatable {
+nonisolated struct InterventionDecision: Sendable, Equatable {
     let action: InterventionAction
     let reason: String
     let timestamp: Date
     
-    init(
+    nonisolated init(
         action: InterventionAction,
         reason: String,
         timestamp: Date = Date()
@@ -88,7 +88,7 @@ struct InterventionDecision: Sendable, Equatable {
     }
     
     /// Convenience static factory for silence.
-    static func silent(reason: String) -> InterventionDecision {
+    nonisolated static func silent(reason: String) -> InterventionDecision {
         InterventionDecision(action: .remainSilent, reason: reason)
     }
 }
@@ -96,7 +96,7 @@ struct InterventionDecision: Sendable, Equatable {
 // MARK: - Tutor Context
 
 /// Snapshot of current session, step, and timing context required for policy decisions.
-struct TutorContext: Sendable {
+nonisolated struct TutorContext: Sendable {
     let currentStep: AssemblyStep
     let sessionID: UUID
     let timeSinceStepStartedSeconds: Double
@@ -106,7 +106,7 @@ struct TutorContext: Sendable {
     let consecutiveUncertainCount: Int
     let isStepCompleted: Bool
     
-    init(
+    nonisolated init(
         currentStep: AssemblyStep,
         sessionID: UUID = UUID(),
         timeSinceStepStartedSeconds: Double = 0.0,
@@ -130,7 +130,7 @@ struct TutorContext: Sendable {
 // MARK: - Intervention Policy Configuration
 
 /// Configurable thresholds governing assistant cooldowns, stuck detection, and uncertainty sensitivity.
-struct InterventionPolicyConfiguration: Sendable, Equatable {
+nonisolated struct InterventionPolicyConfiguration: Sendable, Equatable {
     /// Minimum time in seconds between consecutive proactive assistant interventions (default: 4.0s).
     var minimumCooldownSeconds: Double
     
@@ -143,7 +143,7 @@ struct InterventionPolicyConfiguration: Sendable, Equatable {
     /// Whether initial step instruction should be permitted upon step start (default: true).
     var allowInitialInstruction: Bool
     
-    init(
+    nonisolated init(
         minimumCooldownSeconds: Double = 4.0,
         stuckDetectionThresholdSeconds: Double = 15.0,
         uncertainThresholdCount: Int = 3,
@@ -155,7 +155,7 @@ struct InterventionPolicyConfiguration: Sendable, Equatable {
         self.allowInitialInstruction = allowInitialInstruction
     }
     
-    static let `default` = InterventionPolicyConfiguration()
+    nonisolated static let `default` = InterventionPolicyConfiguration()
 }
 
 // MARK: - Assistant Intervention Policy Protocol

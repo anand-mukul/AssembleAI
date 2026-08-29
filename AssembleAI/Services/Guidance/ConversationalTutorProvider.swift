@@ -11,18 +11,18 @@ import FoundationModels
 // MARK: - Conversation Message & Context
 
 /// Short-term conversation turn in the active assembly session.
-struct ConversationMessage: Sendable, Equatable, Identifiable {
+nonisolated struct ConversationMessage: Sendable, Equatable, Identifiable {
     let id: UUID
     let sender: MessageSender
     let text: String
     let timestamp: Date
     
-    enum MessageSender: String, Sendable, Equatable {
+    nonisolated enum MessageSender: String, Sendable, Equatable {
         case user
         case assistant
     }
     
-    init(
+    nonisolated init(
         id: UUID = UUID(),
         sender: MessageSender,
         text: String,
@@ -36,7 +36,7 @@ struct ConversationMessage: Sendable, Equatable, Identifiable {
 }
 
 /// Structured conversational and physical assembly context provided to Foundation Models.
-struct AssistantContext: Sendable {
+nonisolated struct AssistantContext: Sendable {
     let currentStep: AssemblyStep
     let sessionID: UUID
     let expectedState: ExpectedAssemblyState?
@@ -48,7 +48,7 @@ struct AssistantContext: Sendable {
     let recentConversationHistory: [ConversationMessage]
     let attemptCount: Int
     
-    init(
+    nonisolated init(
         currentStep: AssemblyStep,
         sessionID: UUID = UUID(),
         expectedState: ExpectedAssemblyState? = nil,
@@ -355,9 +355,8 @@ final class HybridTutorResponseProvider: ConversationalTutorProviding, @unchecke
 
 // MARK: - Mock Conversational Tutor Provider
 
-/// Thread-safe mock conversational tutor provider for unit testing with deterministic responses.
-final class MockConversationalTutorProvider: ConversationalTutorProviding, @unchecked Sendable {
-    private let lock = NSLock()
+/// Actor-isolated mock conversational tutor provider for unit testing with deterministic responses.
+actor MockConversationalTutorProvider: ConversationalTutorProviding {
     private var scriptedResponses: [TutorResponse] = []
     private(set) var generateResponseCallCount: Int = 0
     private(set) var answerQuestionCallCount: Int = 0
@@ -368,8 +367,6 @@ final class MockConversationalTutorProvider: ConversationalTutorProviding, @unch
     }
     
     func setScriptedResponses(_ responses: [TutorResponse]) {
-        lock.lock()
-        defer { lock.unlock() }
         self.scriptedResponses = responses
     }
     
@@ -377,8 +374,6 @@ final class MockConversationalTutorProvider: ConversationalTutorProviding, @unch
         for decision: InterventionDecision,
         context: AssistantContext
     ) async -> TutorResponse? {
-        lock.lock()
-        defer { lock.unlock() }
         generateResponseCallCount += 1
         lastReceivedContext = context
         
@@ -397,8 +392,6 @@ final class MockConversationalTutorProvider: ConversationalTutorProviding, @unch
         intent: UserVoiceIntent,
         context: AssistantContext
     ) async -> TutorResponse {
-        lock.lock()
-        defer { lock.unlock() }
         answerQuestionCallCount += 1
         lastReceivedContext = context
         
@@ -419,8 +412,6 @@ final class MockConversationalTutorProvider: ConversationalTutorProviding, @unch
     }
     
     func clearSessionContext() async {
-        lock.lock()
-        defer { lock.unlock() }
         scriptedResponses.removeAll()
         lastReceivedContext = nil
     }

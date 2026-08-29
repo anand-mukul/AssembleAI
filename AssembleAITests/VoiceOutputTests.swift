@@ -88,20 +88,20 @@ final class VoiceOutputTests: XCTestCase {
         await mockVoiceService.speak(response)
         
         XCTAssertEqual(await mockVoiceService.state, .speaking)
-        XCTAssertEqual(mockVoiceService.spokenResponses.count, 1)
-        XCTAssertEqual(mockVoiceService.spokenResponses.first?.text, "Hello World")
+        XCTAssertEqual(await mockVoiceService.spokenResponses.count, 1)
+        XCTAssertEqual(await mockVoiceService.spokenResponses.first?.text, "Hello World")
         
         await mockVoiceService.pause()
         XCTAssertEqual(await mockVoiceService.state, .paused)
-        XCTAssertEqual(mockVoiceService.pauseCount, 1)
+        XCTAssertEqual(await mockVoiceService.pauseCount, 1)
         
         await mockVoiceService.resume()
         XCTAssertEqual(await mockVoiceService.state, .speaking)
-        XCTAssertEqual(mockVoiceService.resumeCount, 1)
+        XCTAssertEqual(await mockVoiceService.resumeCount, 1)
         
         await mockVoiceService.stop()
         XCTAssertEqual(await mockVoiceService.state, .idle)
-        XCTAssertEqual(mockVoiceService.stopCount, 1)
+        XCTAssertEqual(await mockVoiceService.stopCount, 1)
     }
     
     // MARK: - Test 3: Priority Interruption / Stale Speech Preemption
@@ -112,18 +112,18 @@ final class VoiceOutputTests: XCTestCase {
         
         // 1. Start normal speech
         await mockVoiceService.speak(normalResponse)
-        XCTAssertEqual(mockVoiceService.spokenResponses.count, 1)
-        XCTAssertEqual(mockVoiceService.stopCount, 0)
+        XCTAssertEqual(await mockVoiceService.spokenResponses.count, 1)
+        XCTAssertEqual(await mockVoiceService.stopCount, 0)
         
         // 2. High priority speech arrives -> Interrupts normal speech!
         await mockVoiceService.speak(highPriorityResponse)
-        XCTAssertEqual(mockVoiceService.spokenResponses.count, 2)
-        XCTAssertEqual(mockVoiceService.stopCount, 1, "High priority response must interrupt active lower priority speech")
-        XCTAssertEqual(mockVoiceService.spokenResponses.last?.text, "Urgent correction needed!")
+        XCTAssertEqual(await mockVoiceService.spokenResponses.count, 2)
+        XCTAssertEqual(await mockVoiceService.stopCount, 1, "High priority response must interrupt active lower priority speech")
+        XCTAssertEqual(await mockVoiceService.spokenResponses.last?.text, "Urgent correction needed!")
         
         // 3. Low priority speech arrives while high priority is speaking -> Dropped!
         await mockVoiceService.speak(lowPriorityResponse)
-        XCTAssertEqual(mockVoiceService.spokenResponses.count, 2, "Lower priority speech must not preempt active high priority speech")
+        XCTAssertEqual(await mockVoiceService.spokenResponses.count, 2, "Lower priority speech must not preempt active high priority speech")
     }
     
     // MARK: - Test 4: Duplicate Speech Suppression
@@ -132,11 +132,11 @@ final class VoiceOutputTests: XCTestCase {
         let response2 = TutorResponse(text: "Perfect. Step complete.", priority: .normal)
         
         await mockVoiceService.speak(response1)
-        XCTAssertEqual(mockVoiceService.spokenResponses.count, 1)
+        XCTAssertEqual(await mockVoiceService.spokenResponses.count, 1)
         
         // Duplicate immediately following
         await mockVoiceService.speak(response2)
-        XCTAssertEqual(mockVoiceService.spokenResponses.count, 1, "Duplicate identical speech must be suppressed")
+        XCTAssertEqual(await mockVoiceService.spokenResponses.count, 1, "Duplicate identical speech must be suppressed")
     }
     
     // MARK: - Test 5: End-to-End Decision -> Spoken Response Pipeline
@@ -150,8 +150,8 @@ final class VoiceOutputTests: XCTestCase {
         
         await mockVoiceService.speak(tutorResponse)
         
-        XCTAssertEqual(mockVoiceService.spokenResponses.count, 1)
+        XCTAssertEqual(await mockVoiceService.spokenResponses.count, 1)
         XCTAssertEqual(await mockVoiceService.state, .speaking)
-        XCTAssertTrue(mockVoiceService.spokenResponses.first?.category == "confirmation")
+        XCTAssertTrue(await mockVoiceService.spokenResponses.first?.category == "confirmation")
     }
 }

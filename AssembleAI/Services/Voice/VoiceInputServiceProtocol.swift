@@ -8,7 +8,7 @@ import Foundation
 // MARK: - Voice Input State
 
 /// Operational state of the speech recognition service.
-enum VoiceInputState: String, Sendable, Equatable {
+nonisolated enum VoiceInputState: String, Sendable, Equatable {
     /// Microphone is inactive.
     case idle
     /// Microphone is active and capturing audio buffers.

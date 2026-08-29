@@ -35,12 +35,13 @@ final class VoiceInputService: NSObject, ObservableObject, VoiceInputServiceProt
     // MARK: - Transcript Stream API
     
     nonisolated var transcriptStream: AsyncStream<UserVoiceMessage> {
-        AsyncStream(UserVoiceMessage.self, bufferingPolicy: .bufferingNewest(10)) { continuation in
+        let broadcaster = self.broadcaster
+        return AsyncStream(UserVoiceMessage.self, bufferingPolicy: .bufferingNewest(10)) { continuation in
             let id = UUID()
-            self.broadcaster.addContinuation(continuation, id: id)
+            broadcaster.addContinuation(continuation, id: id)
             
-            continuation.onTermination = { [weak self] _ in
-                self?.broadcaster.removeContinuation(id: id)
+            continuation.onTermination = { _ in
+                broadcaster.removeContinuation(id: id)
             }
         }
     }
@@ -182,19 +183,21 @@ private final class TranscriptStreamBroadcaster: @unchecked Sendable {
     private let lock = NSLock()
     private var continuations: [UUID: AsyncStream<UserVoiceMessage>.Continuation] = [:]
     
-    func addContinuation(_ continuation: AsyncStream<UserVoiceMessage>.Continuation, id: UUID) {
+    nonisolated init() {}
+    
+    nonisolated func addContinuation(_ continuation: AsyncStream<UserVoiceMessage>.Continuation, id: UUID) {
         lock.lock()
         defer { lock.unlock() }
         continuations[id] = continuation
     }
     
-    func removeContinuation(id: UUID) {
+    nonisolated func removeContinuation(id: UUID) {
         lock.lock()
         defer { lock.unlock() }
         continuations.removeValue(forKey: id)
     }
     
-    func broadcast(_ message: UserVoiceMessage) {
+    nonisolated func broadcast(_ message: UserVoiceMessage) {
         lock.lock()
         let active = Array(continuations.values)
         lock.unlock()
@@ -204,7 +207,7 @@ private final class TranscriptStreamBroadcaster: @unchecked Sendable {
         }
     }
     
-    func finishAll() {
+    nonisolated func finishAll() {
         lock.lock()
         let active = Array(continuations.values)
         continuations.removeAll()
@@ -218,68 +221,44 @@ private final class TranscriptStreamBroadcaster: @unchecked Sendable {
 
 // MARK: - Mock Voice Input Service
 
-/// Thread-safe mock speech recognition service for unit testing and deterministic simulation.
-final class MockVoiceInputService: VoiceInputServiceProtocol, @unchecked Sendable {
-    private let lock = NSLock()
-    
+/// Actor-isolated mock speech recognition service for unit testing and deterministic simulation.
+actor MockVoiceInputService: VoiceInputServiceProtocol {
     private var _state: VoiceInputState = .idle
-    var state: VoiceInputState {
-        lock.lock()
-        defer { lock.unlock() }
-        return _state
-    }
+    var state: VoiceInputState { _state }
     
-    private var continuations: [UUID: AsyncStream<UserVoiceMessage>.Continuation] = [:]
+    private let broadcaster = TranscriptStreamBroadcaster()
     
     init() {}
     
-    var transcriptStream: AsyncStream<UserVoiceMessage> {
+    nonisolated var transcriptStream: AsyncStream<UserVoiceMessage> {
         AsyncStream(UserVoiceMessage.self, bufferingPolicy: .bufferingNewest(10)) { continuation in
             let id = UUID()
-            self.lock.lock()
-            self.continuations[id] = continuation
-            self.lock.unlock()
+            self.broadcaster.addContinuation(continuation, id: id)
             
             continuation.onTermination = { [weak self] _ in
-                guard let self = self else { return }
-                self.lock.lock()
-                self.continuations.removeValue(forKey: id)
-                self.lock.unlock()
+                self?.broadcaster.removeContinuation(id: id)
             }
         }
     }
     
     func startListening() async throws {
-        lock.lock()
-        defer { lock.unlock() }
         _state = .listening
     }
     
     func stopListening() async {
-        lock.lock()
-        defer { lock.unlock() }
         _state = .idle
     }
     
     func cancelListening() async {
-        lock.lock()
-        defer { lock.unlock() }
         _state = .idle
     }
     
     /// Injects a simulated spoken transcript for unit testing.
     func simulateSpokenTranscript(_ text: String, isFinal: Bool) {
         let message = UserVoiceMessage(transcript: text, isFinal: isFinal)
-        
-        lock.lock()
-        let activeContinuations = Array(continuations.values)
         if isFinal {
             _state = .idle
         }
-        lock.unlock()
-        
-        for continuation in activeContinuations {
-            continuation.yield(message)
-        }
+        broadcaster.broadcast(message)
     }
 }
