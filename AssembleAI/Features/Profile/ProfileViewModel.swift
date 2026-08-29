@@ -48,24 +48,24 @@ final class ProfileViewModel: ObservableObject {
         "cpu.fill",
         "wrench.and.screwdriver.fill",
         "bolt.fill",
-        "sparkles",
+        "viewfinder",
         "hammer.fill",
         "gearshape.fill",
-        "eye.fill",
+        "ruler.fill",
         "dot.radiowaves.left.and.right",
-        "lightbulb.fill",
+        "terminal.fill",
         "macpro.gen3.fill",
         "antenna.radiowaves.left.and.right"
     ]
     
-    // Available Avatar Colors
+    // Available Avatar Colors (Precision Industrial Hardware Palette)
     static let availableColors: [(name: String, hex: String, color: Color)] = [
-        ("Assemble Blue", "#0A84FF", Color.assembleBrandPrimary),
-        ("Emerald Green", "#34C759", AppColors.success),
-        ("Amber Orange", "#FF9500", AppColors.warning),
-        ("Indigo Purple", "#5856D6", Color.indigo),
-        ("Crimson Pink", "#FF2D55", Color.pink),
-        ("Teal Cyan", "#30B0C7", Color.teal)
+        ("Studio Orange", "#FF5E00", AppColors.brandPrimary),
+        ("Signal Green", "#30D158", AppColors.success),
+        ("Calibration Amber", "#FF9F0A", AppColors.warning),
+        ("Titanium Graphite", "#8E8E93", Color.gray),
+        ("Precision Crimson", "#FF453A", AppColors.error),
+        ("Slate Teal", "#30B0C7", Color.teal)
     ]
     
     init() {

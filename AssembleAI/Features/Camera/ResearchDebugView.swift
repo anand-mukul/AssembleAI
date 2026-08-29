@@ -19,7 +19,7 @@ struct ResearchDebugView: View {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 // Header
                 HStack {
-                    BadgeView(text: "RESEARCH INSTRUMENTATION", color: .blue)
+                    BadgeView(text: "RESEARCH INSTRUMENTATION", color: .assembleBrandPrimary)
                     Spacer()
                     Text(sessionID.uuidString.prefix(8).uppercased())
                         .font(.system(size: 11, weight: .bold, design: .monospaced))
@@ -41,7 +41,7 @@ struct ResearchDebugView: View {
                         metricCard(title: "TOTAL ATTEMPTS", value: "\(m.totalAttempts)")
                         metricCard(title: "DETECTION ERRORS", value: "\(m.errorCount)", color: AppColors.error)
                         metricCard(title: "UNCERTAIN RATE", value: "\(m.uncertainCount)", color: AppColors.warning)
-                        metricCard(title: "VERIFICATION LATENCY", value: "\(m.avgVerificationLatencyMs) ms", color: .indigo)
+                        metricCard(title: "VERIFICATION LATENCY", value: "\(m.avgVerificationLatencyMs) ms", color: .assembleBrandPrimary)
                     }
                     
                     // CSV Export Section

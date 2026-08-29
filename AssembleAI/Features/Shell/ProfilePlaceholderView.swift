@@ -67,11 +67,11 @@ struct ProfilePlaceholderView: View {
                         .foregroundColor(AppColors.secondaryText)
                     
                     VStack(spacing: 0) {
-                        privacyStatusRow(label: "Camera Access", value: "System controlled", icon: "camera.fill", color: .green)
+                        privacyStatusRow(label: "Camera Access", value: "System controlled", icon: "camera.fill", color: AppColors.success)
                         Divider().padding(.leading, 44)
-                        privacyStatusRow(label: "Local Processing", value: "Enabled (On-Device)", icon: "cpu.fill", color: .blue)
+                        privacyStatusRow(label: "Local Processing", value: "Enabled (On-Device)", icon: "cpu.fill", color: .assembleBrandPrimary)
                         Divider().padding(.leading, 44)
-                        privacyStatusRow(label: "Research Data", value: "Stored on this device", icon: "lock.shield.fill", color: .indigo)
+                        privacyStatusRow(label: "Research Data", value: "Stored on this device", icon: "lock.shield.fill", color: AppColors.success)
                     }
                     .background(
                         RoundedRectangle(cornerRadius: 16, style: .continuous)

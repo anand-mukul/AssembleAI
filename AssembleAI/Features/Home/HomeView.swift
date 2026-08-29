@@ -139,15 +139,15 @@ struct HomeView: View {
     private var noActiveProjectCard: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             HStack(spacing: 8) {
-                Image(systemName: "sparkles")
+                Image(systemName: "wrench.and.screwdriver.fill")
                     .foregroundColor(.assembleBrandPrimary)
-                Text("Ready to build?")
+                Text("Ready to assemble?")
                     .font(.headline)
                     .fontWeight(.bold)
                     .foregroundColor(AppColors.primaryText)
             }
             
-            Text("Choose a project and start your first guided physical assembly.")
+            Text("Select a hardware task to begin guided step-by-step assembly.")
                 .font(.subheadline)
                 .foregroundColor(AppColors.secondaryText)
             

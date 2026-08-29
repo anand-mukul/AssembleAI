@@ -49,8 +49,8 @@ struct DataPrivacySettingsView: View {
                     
                     VStack(spacing: 0) {
                         storageRow(
-                            icon: "brain.head.profile",
-                            label: "AI Guidance Explanations",
+                            icon: "cpu.fill",
+                            label: "Optical Guidance Cache",
                             detail: "In-Memory LRU Cache",
                             actionTitle: "Clear",
                             action: {

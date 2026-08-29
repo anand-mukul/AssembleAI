@@ -61,13 +61,13 @@ struct BrandHeaderView: View {
                 .foregroundColor(AppColors.primaryText)
             
             if size == .large {
-                Text("State-Aware Physical Task Assistant")
+                Text("Precision Hardware Assembly & Optical Inspection")
                     .font(.subheadline)
                     .foregroundColor(AppColors.secondaryText)
             }
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("AssembleAI. State Aware Physical Task Assistant.")
+        .accessibilityLabel("AssembleAI. Precision Hardware Assembly.")
     }
     
     private var markDiameter: CGFloat {
@@ -109,7 +109,7 @@ struct AssemblyCameraMotifView: View {
                 .fill(AppColors.secondaryBackground)
                 .overlay(
                     RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .strokeBorder(AppColors.border.opacity(0.35), lineWidth: 1)
+                        .strokeBorder(AppColors.border, lineWidth: 1)
                 )
             
             VStack(spacing: AppSpacing.md) {
@@ -117,11 +117,12 @@ struct AssemblyCameraMotifView: View {
                 HStack {
                     HStack(spacing: 6) {
                         Circle()
-                            .fill(Color.green)
+                            .fill(AppColors.success)
                             .frame(width: 7, height: 7)
-                        Text("CAMERA OBSERVER ACTIVE")
+                        Text("OPTICAL SENSOR ACTIVE")
                             .font(.system(size: 10, weight: .bold, design: .monospaced))
                             .foregroundColor(AppColors.secondaryText)
+                            .tracking(0.8)
                     }
                     Spacer()
                     Image(systemName: "viewfinder.circle.fill")
@@ -139,7 +140,7 @@ struct AssemblyCameraMotifView: View {
                         .frame(width: 156, height: 116)
                         .overlay(
                             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .stroke(Color.primary.opacity(0.1), lineWidth: 1)
+                                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
                         )
                     
                     // Hardware Component Visual Symbol
@@ -152,9 +153,10 @@ struct AssemblyCameraMotifView: View {
                             Image(systemName: "checkmark.seal.fill")
                                 .font(.caption2)
                                 .foregroundColor(AppColors.success)
-                            Text("STEP VERIFIED")
-                                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                            Text("PHYSICAL CONTRACT MATCH")
+                                .font(.system(size: 8, weight: .bold, design: .monospaced))
                                 .foregroundColor(AppColors.secondaryText)
+                                .tracking(0.5)
                         }
                     }
                     
@@ -176,10 +178,10 @@ struct AssemblyCameraMotifView: View {
                 
                 // State Verification Badge
                 HStack(spacing: 6) {
-                    Image(systemName: "sparkles")
+                    Image(systemName: "ruler.fill")
                         .font(.caption2)
                         .foregroundColor(.assembleBrandPrimary)
-                    Text("State-Aware Inspection")
+                    Text("Optical State Verification")
                         .font(.caption)
                         .fontWeight(.semibold)
                         .foregroundColor(AppColors.primaryText)
@@ -189,6 +191,10 @@ struct AssemblyCameraMotifView: View {
                 .background(
                     Capsule()
                         .fill(AppColors.appBackground)
+                )
+                .overlay(
+                    Capsule()
+                        .strokeBorder(AppColors.border, lineWidth: 1)
                 )
                 .padding(.bottom, AppSpacing.sm)
             }

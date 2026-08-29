@@ -17,7 +17,7 @@ struct VisionDebugView: View {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 // Header
                 HStack {
-                    BadgeView(text: "VISION DEBUG LAYER", color: .purple)
+                    BadgeView(text: "OPTICAL INSPECTION HUD", color: .assembleBrandPrimary)
                     Spacer()
                     Text("\(Int(observation.processingTimeMs)) ms")
                         .font(.system(size: 11, weight: .bold, design: .monospaced))

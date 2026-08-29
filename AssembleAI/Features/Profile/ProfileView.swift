@@ -135,8 +135,8 @@ struct ProfileView: View {
     private var metricsGrid: some View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: AppSpacing.sm) {
             metricTile(title: "SESSIONS", value: "\(viewModel.completedSessionsCount)", icon: "checkmark.circle.fill", color: AppColors.success)
-            metricTile(title: "ACCURACY", value: "\(viewModel.overallAccuracyScore)%", icon: "target", color: .indigo)
-            metricTile(title: "TIME", value: "\(viewModel.totalAssemblyMinutes)m", icon: "clock.fill", color: .orange)
+            metricTile(title: "ACCURACY", value: "\(viewModel.overallAccuracyScore)%", icon: "target", color: .assembleBrandPrimary)
+            metricTile(title: "TIME", value: "\(viewModel.totalAssemblyMinutes)m", icon: "clock.fill", color: AppColors.warning)
         }
     }
     
@@ -187,13 +187,13 @@ struct ProfileView: View {
                 Divider().padding(.horizontal, AppSpacing.md)
                 
                 NavigationLink(value: ProfileNavigationDestination.notifications) {
-                    settingLinkRow(icon: "bell.fill", title: "Notifications", subtitle: "Reminders & daily building streak", color: .orange)
+                    settingLinkRow(icon: "bell.fill", title: "Notifications", subtitle: "Reminders & daily building streak", color: AppColors.warning)
                 }
                 
                 Divider().padding(.horizontal, AppSpacing.md)
                 
                 NavigationLink(value: ProfileNavigationDestination.help) {
-                    settingLinkRow(icon: "book.pages.fill", title: "Assembly Guide & FAQ", subtitle: "Hardware pinouts, conventions, tips", color: .indigo)
+                    settingLinkRow(icon: "book.pages.fill", title: "Assembly Guide & FAQ", subtitle: "Hardware pinouts, conventions, tips", color: Color(uiColor: .secondaryLabel))
                 }
             }
             .background(

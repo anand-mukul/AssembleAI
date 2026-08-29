@@ -54,7 +54,7 @@ struct VerificationResultView: View {
                         )
                         BadgeView(
                             text: "\(Int(result.confidence * 100))% CONFIDENCE",
-                            color: .indigo
+                            color: .assembleBrandPrimary
                         )
                     }
                 }

@@ -12,9 +12,9 @@ struct AppSettingsView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: AppSpacing.lg) {
-                // Section 1: Guidance & Intelligence
+                // Section 1: Guidance & Verification Engine
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Text("PHYSICAL GUIDANCE & INTELLIGENCE")
+                    Text("PHYSICAL GUIDANCE & VERIFICATION")
                         .font(.system(size: 10, weight: .bold, design: .monospaced))
                         .foregroundColor(AppColors.secondaryText)
                         .padding(.horizontal, 4)
@@ -24,7 +24,7 @@ struct AppSettingsView: View {
                         // Guidance Level Selector
                         VStack(alignment: .leading, spacing: AppSpacing.sm) {
                             HStack {
-                                Label("Guidance Detail Level", systemImage: "sparkles")
+                                Label("Guidance Detail Level", systemImage: "slider.horizontal.3")
                                     .font(.body)
                                     .foregroundColor(AppColors.primaryText)
                                 Spacer()
@@ -56,8 +56,8 @@ struct AppSettingsView: View {
                             }
                             
                             Picker("Verification Mode", selection: $viewModel.verificationMode) {
-                                Text("Hybrid AI").tag("hybrid")
-                                Text("Vision Only").tag("vision")
+                                Text("Hybrid Engine").tag("hybrid")
+                                Text("Optical Only").tag("vision")
                                 Text("Demo Mock").tag("mock")
                             }
                             .pickerStyle(.segmented)

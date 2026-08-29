@@ -14,9 +14,9 @@ enum Difficulty: String, CaseIterable, Codable, Hashable, Sendable {
     
     var color: Color {
         switch self {
-        case .beginner: return .green
-        case .intermediate: return .indigo
-        case .advanced: return .orange
+        case .beginner: return AppColors.success
+        case .intermediate: return AppColors.warning
+        case .advanced: return AppColors.brandPrimary
         }
     }
 }

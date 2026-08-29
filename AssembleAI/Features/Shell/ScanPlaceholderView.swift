@@ -6,6 +6,7 @@
 import SwiftUI
 
 /// Simple, elegant placeholder for the Scan tab destination.
+@MainActor
 struct ScanPlaceholderView: View {
     @EnvironmentObject private var router: AppRouter
     var onLaunchInspection: ((AssemblyProject) -> Void)? = nil
@@ -43,7 +44,13 @@ struct ScanPlaceholderView: View {
                 if let onLaunchInspection = onLaunchInspection {
                     onLaunchInspection(defaultProject)
                 } else {
-                    router.navigateToAssembly(project: defaultProject)
+                    let step = AssemblyStep(
+                        projectId: defaultProject.id,
+                        stepOrder: 1,
+                        title: "Attach 10K Resistor to R1 Pin Header",
+                        instruction: "Insert resistor leads into R1 slots and verify orientation."
+                    )
+                    router.navigateToCamera(step: step)
                 }
             }
             .padding(.horizontal, AppSpacing.lg)

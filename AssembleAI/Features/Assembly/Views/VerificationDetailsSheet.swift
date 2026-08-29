@@ -32,7 +32,7 @@ struct VerificationDetailsSheet: View {
             VStack(spacing: AppSpacing.md) {
                 detailTile(title: "EXPECTED STATE", value: result.expectedDescription, color: AppColors.success)
                 detailTile(title: "OBSERVED STATE", value: result.detectedDescription, color: result.isCorrect ? AppColors.success : AppColors.error)
-                detailTile(title: "EVIDENCE CONFIDENCE", value: "\(Int(result.confidence * 100))%", color: .indigo)
+                detailTile(title: "EVIDENCE CONFIDENCE", value: "\(Int(result.confidence * 100))%", color: .assembleBrandPrimary)
                 detailTile(title: "RESULT OUTCOME", value: result.status.rawValue.uppercased(), color: result.isCorrect ? AppColors.success : AppColors.error)
             }
             .padding(.horizontal, AppSpacing.screenEdge)

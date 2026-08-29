@@ -81,7 +81,7 @@ struct StepIllustrationView: View {
                         .overlay(
                             HStack(spacing: 3) {
                                 Rectangle().fill(Color.red).frame(width: 2)
-                                Rectangle().fill(Color.purple).frame(width: 2)
+                                Rectangle().fill(Color.red).frame(width: 2)
                                 Rectangle().fill(Color.brown).frame(width: 2)
                             }
                         )

@@ -40,7 +40,7 @@ struct HelpAndSupportView: View {
                 referenceCard(
                     title: "BREADBOARD ARCHITECTURE",
                     icon: "square.grid.3x3.topleft.filled",
-                    color: .blue
+                    color: .assembleBrandPrimary
                 ) {
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
                         Text("• Tie-Point Rows (A–E, F–J): Connected horizontally across each row number. Inserting two leads into the same numbered row (e.g. 10A and 10B) connects them electrically.")
@@ -57,7 +57,7 @@ struct HelpAndSupportView: View {
                 referenceCard(
                     title: "COMPONENT POLARITY RULES",
                     icon: "bolt.horizontal.fill",
-                    color: .orange
+                    color: AppColors.warning
                 ) {
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
                         polarityRow(component: "LED", rule: "Long lead = Anode (+) / Short lead = Cathode (-)")
@@ -71,7 +71,7 @@ struct HelpAndSupportView: View {
                 referenceCard(
                     title: "CAMERA SCANNING TIPS",
                     icon: "viewfinder",
-                    color: .purple
+                    color: AppColors.success
                 ) {
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
                         Text("1. Adequate Lighting: Ensure the workspace is well-lit without harsh glare or deep cast shadows.")

@@ -18,7 +18,7 @@ struct FoundationModelDebugView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 HStack {
-                    BadgeView(text: "FOUNDATION MODELS DEBUG", color: .indigo)
+                    BadgeView(text: "STATE REASONING ENGINE", color: .assembleBrandPrimary)
                     Spacer()
                     Text("\(latencyMs) ms")
                         .font(.system(size: 11, weight: .bold, design: .monospaced))
@@ -36,7 +36,7 @@ struct FoundationModelDebugView: View {
                 HStack(spacing: AppSpacing.md) {
                     statusTile(title: "FRAMEWORK", value: isFrameworkAvailable ? "Available" : "Unavailable", color: isFrameworkAvailable ? AppColors.success : AppColors.warning)
                     statusTile(title: "FALLBACK", value: usedFallback ? "Active" : "None", color: usedFallback ? AppColors.warning : AppColors.success)
-                    statusTile(title: "LATENCY", value: "\(latencyMs) ms", color: .indigo)
+                    statusTile(title: "LATENCY", value: "\(latencyMs) ms", color: .assembleBrandPrimary)
                 }
                 
                 // Input Prompt Context Card
