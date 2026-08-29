@@ -23,6 +23,11 @@ struct ResearchSessionMetrics: Sendable, Equatable {
     let avgModelLatencyMs: Int
     let avgSpeechLatencyMs: Int
     let avgProgressionLatencyMs: Int
+    
+    var durationSeconds: Int { Int(taskCompletionTimeSeconds) }
+    var totalAttempts: Int { totalVerificationAttempts }
+    var avgVerificationLatencyMs: Int { avgInterventionLatencyMs }
+    var avgGuidanceLatencyMs: Int { avgModelLatencyMs }
 }
 
 // MARK: - Research Logging Protocol
