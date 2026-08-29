@@ -11,9 +11,9 @@ import Speech
 ///
 /// Converts microphone audio streams into real-time partial and final user transcripts.
 @MainActor
-public final class VoiceInputService: NSObject, ObservableObject, VoiceInputServiceProtocol {
-    @Published public private(set) var state: VoiceInputState = .idle
-    @Published public private(set) var latestTranscript: String = ""
+final class VoiceInputService: NSObject, ObservableObject, VoiceInputServiceProtocol {
+    @Published private(set) var state: VoiceInputState = .idle
+    @Published private(set) var latestTranscript: String = ""
     
     private let speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
     private var audioEngine: AVAudioEngine?
@@ -23,7 +23,7 @@ public final class VoiceInputService: NSObject, ObservableObject, VoiceInputServ
     private let streamLock = NSLock()
     private var continuations: [UUID: AsyncStream<UserVoiceMessage>.Continuation] = [:]
     
-    public override init() {
+    override init() {
         super.init()
         self.speechRecognizer?.delegate = self
     }
@@ -40,7 +40,7 @@ public final class VoiceInputService: NSObject, ObservableObject, VoiceInputServ
     
     // MARK: - Transcript Stream API
     
-    public nonisolated var transcriptStream: AsyncStream<UserVoiceMessage> {
+    nonisolated var transcriptStream: AsyncStream<UserVoiceMessage> {
         AsyncStream(UserVoiceMessage.self, bufferingPolicy: .bufferingNewest(10)) { continuation in
             let id = UUID()
             self.streamLock.lock()
@@ -58,7 +58,7 @@ public final class VoiceInputService: NSObject, ObservableObject, VoiceInputServ
     
     // MARK: - VoiceInputServiceProtocol
     
-    public func startListening() async throws {
+    func startListening() async throws {
         guard state == .idle else { return }
         
         // 1. Check & Request Permissions
@@ -131,7 +131,7 @@ public final class VoiceInputService: NSObject, ObservableObject, VoiceInputServ
         }
     }
     
-    public func stopListening() async {
+    func stopListening() async {
         guard state != .idle else { return }
         
         state = .processing
@@ -149,7 +149,7 @@ public final class VoiceInputService: NSObject, ObservableObject, VoiceInputServ
         state = .idle
     }
     
-    public func cancelListening() async {
+    func cancelListening() async {
         guard state != .idle else { return }
         
         audioEngine?.stop()
@@ -192,7 +192,7 @@ public final class VoiceInputService: NSObject, ObservableObject, VoiceInputServ
 // MARK: - SFSpeechRecognizerDelegate
 
 extension VoiceInputService: SFSpeechRecognizerDelegate {
-    public nonisolated func speechRecognizer(_ speechRecognizer: SFSpeechRecognizer, availabilityDidChange available: Bool) {
+    nonisolated func speechRecognizer(_ speechRecognizer: SFSpeechRecognizer, availabilityDidChange available: Bool) {
         if !available {
             Task { @MainActor in
                 await self.stopListening()
@@ -204,11 +204,11 @@ extension VoiceInputService: SFSpeechRecognizerDelegate {
 // MARK: - Mock Voice Input Service
 
 /// Thread-safe mock speech recognition service for unit testing and deterministic simulation.
-public final class MockVoiceInputService: VoiceInputServiceProtocol, @unchecked Sendable {
+final class MockVoiceInputService: VoiceInputServiceProtocol, @unchecked Sendable {
     private let lock = NSLock()
     
     private var _state: VoiceInputState = .idle
-    public var state: VoiceInputState {
+    var state: VoiceInputState {
         lock.lock()
         defer { lock.unlock() }
         return _state
@@ -216,9 +216,9 @@ public final class MockVoiceInputService: VoiceInputServiceProtocol, @unchecked 
     
     private var continuations: [UUID: AsyncStream<UserVoiceMessage>.Continuation] = [:]
     
-    public init() {}
+    init() {}
     
-    public var transcriptStream: AsyncStream<UserVoiceMessage> {
+    var transcriptStream: AsyncStream<UserVoiceMessage> {
         AsyncStream(UserVoiceMessage.self, bufferingPolicy: .bufferingNewest(10)) { continuation in
             let id = UUID()
             self.lock.lock()
@@ -234,26 +234,26 @@ public final class MockVoiceInputService: VoiceInputServiceProtocol, @unchecked 
         }
     }
     
-    public func startListening() async throws {
+    func startListening() async throws {
         lock.lock()
         defer { lock.unlock() }
         _state = .listening
     }
     
-    public func stopListening() async {
+    func stopListening() async {
         lock.lock()
         defer { lock.unlock() }
         _state = .idle
     }
     
-    public func cancelListening() async {
+    func cancelListening() async {
         lock.lock()
         defer { lock.unlock() }
         _state = .idle
     }
     
     /// Injects a simulated spoken transcript for unit testing.
-    public func simulateSpokenTranscript(_ text: String, isFinal: Bool) {
+    func simulateSpokenTranscript(_ text: String, isFinal: Bool) {
         let message = UserVoiceMessage(transcript: text, isFinal: isFinal)
         
         lock.lock()

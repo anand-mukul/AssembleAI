@@ -31,8 +31,7 @@ final class CameraService: NSObject, ObservableObject {
     nonisolated private let cameraQueue = DispatchQueue(label: "com.assembleai.cameraQueue")
     nonisolated private let videoQueue = DispatchQueue(label: "com.assembleai.videoQueue", qos: .userInitiated)
     
-    nonisolated private let streamLock = NSLock()
-    nonisolated private var frameContinuations: [UUID: AsyncStream<CVPixelBuffer>.Continuation] = [:]
+    nonisolated private let broadcaster = FrameStreamBroadcaster()
     
     private var isConfigured = false
     private var photoContinuation: CheckedContinuation<UIImage, Error>? = nil
@@ -43,13 +42,7 @@ final class CameraService: NSObject, ObservableObject {
     }
     
     deinit {
-        streamLock.lock()
-        let continuations = Array(frameContinuations.values)
-        frameContinuations.removeAll()
-        streamLock.unlock()
-        for continuation in continuations {
-            continuation.finish()
-        }
+        broadcaster.finishAll()
     }
     
     // MARK: - Frame Stream API
@@ -61,15 +54,10 @@ final class CameraService: NSObject, ObservableObject {
     nonisolated var frameStream: AsyncStream<CVPixelBuffer> {
         AsyncStream(CVPixelBuffer.self, bufferingPolicy: .bufferingNewest(1)) { continuation in
             let id = UUID()
-            self.streamLock.lock()
-            self.frameContinuations[id] = continuation
-            self.streamLock.unlock()
+            self.broadcaster.addContinuation(continuation, id: id)
             
             continuation.onTermination = { [weak self] _ in
-                guard let self = self else { return }
-                self.streamLock.lock()
-                self.frameContinuations.removeValue(forKey: id)
-                self.streamLock.unlock()
+                self?.broadcaster.removeContinuation(id: id)
             }
         }
     }
@@ -337,13 +325,7 @@ extension CameraService: AVCaptureVideoDataOutputSampleBufferDelegate {
     ) {
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
         
-        streamLock.lock()
-        let continuations = Array(frameContinuations.values)
-        streamLock.unlock()
-        
-        for continuation in continuations {
-            continuation.yield(pixelBuffer)
-        }
+        broadcaster.broadcast(pixelBuffer)
         
         #if DEBUG
         let now = Date()
@@ -355,4 +337,45 @@ extension CameraService: AVCaptureVideoDataOutputSampleBufferDelegate {
         #endif
     }
 }
+
+// MARK: - Thread-Safe Frame Stream Broadcaster
+
+private final class FrameStreamBroadcaster: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuations: [UUID: AsyncStream<CVPixelBuffer>.Continuation] = [:]
+    
+    func addContinuation(_ continuation: AsyncStream<CVPixelBuffer>.Continuation, id: UUID) {
+        lock.lock()
+        defer { lock.unlock() }
+        continuations[id] = continuation
+    }
+    
+    func removeContinuation(id: UUID) {
+        lock.lock()
+        defer { lock.unlock() }
+        continuations.removeValue(forKey: id)
+    }
+    
+    func broadcast(_ pixelBuffer: CVPixelBuffer) {
+        lock.lock()
+        let active = Array(continuations.values)
+        lock.unlock()
+        
+        for cont in active {
+            cont.yield(pixelBuffer)
+        }
+    }
+    
+    func finishAll() {
+        lock.lock()
+        let active = Array(continuations.values)
+        continuations.removeAll()
+        lock.unlock()
+        
+        for cont in active {
+            cont.finish()
+        }
+    }
+}
+
 

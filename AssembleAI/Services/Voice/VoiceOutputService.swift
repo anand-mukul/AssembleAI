@@ -10,18 +10,18 @@ import AVFoundation
 ///
 /// Implements priority-based speech interruption, duplicate speech suppression, and natural speech rate configuration.
 @MainActor
-public final class VoiceOutputService: NSObject, ObservableObject, VoiceOutputServiceProtocol {
-    @Published public private(set) var state: SpeechState = .idle
-    @Published public private(set) var currentUtteranceText: String? = nil
+final class VoiceOutputService: NSObject, ObservableObject, VoiceOutputServiceProtocol {
+    @Published private(set) var state: SpeechState = .idle
+    @Published private(set) var currentUtteranceText: String? = nil
     
-    public var configuration: VoiceOutputConfiguration
+    var configuration: VoiceOutputConfiguration
     
     private let synthesizer = AVSpeechSynthesizer()
     private var currentResponse: TutorResponse? = nil
     private var lastSpokenText: String? = nil
     private var lastSpokenTimestamp: Date? = nil
     
-    public init(configuration: VoiceOutputConfiguration = .default) {
+    init(configuration: VoiceOutputConfiguration = .default) {
         self.configuration = configuration
         super.init()
         self.synthesizer.delegate = self
@@ -44,7 +44,7 @@ public final class VoiceOutputService: NSObject, ObservableObject, VoiceOutputSe
     
     // MARK: - VoiceOutputServiceProtocol
     
-    public func speak(_ response: TutorResponse) async {
+    func speak(_ response: TutorResponse) async {
         let text = response.text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
         
@@ -84,7 +84,7 @@ public final class VoiceOutputService: NSObject, ObservableObject, VoiceOutputSe
         synthesizer.speak(utterance)
     }
     
-    public func stop() async {
+    func stop() async {
         guard synthesizer.isSpeaking || state != .idle else { return }
         synthesizer.stopSpeaking(at: .immediate)
         currentResponse = nil
@@ -92,13 +92,13 @@ public final class VoiceOutputService: NSObject, ObservableObject, VoiceOutputSe
         state = .idle
     }
     
-    public func pause() async {
+    func pause() async {
         guard synthesizer.isSpeaking, state == .speaking else { return }
         synthesizer.pauseSpeaking(at: .immediate)
         state = .paused
     }
     
-    public func resume() async {
+    func resume() async {
         guard state == .paused else { return }
         synthesizer.continueSpeaking()
         state = .speaking
@@ -108,13 +108,13 @@ public final class VoiceOutputService: NSObject, ObservableObject, VoiceOutputSe
 // MARK: - AVSpeechSynthesizerDelegate
 
 extension VoiceOutputService: AVSpeechSynthesizerDelegate {
-    public nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
+    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
         Task { @MainActor in
             self.state = .speaking
         }
     }
     
-    public nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
         Task { @MainActor in
             self.state = .idle
             self.currentResponse = nil
@@ -122,7 +122,7 @@ extension VoiceOutputService: AVSpeechSynthesizerDelegate {
         }
     }
     
-    public nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
+    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
         Task { @MainActor in
             self.state = .idle
             self.currentResponse = nil
@@ -130,13 +130,13 @@ extension VoiceOutputService: AVSpeechSynthesizerDelegate {
         }
     }
     
-    public nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didPause utterance: AVSpeechUtterance) {
+    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didPause utterance: AVSpeechUtterance) {
         Task { @MainActor in
             self.state = .paused
         }
     }
     
-    public nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didContinue utterance: AVSpeechUtterance) {
+    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didContinue utterance: AVSpeechUtterance) {
         Task { @MainActor in
             self.state = .speaking
         }
@@ -146,24 +146,24 @@ extension VoiceOutputService: AVSpeechSynthesizerDelegate {
 // MARK: - Mock Voice Output Service
 
 /// Thread-safe mock voice output service recording spoken responses and state transitions for unit testing.
-public final class MockVoiceOutputService: VoiceOutputServiceProtocol, @unchecked Sendable {
+final class MockVoiceOutputService: VoiceOutputServiceProtocol, @unchecked Sendable {
     private let lock = NSLock()
     
     private var _state: SpeechState = .idle
-    public var state: SpeechState {
+    var state: SpeechState {
         lock.lock()
         defer { lock.unlock() }
         return _state
     }
     
-    public private(set) var spokenResponses: [TutorResponse] = []
-    public private(set) var stopCount: Int = 0
-    public private(set) var pauseCount: Int = 0
-    public private(set) var resumeCount: Int = 0
+    private(set) var spokenResponses: [TutorResponse] = []
+    private(set) var stopCount: Int = 0
+    private(set) var pauseCount: Int = 0
+    private(set) var resumeCount: Int = 0
     
-    public init() {}
+    init() {}
     
-    public func speak(_ response: TutorResponse) async {
+    func speak(_ response: TutorResponse) async {
         lock.lock()
         defer { lock.unlock() }
         
@@ -185,28 +185,28 @@ public final class MockVoiceOutputService: VoiceOutputServiceProtocol, @unchecke
         _state = .speaking
     }
     
-    public func stop() async {
+    func stop() async {
         lock.lock()
         defer { lock.unlock() }
         stopCount += 1
         _state = .idle
     }
     
-    public func pause() async {
+    func pause() async {
         lock.lock()
         defer { lock.unlock() }
         pauseCount += 1
         _state = .paused
     }
     
-    public func resume() async {
+    func resume() async {
         lock.lock()
         defer { lock.unlock() }
         resumeCount += 1
         _state = .speaking
     }
     
-    public func reset() {
+    func reset() {
         lock.lock()
         defer { lock.unlock() }
         spokenResponses.removeAll()

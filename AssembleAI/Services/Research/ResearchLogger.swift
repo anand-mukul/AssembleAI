@@ -8,27 +8,27 @@ import Foundation
 // MARK: - Research Session Metrics
 
 /// Comprehensive statistical metrics calculated for an experimental evaluation session.
-public struct ResearchSessionMetrics: Sendable, Equatable {
-    public let sessionID: UUID
-    public let mode: InteractionMode
-    public let taskCompletionTimeSeconds: Double
-    public let completedStepsCount: Int
-    public let totalVerificationAttempts: Int
-    public let errorCount: Int
-    public let uncertainCount: Int
-    public let totalCorrectionTimeSeconds: Double
-    public let interventionCount: Int
-    public let userQuestionCount: Int
-    public let avgInterventionLatencyMs: Int
-    public let avgModelLatencyMs: Int
-    public let avgSpeechLatencyMs: Int
-    public let avgProgressionLatencyMs: Int
+struct ResearchSessionMetrics: Sendable, Equatable {
+    let sessionID: UUID
+    let mode: InteractionMode
+    let taskCompletionTimeSeconds: Double
+    let completedStepsCount: Int
+    let totalVerificationAttempts: Int
+    let errorCount: Int
+    let uncertainCount: Int
+    let totalCorrectionTimeSeconds: Double
+    let interventionCount: Int
+    let userQuestionCount: Int
+    let avgInterventionLatencyMs: Int
+    let avgModelLatencyMs: Int
+    let avgSpeechLatencyMs: Int
+    let avgProgressionLatencyMs: Int
 }
 
 // MARK: - Research Logging Protocol
 
 /// Abstract interface for recording research telemetry events.
-public protocol ResearchLogging: Sendable {
+protocol ResearchLogging: Sendable {
     func logEvent(_ event: ResearchEvent) async
     func fetchEvents(for sessionID: UUID) async -> [ResearchEvent]
     func calculateMetrics(for sessionID: UUID) async -> ResearchSessionMetrics
@@ -39,16 +39,16 @@ public protocol ResearchLogging: Sendable {
 // MARK: - Concrete Research Logger Actor
 
 /// Thread-safe local research logger capturing pseudonymous session metrics, monotonic sequencing, and CSV export.
-public actor ResearchLogger: ResearchLogging {
-    public static let shared = ResearchLogger()
+actor ResearchLogger: ResearchLogging {
+    static let shared = ResearchLogger()
     
     private var events: [ResearchEvent] = []
     private var sessionSequences: [UUID: Int] = [:]
     
-    public init() {}
+    init() {}
     
     /// Records a research telemetry event with automatic per-session sequence numbering.
-    public func logEvent(_ event: ResearchEvent) {
+    func logEvent(_ event: ResearchEvent) {
         let seq = (sessionSequences[event.sessionID] ?? 0) + 1
         sessionSequences[event.sessionID] = seq
         
@@ -69,12 +69,12 @@ public actor ResearchLogger: ResearchLogging {
     }
     
     /// Returns all logged events for a given session.
-    public func fetchEvents(for sessionID: UUID) -> [ResearchEvent] {
+    func fetchEvents(for sessionID: UUID) -> [ResearchEvent] {
         return events.filter { $0.sessionID == sessionID }
     }
     
     /// Calculates aggregate research metrics for an experimental session.
-    public func calculateMetrics(for sessionID: UUID) -> ResearchSessionMetrics {
+    func calculateMetrics(for sessionID: UUID) -> ResearchSessionMetrics {
         let sessionEvents = fetchEvents(for: sessionID)
         let mode = sessionEvents.first?.mode ?? .liveTutor
         
@@ -145,7 +145,7 @@ public actor ResearchLogger: ResearchLogging {
     }
     
     /// Exports recorded research events as an anonymized RFC 4180 CSV string.
-    public func exportCSV(for sessionID: UUID? = nil) -> String {
+    func exportCSV(for sessionID: UUID? = nil) -> String {
         let targetEvents = sessionID != nil ? events.filter { $0.sessionID == sessionID } : events
         var csv = ResearchEvent.csvHeader + "\n"
         for event in targetEvents {
@@ -155,7 +155,7 @@ public actor ResearchLogger: ResearchLogging {
     }
     
     /// Clears all stored research event logs.
-    public func clearLogs() {
+    func clearLogs() {
         events.removeAll()
         sessionSequences.removeAll()
     }
@@ -164,25 +164,25 @@ public actor ResearchLogger: ResearchLogging {
 // MARK: - Mock Research Logger
 
 /// Thread-safe mock research logger for unit testing.
-public final class MockResearchLogger: ResearchLogging, @unchecked Sendable {
+final class MockResearchLogger: ResearchLogging, @unchecked Sendable {
     private let lock = NSLock()
-    public private(set) var loggedEvents: [ResearchEvent] = []
+    private(set) var loggedEvents: [ResearchEvent] = []
     
-    public init() {}
+    init() {}
     
-    public func logEvent(_ event: ResearchEvent) async {
+    func logEvent(_ event: ResearchEvent) async {
         lock.lock()
         defer { lock.unlock() }
         loggedEvents.append(event)
     }
     
-    public func fetchEvents(for sessionID: UUID) async -> [ResearchEvent] {
+    func fetchEvents(for sessionID: UUID) async -> [ResearchEvent] {
         lock.lock()
         defer { lock.unlock() }
         return loggedEvents.filter { $0.sessionID == sessionID }
     }
     
-    public func calculateMetrics(for sessionID: UUID) async -> ResearchSessionMetrics {
+    func calculateMetrics(for sessionID: UUID) async -> ResearchSessionMetrics {
         lock.lock()
         defer { lock.unlock() }
         let sessionEvents = loggedEvents.filter { $0.sessionID == sessionID }
@@ -204,7 +204,7 @@ public final class MockResearchLogger: ResearchLogging, @unchecked Sendable {
         )
     }
     
-    public func exportCSV(for sessionID: UUID?) async -> String {
+    func exportCSV(for sessionID: UUID?) async -> String {
         lock.lock()
         defer { lock.unlock() }
         let target = sessionID != nil ? loggedEvents.filter { $0.sessionID == sessionID } : loggedEvents
@@ -215,7 +215,7 @@ public final class MockResearchLogger: ResearchLogging, @unchecked Sendable {
         return csv
     }
     
-    public func clearLogs() async {
+    func clearLogs() async {
         lock.lock()
         defer { lock.unlock() }
         loggedEvents.removeAll()

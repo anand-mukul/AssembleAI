@@ -8,7 +8,7 @@ import Foundation
 // MARK: - User Voice Intent
 
 /// Semantic intents parsed from user spoken commands and questions.
-public enum UserVoiceIntent: Sendable, Equatable {
+enum UserVoiceIntent: Sendable, Equatable {
     /// Repeat the current instruction or last assistant response ("repeat that", "say again").
     case repeatInstruction
     
@@ -40,13 +40,13 @@ public enum UserVoiceIntent: Sendable, Equatable {
 // MARK: - User Voice Message Model
 
 /// Structured user voice utterance message containing transcript text and finality status.
-public struct UserVoiceMessage: Sendable, Equatable, Identifiable {
-    public let id: UUID
-    public let transcript: String
-    public let isFinal: Bool
-    public let timestamp: Date
+struct UserVoiceMessage: Sendable, Equatable, Identifiable {
+    let id: UUID
+    let transcript: String
+    let isFinal: Bool
+    let timestamp: Date
     
-    public init(
+    init(
         id: UUID = UUID(),
         transcript: String,
         isFinal: Bool,
@@ -62,11 +62,11 @@ public struct UserVoiceMessage: Sendable, Equatable, Identifiable {
 // MARK: - Voice Intent Parser
 
 /// Deterministic natural language intent parser mapping raw transcripts to structured `UserVoiceIntent`s.
-public struct VoiceIntentParser: Sendable {
-    public init() {}
+struct VoiceIntentParser: Sendable {
+    init() {}
     
     /// Normalizes transcript text by trimming whitespace, lowercasing, and stripping trailing punctuation.
-    public func normalize(_ text: String) -> String {
+    func normalize(_ text: String) -> String {
         var cleaned = text.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         while let last = cleaned.last, [".", "?", "!", ","].contains(last) {
             cleaned.removeLast()
@@ -75,7 +75,7 @@ public struct VoiceIntentParser: Sendable {
     }
     
     /// Parses a raw user transcript into a deterministic `UserVoiceIntent`.
-    public func parse(_ rawTranscript: String) -> UserVoiceIntent {
+    func parse(_ rawTranscript: String) -> UserVoiceIntent {
         let text = normalize(rawTranscript)
         guard !text.isEmpty else {
             return .unknown(transcript: rawTranscript)

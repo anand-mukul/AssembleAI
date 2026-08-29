@@ -8,7 +8,7 @@ import Foundation
 // MARK: - Voice Input State
 
 /// Operational state of the speech recognition service.
-public enum VoiceInputState: String, Sendable, Equatable {
+enum VoiceInputState: String, Sendable, Equatable {
     /// Microphone is inactive.
     case idle
     /// Microphone is active and capturing audio buffers.
@@ -20,7 +20,7 @@ public enum VoiceInputState: String, Sendable, Equatable {
 // MARK: - Voice Input Service Protocol
 
 /// Abstract interface for voice input and speech recognition.
-public protocol VoiceInputServiceProtocol: Sendable {
+protocol VoiceInputServiceProtocol: Sendable {
     /// Current recognition operational state.
     var state: VoiceInputState { get async }
     

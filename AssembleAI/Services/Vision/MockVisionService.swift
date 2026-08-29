@@ -12,13 +12,13 @@ import ImageIO
 /// Mock computer vision analysis service for unit testing and simulator demonstration mode.
 ///
 /// Supports predetermined observation sequences, simulated processing latencies, and synthetic detection generation.
-public final class MockVisionService: VisionAnalyzing, @unchecked Sendable {
+final class MockVisionService: VisionAnalyzing, @unchecked Sendable {
     private let lock = NSLock()
     private var scriptedObservations: [VisualObservation] = []
     private var simulatedLatencyMs: Double
     private var callCount: Int = 0
     
-    public init(
+    init(
         scriptedObservations: [VisualObservation] = [],
         simulatedLatencyMs: Double = 50.0
     ) {
@@ -27,7 +27,7 @@ public final class MockVisionService: VisionAnalyzing, @unchecked Sendable {
     }
     
     /// Enqueues a predetermined sequence of observations to be emitted consecutively.
-    public func setScriptedObservations(_ observations: [VisualObservation]) {
+    func setScriptedObservations(_ observations: [VisualObservation]) {
         lock.lock()
         defer { lock.unlock() }
         self.scriptedObservations = observations
@@ -36,7 +36,7 @@ public final class MockVisionService: VisionAnalyzing, @unchecked Sendable {
     
     // MARK: - VisionAnalyzing Conformance
     
-    public func analyze(image: UIImage) async throws -> VisualObservation {
+    func analyze(image: UIImage) async throws -> VisualObservation {
         if simulatedLatencyMs > 0 {
             try await Task.sleep(nanoseconds: UInt64(simulatedLatencyMs * 1_000_000))
         }
@@ -64,7 +64,7 @@ public final class MockVisionService: VisionAnalyzing, @unchecked Sendable {
         )
     }
     
-    public func analyze(
+    func analyze(
         frame: CVPixelBuffer,
         orientation: CGImagePropertyOrientation = .up,
         timestamp: CMTime = CMTime(seconds: CFAbsoluteTimeGetCurrent(), preferredTimescale: 600)
@@ -105,7 +105,7 @@ public final class MockVisionService: VisionAnalyzing, @unchecked Sendable {
         )
     }
     
-    public func observationStream(
+    func observationStream(
         from sampledFrames: AsyncStream<SampledFrame>,
         orientation: CGImagePropertyOrientation = .up
     ) -> AsyncStream<VisualObservation> {

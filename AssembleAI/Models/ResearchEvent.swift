@@ -8,7 +8,7 @@ import Foundation
 // MARK: - Research Event Type Taxonomy
 
 /// Controlled event taxonomy for experimental evaluation and CSE thesis research metrics.
-public enum ResearchEventType: String, Codable, Hashable, Equatable, Sendable {
+enum ResearchEventType: String, Codable, Hashable, Equatable, Sendable {
     // Session Lifecycle
     case sessionStarted
     case sessionCompleted
@@ -53,20 +53,20 @@ public enum ResearchEventType: String, Codable, Hashable, Equatable, Sendable {
 // MARK: - Research Event Model
 
 /// Anonymized, structured telemetry record capturing interaction timing and experimental metrics.
-public struct ResearchEvent: Identifiable, Hashable, Codable, Equatable, Sendable {
-    public let id: UUID
-    public let sequence: Int
-    public let timestamp: Date
-    public let sessionID: UUID
-    public let projectID: UUID
-    public let stepID: UUID?
-    public let mode: InteractionMode
-    public let eventType: ResearchEventType
-    public let durationMilliseconds: Int?
-    public let verificationStatus: String?
-    public let metadata: [String: String]
+struct ResearchEvent: Identifiable, Hashable, Codable, Equatable, Sendable {
+    let id: UUID
+    let sequence: Int
+    let timestamp: Date
+    let sessionID: UUID
+    let projectID: UUID
+    let stepID: UUID?
+    let mode: InteractionMode
+    let eventType: ResearchEventType
+    let durationMilliseconds: Int?
+    let verificationStatus: String?
+    let metadata: [String: String]
     
-    public init(
+    init(
         id: UUID = UUID(),
         sequence: Int = 0,
         timestamp: Date = Date(),
@@ -93,7 +93,7 @@ public struct ResearchEvent: Identifiable, Hashable, Codable, Equatable, Sendabl
     }
     
     /// Formats event record as an RFC 4180-compliant CSV line.
-    public var csvLine: String {
+    var csvLine: String {
         let isoDate = ISO8601DateFormatter().string(from: timestamp)
         let step = stepID?.uuidString ?? ""
         let dur = durationMilliseconds.map { "\($0)" } ?? ""
@@ -103,7 +103,7 @@ public struct ResearchEvent: Identifiable, Hashable, Codable, Equatable, Sendabl
         return "\(id.uuidString),\(sequence),\(isoDate),\(sessionID.uuidString),\(projectID.uuidString),\(mode.rawValue),\(step),\(eventType.rawValue),\(dur),\(stat),\(metaStr)"
     }
     
-    public static var csvHeader: String {
+    static var csvHeader: String {
         "event_id,sequence,timestamp,session_id,project_id,mode,step_id,event_type,duration_ms,verification_status,metadata"
     }
 }

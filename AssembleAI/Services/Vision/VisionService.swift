@@ -11,28 +11,28 @@ import CoreMedia
 import ImageIO
 
 /// Diagnostic performance metrics for Vision processing validation.
-public struct VisionServiceMetrics: Sendable, Equatable {
-    public var requestsStarted: UInt64 = 0
-    public var requestsCompleted: UInt64 = 0
-    public var requestsCancelled: UInt64 = 0
-    public var averageLatencyMs: Double = 0.0
-    public var lastObservationTimestamp: Date? = nil
+struct VisionServiceMetrics: Sendable, Equatable {
+    var requestsStarted: UInt64 = 0
+    var requestsCompleted: UInt64 = 0
+    var requestsCancelled: UInt64 = 0
+    var averageLatencyMs: Double = 0.0
+    var lastObservationTimestamp: Date? = nil
 }
 
 /// Concrete computer vision analysis service using Apple's Vision framework (VNRecognizeTextRequest + VNDetectRectanglesRequest).
 ///
 /// Supports both single-image snapshot analysis and continuous CVPixelBuffer streaming with bounded concurrency.
-public actor VisionService: VisionAnalyzing {
+actor VisionService: VisionAnalyzing {
     private let imageProcessor = ImageProcessingService()
     private var metrics = VisionServiceMetrics()
     private var totalLatencyAccumulatorMs: Double = 0.0
     
-    public init() {}
+    init() {}
     
     // MARK: - Manual Image Analysis (Existing Workflow)
     
     /// Analyzes a captured `UIImage` and produces structured visual observations.
-    public func analyze(image: UIImage) async throws -> VisualObservation {
+    func analyze(image: UIImage) async throws -> VisualObservation {
         metrics.requestsStarted += 1
         let startTime = CFAbsoluteTimeGetCurrent()
         
@@ -66,7 +66,7 @@ public actor VisionService: VisionAnalyzing {
     // MARK: - Live PixelBuffer Analysis (Live Tutor Pipeline)
     
     /// Analyzes a live `CVPixelBuffer` directly without converting to `UIImage` or copying memory.
-    public func analyze(
+    func analyze(
         frame: CVPixelBuffer,
         orientation: CGImagePropertyOrientation = .up,
         timestamp: CMTime = CMTime(seconds: CFAbsoluteTimeGetCurrent(), preferredTimescale: 600)
@@ -114,7 +114,7 @@ public actor VisionService: VisionAnalyzing {
     ///
     /// Ensures bounded concurrency (at most 1 active Vision inference at a time) and drops stale frames
     /// if Vision inference duration exceeds the sampling arrival rate.
-    public nonisolated func observationStream(
+    nonisolated func observationStream(
         from sampledFrames: AsyncStream<SampledFrame>,
         orientation: CGImagePropertyOrientation = .up
     ) -> AsyncStream<VisualObservation> {
@@ -159,11 +159,11 @@ public actor VisionService: VisionAnalyzing {
     
     // MARK: - Metrics & Diagnostics
     
-    public func getMetrics() -> VisionServiceMetrics {
+    func getMetrics() -> VisionServiceMetrics {
         metrics
     }
     
-    public func resetMetrics() {
+    func resetMetrics() {
         metrics = VisionServiceMetrics()
         totalLatencyAccumulatorMs = 0.0
     }

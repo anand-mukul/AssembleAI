@@ -9,17 +9,17 @@ import CoreGraphics
 // MARK: - Live Observation Configuration
 
 /// Configuration controlling stability windows and debounce thresholds for live verification.
-public struct LiveObservationConfiguration: Sendable, Equatable {
+struct LiveObservationConfiguration: Sendable, Equatable {
     /// Number of consecutive matching observation comparisons required to confirm a state change (default: 2).
-    public var consecutiveObservationsRequired: Int
+    var consecutiveObservationsRequired: Int
     
     /// Minimum time in seconds a candidate state must persist before transitioning (default: 0.3s).
-    public var minimumStateDurationSeconds: Double
+    var minimumStateDurationSeconds: Double
     
     /// Minimum visual evidence confidence below which observations are treated as `.uncertain` (default: 0.50).
-    public var minimumEvidenceConfidence: Double
+    var minimumEvidenceConfidence: Double
     
-    public init(
+    init(
         consecutiveObservationsRequired: Int = 2,
         minimumStateDurationSeconds: Double = 0.3,
         minimumEvidenceConfidence: Double = 0.50
@@ -30,25 +30,25 @@ public struct LiveObservationConfiguration: Sendable, Equatable {
     }
     
     /// Standard default live verification configuration.
-    public static let `default` = LiveObservationConfiguration()
+    static let `default` = LiveObservationConfiguration()
 }
 
 // MARK: - Live Observation Metrics
 
 /// Performance and state diagnostics for live observation coordination.
-public struct LiveObservationMetrics: Sendable, Equatable {
-    public var observationsReceived: UInt64 = 0
-    public var stateEstimationsPerformed: UInt64 = 0
-    public var comparisonsPerformed: UInt64 = 0
-    public var staleObservationsDiscarded: UInt64 = 0
-    public var verificationsEmitted: UInt64 = 0
-    public var currentStableStatus: ComparisonStatus? = nil
+struct LiveObservationMetrics: Sendable, Equatable {
+    var observationsReceived: UInt64 = 0
+    var stateEstimationsPerformed: UInt64 = 0
+    var comparisonsPerformed: UInt64 = 0
+    var staleObservationsDiscarded: UInt64 = 0
+    var verificationsEmitted: UInt64 = 0
+    var currentStableStatus: ComparisonStatus? = nil
 }
 
 // MARK: - Live Observation Coordinator Protocol
 
 /// Protocol orchestrating live computer vision observations, domain state estimation, and deterministic state comparison.
-public protocol LiveObservationCoordinating: Sendable {
+protocol LiveObservationCoordinating: Sendable {
     /// Evaluates a single `VisualObservation` against an assembly step contract.
     func process(
         observation: VisualObservation,
@@ -73,7 +73,7 @@ public protocol LiveObservationCoordinating: Sendable {
 /// Actor-isolated orchestrator connecting `VisualObservation` stream to `AssemblyStateEstimator` and `AssemblyStateComparator`.
 ///
 /// Enforces step identity validation, transient motion debounce, stale result protection, and duplicate emission filtering.
-public actor LiveObservationCoordinator: LiveObservationCoordinating {
+actor LiveObservationCoordinator: LiveObservationCoordinating {
     private let estimator: AssemblyStateEstimating
     private let comparator: AssemblyStateComparator
     private var configuration: LiveObservationConfiguration
@@ -90,7 +90,7 @@ public actor LiveObservationCoordinator: LiveObservationCoordinating {
     private var lastEmittedResult: VerificationResult? = nil
     private var lastProcessedStepID: UUID? = nil
     
-    public init(
+    init(
         estimator: AssemblyStateEstimating = VisionAssemblyStateEstimator(),
         comparator: AssemblyStateComparator? = nil,
         configuration: LiveObservationConfiguration = .default
@@ -107,7 +107,7 @@ public actor LiveObservationCoordinator: LiveObservationCoordinating {
     // MARK: - Single Observation Processing
     
     /// Evaluates a single visual observation against the target assembly step.
-    public func process(
+    func process(
         observation: VisualObservation,
         for step: AssemblyStep
     ) async -> VerificationResult? {
@@ -171,7 +171,7 @@ public actor LiveObservationCoordinator: LiveObservationCoordinating {
     // MARK: - Live Verification Stream
     
     /// Creates an asynchronous stream of verified state results from an upstream observation stream.
-    public nonisolated func liveVerificationStream(
+    nonisolated func liveVerificationStream(
         from observationStream: AsyncStream<VisualObservation>,
         stepProvider: @escaping @Sendable () -> AssemblyStep?
     ) -> AsyncStream<VerificationResult> {
@@ -209,7 +209,7 @@ public actor LiveObservationCoordinator: LiveObservationCoordinating {
     
     // MARK: - Reset & Metrics
     
-    public func reset() {
+    func reset() {
         resetStabilityCounters()
         lastProcessedStepID = nil
         lastConfirmedStatus = nil
@@ -217,7 +217,7 @@ public actor LiveObservationCoordinator: LiveObservationCoordinating {
         metrics = LiveObservationMetrics()
     }
     
-    public func getMetrics() -> LiveObservationMetrics {
+    func getMetrics() -> LiveObservationMetrics {
         metrics
     }
     

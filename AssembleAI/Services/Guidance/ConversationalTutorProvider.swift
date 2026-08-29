@@ -11,18 +11,18 @@ import FoundationModels
 // MARK: - Conversation Message & Context
 
 /// Short-term conversation turn in the active assembly session.
-public struct ConversationMessage: Sendable, Equatable, Identifiable {
-    public let id: UUID
-    public let sender: MessageSender
-    public let text: String
-    public let timestamp: Date
+struct ConversationMessage: Sendable, Equatable, Identifiable {
+    let id: UUID
+    let sender: MessageSender
+    let text: String
+    let timestamp: Date
     
-    public enum MessageSender: String, Sendable, Equatable {
+    enum MessageSender: String, Sendable, Equatable {
         case user
         case assistant
     }
     
-    public init(
+    init(
         id: UUID = UUID(),
         sender: MessageSender,
         text: String,
@@ -36,19 +36,19 @@ public struct ConversationMessage: Sendable, Equatable, Identifiable {
 }
 
 /// Structured conversational and physical assembly context provided to Foundation Models.
-public struct AssistantContext: Sendable {
-    public let currentStep: AssemblyStep
-    public let sessionID: UUID
-    public let expectedState: ExpectedAssemblyState?
-    public let observedState: ObservedAssemblyState?
-    public let verificationResult: VerificationResult?
-    public let primaryIssue: StateIssue?
-    public let userIntent: UserVoiceIntent?
-    public let userTranscript: String?
-    public let recentConversationHistory: [ConversationMessage]
-    public let attemptCount: Int
+struct AssistantContext: Sendable {
+    let currentStep: AssemblyStep
+    let sessionID: UUID
+    let expectedState: ExpectedAssemblyState?
+    let observedState: ObservedAssemblyState?
+    let verificationResult: VerificationResult?
+    let primaryIssue: StateIssue?
+    let userIntent: UserVoiceIntent?
+    let userTranscript: String?
+    let recentConversationHistory: [ConversationMessage]
+    let attemptCount: Int
     
-    public init(
+    init(
         currentStep: AssemblyStep,
         sessionID: UUID = UUID(),
         expectedState: ExpectedAssemblyState? = nil,
@@ -76,7 +76,7 @@ public struct AssistantContext: Sendable {
 // MARK: - Conversational Tutor Protocol
 
 /// Protocol for generating conversational, grounded tutor responses using Apple Foundation Models or local fallbacks.
-public protocol ConversationalTutorProviding: Sendable {
+protocol ConversationalTutorProviding: Sendable {
     /// Generates a spoken tutor response for an intervention decision and structured assistant context.
     func generateResponse(
         for decision: InterventionDecision,
@@ -103,13 +103,13 @@ public protocol ConversationalTutorProviding: Sendable {
 /// The language model is used ONLY for generating natural-language explanations and spoken dialogue.
 /// It NEVER decides correctness — correctness is determined deterministically by `AssemblyStateComparator`.
 @available(iOS 26.0, *)
-public actor FoundationModelTutorResponseProvider: ConversationalTutorProviding {
+actor FoundationModelTutorResponseProvider: ConversationalTutorProviding {
     private let fallbackProvider = DeterministicTutorResponseProvider()
     private var sessionMemory: [UUID: [ConversationMessage]] = [:]
     
-    public init() {}
+    init() {}
     
-    public func generateResponse(
+    func generateResponse(
         for decision: InterventionDecision,
         context: AssistantContext
     ) async -> TutorResponse? {
@@ -168,7 +168,7 @@ public actor FoundationModelTutorResponseProvider: ConversationalTutorProviding 
         }
     }
     
-    public func answerUserQuestion(
+    func answerUserQuestion(
         query: String,
         intent: UserVoiceIntent,
         context: AssistantContext
@@ -189,7 +189,7 @@ public actor FoundationModelTutorResponseProvider: ConversationalTutorProviding 
         )
     }
     
-    public func clearSessionContext() {
+    func clearSessionContext() {
         sessionMemory.removeAll()
     }
     
@@ -301,12 +301,12 @@ public actor FoundationModelTutorResponseProvider: ConversationalTutorProviding 
 
 /// Hybrid conversational tutor provider routing requests to Apple Foundation Models when available,
 /// with seamless automatic fallback to `DeterministicTutorResponseProvider`.
-public final class HybridTutorResponseProvider: ConversationalTutorProviding, @unchecked Sendable {
+final class HybridTutorResponseProvider: ConversationalTutorProviding, @unchecked Sendable {
     private let fallbackProvider = DeterministicTutorResponseProvider()
     
-    public init() {}
+    init() {}
     
-    public func generateResponse(
+    func generateResponse(
         for decision: InterventionDecision,
         context: AssistantContext
     ) async -> TutorResponse? {
@@ -324,7 +324,7 @@ public final class HybridTutorResponseProvider: ConversationalTutorProviding, @u
         return fallbackProvider.response(for: decision)
     }
     
-    public func answerUserQuestion(
+    func answerUserQuestion(
         query: String,
         intent: UserVoiceIntent,
         context: AssistantContext
@@ -343,7 +343,7 @@ public final class HybridTutorResponseProvider: ConversationalTutorProviding, @u
         )
     }
     
-    public func clearSessionContext() async {
+    func clearSessionContext() async {
         #if canImport(FoundationModels)
         if #available(iOS 26.0, *) {
             let provider = FoundationModelTutorResponseProvider()
@@ -356,24 +356,24 @@ public final class HybridTutorResponseProvider: ConversationalTutorProviding, @u
 // MARK: - Mock Conversational Tutor Provider
 
 /// Thread-safe mock conversational tutor provider for unit testing with deterministic responses.
-public final class MockConversationalTutorProvider: ConversationalTutorProviding, @unchecked Sendable {
+final class MockConversationalTutorProvider: ConversationalTutorProviding, @unchecked Sendable {
     private let lock = NSLock()
     private var scriptedResponses: [TutorResponse] = []
-    public private(set) var generateResponseCallCount: Int = 0
-    public private(set) var answerQuestionCallCount: Int = 0
-    public private(set) var lastReceivedContext: AssistantContext? = nil
+    private(set) var generateResponseCallCount: Int = 0
+    private(set) var answerQuestionCallCount: Int = 0
+    private(set) var lastReceivedContext: AssistantContext? = nil
     
-    public init(scriptedResponses: [TutorResponse] = []) {
+    init(scriptedResponses: [TutorResponse] = []) {
         self.scriptedResponses = scriptedResponses
     }
     
-    public func setScriptedResponses(_ responses: [TutorResponse]) {
+    func setScriptedResponses(_ responses: [TutorResponse]) {
         lock.lock()
         defer { lock.unlock() }
         self.scriptedResponses = responses
     }
     
-    public func generateResponse(
+    func generateResponse(
         for decision: InterventionDecision,
         context: AssistantContext
     ) async -> TutorResponse? {
@@ -392,7 +392,7 @@ public final class MockConversationalTutorProvider: ConversationalTutorProviding
         return fallback.response(for: decision)
     }
     
-    public func answerUserQuestion(
+    func answerUserQuestion(
         query: String,
         intent: UserVoiceIntent,
         context: AssistantContext
@@ -418,7 +418,7 @@ public final class MockConversationalTutorProvider: ConversationalTutorProviding
         }
     }
     
-    public func clearSessionContext() async {
+    func clearSessionContext() async {
         lock.lock()
         defer { lock.unlock() }
         scriptedResponses.removeAll()

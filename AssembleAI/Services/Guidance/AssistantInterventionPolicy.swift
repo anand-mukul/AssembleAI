@@ -8,7 +8,7 @@ import Foundation
 // MARK: - Tutor Event Model
 
 /// Semantic events evaluated by the assistant intervention policy.
-public enum TutorEvent: Sendable, Equatable {
+enum TutorEvent: Sendable, Equatable {
     /// A new assembly step has begun.
     case stepStarted(step: AssemblyStep)
     
@@ -28,7 +28,7 @@ public enum TutorEvent: Sendable, Equatable {
 // MARK: - Intervention Level & Action
 
 /// Escalating intervention detail level for repeated mistakes.
-public enum InterventionLevel: String, Sendable, Equatable, Codable {
+enum InterventionLevel: String, Sendable, Equatable, Codable {
     /// First mistake: concise reminder.
     case gentle
     /// Second mistake: explicit actionable instruction.
@@ -38,7 +38,7 @@ public enum InterventionLevel: String, Sendable, Equatable, Codable {
 }
 
 /// The specific category of proactive intervention decided by the policy.
-public enum InterventionAction: Sendable, Equatable {
+enum InterventionAction: Sendable, Equatable {
     /// Remain silent; do not interrupt the user.
     case remainSilent
     
@@ -64,12 +64,12 @@ public enum InterventionAction: Sendable, Equatable {
 // MARK: - Intervention Decision
 
 /// Structured outcome produced by the intervention policy determining whether to speak or remain silent.
-public struct InterventionDecision: Sendable, Equatable {
-    public let action: InterventionAction
-    public let reason: String
-    public let timestamp: Date
+struct InterventionDecision: Sendable, Equatable {
+    let action: InterventionAction
+    let reason: String
+    let timestamp: Date
     
-    public init(
+    init(
         action: InterventionAction,
         reason: String,
         timestamp: Date = Date()
@@ -80,7 +80,7 @@ public struct InterventionDecision: Sendable, Equatable {
     }
     
     /// Indicates whether the assistant should actively intervene rather than remaining silent.
-    public var shouldIntervene: Bool {
+    var shouldIntervene: Bool {
         if case .remainSilent = action {
             return false
         }
@@ -88,7 +88,7 @@ public struct InterventionDecision: Sendable, Equatable {
     }
     
     /// Convenience static factory for silence.
-    public static func silent(reason: String) -> InterventionDecision {
+    static func silent(reason: String) -> InterventionDecision {
         InterventionDecision(action: .remainSilent, reason: reason)
     }
 }
@@ -96,17 +96,17 @@ public struct InterventionDecision: Sendable, Equatable {
 // MARK: - Tutor Context
 
 /// Snapshot of current session, step, and timing context required for policy decisions.
-public struct TutorContext: Sendable {
-    public let currentStep: AssemblyStep
-    public let sessionID: UUID
-    public let timeSinceStepStartedSeconds: Double
-    public let timeSinceLastInterventionSeconds: Double
-    public let lastVerificationResult: VerificationResult?
-    public let consecutiveMistakeCount: Int
-    public let consecutiveUncertainCount: Int
-    public let isStepCompleted: Bool
+struct TutorContext: Sendable {
+    let currentStep: AssemblyStep
+    let sessionID: UUID
+    let timeSinceStepStartedSeconds: Double
+    let timeSinceLastInterventionSeconds: Double
+    let lastVerificationResult: VerificationResult?
+    let consecutiveMistakeCount: Int
+    let consecutiveUncertainCount: Int
+    let isStepCompleted: Bool
     
-    public init(
+    init(
         currentStep: AssemblyStep,
         sessionID: UUID = UUID(),
         timeSinceStepStartedSeconds: Double = 0.0,
@@ -130,20 +130,20 @@ public struct TutorContext: Sendable {
 // MARK: - Intervention Policy Configuration
 
 /// Configurable thresholds governing assistant cooldowns, stuck detection, and uncertainty sensitivity.
-public struct InterventionPolicyConfiguration: Sendable, Equatable {
+struct InterventionPolicyConfiguration: Sendable, Equatable {
     /// Minimum time in seconds between consecutive proactive assistant interventions (default: 4.0s).
-    public var minimumCooldownSeconds: Double
+    var minimumCooldownSeconds: Double
     
     /// Minimum duration in seconds of inactivity without progression before triggering stuck detection (default: 15.0s).
-    public var stuckDetectionThresholdSeconds: Double
+    var stuckDetectionThresholdSeconds: Double
     
     /// Number of consecutive uncertain observations before requesting a better view (default: 3).
-    public var uncertainThresholdCount: Int
+    var uncertainThresholdCount: Int
     
     /// Whether initial step instruction should be permitted upon step start (default: true).
-    public var allowInitialInstruction: Bool
+    var allowInitialInstruction: Bool
     
-    public init(
+    init(
         minimumCooldownSeconds: Double = 4.0,
         stuckDetectionThresholdSeconds: Double = 15.0,
         uncertainThresholdCount: Int = 3,
@@ -155,13 +155,13 @@ public struct InterventionPolicyConfiguration: Sendable, Equatable {
         self.allowInitialInstruction = allowInitialInstruction
     }
     
-    public static let `default` = InterventionPolicyConfiguration()
+    static let `default` = InterventionPolicyConfiguration()
 }
 
 // MARK: - Assistant Intervention Policy Protocol
 
 /// Deterministic behavioral policy protocol deciding when AssembleAI should intervene or remain silent.
-public protocol AssistantInterventionPolicing: Sendable {
+protocol AssistantInterventionPolicing: Sendable {
     /// Evaluates a semantic tutor event against current assembly context.
     func evaluate(event: TutorEvent, context: TutorContext) -> InterventionDecision
     
@@ -177,8 +177,8 @@ public protocol AssistantInterventionPolicing: Sendable {
 /// Concrete deterministic intervention policy governing proactive spoken and visual assistant actions.
 ///
 /// Ensures silence is a first-class decision, suppresses repeated spam, enforces cooldowns, and enables user overrides.
-public final class AssistantInterventionPolicy: AssistantInterventionPolicing, @unchecked Sendable {
-    public let configuration: InterventionPolicyConfiguration
+final class AssistantInterventionPolicy: AssistantInterventionPolicing, @unchecked Sendable {
+    let configuration: InterventionPolicyConfiguration
     private let lock = NSLock()
     
     // Internal State Tracking
@@ -189,13 +189,13 @@ public final class AssistantInterventionPolicy: AssistantInterventionPolicing, @
     private var lastCorrectedExplanation: String? = nil
     private var lastInterventionTimestamp: Date? = nil
     
-    public init(configuration: InterventionPolicyConfiguration = .default) {
+    init(configuration: InterventionPolicyConfiguration = .default) {
         self.configuration = configuration
     }
     
     // MARK: - Evaluation Engine
     
-    public func evaluate(event: TutorEvent, context: TutorContext) -> InterventionDecision {
+    func evaluate(event: TutorEvent, context: TutorContext) -> InterventionDecision {
         lock.lock()
         defer { lock.unlock() }
         
@@ -350,13 +350,13 @@ public final class AssistantInterventionPolicy: AssistantInterventionPolicing, @
     
     // MARK: - Lifecycle & State Resets
     
-    public func reset() {
+    func reset() {
         lock.lock()
         defer { lock.unlock() }
         performFullReset()
     }
     
-    public func resetForStepChange(newStep: AssemblyStep) {
+    func resetForStepChange(newStep: AssemblyStep) {
         lock.lock()
         defer { lock.unlock() }
         performStepReset(newStep: newStep)

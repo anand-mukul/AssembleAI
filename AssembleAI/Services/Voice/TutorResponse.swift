@@ -8,7 +8,7 @@ import Foundation
 // MARK: - Response Priority
 
 /// Priority level governing speech queue interruption and replacement.
-public enum ResponsePriority: Int, Sendable, Comparable, Codable {
+enum ResponsePriority: Int, Sendable, Comparable, Codable {
     /// Optional or background encouragement.
     case low = 1
     /// Standard step orientation or confirmation.
@@ -18,7 +18,7 @@ public enum ResponsePriority: Int, Sendable, Comparable, Codable {
     /// Direct user-requested answers or critical safety prompts.
     case immediate = 4
     
-    public static func < (lhs: ResponsePriority, rhs: ResponsePriority) -> Bool {
+    static func < (lhs: ResponsePriority, rhs: ResponsePriority) -> Bool {
         lhs.rawValue < rhs.rawValue
     }
 }
@@ -26,14 +26,14 @@ public enum ResponsePriority: Int, Sendable, Comparable, Codable {
 // MARK: - Tutor Response Model
 
 /// Spoken tutor utterance with metadata for speech synthesis and telemetry.
-public struct TutorResponse: Sendable, Equatable, Identifiable {
-    public let id: UUID
-    public let text: String
-    public let priority: ResponsePriority
-    public let category: String
-    public let timestamp: Date
+struct TutorResponse: Sendable, Equatable, Identifiable {
+    let id: UUID
+    let text: String
+    let priority: ResponsePriority
+    let category: String
+    let timestamp: Date
     
-    public init(
+    init(
         id: UUID = UUID(),
         text: String,
         priority: ResponsePriority = .normal,
@@ -51,7 +51,7 @@ public struct TutorResponse: Sendable, Equatable, Identifiable {
 // MARK: - Tutor Response Providing Protocol
 
 /// Protocol for translating behavioral intervention decisions into spoken natural language responses.
-public protocol TutorResponseProviding: Sendable {
+protocol TutorResponseProviding: Sendable {
     /// Generates a spoken tutor response for an intervention decision.
     func response(for decision: InterventionDecision) -> TutorResponse?
 }
@@ -61,10 +61,10 @@ public protocol TutorResponseProviding: Sendable {
 /// Concrete deterministic response provider generating concise, friendly tutor dialogue.
 ///
 /// Serves as the baseline spoken language provider before Apple Foundation Models integration in Phase 8.
-public struct DeterministicTutorResponseProvider: TutorResponseProviding {
-    public init() {}
+struct DeterministicTutorResponseProvider: TutorResponseProviding {
+    init() {}
     
-    public func response(for decision: InterventionDecision) -> TutorResponse? {
+    func response(for decision: InterventionDecision) -> TutorResponse? {
         guard decision.shouldIntervene else { return nil }
         
         switch decision.action {

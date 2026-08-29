@@ -10,20 +10,20 @@ import CoreVideo
 // MARK: - Sampled Frame
 
 /// Represents a video frame selected by the adaptive frame sampler for downstream visual analysis.
-public struct SampledFrame: @unchecked Sendable {
+struct SampledFrame: @unchecked Sendable {
     /// The unmanaged raw video pixel buffer.
-    public let pixelBuffer: CVPixelBuffer
+    let pixelBuffer: CVPixelBuffer
     
     /// Hardware capture presentation timestamp.
-    public let timestamp: CMTime
+    let timestamp: CMTime
     
     /// Monotonically increasing sequence number for sampled frames.
-    public let sequenceNumber: UInt64
+    let sequenceNumber: UInt64
     
     /// Computed visual difference score against the previously sampled frame (0.0 = identical, 1.0 = completely different).
-    public let motionDifference: Double
+    let motionDifference: Double
     
-    public init(
+    init(
         pixelBuffer: CVPixelBuffer,
         timestamp: CMTime = CMTime(seconds: CFAbsoluteTimeGetCurrent(), preferredTimescale: 600),
         sequenceNumber: UInt64 = 0,
@@ -39,7 +39,7 @@ public struct SampledFrame: @unchecked Sendable {
 // MARK: - Sampling Priority
 
 /// Priority level governing frame sampling evaluation.
-public enum SamplingPriority: Sendable, Equatable {
+enum SamplingPriority: Sendable, Equatable {
     /// Standard sampling subject to time-based rate limits, motion thresholds, and stability gating.
     case normal
     
@@ -50,32 +50,32 @@ public enum SamplingPriority: Sendable, Equatable {
 // MARK: - Frame Sampling Configuration
 
 /// Configuration parameters controlling adaptive sampling intervals, motion thresholds, and scene stability debounce.
-public struct FrameSamplingConfiguration: Sendable, Equatable {
+struct FrameSamplingConfiguration: Sendable, Equatable {
     /// Target frame rate in frames per second under active assembly conditions (default: 5.0 FPS).
-    public var targetFramesPerSecond: Double
+    var targetFramesPerSecond: Double
     
     /// Minimum time interval in seconds between consecutive sampled frames.
-    public var minimumIntervalSeconds: Double {
+    var minimumIntervalSeconds: Double {
         guard targetFramesPerSecond > 0 else { return 0.2 }
         return 1.0 / targetFramesPerSecond
     }
     
     /// Normalized motion threshold (0.0 to 1.0) required to treat the scene as meaningfully changed (default: 0.05).
-    public var motionThreshold: Double
+    var motionThreshold: Double
     
     /// Rapid motion threshold (0.0 to 1.0) above which the scene is considered actively shaking or panning (default: 0.25).
-    public var rapidMotionThreshold: Double
+    var rapidMotionThreshold: Double
     
     /// Time window in seconds of scene stabilization required after rapid motion before accepting a frame (default: 0.25s).
-    public var stabilityWindowSeconds: Double
+    var stabilityWindowSeconds: Double
     
     /// Maximum time interval in seconds a static scene can remain unsampled before forcing a heartbeat sample (default: 2.0s).
-    public var forcedHeartbeatIntervalSeconds: Double
+    var forcedHeartbeatIntervalSeconds: Double
     
     /// Grid dimension along each axis for lightweight luminance comparison (e.g. 16 -> 16x16 = 256 sample points).
-    public var gridSamplingDimension: Int
+    var gridSamplingDimension: Int
     
-    public init(
+    init(
         targetFramesPerSecond: Double = 5.0,
         motionThreshold: Double = 0.05,
         rapidMotionThreshold: Double = 0.25,
@@ -92,27 +92,27 @@ public struct FrameSamplingConfiguration: Sendable, Equatable {
     }
     
     /// Default standard configuration for AssembleAI Live Tutor.
-    public static let `default` = FrameSamplingConfiguration()
+    static let `default` = FrameSamplingConfiguration()
 }
 
 // MARK: - Frame Sampling Diagnostics Metrics
 
 /// Diagnostic performance metrics for engineering validation and performance tuning.
-public struct FrameSamplingMetrics: Sendable, Equatable {
-    public var framesReceived: UInt64 = 0
-    public var framesSampled: UInt64 = 0
-    public var framesDroppedByRate: UInt64 = 0
-    public var framesDroppedByMotion: UInt64 = 0
-    public var framesDroppedByStability: UInt64 = 0
-    public var framesForwarded: UInt64 = 0
-    public var lastSampleTimestampSeconds: Double = 0.0
-    public var effectiveSamplingFPS: Double = 0.0
+struct FrameSamplingMetrics: Sendable, Equatable {
+    var framesReceived: UInt64 = 0
+    var framesSampled: UInt64 = 0
+    var framesDroppedByRate: UInt64 = 0
+    var framesDroppedByMotion: UInt64 = 0
+    var framesDroppedByStability: UInt64 = 0
+    var framesForwarded: UInt64 = 0
+    var lastSampleTimestampSeconds: Double = 0.0
+    var effectiveSamplingFPS: Double = 0.0
 }
 
 // MARK: - Frame Sampling Protocol
 
 /// Protocol defining the interface for adaptive camera frame sampling.
-public protocol FrameSampling: Sendable {
+protocol FrameSampling: Sendable {
     /// Evaluates a candidate camera frame and returns a `SampledFrame` if it passes rate, motion, and stability gates.
     func process(
         frame: CVPixelBuffer,
@@ -136,8 +136,8 @@ public protocol FrameSampling: Sendable {
 
 /// Actor-isolated adaptive frame sampling service implementing rate limiting, sub-millisecond motion gating,
 /// and stability debounce windows.
-public actor FrameSamplingService: FrameSampling {
-    public var configuration: FrameSamplingConfiguration
+actor FrameSamplingService: FrameSampling {
+    var configuration: FrameSamplingConfiguration
     private var metrics = FrameSamplingMetrics()
     
     private var sequenceCounter: UInt64 = 0
@@ -149,12 +149,12 @@ public actor FrameSamplingService: FrameSampling {
     private var lastFPSCalculationTime: Double = 0.0
     private var framesInCurrentSecond: UInt64 = 0
     
-    public init(configuration: FrameSamplingConfiguration = .default) {
+    init(configuration: FrameSamplingConfiguration = .default) {
         self.configuration = configuration
     }
     
     /// Evaluates a single candidate camera frame through rate, motion, and stability gates.
-    public func process(
+    func process(
         frame: CVPixelBuffer,
         timestamp: CMTime,
         priority: SamplingPriority = .normal
@@ -223,7 +223,7 @@ public actor FrameSamplingService: FrameSampling {
     }
     
     /// Subscribes to an upstream `AsyncStream<CVPixelBuffer>` and returns an `AsyncStream<SampledFrame>` with bounded backpressure.
-    public func sampledStream(
+    func sampledStream(
         from sourceStream: AsyncStream<CVPixelBuffer>
     ) -> AsyncStream<SampledFrame> {
         AsyncStream(SampledFrame.self, bufferingPolicy: .bufferingNewest(1)) { continuation in
@@ -247,7 +247,7 @@ public actor FrameSamplingService: FrameSampling {
     }
     
     /// Resets state, sequence counter, and timestamps.
-    public func reset() {
+    func reset() {
         lastSampledTimeSeconds = 0.0
         lastRapidMotionTimeSeconds = 0.0
         lastFrameSignature = nil
@@ -256,7 +256,7 @@ public actor FrameSamplingService: FrameSampling {
     }
     
     /// Retrieves current diagnostic metrics.
-    public func getMetrics() -> FrameSamplingMetrics {
+    func getMetrics() -> FrameSamplingMetrics {
         metrics
     }
     

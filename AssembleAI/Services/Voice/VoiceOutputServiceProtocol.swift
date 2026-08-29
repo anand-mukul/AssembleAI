@@ -9,7 +9,7 @@ import AVFoundation
 // MARK: - Speech State
 
 /// Operational state of the speech output service.
-public enum SpeechState: String, Sendable, Equatable {
+enum SpeechState: String, Sendable, Equatable {
     /// No speech is currently playing.
     case idle
     /// Speech synthesizer is actively speaking an utterance.
@@ -21,17 +21,17 @@ public enum SpeechState: String, Sendable, Equatable {
 // MARK: - Voice Output Configuration
 
 /// Configuration controlling speech rate, pitch, volume, and language.
-public struct VoiceOutputConfiguration: Sendable, Equatable {
+struct VoiceOutputConfiguration: Sendable, Equatable {
     /// Speech rate (0.0 to 1.0; AVSpeechUtteranceDefaultSpeechRate is ~0.50).
-    public var rate: Float
+    var rate: Float
     /// Speech pitch multiplier (0.5 to 2.0; default 1.0).
-    public var pitchMultiplier: Float
+    var pitchMultiplier: Float
     /// Speech volume (0.0 to 1.0; default 1.0).
-    public var volume: Float
+    var volume: Float
     /// BCP-47 language identifier (default: "en-US").
-    public var language: String
+    var language: String
     
-    public init(
+    init(
         rate: Float = AVSpeechUtteranceDefaultSpeechRate,
         pitchMultiplier: Float = 1.0,
         volume: Float = 1.0,
@@ -44,13 +44,13 @@ public struct VoiceOutputConfiguration: Sendable, Equatable {
     }
     
     /// Standard natural tutor voice configuration.
-    public static let `default` = VoiceOutputConfiguration()
+    static let `default` = VoiceOutputConfiguration()
 }
 
 // MARK: - Voice Output Service Protocol
 
 /// Abstract interface for delivering spoken tutor guidance.
-public protocol VoiceOutputServiceProtocol: Sendable {
+protocol VoiceOutputServiceProtocol: Sendable {
     /// Current speech synthesizer state.
     var state: SpeechState { get async }
     
@@ -70,7 +70,7 @@ public protocol VoiceOutputServiceProtocol: Sendable {
     func resume() async
 }
 
-public extension VoiceOutputServiceProtocol {
+extension VoiceOutputServiceProtocol {
     func speak(_ text: String) async {
         await speak(TutorResponse(text: text, priority: .normal))
     }

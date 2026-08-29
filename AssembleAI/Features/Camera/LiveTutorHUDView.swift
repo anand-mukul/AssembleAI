@@ -8,7 +8,7 @@ import SwiftUI
 // MARK: - Live Tutor Status
 
 /// Visual operational status of the live tutor HUD.
-public enum LiveTutorStatus: String, Sendable, Equatable {
+enum LiveTutorStatus: String, Sendable, Equatable {
     case live = "LIVE"
     case paused = "PAUSED"
     case speaking = "SPEAKING"
@@ -19,14 +19,14 @@ public enum LiveTutorStatus: String, Sendable, Equatable {
 // MARK: - Live Tutor Configuration
 
 /// Feature flag configuration governing Live Tutor Mode vs Legacy Manual Analysis Mode.
-public struct LiveTutorConfiguration: Sendable, Equatable {
-    public var isEnabled: Bool
+struct LiveTutorConfiguration: Sendable, Equatable {
+    var isEnabled: Bool
     
-    public init(isEnabled: Bool = true) {
+    init(isEnabled: Bool = true) {
         self.isEnabled = isEnabled
     }
     
-    public static let `default` = LiveTutorConfiguration(isEnabled: true)
+    static let `default` = LiveTutorConfiguration(isEnabled: true)
 }
 
 // MARK: - Live Tutor HUD View
