@@ -38,6 +38,19 @@ extension VisionAnalyzing {
         )
     }
     
+    /// Convenience overload accepting timestamp as TimeInterval / Double.
+    func analyze(
+        frame: CVPixelBuffer,
+        orientation: CGImagePropertyOrientation,
+        timestamp: TimeInterval
+    ) async throws -> VisualObservation {
+        try await analyze(
+            frame: frame,
+            orientation: orientation,
+            timestamp: CMTime(seconds: timestamp, preferredTimescale: 600)
+        )
+    }
+    
     /// Convenience overload creating an observation stream with default portrait orientation.
     func observationStream(
         from sampledFrames: AsyncStream<SampledFrame>

@@ -8,6 +8,7 @@ import Combine
 import SwiftUI
 import UIKit
 import CoreVideo
+import CoreMedia
 
 /// Verification execution mode selector.
 enum VerificationMode: String, CaseIterable, Identifiable, Codable, Hashable, Equatable, Sendable {
@@ -174,7 +175,8 @@ final class AssemblyViewModel: ObservableObject {
                 let startTime = Date()
                 
                 // 1. Vision Analysis
-                guard let observation = try? await self.visionAnalyzer.analyze(frame: frame, orientation: .right, timestamp: Date().timeIntervalSince1970) else {
+                let frameTime = CMTime(seconds: CFAbsoluteTimeGetCurrent(), preferredTimescale: 600)
+                guard let observation = try? await self.visionAnalyzer.analyze(frame: frame, orientation: .right, timestamp: frameTime) else {
                     continue
                 }
                 
