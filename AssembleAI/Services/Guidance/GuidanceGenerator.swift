@@ -32,7 +32,8 @@ protocol GuidanceGenerating: Sendable {
 }
 
 /// Local template-based guidance generator when Foundation Models are unavailable.
-struct MockGuidanceGenerator: GuidanceGenerating {
+nonisolated struct MockGuidanceGenerator: GuidanceGenerating {
+    nonisolated init() {}
     
     func generateGuidance(
         issue: StateIssue,
@@ -156,8 +157,10 @@ actor FoundationModelGuidanceGenerator: GuidanceGenerating {
 #endif
 
 /// Hybrid guidance generator routing requests to Foundation Models when available on device, falling back to local template generator.
-struct HybridGuidanceGenerator: GuidanceGenerating {
+nonisolated struct HybridGuidanceGenerator: GuidanceGenerating {
     private let mockGenerator = MockGuidanceGenerator()
+    
+    nonisolated init() {}
     
     func generateGuidance(
         issue: StateIssue,

@@ -21,7 +21,7 @@ enum ResearchEventType: String, Codable, Hashable, Equatable, Sendable {
 }
 
 /// Anonymized pseudonymous telemetry record for research metric calculation.
-struct ResearchEvent: Identifiable, Hashable, Codable, Equatable, Sendable {
+nonisolated struct ResearchEvent: Identifiable, Hashable, Codable, Equatable, Sendable {
     let id: UUID
     let timestamp: Date
     let sessionID: UUID
@@ -32,7 +32,7 @@ struct ResearchEvent: Identifiable, Hashable, Codable, Equatable, Sendable {
     let attemptNumber: Int?
     let verificationStatus: String?
     
-    init(
+    nonisolated init(
         id: UUID = UUID(),
         timestamp: Date = Date(),
         sessionID: UUID,
@@ -55,7 +55,7 @@ struct ResearchEvent: Identifiable, Hashable, Codable, Equatable, Sendable {
     }
     
     /// Formats event record as a CSV line.
-    var csvLine: String {
+    nonisolated var csvLine: String {
         let ISO8601Date = ISO8601DateFormatter().string(from: timestamp)
         let dur = durationMilliseconds.map { "\($0)" } ?? ""
         let att = attemptNumber.map { "\($0)" } ?? ""
@@ -64,7 +64,7 @@ struct ResearchEvent: Identifiable, Hashable, Codable, Equatable, Sendable {
         return "\(id.uuidString),\(ISO8601Date),\(sessionID.uuidString),\(projectID.uuidString),\(stepID.uuidString),\(eventType.rawValue),\(dur),\(att),\(stat)"
     }
     
-    static var csvHeader: String {
+    nonisolated static var csvHeader: String {
         "event_id,timestamp,session_id,project_id,step_id,event_type,duration_ms,attempt_number,verification_status"
     }
 }

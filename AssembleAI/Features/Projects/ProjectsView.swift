@@ -6,6 +6,7 @@
 import SwiftUI
 
 /// Main Projects screen featuring native SwiftUI search, category filtering, and project management.
+@MainActor
 struct ProjectsView: View {
     @EnvironmentObject private var router: AppRouter
     @StateObject private var viewModel = ProjectsViewModel()

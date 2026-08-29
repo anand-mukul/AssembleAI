@@ -6,6 +6,7 @@
 import SwiftUI
 
 /// Main Home screen displaying active physical assembly progress, project cards, and recent step activity.
+@MainActor
 struct HomeView: View {
     @EnvironmentObject private var router: AppRouter
     @StateObject private var viewModel = HomeViewModel()

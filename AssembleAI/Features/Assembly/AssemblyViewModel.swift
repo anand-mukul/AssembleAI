@@ -5,6 +5,7 @@
 
 import Foundation
 import Combine
+import SwiftUI
 import UIKit
 
 /// Verification execution mode selector.
@@ -48,14 +49,14 @@ final class AssemblyViewModel: ObservableObject {
     
     init(
         project: AssemblyProject,
-        verificationService: VerificationServiceProtocol = StateAwareVerificationService(),
-        visionAnalyzer: VisionAnalyzing = VisionService(),
-        guidanceProvider: GuidanceProviding = DefaultGuidanceProvider()
+        verificationService: VerificationServiceProtocol? = nil,
+        visionAnalyzer: VisionAnalyzing? = nil,
+        guidanceProvider: GuidanceProviding? = nil
     ) {
         self.project = project
-        self.verificationService = verificationService
-        self.visionAnalyzer = visionAnalyzer
-        self.guidanceProvider = guidanceProvider
+        self.verificationService = verificationService ?? StateAwareVerificationService()
+        self.visionAnalyzer = visionAnalyzer ?? VisionService()
+        self.guidanceProvider = guidanceProvider ?? DefaultGuidanceProvider()
         self.session = AssemblySession(projectId: project.id, currentStepIndex: project.completedSteps)
         self.currentStepIndex = max(0, min(project.completedSteps, max(0, project.steps.count - 1)))
     }

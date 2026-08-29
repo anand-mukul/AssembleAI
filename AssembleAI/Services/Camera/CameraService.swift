@@ -4,7 +4,7 @@
 //
 
 import Foundation
-import AVFoundation
+@preconcurrency import AVFoundation
 import Combine
 import SwiftUI
 import UIKit
@@ -19,9 +19,9 @@ final class CameraService: NSObject, ObservableObject {
     @Published var isTorchOn: Bool = false
     @Published var errorMessage: String? = nil
     
-    let captureSession = AVCaptureSession()
-    private let photoOutput = AVCapturePhotoOutput()
-    private let cameraQueue = DispatchQueue(label: "com.assembleai.cameraQueue")
+    nonisolated let captureSession = AVCaptureSession()
+    nonisolated private let photoOutput = AVCapturePhotoOutput()
+    nonisolated private let cameraQueue = DispatchQueue(label: "com.assembleai.cameraQueue")
     private var isConfigured = false
     
     private var photoContinuation: CheckedContinuation<UIImage, Error>? = nil
@@ -51,34 +51,36 @@ final class CameraService: NSObject, ObservableObject {
     func configureSession() {
         guard !isConfigured else { return }
         
-        cameraQueue.async { [weak self] in
+        cameraQueue.async { [weak self, captureSession, photoOutput] in
             guard let self = self else { return }
             
-            self.captureSession.beginConfiguration()
-            self.captureSession.sessionPreset = .photo
+            captureSession.beginConfiguration()
+            captureSession.sessionPreset = .photo
             
             // Video Input
             guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
                   let videoInput = try? AVCaptureDeviceInput(device: videoDevice),
-                  self.captureSession.canAddInput(videoInput) else {
+                  captureSession.canAddInput(videoInput) else {
                 
                 DispatchQueue.main.async {
                     self.isCameraAvailable = false
                     self.errorMessage = "Camera unavailable (Simulator or hardware restriction)"
                 }
-                self.captureSession.commitConfiguration()
+                captureSession.commitConfiguration()
                 return
             }
             
-            self.captureSession.addInput(videoInput)
+            captureSession.addInput(videoInput)
             
             // Photo Output
-            if self.captureSession.canAddOutput(self.photoOutput) {
-                self.captureSession.addOutput(self.photoOutput)
-                self.photoOutput.isHighResolutionCaptureEnabled = true
+            if captureSession.canAddOutput(photoOutput) {
+                captureSession.addOutput(photoOutput)
+                if let maxDimensions = videoDevice.activeFormat.supportedMaxPhotoDimensions.last {
+                    photoOutput.maxPhotoDimensions = maxDimensions
+                }
             }
             
-            self.captureSession.commitConfiguration()
+            captureSession.commitConfiguration()
             
             let torchAvailable = videoDevice.hasTorch && videoDevice.isTorchAvailable
             
@@ -98,21 +100,21 @@ final class CameraService: NSObject, ObservableObject {
             configureSession()
         }
         
-        cameraQueue.async { [weak self] in
-            guard let self = self, !self.captureSession.isRunning else { return }
-            self.captureSession.startRunning()
+        cameraQueue.async { [weak self, captureSession] in
+            guard let self = self, !captureSession.isRunning else { return }
+            captureSession.startRunning()
             
             DispatchQueue.main.async {
-                self.isSessionRunning = self.captureSession.isRunning
+                self.isSessionRunning = captureSession.isRunning
             }
         }
     }
     
     /// Stops AVCaptureSession asynchronously.
     func stopSession() {
-        cameraQueue.async { [weak self] in
-            guard let self = self, self.captureSession.isRunning else { return }
-            self.captureSession.stopRunning()
+        cameraQueue.async { [weak self, captureSession] in
+            guard let self = self, captureSession.isRunning else { return }
+            captureSession.stopRunning()
             
             DispatchQueue.main.async {
                 self.isSessionRunning = false
@@ -147,14 +149,13 @@ final class CameraService: NSObject, ObservableObject {
         return try await withCheckedThrowingContinuation { continuation in
             self.photoContinuation = continuation
             
-            let settings = AVCapturePhotoSettings()
-            if self.photoOutput.supportedFlashModes.contains(.auto) {
-                settings.flashMode = .auto
-            }
-            
-            self.cameraQueue.async { [weak self] in
+            self.cameraQueue.async { [weak self, photoOutput] in
                 guard let self = self else { return }
-                self.photoOutput.capturePhoto(with: settings, delegate: self)
+                let settings = AVCapturePhotoSettings()
+                if photoOutput.supportedFlashModes.contains(.auto) {
+                    settings.flashMode = .auto
+                }
+                photoOutput.capturePhoto(with: settings, delegate: self)
             }
         }
     }

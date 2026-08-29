@@ -65,7 +65,7 @@ struct AssemblySession: Identifiable, Hashable, Codable, Equatable, Sendable {
     /// Convenience initializer for SwiftData persistence mappings
     init(
         id: UUID = UUID(),
-        userId: UUID,
+        userId: UUID? = nil,
         projectId: UUID,
         startedAt: Date,
         completedAt: Date?,

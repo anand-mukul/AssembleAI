@@ -8,7 +8,8 @@ import UIKit
 import CoreGraphics
 
 /// Service preparing captured camera images for Apple Vision framework analysis and coordinate mapping.
-struct ImageProcessingService: Sendable {
+nonisolated struct ImageProcessingService: Sendable {
+    nonisolated init() {}
     
     /// Normalizes image orientation and resizes if necessary to optimize memory usage during Vision requests.
     func prepareImageForVision(_ image: UIImage, maxDimension: CGFloat = 2048) -> UIImage {

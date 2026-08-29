@@ -6,10 +6,10 @@
 import Foundation
 
 /// Helper building structured, strict context prompts for Apple Foundation Models.
-struct GuidanceContextBuilder: Sendable {
+nonisolated struct GuidanceContextBuilder: Sendable {
     
     /// Constructs a strict, grounded system context for model guidance generation.
-    static func buildContext(
+    nonisolated static func buildContext(
         step: AssemblyStep,
         issue: StateIssue,
         expectedState: ExpectedAssemblyState,
@@ -55,7 +55,7 @@ struct GuidanceContextBuilder: Sendable {
     }
     
     /// Constructs a prompt for the contextual "Why is this wrong?" bottom sheet.
-    static func buildWhyContext(
+    nonisolated static func buildWhyContext(
         step: AssemblyStep,
         issue: StateIssue
     ) -> String {

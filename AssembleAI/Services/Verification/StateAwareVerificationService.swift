@@ -32,17 +32,17 @@ final class StateAwareVerificationService: VerificationServiceProtocol {
     var mode: VerificationMode = .hybrid
     
     init(
-        visionService: VisionAnalyzing = VisionService(),
-        estimator: AssemblyStateEstimating = VisionAssemblyStateEstimator(),
-        comparator: AssemblyStateComparator = AssemblyStateComparator(),
-        guidanceGenerator: GuidanceGenerating = HybridGuidanceGenerator(),
-        mockFallbackService: VerificationServiceProtocol = MockVerificationService()
+        visionService: VisionAnalyzing? = nil,
+        estimator: AssemblyStateEstimating? = nil,
+        comparator: AssemblyStateComparator? = nil,
+        guidanceGenerator: GuidanceGenerating? = nil,
+        mockFallbackService: VerificationServiceProtocol? = nil
     ) {
-        self.visionService = visionService
-        self.estimator = estimator
-        self.comparator = comparator
-        self.guidanceGenerator = guidanceGenerator
-        self.mockFallbackService = mockFallbackService
+        self.visionService = visionService ?? VisionService()
+        self.estimator = estimator ?? VisionAssemblyStateEstimator()
+        self.comparator = comparator ?? AssemblyStateComparator()
+        self.guidanceGenerator = guidanceGenerator ?? HybridGuidanceGenerator()
+        self.mockFallbackService = mockFallbackService ?? MockVerificationService()
     }
     
     func verifyStep(_ step: AssemblyStep, image: UIImage?) async throws -> VerificationResult {
