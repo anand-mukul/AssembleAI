@@ -8,7 +8,7 @@ import SwiftUI
 import CloudKit
 import Combine
 
-/// Authentication Service backed by Apple CloudKit account status and native Sign in with Apple.
+/// Authentication Service backed by Apple CloudKit account status, native Sign in with Apple, and local SwiftData persistence.
 @MainActor
 final class CloudKitAuthService: AuthenticationService {
     @Published private(set) var currentUser: User? = nil
@@ -18,10 +18,12 @@ final class CloudKitAuthService: AuthenticationService {
     
     private let cloudKitManager: CloudKitManager
     private let mockFallbackService: MockAuthenticationService
+    private let userRepository: UserRepositoryImpl
     
     init(cloudKitManager: CloudKitManager? = nil) {
         self.cloudKitManager = cloudKitManager ?? CloudKitManager.shared
         self.mockFallbackService = MockAuthenticationService()
+        self.userRepository = UserRepositoryImpl(modelContext: PersistenceController.shared.container.mainContext)
         
         Task {
             await checkExistingCloudKitSession()
@@ -42,6 +44,11 @@ final class CloudKitAuthService: AuthenticationService {
                 updatedAt: Date()
             )
             self.currentUser = cloudUser
+            self.isAuthenticated = true
+            try? await userRepository.saveUser(cloudUser)
+        } else if let savedUser = try? await userRepository.fetchCurrentUser() {
+            // Restore persistent local user (Guest or Email session)
+            self.currentUser = savedUser
             self.isAuthenticated = true
         }
     }
@@ -66,11 +73,15 @@ final class CloudKitAuthService: AuthenticationService {
             )
             self.currentUser = cloudUser
             self.isAuthenticated = true
+            try? await userRepository.saveUser(cloudUser)
         } else {
             // Simulator or unconfigured container fallback
             try await mockFallbackService.signInWithApple()
-            self.currentUser = mockFallbackService.currentUser
-            self.isAuthenticated = mockFallbackService.isAuthenticated
+            if let user = mockFallbackService.currentUser {
+                self.currentUser = user
+                self.isAuthenticated = true
+                try? await userRepository.saveUser(user)
+            }
         }
     }
     
@@ -82,8 +93,11 @@ final class CloudKitAuthService: AuthenticationService {
         
         do {
             try await mockFallbackService.signIn(email: email, password: password)
-            self.currentUser = mockFallbackService.currentUser
-            self.isAuthenticated = mockFallbackService.isAuthenticated
+            if let user = mockFallbackService.currentUser {
+                self.currentUser = user
+                self.isAuthenticated = true
+                try? await userRepository.saveUser(user)
+            }
         } catch {
             self.authError = error.localizedDescription
             throw error
@@ -98,8 +112,11 @@ final class CloudKitAuthService: AuthenticationService {
         
         do {
             try await mockFallbackService.createAccount(name: name, email: email, password: password)
-            self.currentUser = mockFallbackService.currentUser
-            self.isAuthenticated = mockFallbackService.isAuthenticated
+            if let user = mockFallbackService.currentUser {
+                self.currentUser = user
+                self.isAuthenticated = true
+                try? await userRepository.saveUser(user)
+            }
         } catch {
             self.authError = error.localizedDescription
             throw error
@@ -120,8 +137,11 @@ final class CloudKitAuthService: AuthenticationService {
         authError = nil
         
         await mockFallbackService.continueAsGuest()
-        self.currentUser = mockFallbackService.currentUser
-        self.isAuthenticated = mockFallbackService.isAuthenticated
+        if let guestUser = mockFallbackService.currentUser {
+            self.currentUser = guestUser
+            self.isAuthenticated = true
+            try? await userRepository.saveUser(guestUser)
+        }
         self.isLoading = false
     }
     
@@ -129,6 +149,7 @@ final class CloudKitAuthService: AuthenticationService {
         isLoading = true
         
         await mockFallbackService.signOut()
+        try? await userRepository.deleteCurrentUser()
         
         self.currentUser = nil
         self.isAuthenticated = false

@@ -16,7 +16,6 @@ struct HomePlaceholderView: View {
     @State private var isCreatingProject: Bool = false
     @State private var newProjectTitle: String = ""
     @State private var newProjectDescription: String = ""
-    @State private var syncStatusMessage: String = "iCloud Sync Ready"
     
     var body: some View {
         NavigationStack {
@@ -34,9 +33,9 @@ struct HomePlaceholderView: View {
                                 Spacer()
                                 HStack(spacing: 4) {
                                     Circle()
-                                        .fill(Color.blue)
+                                        .fill(user.isGuest ? Color.orange : Color.green)
                                         .frame(width: 8, height: 8)
-                                    Text(syncStatusMessage)
+                                    Text(user.isGuest ? "Local Storage" : "iCloud Synced")
                                         .font(.caption2)
                                         .foregroundColor(AppColors.secondaryText)
                                 }
@@ -236,22 +235,6 @@ struct HomePlaceholderView: View {
             newProjectTitle = ""
             newProjectDescription = ""
         }
-    }
-}
-
-struct BadgeView: View {
-    let text: String
-    let color: Color
-    
-    var body: some View {
-        Text(text)
-            .font(.caption2)
-            .fontWeight(.bold)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(color.opacity(0.12))
-            .foregroundColor(color)
-            .clipShape(Capsule())
     }
 }
 
