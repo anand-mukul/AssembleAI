@@ -8,7 +8,7 @@ import SwiftUI
 /// Create Account screen with full field validation and accessibility labels.
 struct CreateAccountView: View {
     @EnvironmentObject private var router: AppRouter
-    @EnvironmentObject private var authService: CloudKitAuthService
+    @EnvironmentObject private var authService: SupabaseAuthService
     
     @State private var name: String = ""
     @State private var email: String = ""
@@ -207,6 +207,6 @@ struct CreateAccountView: View {
     NavigationView {
         CreateAccountView()
             .environmentObject(AppRouter())
-            .environmentObject(CloudKitAuthService())
+            .environmentObject(SupabaseAuthService())
     }
 }

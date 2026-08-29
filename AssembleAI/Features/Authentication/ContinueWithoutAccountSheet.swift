@@ -8,7 +8,7 @@ import SwiftUI
 /// Confirmation sheet modal for guest access respecting local privacy preferences.
 struct ContinueWithoutAccountSheet: View {
     @EnvironmentObject private var router: AppRouter
-    @EnvironmentObject private var authService: CloudKitAuthService
+    @EnvironmentObject private var authService: SupabaseAuthService
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -73,6 +73,6 @@ struct ContinueWithoutAccountSheet: View {
         .sheet(isPresented: .constant(true)) {
             ContinueWithoutAccountSheet()
                 .environmentObject(AppRouter())
-                .environmentObject(CloudKitAuthService())
+                .environmentObject(SupabaseAuthService())
         }
 }

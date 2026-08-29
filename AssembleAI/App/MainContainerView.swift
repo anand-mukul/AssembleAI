@@ -8,7 +8,7 @@ import SwiftUI
 /// Main container view orchestrating top-level routing, modal overlays, and sheet presentations.
 struct MainContainerView: View {
     @EnvironmentObject private var router: AppRouter
-    @EnvironmentObject private var authService: CloudKitAuthService
+    @EnvironmentObject private var authService: SupabaseAuthService
     
     var body: some View {
         ZStack {
@@ -102,5 +102,5 @@ struct MainContainerView: View {
 #Preview("Main Container View") {
     MainContainerView()
         .environmentObject(AppRouter())
-        .environmentObject(CloudKitAuthService())
+        .environmentObject(SupabaseAuthService())
 }

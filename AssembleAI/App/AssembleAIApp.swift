@@ -9,7 +9,7 @@ import SwiftData
 @main
 struct AssembleAIApp: App {
     @StateObject private var router = AppRouter()
-    @StateObject private var authService = CloudKitAuthService()
+    @StateObject private var authService = SupabaseAuthService()
 
     var body: some Scene {
         WindowGroup {

@@ -5,13 +5,12 @@
 
 import Testing
 import Foundation
-import CloudKit
 @testable import AssembleAI
 
 struct AssembleAITests {
 
-    @Test func testCloudKitAuthServiceGuestFlow() async throws {
-        let authService = await CloudKitAuthService()
+    @Test func testSupabaseAuthServiceGuestFlow() async throws {
+        let authService = await SupabaseAuthService()
         await authService.continueAsGuest()
         
         let isAuth = await authService.isAuthenticated

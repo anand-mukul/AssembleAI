@@ -7,31 +7,29 @@ import Foundation
 import SwiftData
 import Combine
 
-/// Synchronizes pending local SwiftData changes with Apple CloudKit when iCloud is active.
+/// Synchronizes pending local SwiftData changes with Supabase backend when online.
 @MainActor
 final class SyncCoordinator: ObservableObject {
     @Published private(set) var isSyncing: Bool = false
     @Published private(set) var lastSyncedAt: Date? = nil
     
     private let modelContext: ModelContext
-    private let cloudKitManager: CloudKitManager
-    private let cloudKitService: CloudKitProjectService
+    private let supabaseManager: SupabaseManager
+    private let supabaseService: SupabaseProjectService
     
     init(
         modelContext: ModelContext,
-        cloudKitManager: CloudKitManager? = nil,
-        cloudKitService: CloudKitProjectService? = nil
+        supabaseManager: SupabaseManager = .shared,
+        supabaseService: SupabaseProjectService = SupabaseProjectService()
     ) {
-        let manager = cloudKitManager ?? CloudKitManager.shared
         self.modelContext = modelContext
-        self.cloudKitManager = manager
-        self.cloudKitService = cloudKitService ?? CloudKitProjectService(cloudKitManager: manager)
+        self.supabaseManager = supabaseManager
+        self.supabaseService = supabaseService
     }
     
-    /// Synchronizes all pending local SwiftData modifications to CloudKit.
+    /// Synchronizes all pending local SwiftData modifications to Supabase.
     func synchronizePendingChanges() async {
-        await cloudKitManager.checkAccountStatus()
-        guard cloudKitManager.isAvailable else { return }
+        guard supabaseManager.isConnected else { return }
         
         isSyncing = true
         defer {
@@ -47,7 +45,7 @@ final class SyncCoordinator: ObservableObject {
             
             for localProject in pendingProjects {
                 let domainProject = localProject.toDomainModel()
-                try await cloudKitService.saveProject(domainProject)
+                try await supabaseService.saveProject(domainProject)
                 localProject.syncStateRaw = SyncState.synced.rawValue
             }
             

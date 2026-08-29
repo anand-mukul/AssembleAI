@@ -14,11 +14,11 @@ final class AuthSessionManager: ObservableObject {
     @Published private(set) var isAuthenticated: Bool = false
     @Published private(set) var isRestoringSession: Bool = true
     
-    let authService: CloudKitAuthService
+    let authService: SupabaseAuthService
     private let userRepository: UserRepository
     private var cancellables = Set<AnyCancellable>()
     
-    init(authService: CloudKitAuthService, userRepository: UserRepository) {
+    init(authService: SupabaseAuthService, userRepository: UserRepository) {
         self.authService = authService
         self.userRepository = userRepository
         

@@ -4,124 +4,75 @@
 //
 
 import SwiftUI
-import AuthenticationServices
 
-/// Authentication choice screen presenting Apple Sign In, Email options, and Guest access.
+/// Authentication options screen providing Sign in with Apple, Email, and Guest access.
 struct AuthChoiceView: View {
     @EnvironmentObject private var router: AppRouter
-    @EnvironmentObject private var authService: CloudKitAuthService
-    @Environment(\.colorScheme) private var colorScheme
+    @EnvironmentObject private var authService: SupabaseAuthService
     
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: AppSpacing.lg) {
             Spacer()
             
-            // Header
+            // Hero Illustration Header
             VStack(spacing: AppSpacing.xs) {
-                Image(systemName: "lock.shield")
-                    .font(.system(size: 44, weight: .light))
+                Image(systemName: "person.badge.shield.checkmark.fill")
+                    .font(.system(size: 56, weight: .light))
                     .foregroundColor(.assembleBrandPrimary)
                     .padding(.bottom, AppSpacing.xs)
                 
                 Text("Welcome to AssembleAI")
-                    .font(.title2)
+                    .font(.title)
                     .fontWeight(.bold)
                     .foregroundColor(AppColors.primaryText)
                 
-                Text("Your projects stay yours.")
+                Text("Choose your preferred method to sync your assembly workflows.")
                     .font(.subheadline)
                     .foregroundColor(AppColors.secondaryText)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, AppSpacing.md)
             }
-            .padding(.bottom, AppSpacing.xxl)
             
-            // Authentication Options
+            Spacer()
+            
+            // Action Buttons
             VStack(spacing: AppSpacing.md) {
-                // Native Sign in with Apple Button
-                SignInWithAppleButton(
-                    .continue,
-                    onRequest: { request in
-                        request.requestedScopes = [.fullName, .email]
-                    },
-                    onCompletion: { result in
-                        Task {
-                            do {
-                                try await authService.signInWithApple()
-                                router.transitionToHome()
-                            } catch {
-                                // Error handled via authService.authError state
-                            }
-                        }
-                    }
-                )
-                .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
-                .frame(height: 50)
-                .cornerRadius(14)
-                .accessibilityLabel("Continue with Apple")
-                
-                // Divider line with text
-                HStack {
-                    Rectangle()
-                        .fill(AppColors.border)
-                        .frame(height: 1)
-                    Text("or")
-                        .font(.caption)
-                        .foregroundColor(AppColors.tertiaryText)
-                        .padding(.horizontal, AppSpacing.xs)
-                    Rectangle()
-                        .fill(AppColors.border)
-                        .frame(height: 1)
+                PrimaryButton(title: "Sign in with Apple", iconName: "apple.logo") {
+                    router.navigateToSignInWithApple()
                 }
-                .padding(.vertical, AppSpacing.xs)
                 
-                // Continue with Email
                 SecondaryButton(title: "Continue with Email", iconName: "envelope.fill") {
-                    router.navigateToSignIn()
+                    router.navigateToEmailSignIn()
                 }
                 
-                // Guest / Local Access Button
                 Button(action: {
                     router.showGuestConfirmationSheet = true
                 }) {
                     Text("Continue without account")
                         .font(.subheadline)
-                        .fontWeight(.medium)
+                        .fontWeight(.semibold)
                         .foregroundColor(AppColors.secondaryText)
-                        .underline()
                 }
-                .padding(.top, AppSpacing.sm)
+                .padding(.top, AppSpacing.xs)
                 .accessibilityLabel("Continue without account")
             }
-            .padding(.horizontal, AppSpacing.lg)
-            
-            Spacer()
-            
-            // Privacy Explanation Footnote
-            HStack(alignment: .top, spacing: AppSpacing.xs) {
-                Image(systemName: "checkmark.shield.fill")
-                    .font(.caption)
-                    .foregroundColor(AppColors.secondaryText)
-                
-                Text("An account lets you sync projects and history. You can also continue on this device.")
-                    .font(.caption)
-                    .foregroundColor(AppColors.secondaryText)
-                    .multilineTextAlignment(.leading)
-            }
-            .padding(.horizontal, AppSpacing.xl)
-            .padding(.bottom, AppSpacing.lg)
+            .padding(.bottom, AppSpacing.xl)
         }
+        .padding(.horizontal, AppSpacing.lg)
         .background(AppColors.appBackground.ignoresSafeArea())
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
 #Preview("Auth Choice View") {
     AuthChoiceView()
         .environmentObject(AppRouter())
-        .environmentObject(CloudKitAuthService())
+        .environmentObject(SupabaseAuthService())
 }
 
 #Preview("Auth Choice View - Dark Mode") {
     AuthChoiceView()
         .preferredColorScheme(.dark)
         .environmentObject(AppRouter())
-        .environmentObject(CloudKitAuthService())
+        .environmentObject(SupabaseAuthService())
 }

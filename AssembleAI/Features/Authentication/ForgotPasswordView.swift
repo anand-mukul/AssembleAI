@@ -8,7 +8,7 @@ import SwiftUI
 /// Password reset request view with simulated success state.
 struct ForgotPasswordView: View {
     @EnvironmentObject private var router: AppRouter
-    @EnvironmentObject private var authService: CloudKitAuthService
+    @EnvironmentObject private var authService: SupabaseAuthService
     
     @State private var email: String = ""
     @State private var emailError: String? = nil
@@ -159,6 +159,6 @@ struct ForgotPasswordView: View {
     NavigationView {
         ForgotPasswordView()
             .environmentObject(AppRouter())
-            .environmentObject(CloudKitAuthService())
+            .environmentObject(SupabaseAuthService())
     }
 }

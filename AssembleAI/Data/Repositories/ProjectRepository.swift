@@ -14,14 +14,14 @@ protocol ProjectRepository: Sendable {
     func deleteProject(id: UUID) async throws
 }
 
-/// Local-first implementation querying SwiftData instantly and syncing with CloudKit asynchronously.
+/// Local-first implementation querying SwiftData instantly and syncing with Supabase asynchronously.
 final class LocalFirstProjectRepository: ProjectRepository, @unchecked Sendable {
     private let modelContext: ModelContext
-    private let cloudKitService: CloudKitProjectService?
+    private let supabaseService: SupabaseProjectService?
     
-    init(modelContext: ModelContext, cloudKitService: CloudKitProjectService? = nil) {
+    init(modelContext: ModelContext, supabaseService: SupabaseProjectService? = nil) {
         self.modelContext = modelContext
-        self.cloudKitService = cloudKitService
+        self.supabaseService = supabaseService
     }
     
     @MainActor
@@ -30,11 +30,11 @@ final class LocalFirstProjectRepository: ProjectRepository, @unchecked Sendable 
         let localProjects = try modelContext.fetch(descriptor)
         let domainProjects = localProjects.map { $0.toDomainModel() }
         
-        // Asynchronously sync from CloudKit if available
-        if let cloudKitService = cloudKitService {
+        // Asynchronously sync from Supabase if available
+        if let supabaseService = supabaseService {
             Task { @MainActor in
                 do {
-                    let remoteProjects = try await cloudKitService.fetchProjects()
+                    let remoteProjects = try await supabaseService.fetchProjects()
                     for remote in remoteProjects {
                         let targetId = remote.id
                         let fetchLocal = FetchDescriptor<LocalProject>(predicate: #Predicate<LocalProject> { $0.id == targetId })
@@ -92,11 +92,11 @@ final class LocalFirstProjectRepository: ProjectRepository, @unchecked Sendable 
         
         try modelContext.save()
         
-        // Background push to CloudKit if available
-        if let cloudKitService = cloudKitService {
+        // Background push to Supabase if available
+        if let supabaseService = supabaseService {
             Task { @MainActor in
                 do {
-                    try await cloudKitService.saveProject(project)
+                    try await supabaseService.saveProject(project)
                     if let existing = try self.modelContext.fetch(fetchLocal).first {
                         existing.syncStateRaw = SyncState.synced.rawValue
                         try self.modelContext.save()
@@ -116,9 +116,9 @@ final class LocalFirstProjectRepository: ProjectRepository, @unchecked Sendable 
             try modelContext.save()
         }
         
-        if let cloudKitService = cloudKitService {
+        if let supabaseService = supabaseService {
             Task {
-                try? await cloudKitService.deleteProject(id: id)
+                try? await supabaseService.deleteProject(id: id)
             }
         }
     }

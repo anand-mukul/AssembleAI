@@ -4,8 +4,8 @@
 //
 
 import SwiftUI
+import SwiftData
 
-/// Main entry view redirecting to MainContainerView.
 struct ContentView: View {
     var body: some View {
         MainContainerView()
@@ -15,5 +15,6 @@ struct ContentView: View {
 #Preview {
     ContentView()
         .environmentObject(AppRouter())
-        .environmentObject(CloudKitAuthService())
+        .environmentObject(SupabaseAuthService())
+        .modelContainer(for: LocalProject.self, inMemory: true)
 }

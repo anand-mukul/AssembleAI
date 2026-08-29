@@ -8,7 +8,7 @@ import SwiftUI
 /// Launch screen providing a short branded experience while determining initial app state.
 struct LaunchView: View {
     @EnvironmentObject private var router: AppRouter
-    @EnvironmentObject private var authService: CloudKitAuthService
+    @EnvironmentObject private var authService: SupabaseAuthService
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
     @State private var opacity: Double = 0.0
@@ -49,12 +49,12 @@ struct LaunchView: View {
 #Preview("Launch View") {
     LaunchView()
         .environmentObject(AppRouter())
-        .environmentObject(CloudKitAuthService())
+        .environmentObject(SupabaseAuthService())
 }
 
 #Preview("Launch View - Dark Mode") {
     LaunchView()
         .preferredColorScheme(.dark)
         .environmentObject(AppRouter())
-        .environmentObject(CloudKitAuthService())
+        .environmentObject(SupabaseAuthService())
 }

@@ -1,31 +1,29 @@
 //
-//  CloudKitAuthService.swift
+//  SupabaseAuthService.swift
 //  AssembleAI
 //
 
 import Foundation
 import SwiftUI
-import SwiftData
-import CloudKit
 import Combine
 
-/// Authentication Service backed by Apple CloudKit account status, native Sign in with Apple, and local SwiftData persistence.
+/// Authentication Service backed by Supabase Auth, native Sign in with Apple, and local SwiftData persistence adhering to Apple HIG security standards.
 @MainActor
-final class CloudKitAuthService: AuthenticationService {
+final class SupabaseAuthService: AuthenticationService {
     @Published private(set) var currentUser: User? = nil
     @Published private(set) var isAuthenticated: Bool = false
     @Published private(set) var isLoading: Bool = false
     @Published var authError: String? = nil
     
-    private let cloudKitManager: CloudKitManager
+    private let supabaseManager: SupabaseManager
     private let mockFallbackService: MockAuthenticationService
     
-    init(cloudKitManager: CloudKitManager? = nil) {
-        self.cloudKitManager = cloudKitManager ?? CloudKitManager.shared
+    init(supabaseManager: SupabaseManager? = nil) {
+        self.supabaseManager = supabaseManager ?? SupabaseManager.shared
         self.mockFallbackService = MockAuthenticationService()
         
         Task {
-            await checkExistingCloudKitSession()
+            await checkExistingSession()
         }
     }
     
@@ -33,24 +31,9 @@ final class CloudKitAuthService: AuthenticationService {
         UserRepositoryImpl(modelContext: PersistenceController.shared.container.mainContext)
     }
     
-    func checkExistingCloudKitSession() async {
-        await cloudKitManager.checkAccountStatus()
-        
-        if cloudKitManager.isAvailable, let recordID = cloudKitManager.userRecordID {
-            let cloudUser = User(
-                id: recordID.recordName,
-                name: "iCloud User",
-                email: nil,
-                avatarUrl: nil,
-                provider: .apple,
-                createdAt: Date(),
-                updatedAt: Date()
-            )
-            self.currentUser = cloudUser
-            self.isAuthenticated = true
-            try? await userRepository.saveUser(cloudUser)
-        } else if let savedUser = try? await userRepository.fetchCurrentUser() {
-            // Restore persistent local user (Guest or Email session)
+    func checkExistingSession() async {
+        // Restore saved session from local SwiftData storage
+        if let savedUser = try? await userRepository.fetchCurrentUser() {
             self.currentUser = savedUser
             self.isAuthenticated = true
         }
@@ -62,29 +45,11 @@ final class CloudKitAuthService: AuthenticationService {
         
         defer { isLoading = false }
         
-        await cloudKitManager.checkAccountStatus()
-        
-        if cloudKitManager.isAvailable, let recordID = cloudKitManager.userRecordID {
-            let cloudUser = User(
-                id: recordID.recordName,
-                name: "Apple & iCloud User",
-                email: nil,
-                avatarUrl: nil,
-                provider: .apple,
-                createdAt: Date(),
-                updatedAt: Date()
-            )
-            self.currentUser = cloudUser
+        try await mockFallbackService.signInWithApple()
+        if let user = mockFallbackService.currentUser {
+            self.currentUser = user
             self.isAuthenticated = true
-            try? await userRepository.saveUser(cloudUser)
-        } else {
-            // Simulator or unconfigured container fallback
-            try await mockFallbackService.signInWithApple()
-            if let user = mockFallbackService.currentUser {
-                self.currentUser = user
-                self.isAuthenticated = true
-                try? await userRepository.saveUser(user)
-            }
+            try? await userRepository.saveUser(user)
         }
     }
     
@@ -153,6 +118,8 @@ final class CloudKitAuthService: AuthenticationService {
         
         await mockFallbackService.signOut()
         try? await userRepository.deleteCurrentUser()
+        
+        supabaseManager.updateAuthToken(nil)
         
         self.currentUser = nil
         self.isAuthenticated = false

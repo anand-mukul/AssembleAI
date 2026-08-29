@@ -6,10 +6,10 @@
 import SwiftUI
 import SwiftData
 
-/// Main application home screen demonstrating local-first SwiftData persistence and Apple CloudKit synchronization status.
+/// Main application home screen demonstrating local-first SwiftData persistence and Supabase synchronization status.
 struct HomePlaceholderView: View {
     @EnvironmentObject private var router: AppRouter
-    @EnvironmentObject private var authService: CloudKitAuthService
+    @EnvironmentObject private var authService: SupabaseAuthService
     @Environment(\.modelContext) private var modelContext
     
     @State private var projects: [Project] = []
@@ -25,9 +25,9 @@ struct HomePlaceholderView: View {
                     if let user = authService.currentUser {
                         VStack(spacing: AppSpacing.xs) {
                             HStack {
-                                Image(systemName: user.isGuest ? "person.crop.circle.badge.clock" : "icloud.fill")
+                                Image(systemName: user.isGuest ? "person.crop.circle.badge.clock" : "shield.checkmark.fill")
                                     .foregroundColor(user.isGuest ? AppColors.warning : AppColors.brandPrimary)
-                                Text(user.isGuest ? "Guest Mode (Local Only)" : "iCloud Active")
+                                Text(user.isGuest ? "Guest Mode (Local Only)" : "Supabase Active")
                                     .font(.subheadline)
                                     .fontWeight(.semibold)
                                 Spacer()
@@ -35,7 +35,7 @@ struct HomePlaceholderView: View {
                                     Circle()
                                         .fill(user.isGuest ? Color.orange : Color.green)
                                         .frame(width: 8, height: 8)
-                                    Text(user.isGuest ? "Local Storage" : "iCloud Synced")
+                                    Text(user.isGuest ? "Local Storage" : "Cloud Synced")
                                         .font(.caption2)
                                         .foregroundColor(AppColors.secondaryText)
                                 }
@@ -74,7 +74,7 @@ struct HomePlaceholderView: View {
                                 .font(.title2)
                                 .fontWeight(.bold)
                                 .foregroundColor(AppColors.primaryText)
-                            Text("Local SwiftData • iCloud Private Database")
+                            Text("Local SwiftData • Free Supabase Storage")
                                 .font(.caption)
                                 .foregroundColor(AppColors.secondaryText)
                         }
@@ -123,7 +123,7 @@ struct HomePlaceholderView: View {
                                                 .font(.headline)
                                                 .foregroundColor(AppColors.primaryText)
                                             Spacer()
-                                            ProjectBadgeView(text: project.difficulty, color: .indigo)
+                                            BadgeView(text: project.difficulty, color: .indigo)
                                         }
                                         
                                         if !project.description.isEmpty {
@@ -135,7 +135,7 @@ struct HomePlaceholderView: View {
                                         
                                         HStack(spacing: AppSpacing.md) {
                                             Label("\(project.estimatedMinutes) mins", systemImage: "clock")
-                                            Label(project.syncState.rawValue, systemImage: project.syncState == .synced ? "icloud.fill" : "icloud.and.arrow.up")
+                                            Label(project.syncState.rawValue, systemImage: project.syncState == .synced ? "checkmark.circle.fill" : "arrow.triangle.2.circlepath")
                                                 .foregroundColor(project.syncState == .synced ? AppColors.success : AppColors.warning)
                                         }
                                         .font(.caption)
@@ -162,9 +162,7 @@ struct HomePlaceholderView: View {
                     SecondaryButton(title: "Sign Out", iconName: "rectangle.portrait.and.arrow.right") {
                         Task {
                             await authService.signOut()
-                            await MainActor.run {
-                                router.transitionToWelcome()
-                            }
+                            router.transitionToWelcome()
                         }
                     }
                     .padding(.horizontal, AppSpacing.lg)
@@ -213,9 +211,7 @@ struct HomePlaceholderView: View {
         let repository = LocalFirstProjectRepository(modelContext: modelContext)
         Task {
             if let loaded = try? await repository.fetchProjects() {
-                await MainActor.run {
-                    self.projects = loaded
-                }
+                self.projects = loaded
             }
         }
     }
@@ -235,36 +231,15 @@ struct HomePlaceholderView: View {
         
         Task {
             try? await repository.saveProject(newProject)
-            await MainActor.run {
-                loadLocalProjects()
-                newProjectTitle = ""
-                newProjectDescription = ""
-            }
+            loadLocalProjects()
+            newProjectTitle = ""
+            newProjectDescription = ""
         }
-    }
-}
-
-private struct ProjectBadgeView: View {
-    let text: String
-    let color: Color
-    
-    var body: some View {
-        Text(text)
-            .font(.caption2)
-            .fontWeight(.semibold)
-            .foregroundColor(color)
-            .padding(.horizontal, AppSpacing.sm)
-            .padding(.vertical, 4)
-            .background(
-                Capsule()
-                    .fill(color.opacity(0.12))
-            )
     }
 }
 
 #Preview("Home View") {
     HomePlaceholderView()
         .environmentObject(AppRouter())
-        .environmentObject(CloudKitAuthService())
-        .modelContainer(for: [LocalProject.self], inMemory: true)
+        .environmentObject(SupabaseAuthService())
 }

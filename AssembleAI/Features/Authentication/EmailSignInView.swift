@@ -8,7 +8,7 @@ import SwiftUI
 /// Email Sign In screen with validation, keyboard management, and error handling.
 struct EmailSignInView: View {
     @EnvironmentObject private var router: AppRouter
-    @EnvironmentObject private var authService: CloudKitAuthService
+    @EnvironmentObject private var authService: SupabaseAuthService
     
     @State private var email: String = ""
     @State private var password: String = ""
@@ -166,6 +166,6 @@ struct EmailSignInView: View {
     NavigationView {
         EmailSignInView()
             .environmentObject(AppRouter())
-            .environmentObject(CloudKitAuthService())
+            .environmentObject(SupabaseAuthService())
     }
 }

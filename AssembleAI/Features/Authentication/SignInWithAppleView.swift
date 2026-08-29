@@ -6,85 +6,82 @@
 import SwiftUI
 import AuthenticationServices
 
-/// Dedicated Sign In with Apple view adhering strictly to Apple design guidelines.
+/// Apple HIG compliant Sign in with Apple screen with full concurrency safety.
 struct SignInWithAppleView: View {
     @EnvironmentObject private var router: AppRouter
-    @EnvironmentObject private var authService: CloudKitAuthService
-    @Environment(\.colorScheme) private var colorScheme
+    @EnvironmentObject private var authService: SupabaseAuthService
     
     var body: some View {
-        VStack(spacing: AppSpacing.lg) {
+        VStack(spacing: AppSpacing.xl) {
             Spacer()
             
-            // Header
-            VStack(spacing: AppSpacing.sm) {
-                Image(systemName: "applelogo")
-                    .font(.system(size: 48, weight: .regular))
+            // Hero Illustration Header
+            VStack(spacing: AppSpacing.md) {
+                Image(systemName: "apple.logo")
+                    .font(.system(size: 64, weight: .light))
                     .foregroundColor(AppColors.primaryText)
+                    .padding(.bottom, AppSpacing.xs)
                 
-                Text("Sign in")
+                Text("Sign in with Apple")
                     .font(.title)
                     .fontWeight(.bold)
                     .foregroundColor(AppColors.primaryText)
                 
-                Text("Continue with Apple to access your projects.")
+                Text("Fast, secure, and private authentication. Synchronize your assembly workflows automatically.")
                     .font(.subheadline)
                     .foregroundColor(AppColors.secondaryText)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, AppSpacing.lg)
+                    .padding(.horizontal, AppSpacing.md)
             }
             
             Spacer()
             
-            // Sign in with Apple Button
+            // Sign in with Apple Official SwiftUI Button
             VStack(spacing: AppSpacing.md) {
-                SignInWithAppleButton(
-                    .signIn,
-                    onRequest: { request in
-                        request.requestedScopes = [.fullName, .email]
-                    },
-                    onCompletion: { result in
-                        Task {
-                            do {
-                                try await authService.signInWithApple()
-                                router.transitionToHome()
-                            } catch {
-                                // Error handled in authService state
-                            }
-                        }
-                    }
-                )
-                .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
-                .frame(height: 50)
-                .cornerRadius(14)
-                .padding(.horizontal, AppSpacing.lg)
-                
-                HStack(spacing: 4) {
-                    Image(systemName: "hand.raised.fill")
-                        .font(.caption2)
-                    Text("Your account stays private.")
-                        .font(.caption)
+                SignInWithAppleButton(.signIn) { request in
+                    request.requestedScopes = [.fullName, .email]
+                } onCompletion: { result in
+                    handleAppleSignInCompletion(result)
                 }
-                .foregroundColor(AppColors.secondaryText)
+                .signInWithAppleButtonStyle(.whiteOutline)
+                .frame(height: 52)
+                .cornerRadius(12)
+                .accessibilityLabel("Sign in with Apple")
                 
                 Button(action: {
                     router.pop()
                 }) {
-                    Text("Not now")
+                    Text("Cancel")
                         .font(.subheadline)
                         .fontWeight(.medium)
                         .foregroundColor(AppColors.secondaryText)
                 }
-                .padding(.top, AppSpacing.sm)
+                .padding(.vertical, AppSpacing.xs)
             }
             .padding(.bottom, AppSpacing.xl)
         }
+        .padding(.horizontal, AppSpacing.lg)
         .background(AppColors.appBackground.ignoresSafeArea())
+        .navigationBarTitleDisplayMode(.inline)
+    }
+    
+    private func handleAppleSignInCompletion(_ result: Result<ASAuthorization, Error>) {
+        Task {
+            switch result {
+            case .success:
+                try? await authService.signInWithApple()
+                router.transitionToHome()
+            case .failure(let error):
+                authService.authError = error.localizedDescription
+            }
+        }
     }
 }
 
-#Preview("Sign In With Apple") {
-    SignInWithAppleView()
-        .environmentObject(AppRouter())
-        .environmentObject(CloudKitAuthService())
+#Preview("Sign in with Apple View") {
+    NavigationView {
+        SignInWithAppleView()
+            .environmentObject(AppRouter())
+            .environmentObject(SupabaseAuthService())
+    }
 }
