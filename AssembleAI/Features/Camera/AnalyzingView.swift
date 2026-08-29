@@ -12,7 +12,7 @@ struct AnalyzingView: View {
     
     let step: AssemblyStep
     var capturedImage: UIImage? = nil
-    var verificationService: VerificationServiceProtocol = MockVerificationService()
+    var verificationService: VerificationServiceProtocol = HybridVerificationService()
     
     @State private var progress: Double = 0.0
     @State private var analysisPhaseText: String = "Capturing spatial frame..."
