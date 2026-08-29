@@ -4,15 +4,24 @@
 //
 
 import SwiftUI
+import UIKit
 
 // MARK: - Button Spring Micro-Interaction Style
 
-/// Tactile spring scale button style adhering to Apple HIG guidelines.
+/// Tactile spring scale button style with optional haptic feedback adhering to Apple HIG guidelines.
 struct ScaleButtonStyle: ButtonStyle {
+    var enableHaptic: Bool = false
+    
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
+            .opacity(configuration.isPressed ? 0.9 : 1.0)
             .animation(.spring(response: 0.25, dampingFraction: 0.7), value: configuration.isPressed)
+            .onChange(of: configuration.isPressed) { _, isPressed in
+                if enableHaptic && isPressed {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                }
+            }
     }
 }
 
@@ -29,7 +38,7 @@ struct BrandHeaderView: View {
     }
     
     var body: some View {
-        VStack(spacing: size == .large ? AppSpacing.xs : 4) {
+        VStack(spacing: size == .large ? AppSpacing.sm : 4) {
             // App Brand Mark (Precision Viewfinder + CPU Core)
             ZStack {
                 Circle()
@@ -242,18 +251,21 @@ struct PrimaryButton: View {
     let action: () -> Void
     
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: AppSpacing.xs) {
+        Button(action: {
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            action()
+        }) {
+            HStack(spacing: AppSpacing.sm) {
                 if isLoading {
                     ProgressView()
                         .tint(.white)
                 } else {
                     if let iconName = iconName {
                         Image(systemName: iconName)
-                            .font(.subheadline)
+                            .font(.body.weight(.medium))
                     }
                     Text(title)
-                        .font(.headline)
+                        .font(.body)
                         .fontWeight(.semibold)
                         .lineLimit(1)
                 }
@@ -265,11 +277,13 @@ struct PrimaryButton: View {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(isDisabled ? AppColors.tertiaryText.opacity(0.3) : Color.assembleBrandPrimary)
             )
+            .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .buttonStyle(ScaleButtonStyle())
         .disabled(isDisabled || isLoading)
         .opacity(isDisabled ? 0.75 : 1.0)
         .accessibilityLabel(title)
+        .accessibilityHint(isLoading ? "Loading" : "")
     }
 }
 
@@ -283,14 +297,17 @@ struct SecondaryButton: View {
     let action: () -> Void
     
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: AppSpacing.xs) {
+        Button(action: {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            action()
+        }) {
+            HStack(spacing: AppSpacing.sm) {
                 if let iconName = iconName {
                     Image(systemName: iconName)
-                        .font(.subheadline)
+                        .font(.body.weight(.medium))
                 }
                 Text(title)
-                    .font(.headline)
+                    .font(.body)
                     .fontWeight(.medium)
                     .lineLimit(1)
             }
@@ -305,6 +322,7 @@ struct SecondaryButton: View {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .strokeBorder(AppColors.border.opacity(0.4), lineWidth: 1)
             )
+            .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .buttonStyle(ScaleButtonStyle())
         .disabled(isDisabled)
@@ -315,7 +333,7 @@ struct SecondaryButton: View {
 
 // MARK: - Status Badge
 
-/// Minimal status badge for difficulty level and sync state.
+/// Minimal status badge for difficulty level, sync state, and verification outcomes.
 struct BadgeView: View {
     let text: String
     var color: Color = .assembleBrandPrimary
@@ -337,7 +355,7 @@ struct BadgeView: View {
 
 // MARK: - Custom Input Text Field
 
-/// Standardized native text field with icon, focus highlighting, and error message support.
+/// Standardized native text field with icon, focus highlighting, error state, and clear button.
 struct CustomTextField: View {
     let title: String
     let placeholder: String
@@ -363,6 +381,7 @@ struct CustomTextField: View {
                 Image(systemName: iconName)
                     .foregroundColor(isFocused ? .assembleBrandPrimary : AppColors.secondaryText)
                     .frame(width: 20)
+                    .accessibilityHidden(true)
                 
                 if isSecure && !isPasswordVisible {
                     SecureField(placeholder, text: $text)
@@ -370,6 +389,7 @@ struct CustomTextField: View {
                         .submitLabel(submitLabel)
                         .onSubmit(onCommit)
                         .focused($isFocused)
+                        .textContentType(.password)
                 } else {
                     TextField(placeholder, text: $text)
                         .keyboardType(keyboardType)
@@ -378,12 +398,14 @@ struct CustomTextField: View {
                         .submitLabel(submitLabel)
                         .onSubmit(onCommit)
                         .focused($isFocused)
+                        .textContentType(keyboardType == .emailAddress ? .emailAddress : nil)
                 }
                 
                 if isSecure {
                     Button(action: { isPasswordVisible.toggle() }) {
                         Image(systemName: isPasswordVisible ? "eye.slash" : "eye")
                             .foregroundColor(AppColors.tertiaryText)
+                            .contentTransition(.symbolEffect(.replace))
                     }
                     .accessibilityLabel(isPasswordVisible ? "Hide password" : "Show password")
                 } else if !text.isEmpty && isFocused {
@@ -419,7 +441,8 @@ struct CustomTextField: View {
                         .foregroundColor(AppColors.error)
                 }
                 .padding(.leading, 4)
-                .transition(.opacity)
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .accessibilityLabel("Error: \(errorMessage)")
             }
         }
     }

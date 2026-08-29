@@ -29,16 +29,16 @@ struct LaunchView: View {
             if reduceMotion {
                 opacity = 1.0
                 scale = 1.0
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                     router.completeLaunch(isAuthenticated: authService.isAuthenticated)
                 }
             } else {
-                withAnimation(.easeOut(duration: 0.6)) {
+                withAnimation(.easeOut(duration: 0.5)) {
                     opacity = 1.0
                     scale = 1.0
                 }
                 
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
                     router.completeLaunch(isAuthenticated: authService.isAuthenticated)
                 }
             }

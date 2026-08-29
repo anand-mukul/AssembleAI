@@ -10,42 +10,58 @@ import AuthenticationServices
 struct SignInWithAppleView: View {
     @EnvironmentObject private var router: AppRouter
     @EnvironmentObject private var authService: SupabaseAuthService
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    
+    @State private var contentAppeared = false
     
     var body: some View {
-        VStack(spacing: AppSpacing.xl) {
+        VStack(spacing: 0) {
             Spacer()
             
             // Hero Illustration Header
-            VStack(spacing: AppSpacing.md) {
-                Image(systemName: "apple.logo")
-                    .font(.system(size: 64, weight: .light))
-                    .foregroundColor(AppColors.primaryText)
-                    .padding(.bottom, AppSpacing.xs)
+            VStack(spacing: AppSpacing.mdSm) {
+                ZStack {
+                    Circle()
+                        .fill(AppColors.secondaryBackground)
+                        .frame(width: 80, height: 80)
+                    
+                    Image(systemName: "apple.logo")
+                        .font(.system(size: 38, weight: .regular))
+                        .foregroundColor(AppColors.primaryText)
+                }
+                .opacity(contentAppeared ? 1 : 0)
+                .scaleEffect(contentAppeared ? 1 : 0.85)
                 
-                Text("Sign in with Apple")
-                    .font(.title)
-                    .fontWeight(.bold)
-                    .foregroundColor(AppColors.primaryText)
-                
-                Text("Fast, secure, and private authentication. Synchronize your assembly workflows automatically.")
-                    .font(.subheadline)
-                    .foregroundColor(AppColors.secondaryText)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, AppSpacing.md)
+                VStack(spacing: AppSpacing.xs) {
+                    Text("Sign in with Apple")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(AppColors.primaryText)
+                        .accessibilityAddTraits(.isHeader)
+                    
+                    Text("Fast, secure, and private authentication. Synchronize your assembly workflows automatically.")
+                        .font(.subheadline)
+                        .foregroundColor(AppColors.secondaryText)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, AppSpacing.md)
+                }
+                .opacity(contentAppeared ? 1 : 0)
+                .offset(y: contentAppeared ? 0 : 10)
             }
             
             Spacer()
             
             // Sign in with Apple Official SwiftUI Button
-            VStack(spacing: AppSpacing.md) {
+            VStack(spacing: AppSpacing.mdSm) {
                 SignInWithAppleButton(.signIn) { request in
                     request.requestedScopes = [.fullName, .email]
                 } onCompletion: { result in
                     handleAppleSignInCompletion(result)
                 }
-                .signInWithAppleButtonStyle(.whiteOutline)
-                .frame(height: 52)
-                .cornerRadius(12)
+                .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
+                .frame(height: 50)
+                .cornerRadius(14)
                 .accessibilityLabel("Sign in with Apple")
                 
                 Button(action: {
@@ -59,10 +75,17 @@ struct SignInWithAppleView: View {
                 .padding(.vertical, AppSpacing.xs)
             }
             .padding(.bottom, AppSpacing.xl)
+            .opacity(contentAppeared ? 1 : 0)
+            .offset(y: contentAppeared ? 0 : 16)
         }
-        .padding(.horizontal, AppSpacing.lg)
+        .padding(.horizontal, AppSpacing.screenEdge)
         .background(AppColors.appBackground.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            withAnimation(reduceMotion ? .none : .spring(response: 0.5, dampingFraction: 0.8)) {
+                contentAppeared = true
+            }
+        }
     }
     
     private func handleAppleSignInCompletion(_ result: Result<ASAuthorization, Error>) {

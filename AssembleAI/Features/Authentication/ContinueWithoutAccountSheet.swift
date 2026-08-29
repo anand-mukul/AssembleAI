@@ -20,27 +20,34 @@ struct ContinueWithoutAccountSheet: View {
                 .padding(.top, AppSpacing.sm)
             
             VStack(spacing: AppSpacing.sm) {
-                Image(systemName: "iphone.circle.fill")
-                    .font(.system(size: 52, weight: .light))
-                    .foregroundColor(.assembleBrandPrimary)
-                    .padding(.bottom, AppSpacing.xs)
+                ZStack {
+                    Circle()
+                        .fill(Color.assembleBrandPrimary.opacity(0.1))
+                        .frame(width: 68, height: 68)
+                    
+                    Image(systemName: "iphone.circle.fill")
+                        .font(.system(size: 34, weight: .light))
+                        .foregroundColor(.assembleBrandPrimary)
+                }
+                .padding(.bottom, AppSpacing.xs)
                 
-                Text("Continue on this iPhone?")
+                Text("Continue on iPhone")
                     .font(.title2)
                     .fontWeight(.bold)
                     .foregroundColor(AppColors.primaryText)
+                    .accessibilityAddTraits(.isHeader)
                 
-                Text("You can use AssembleAI without an account. Your projects and history will remain on this device.")
+                Text("Use AssembleAI without an account. Your assembly projects and inspection history stay strictly on this device.")
                     .font(.subheadline)
                     .foregroundColor(AppColors.secondaryText)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, AppSpacing.md)
+                    .padding(.horizontal, AppSpacing.sm)
             }
-            .padding(.top, AppSpacing.sm)
+            .padding(.top, AppSpacing.xs)
             
             Spacer()
             
-            VStack(spacing: AppSpacing.md) {
+            VStack(spacing: AppSpacing.mdSm) {
                 PrimaryButton(title: "Continue", iconName: "arrow.right") {
                     dismiss()
                     Task {
@@ -61,10 +68,11 @@ struct ContinueWithoutAccountSheet: View {
             }
             .padding(.bottom, AppSpacing.lg)
         }
-        .padding(.horizontal, AppSpacing.lg)
+        .padding(.horizontal, AppSpacing.screenEdge)
         .background(AppColors.secondaryGroupedBackground.ignoresSafeArea())
-        .presentationDetents([.height(380), .medium])
+        .presentationDetents([.height(390), .medium])
         .presentationCornerRadius(28)
+        .accessibilityElement(children: .contain)
     }
 }
 

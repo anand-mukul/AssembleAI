@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 /// Native-styled error alert view for handling authentication failures gracefully.
 struct AuthenticationErrorView: View {
@@ -11,18 +12,32 @@ struct AuthenticationErrorView: View {
     let onRetry: () -> Void
     let onDismiss: () -> Void
     
+    @State private var iconAppeared = false
+    
     var body: some View {
         VStack(spacing: AppSpacing.lg) {
+            // Drag indicator
+            Capsule()
+                .fill(AppColors.border)
+                .frame(width: 36, height: 5)
+                .padding(.top, AppSpacing.sm)
+            
             Spacer()
             
-            VStack(spacing: AppSpacing.sm) {
-                Image(systemName: "exclamationmark.circle.fill")
-                    .font(.system(size: 48, weight: .light))
-                    .foregroundColor(AppColors.error)
-                    .padding(.bottom, AppSpacing.xs)
+            VStack(spacing: AppSpacing.mdSm) {
+                ZStack {
+                    Circle()
+                        .fill(AppColors.error.opacity(0.1))
+                        .frame(width: 72, height: 72)
+                    
+                    Image(systemName: "exclamationmark.circle.fill")
+                        .font(.system(size: 36, weight: .light))
+                        .foregroundColor(AppColors.error)
+                        .scaleEffect(iconAppeared ? 1 : 0.7)
+                }
                 
                 Text("Something went wrong")
-                    .font(.title2)
+                    .font(.title3)
                     .fontWeight(.bold)
                     .foregroundColor(AppColors.primaryText)
                 
@@ -30,29 +45,36 @@ struct AuthenticationErrorView: View {
                     .font(.subheadline)
                     .foregroundColor(AppColors.secondaryText)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, AppSpacing.lg)
+                    .padding(.horizontal, AppSpacing.md)
             }
             
             Spacer()
             
-            VStack(spacing: AppSpacing.md) {
+            VStack(spacing: AppSpacing.mdSm) {
                 PrimaryButton(title: "Try Again", iconName: "arrow.clockwise") {
                     onRetry()
                 }
                 
                 Button(action: onDismiss) {
-                    Text("Cancel")
+                    Text("Dismiss")
                         .font(.subheadline)
                         .fontWeight(.medium)
                         .foregroundColor(AppColors.secondaryText)
                 }
                 .padding(.vertical, AppSpacing.xs)
             }
-            .padding(.bottom, AppSpacing.xl)
+            .padding(.bottom, AppSpacing.lg)
         }
-        .padding(.horizontal, AppSpacing.lg)
-        .background(AppColors.appBackground.ignoresSafeArea())
+        .padding(.horizontal, AppSpacing.screenEdge)
+        .background(AppColors.secondaryGroupedBackground.ignoresSafeArea())
+        .onAppear {
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.6).delay(0.1)) {
+                iconAppeared = true
+            }
+        }
         .accessibilityElement(children: .contain)
+        .accessibilityLabel("Error: \(errorMessage.isEmpty ? "Sign in failed" : errorMessage)")
     }
 }
 

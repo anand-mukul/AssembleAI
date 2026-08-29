@@ -27,16 +27,17 @@ struct CreateAccountView: View {
                 // Header
                 VStack(spacing: AppSpacing.xs) {
                     Text("Create Account")
-                        .font(.title)
+                        .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(AppColors.primaryText)
+                        .accessibilityAddTraits(.isHeader)
                     
                     Text("Sync your assembly projects and history safely.")
                         .font(.subheadline)
                         .foregroundColor(AppColors.secondaryText)
                         .multilineTextAlignment(.center)
                 }
-                .padding(.top, AppSpacing.lg)
+                .padding(.top, AppSpacing.xl)
                 .padding(.bottom, AppSpacing.sm)
                 
                 // Form Fields
@@ -98,7 +99,7 @@ struct CreateAccountView: View {
                 // Primary Action Button
                 PrimaryButton(
                     title: "Create Account",
-                    iconName: "checkmark.circle.fill",
+                    iconName: "checkmark",
                     isLoading: authService.isLoading,
                     isDisabled: isFormIncomplete
                 ) {
@@ -122,7 +123,7 @@ struct CreateAccountView: View {
                 .padding(.top, AppSpacing.md)
                 .accessibilityLabel("Already have an account? Sign In")
             }
-            .padding(.horizontal, AppSpacing.lg)
+            .padding(.horizontal, AppSpacing.screenEdge)
             .padding(.bottom, AppSpacing.xl)
         }
         .background(AppColors.appBackground.ignoresSafeArea())

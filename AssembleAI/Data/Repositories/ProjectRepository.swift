@@ -7,7 +7,7 @@ import Foundation
 import SwiftData
 import Combine
 
-protocol ProjectRepository: Sendable {
+protocol LocalProjectRepository: Sendable {
     func fetchProjects() async throws -> [Project]
     func fetchProject(id: UUID) async throws -> Project?
     func saveProject(_ project: Project) async throws
@@ -15,7 +15,7 @@ protocol ProjectRepository: Sendable {
 }
 
 /// Local-first implementation querying SwiftData instantly and syncing with Supabase asynchronously.
-final class LocalFirstProjectRepository: ProjectRepository, @unchecked Sendable {
+final class LocalFirstProjectRepository: LocalProjectRepository, @unchecked Sendable {
     private let modelContext: ModelContext
     private let supabaseService: SupabaseProjectService?
     

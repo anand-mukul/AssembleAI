@@ -11,7 +11,7 @@ struct AuthenticationLoadingView: View {
     
     var body: some View {
         ZStack {
-            AppColors.appBackground.opacity(0.85)
+            AppColors.appBackground.opacity(0.8)
                 .ignoresSafeArea()
             
             VStack(spacing: AppSpacing.md) {
@@ -28,12 +28,12 @@ struct AuthenticationLoadingView: View {
             .padding(.vertical, AppSpacing.lg)
             .background(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(AppColors.secondaryBackground)
-                    .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 4)
+                    .fill(AppColors.secondaryGroupedBackground)
+                    .shadow(color: Color.black.opacity(0.06), radius: 16, x: 0, y: 6)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .strokeBorder(AppColors.border.opacity(0.5), lineWidth: 1)
+                    .strokeBorder(AppColors.border.opacity(0.3), lineWidth: 1)
             )
         }
         .accessibilityElement(children: .combine)

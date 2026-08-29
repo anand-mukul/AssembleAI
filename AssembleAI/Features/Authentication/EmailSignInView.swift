@@ -23,16 +23,17 @@ struct EmailSignInView: View {
                 // Header
                 VStack(spacing: AppSpacing.xs) {
                     Text("Sign In")
-                        .font(.title)
+                        .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(AppColors.primaryText)
+                        .accessibilityAddTraits(.isHeader)
                     
                     Text("Enter your email and password to access your account.")
                         .font(.subheadline)
                         .foregroundColor(AppColors.secondaryText)
                         .multilineTextAlignment(.center)
                 }
-                .padding(.top, AppSpacing.lg)
+                .padding(.top, AppSpacing.xl)
                 .padding(.bottom, AppSpacing.sm)
                 
                 // Form Fields
@@ -74,14 +75,14 @@ struct EmailSignInView: View {
                                 .foregroundColor(.assembleBrandPrimary)
                         }
                         .padding(.top, AppSpacing.xxs)
-                        .accessibilityLabel("Forgot password?")
+                        .accessibilityLabel("Forgot password")
                     }
                 }
                 
                 // Primary Action Button
                 PrimaryButton(
                     title: "Sign In",
-                    iconName: "arrow.right.circle.fill",
+                    iconName: "arrow.right",
                     isLoading: authService.isLoading,
                     isDisabled: isFormInvalid
                 ) {
@@ -105,7 +106,7 @@ struct EmailSignInView: View {
                 .padding(.top, AppSpacing.md)
                 .accessibilityLabel("Don't have an account? Create account")
             }
-            .padding(.horizontal, AppSpacing.lg)
+            .padding(.horizontal, AppSpacing.screenEdge)
             .padding(.bottom, AppSpacing.xl)
         }
         .background(AppColors.appBackground.ignoresSafeArea())

@@ -36,13 +36,8 @@ struct MainContainerView: View {
                 .transition(.opacity)
                 
             case .home:
-                NavigationStack(path: $router.navigationPath) {
-                    HomePlaceholderView()
-                        .navigationDestination(for: AppRoute.self) { route in
-                            destinationView(for: route)
-                        }
-                }
-                .transition(.opacity)
+                MainTabView()
+                    .transition(.opacity)
                 
             default:
                 NavigationStack(path: $router.navigationPath) {
@@ -102,8 +97,8 @@ struct MainContainerView: View {
             ForgotPasswordView()
         case .camera(let step):
             AssemblyCameraView(currentStep: step)
-        case .analyzing(let step):
-            AnalyzingView(step: step)
+        case .analyzing:
+            AnalysisView()
         default:
             EmptyView()
         }

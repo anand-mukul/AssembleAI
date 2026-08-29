@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 /// Password reset request view with simulated success state.
 struct ForgotPasswordView: View {
@@ -23,7 +24,7 @@ struct ForgotPasswordView: View {
                 requestStateView
             }
         }
-        .padding(.horizontal, AppSpacing.lg)
+        .padding(.horizontal, AppSpacing.screenEdge)
         .background(AppColors.appBackground.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -35,17 +36,24 @@ struct ForgotPasswordView: View {
             
             // Header
             VStack(spacing: AppSpacing.xs) {
-                Image(systemName: "key.fill")
-                    .font(.system(size: 40, weight: .light))
-                    .foregroundColor(.assembleBrandPrimary)
-                    .padding(.bottom, AppSpacing.xs)
+                ZStack {
+                    Circle()
+                        .fill(Color.assembleBrandPrimary.opacity(0.1))
+                        .frame(width: 68, height: 68)
+                    
+                    Image(systemName: "key.fill")
+                        .font(.system(size: 30, weight: .light))
+                        .foregroundColor(.assembleBrandPrimary)
+                }
+                .padding(.bottom, AppSpacing.xs)
                 
-                Text("Reset your password")
+                Text("Reset Password")
                     .font(.title2)
                     .fontWeight(.bold)
                     .foregroundColor(AppColors.primaryText)
+                    .accessibilityAddTraits(.isHeader)
                 
-                Text("Enter your email and we'll send instructions to reset it.")
+                Text("Enter your email and we'll send instructions to reset your password.")
                     .font(.subheadline)
                     .foregroundColor(AppColors.secondaryText)
                     .multilineTextAlignment(.center)
@@ -66,7 +74,7 @@ struct ForgotPasswordView: View {
             // Primary Button
             PrimaryButton(
                 title: "Send Reset Link",
-                iconName: "paperplane.fill",
+                iconName: "paperplane",
                 isLoading: authService.isLoading,
                 isDisabled: email.trimmingCharacters(in: .whitespaces).isEmpty
             ) {
@@ -94,18 +102,25 @@ struct ForgotPasswordView: View {
             Spacer()
             
             VStack(spacing: AppSpacing.sm) {
-                Image(systemName: "envelope.badge.shield.halffilled")
-                    .font(.system(size: 56))
-                    .foregroundColor(.assembleBrandPrimary)
-                    .padding(.bottom, AppSpacing.xs)
+                ZStack {
+                    Circle()
+                        .fill(AppColors.success.opacity(0.12))
+                        .frame(width: 72, height: 72)
+                    
+                    Image(systemName: "envelope.badge.shield.halffilled")
+                        .font(.system(size: 34, weight: .light))
+                        .foregroundColor(AppColors.success)
+                }
+                .padding(.bottom, AppSpacing.xs)
                 
-                Text("Check your inbox")
-                    .font(.title)
+                Text("Check Your Inbox")
+                    .font(.title2)
                     .fontWeight(.bold)
                     .foregroundColor(AppColors.primaryText)
+                    .accessibilityAddTraits(.isHeader)
                 
                 Text("If an account exists for \(email), you'll receive reset instructions shortly.")
-                    .font(.body)
+                    .font(.subheadline)
                     .foregroundColor(AppColors.secondaryText)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, AppSpacing.md)
@@ -117,6 +132,9 @@ struct ForgotPasswordView: View {
                 router.pop()
             }
             .padding(.bottom, AppSpacing.xl)
+        }
+        .onAppear {
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
         }
     }
     
@@ -139,7 +157,7 @@ struct ForgotPasswordView: View {
         Task {
             do {
                 try await authService.resetPassword(email: trimmedEmail)
-                withAnimation(.easeInOut(duration: 0.3)) {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                     isSuccessState = true
                 }
             } catch {

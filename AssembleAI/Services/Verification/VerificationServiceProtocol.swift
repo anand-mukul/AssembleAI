@@ -10,6 +10,7 @@ import UIKit
 enum VerificationStatus: String, Codable, Sendable {
     case correct
     case incorrect
+    case uncertain
 }
 
 /// Structured result returned by a verification service after analyzing physical assembly image state.
