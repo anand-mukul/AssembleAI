@@ -68,6 +68,18 @@ protocol LiveObservationCoordinating: Sendable {
     func getMetrics() async -> LiveObservationMetrics
 }
 
+extension LiveObservationCoordinating {
+    /// Evaluates observation for the given step.
+    func handleObservation(_ observation: VisualObservation, for step: AssemblyStep) async -> VerificationResult? {
+        await process(observation: observation, for: step)
+    }
+    
+    /// Resets temporal state on step progression.
+    func resetForStepChange() async {
+        await reset()
+    }
+}
+
 // MARK: - Live Observation Coordinator Implementation
 
 /// Actor-isolated orchestrator connecting `VisualObservation` stream to `AssemblyStateEstimator` and `AssemblyStateComparator`.

@@ -169,7 +169,14 @@ protocol AssistantInterventionPolicing: Sendable {
     func reset()
     
     /// Resets step-specific cooldowns and mistake counters when transitioning steps.
-    func resetForStepChange(newStep: AssemblyStep)
+    func resetForStepChange(newStep: AssemblyStep?)
+}
+
+extension AssistantInterventionPolicing {
+    /// Convenience reset on step change.
+    func resetForStepChange() {
+        resetForStepChange(newStep: nil)
+    }
 }
 
 // MARK: - Assistant Intervention Policy Implementation
@@ -356,14 +363,14 @@ final class AssistantInterventionPolicy: AssistantInterventionPolicing, @uncheck
         performFullReset()
     }
     
-    func resetForStepChange(newStep: AssemblyStep) {
+    func resetForStepChange(newStep: AssemblyStep? = nil) {
         lock.lock()
         defer { lock.unlock() }
         performStepReset(newStep: newStep)
     }
     
-    private func performStepReset(newStep: AssemblyStep) {
-        activeStepID = newStep.id
+    private func performStepReset(newStep: AssemblyStep?) {
+        activeStepID = newStep?.id
         stepConfirmed = false
         consecutiveMistakes = 0
         consecutiveUncertainties = 0

@@ -132,6 +132,27 @@ protocol FrameSampling: Sendable {
     func getMetrics() async -> FrameSamplingMetrics
 }
 
+typealias FrameSamplingServiceProtocol = FrameSampling
+
+extension FrameSampling {
+    /// Subscribes to an upstream video stream and samples frames as CVPixelBuffer.
+    func sample(stream: AsyncStream<CVPixelBuffer>) -> AsyncStream<CVPixelBuffer> {
+        AsyncStream(CVPixelBuffer.self, bufferingPolicy: .bufferingNewest(1)) { continuation in
+            let source = sampledStream(from: stream)
+            let task = Task {
+                for await frame in source {
+                    if Task.isCancelled { break }
+                    continuation.yield(frame.pixelBuffer)
+                }
+                continuation.finish()
+            }
+            continuation.onTermination = { _ in
+                task.cancel()
+            }
+        }
+    }
+}
+
 // MARK: - Frame Sampling Service Implementation
 
 /// Actor-isolated adaptive frame sampling service implementing rate limiting, sub-millisecond motion gating,
