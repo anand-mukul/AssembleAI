@@ -21,6 +21,11 @@ struct StepCompletedView: View {
             
             ZStack {
                 Circle()
+                    .stroke(AppColors.success.opacity(0.25), lineWidth: 2)
+                    .frame(width: 140, height: 140)
+                    .scaleEffect(iconScale)
+                
+                Circle()
                     .fill(AppColors.success.opacity(0.12))
                     .frame(width: 120, height: 120)
                 
@@ -71,8 +76,8 @@ struct StepCompletedView: View {
         .padding(.horizontal, AppSpacing.screenEdge)
         .background(AppColors.appBackground.ignoresSafeArea())
         .onAppear {
-            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            withAnimation(.spring(response: 0.42, dampingFraction: 0.58)) {
                 iconScale = 1.0
             }
         }

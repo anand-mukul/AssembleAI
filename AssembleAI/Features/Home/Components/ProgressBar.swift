@@ -25,9 +25,15 @@ struct ProgressBar: View {
                     .frame(height: height)
                 
                 Capsule()
-                    .fill(fillColor)
+                    .fill(
+                        LinearGradient(
+                            colors: [fillColor, fillColor.opacity(0.85)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
                     .frame(width: width, height: height)
-                    .animation(reduceMotion ? .none : .spring(response: 0.5, dampingFraction: 0.8), value: value)
+                    .animation(reduceMotion ? .none : .spring(response: 0.45, dampingFraction: 0.82), value: value)
             }
         }
         .frame(height: height)

@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 // MARK: - Live Tutor Status
 
@@ -31,7 +32,7 @@ struct LiveTutorConfiguration: Sendable, Equatable {
 
 // MARK: - Live Tutor HUD View
 
-/// Floating, compact Live Tutor HUD overlay presenting real-time conversational guidance, voice controls, and status pills.
+/// Floating, compact Live Tutor HUD overlay presenting real-time conversational guidance, voice controls, and Jakub Antalik thinking orbs.
 struct LiveTutorHUDView: View {
     let status: LiveTutorStatus
     let currentStep: AssemblyStep
@@ -45,20 +46,22 @@ struct LiveTutorHUDView: View {
     var onManualFallback: (() -> Void)? = nil
     
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var isPulsing = false
     
     var body: some View {
         VStack(spacing: AppSpacing.sm) {
             // Floating Assistant Glass Card
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                // Card Header: Status Badge & Pause/Resume Control
+                // Card Header: Status Badge with Thinking Orb & Pause/Resume Control
                 HStack {
                     statusBadge
                     
                     Spacer()
                     
                     // Pause / Resume Button
-                    Button(action: onTogglePause) {
+                    Button(action: {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        onTogglePause()
+                    }) {
                         HStack(spacing: 4) {
                             Image(systemName: isPaused ? "play.fill" : "pause.fill")
                                 .font(.system(size: 11, weight: .bold))
@@ -70,6 +73,7 @@ struct LiveTutorHUDView: View {
                         .padding(.vertical, 4)
                         .background(Capsule().fill(.ultraThinMaterial))
                     }
+                    .buttonStyle(ScaleButtonStyle())
                     .accessibilityLabel(isPaused ? "Resume Live Tutor" : "Pause Live Tutor")
                 }
                 
@@ -89,19 +93,39 @@ struct LiveTutorHUDView: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .strokeBorder(cardBorderColor.opacity(0.35), lineWidth: 1)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: [
+                                cardBorderColor.opacity(0.6),
+                                cardBorderColor.opacity(0.2),
+                                Color.white.opacity(0.1)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
             )
             .shadow(color: Color.black.opacity(0.25), radius: 12, x: 0, y: 6)
             
             // Bottom Controls Bar: Tap-to-Talk Button & Secondary Actions
             HStack(spacing: AppSpacing.md) {
                 // Tap-to-Talk Button
-                Button(action: onToggleVoice) {
+                Button(action: {
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    onToggleVoice()
+                }) {
                     HStack(spacing: 8) {
-                        Image(systemName: isListening ? "stop.fill" : "mic.fill")
-                            .font(.system(size: 15, weight: .bold))
-                        Text(isListening ? "Listening..." : "Talk")
-                            .font(.system(size: 14, weight: .semibold))
+                        if isListening {
+                            ThinkingOrbView(status: .listening, diameter: 18, customColor: .white)
+                            Text("Listening...")
+                                .font(.system(size: 14, weight: .bold))
+                        } else {
+                            Image(systemName: "mic.fill")
+                                .font(.system(size: 15, weight: .bold))
+                            Text("Talk to AssembleAI")
+                                .font(.system(size: 14, weight: .semibold))
+                        }
                     }
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
@@ -110,26 +134,25 @@ struct LiveTutorHUDView: View {
                         Capsule()
                             .fill(isListening ? AppColors.error : Color.assembleBrandPrimary)
                     )
+                    .shadow(color: (isListening ? AppColors.error : Color.assembleBrandPrimary).opacity(0.35), radius: 8, x: 0, y: 3)
                 }
+                .buttonStyle(ScaleButtonStyle())
                 .accessibilityLabel(isListening ? "Stop listening" : "Talk to AssembleAI")
                 
                 // Manual Capture Fallback (if user desires explicit snapshot)
                 if let onManualFallback = onManualFallback {
-                    Button(action: onManualFallback) {
+                    Button(action: {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        onManualFallback()
+                    }) {
                         Image(systemName: "camera.viewfinder")
                             .font(.system(size: 16, weight: .medium))
                             .foregroundColor(.white.opacity(0.9))
                             .padding(12)
                             .background(Circle().fill(.ultraThinMaterial))
                     }
+                    .buttonStyle(ScaleButtonStyle())
                     .accessibilityLabel("Manual snapshot analysis")
-                }
-            }
-        }
-        .onAppear {
-            if !reduceMotion {
-                withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
-                    isPulsing = true
                 }
             }
         }
@@ -139,10 +162,7 @@ struct LiveTutorHUDView: View {
     
     private var statusBadge: some View {
         HStack(spacing: 6) {
-            Circle()
-                .fill(statusColor)
-                .frame(width: 8, height: 8)
-                .scaleEffect(reduceMotion ? 1.0 : (status == .live || status == .speaking || status == .listening ? (isPulsing ? 1.2 : 0.8) : 1.0))
+            ThinkingOrbView(status: status, diameter: 16)
             
             Text(status.rawValue)
                 .font(.system(size: 10, weight: .bold, design: .monospaced))
@@ -152,13 +172,18 @@ struct LiveTutorHUDView: View {
                 .font(.system(size: 11, weight: .medium))
                 .foregroundColor(.white.opacity(0.7))
         }
-        .padding(.horizontal, 10)
+        .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .background(Capsule().fill(.ultraThinMaterial))
     }
     
     private func assistantMessageView(_ message: TutorResponse) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
+        HStack(alignment: .top, spacing: 8) {
+            if status == .speaking {
+                VoiceEqualizerView()
+                    .padding(.top, 3)
+            }
+            
             Text(message.text)
                 .font(.subheadline)
                 .fontWeight(.medium)
@@ -170,10 +195,8 @@ struct LiveTutorHUDView: View {
     }
     
     private var userTranscriptView: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "waveform")
-                .font(.caption)
-                .foregroundColor(AppColors.warning)
+        HStack(spacing: 8) {
+            ThinkingOrbView(status: .listening, diameter: 14)
             
             Text(userTranscript.isEmpty ? "Listening to your question..." : userTranscript)
                 .font(.subheadline)
@@ -199,7 +222,7 @@ struct LiveTutorHUDView: View {
     
     // MARK: - Color Properties
     
-    private var statusColor: Color {
+    private var cardBorderColor: Color {
         switch status {
         case .live: return AppColors.success
         case .paused: return Color.gray
@@ -208,14 +231,33 @@ struct LiveTutorHUDView: View {
         case .verifying: return Color.assembleBrandPrimary
         }
     }
+}
+
+// MARK: - Voice Equalizer Bar Animation
+
+/// Animated 3-bar audio equalizer indicating active spoken dialogue.
+struct VoiceEqualizerView: View {
+    @State private var animating = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
-    private var cardBorderColor: Color {
-        switch status {
-        case .live: return Color.white.opacity(0.2)
-        case .paused: return Color.gray
-        case .speaking: return Color.purple
-        case .listening: return AppColors.warning
-        case .verifying: return Color.assembleBrandPrimary
+    var body: some View {
+        HStack(spacing: 2) {
+            bar(delay: 0.0, height: animating ? 12 : 4)
+            bar(delay: 0.2, height: animating ? 16 : 6)
+            bar(delay: 0.4, height: animating ? 10 : 3)
         }
+        .frame(width: 14, height: 16)
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.easeInOut(duration: 0.45).repeatForever(autoreverses: true)) {
+                animating = true
+            }
+        }
+    }
+    
+    private func bar(delay: Double, height: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: 1.5)
+            .fill(Color.purple)
+            .frame(width: 2.5, height: height)
     }
 }

@@ -16,20 +16,18 @@ struct AnalysisView: View {
         VStack(spacing: AppSpacing.lg) {
             Spacer()
             
-            // Scanning Animation Graphic
+            // Scanning Animation Graphic with Thinking Orb
             ZStack {
                 Circle()
-                    .fill(Color.assembleBrandPrimary.opacity(0.1))
-                    .frame(width: 130, height: 130)
+                    .fill(Color.assembleBrandPrimary.opacity(0.08))
+                    .frame(width: 150, height: 150)
                 
                 Circle()
-                    .stroke(Color.assembleBrandPrimary.opacity(0.3), lineWidth: 2)
-                    .frame(width: 160, height: 160)
-                    .scaleEffect(reduceMotion ? 1.0 : (scanPulse ? 1.08 : 0.95))
+                    .stroke(Color.assembleBrandPrimary.opacity(0.25), lineWidth: 1.5)
+                    .frame(width: 170, height: 170)
+                    .scaleEffect(reduceMotion ? 1.0 : (scanPulse ? 1.06 : 0.96))
                 
-                Image(systemName: "viewfinder")
-                    .font(.system(size: 56, weight: .ultraLight))
-                    .foregroundColor(.assembleBrandPrimary)
+                ThinkingOrbView(state: .verifying, diameter: 72)
             }
             .frame(height: 180)
             
