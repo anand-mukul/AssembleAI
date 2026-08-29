@@ -10,7 +10,6 @@ import SwiftUI
 enum AppColors {
     // Brand Palette (Restrained, precise, technical accent)
     static let brandPrimary = Color("BrandPrimary", bundle: nil)
-        .opacity(1.0)
     
     /// Dynamic brand accent for primary controls and brand mark
     static var brandAccent: Color {
@@ -46,8 +45,8 @@ enum AppColors {
 }
 
 extension Color {
-    /// Helper for brand primary fallback if custom asset isn't compiled
+    /// Helper for brand primary color
     static var assembleBrandPrimary: Color {
-        Color.indigo
+        AppColors.brandPrimary
     }
 }

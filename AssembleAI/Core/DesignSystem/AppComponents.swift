@@ -5,6 +5,17 @@
 
 import SwiftUI
 
+// MARK: - Button Spring Micro-Interaction Style
+
+/// Tactile spring scale button style adhering to Apple HIG guidelines.
+struct ScaleButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
+            .animation(.spring(response: 0.25, dampingFraction: 0.7), value: configuration.isPressed)
+    }
+}
+
 // MARK: - Brand Header Component
 
 /// Reusable brand header featuring the AssembleAI logo mark, app name, and tagline.
@@ -18,11 +29,11 @@ struct BrandHeaderView: View {
     }
     
     var body: some View {
-        VStack(spacing: size == .large ? AppSpacing.sm : AppSpacing.xs) {
-            // App Brand Mark (Precision Camera + Assembly symbol)
+        VStack(spacing: size == .large ? AppSpacing.xs : 4) {
+            // App Brand Mark (Precision Viewfinder + CPU Core)
             ZStack {
                 Circle()
-                    .fill(Color.assembleBrandPrimary.opacity(0.12))
+                    .fill(Color.assembleBrandPrimary.opacity(0.1))
                     .frame(width: markDiameter, height: markDiameter)
                 
                 Image(systemName: "viewfinder")
@@ -35,63 +46,61 @@ struct BrandHeaderView: View {
             }
             .accessibilityHidden(true)
             
-            // App Name
             Text("AssembleAI")
-                .font(size == .large ? .largeTitle : (size == .medium ? .title : .title2))
+                .font(size == .large ? .title : (size == .medium ? .title2 : .headline))
                 .fontWeight(.bold)
                 .foregroundColor(AppColors.primaryText)
             
-            // Tagline
-            Text("Build with confidence.")
-                .font(size == .large ? .subheadline : .caption)
-                .fontWeight(.medium)
-                .foregroundColor(AppColors.secondaryText)
+            if size == .large {
+                Text("State-Aware Physical Task Assistant")
+                    .font(.subheadline)
+                    .foregroundColor(AppColors.secondaryText)
+            }
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("AssembleAI. Build with confidence.")
+        .accessibilityLabel("AssembleAI. State Aware Physical Task Assistant.")
     }
     
     private var markDiameter: CGFloat {
         switch size {
-        case .compact: return 48
-        case .medium: return 64
-        case .large: return 80
+        case .compact: return 44
+        case .medium: return 60
+        case .large: return 76
         }
     }
     
     private var iconFontSize: CGFloat {
         switch size {
-        case .compact: return 24
-        case .medium: return 32
-        case .large: return 42
+        case .compact: return 22
+        case .medium: return 30
+        case .large: return 38
         }
     }
     
     private var subIconFontSize: CGFloat {
         switch size {
-        case .compact: return 12
-        case .medium: return 16
-        case .large: return 20
+        case .compact: return 10
+        case .medium: return 14
+        case .large: return 18
         }
     }
 }
 
-// MARK: - Assembly Camera Visual Motif
+// MARK: - Assembly Camera Visual Centerpiece Motif
 
-/// Custom Apple-quality SwiftUI visual composition illustrating an iPhone camera observing a physical assembly object.
-/// Built without generic AI artwork, using SF Symbols, reticles, alignment marks, and circuit board motifs.
+/// Apple-quality visual centerpiece displaying live spatial task observation, reticles, alignment crosshairs, and state verification.
 struct AssemblyCameraMotifView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isPulseAnimating = false
     
     var body: some View {
         ZStack {
-            // Background subtle grid canvas
+            // Background Canvas Surface
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .fill(AppColors.secondaryBackground)
                 .overlay(
                     RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .strokeBorder(AppColors.border.opacity(0.5), lineWidth: 1)
+                        .strokeBorder(AppColors.border.opacity(0.35), lineWidth: 1)
                 )
             
             VStack(spacing: AppSpacing.md) {
@@ -100,113 +109,91 @@ struct AssemblyCameraMotifView: View {
                     HStack(spacing: 6) {
                         Circle()
                             .fill(Color.green)
-                            .frame(width: 8, height: 8)
-                        Text("OBSERVING TASK")
-                            .font(.caption2)
-                            .fontWeight(.bold)
+                            .frame(width: 7, height: 7)
+                        Text("CAMERA OBSERVER ACTIVE")
+                            .font(.system(size: 10, weight: .bold, design: .monospaced))
                             .foregroundColor(AppColors.secondaryText)
                     }
                     Spacer()
-                    Image(systemName: "bolt.fill")
-                        .font(.caption2)
-                        .foregroundColor(AppColors.tertiaryText)
+                    Image(systemName: "viewfinder.circle.fill")
+                        .font(.subheadline)
+                        .foregroundColor(.assembleBrandPrimary)
                 }
                 .padding(.horizontal, AppSpacing.md)
                 .padding(.top, AppSpacing.sm)
                 
-                // Central Assembly Inspection Canvas
+                // Central Camera Reticle Target
                 ZStack {
-                    // Physical Assembly Component (PCB / Chip representation)
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color(uiColor: .tertiarySystemGroupedBackground))
-                        .frame(width: 140, height: 110)
+                    // Physical Task Component Grid Target
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(AppColors.tertiaryBackground)
+                        .frame(width: 156, height: 116)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .stroke(Color.primary.opacity(0.15), lineWidth: 1.5)
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .stroke(Color.primary.opacity(0.1), lineWidth: 1)
                         )
                     
-                    // Circuit traces & component pin lines
-                    HStack(spacing: 16) {
-                        VStack(spacing: 8) {
-                            Circle()
-                                .fill(Color.indigo.opacity(0.7))
-                                .frame(width: 14, height: 14)
-                            Rectangle()
-                                .fill(Color.indigo.opacity(0.4))
-                                .frame(width: 2, height: 28)
-                        }
+                    // Hardware Component Visual Symbol
+                    VStack(spacing: 6) {
+                        Image(systemName: "cpu.fill")
+                            .font(.system(size: 32, weight: .regular))
+                            .foregroundColor(AppColors.primaryText)
                         
-                        VStack(spacing: 6) {
-                            Image(systemName: "cpu.fill")
-                                .font(.system(size: 28))
-                                .foregroundColor(AppColors.primaryText.opacity(0.8))
-                            
-                            HStack(spacing: 4) {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .font(.caption2)
-                                    .foregroundColor(AppColors.success)
-                                Text("COMPONENTS OK")
-                                    .font(.system(size: 8, weight: .bold))
-                                    .foregroundColor(AppColors.secondaryText)
-                            }
-                        }
-                        
-                        VStack(spacing: 8) {
-                            Rectangle()
-                                .fill(Color.indigo.opacity(0.4))
-                                .frame(width: 2, height: 28)
-                            Circle()
-                                .fill(Color.indigo.opacity(0.7))
-                                .frame(width: 14, height: 14)
+                        HStack(spacing: 4) {
+                            Image(systemName: "checkmark.seal.fill")
+                                .font(.caption2)
+                                .foregroundColor(AppColors.success)
+                            Text("STEP VERIFIED")
+                                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                                .foregroundColor(AppColors.secondaryText)
                         }
                     }
                     
-                    // Camera Bounding Reticle Box
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    // Reticle Pulsing Boundary Box
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
                         .stroke(
                             Color.assembleBrandPrimary,
-                            style: StrokeStyle(lineWidth: 2, dash: [8, 4])
+                            style: StrokeStyle(lineWidth: 1.5, dash: [6, 4])
                         )
-                        .frame(width: 170, height: 130)
-                        .scaleEffect(reduceMotion ? 1.0 : (isPulseAnimating ? 1.03 : 0.98))
+                        .frame(width: 180, height: 136)
+                        .scaleEffect(reduceMotion ? 1.0 : (isPulseAnimating ? 1.02 : 0.98))
                     
-                    // Four Corner Camera Framing Crosshairs
+                    // Corner Alignment Markers
                     CameraCornersView()
-                        .frame(width: 184, height: 144)
+                        .frame(width: 194, height: 150)
                         .foregroundColor(Color.assembleBrandPrimary)
                 }
                 .padding(.vertical, AppSpacing.xs)
                 
-                // Status readout pill
-                HStack(spacing: AppSpacing.xs) {
+                // State Verification Badge
+                HStack(spacing: 6) {
                     Image(systemName: "sparkles")
                         .font(.caption2)
                         .foregroundColor(.assembleBrandPrimary)
-                    Text("State-Aware Verification")
+                    Text("State-Aware Inspection")
                         .font(.caption)
                         .fontWeight(.semibold)
                         .foregroundColor(AppColors.primaryText)
                 }
-                .padding(.horizontal, AppSpacing.mdSm)
-                .padding(.vertical, AppSpacing.xs)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 6)
                 .background(
                     Capsule()
                         .fill(AppColors.appBackground)
-                        .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: 2)
                 )
                 .padding(.bottom, AppSpacing.sm)
             }
         }
-        .frame(height: 220)
+        .frame(height: 236)
         .onAppear {
             if !reduceMotion {
-                withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
+                withAnimation(.easeInOut(duration: 2.2).repeatForever(autoreverses: true)) {
                     isPulseAnimating = true
                 }
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Illustration of AssembleAI camera scanning physical electronic component for verification.")
+        .accessibilityLabel("AssembleAI spatial camera observing assembly component for verification.")
     }
 }
 
@@ -216,7 +203,7 @@ struct CameraCornersView: View {
         GeometryReader { geo in
             let w = geo.size.width
             let h = geo.size.height
-            let len: CGFloat = 16
+            let len: CGFloat = 14
             
             Path { path in
                 // Top Left
@@ -239,14 +226,14 @@ struct CameraCornersView: View {
                 path.addLine(to: CGPoint(x: w, y: h))
                 path.addLine(to: CGPoint(x: w, y: h - len))
             }
-            .stroke(style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
+            .stroke(style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
         }
     }
 }
 
-// MARK: - Primary Action Button
+// MARK: - Native Primary Action Button
 
-/// Full-width primary button styled to native Apple HIG standards with loading indicator support.
+/// Clean, minimal, full-width primary button styled strictly to Apple HIG standards.
 struct PrimaryButton: View {
     let title: String
     var iconName: String? = nil
@@ -256,42 +243,39 @@ struct PrimaryButton: View {
     
     var body: some View {
         Button(action: action) {
-            HStack(spacing: AppSpacing.sm) {
+            HStack(spacing: AppSpacing.xs) {
                 if isLoading {
                     ProgressView()
                         .tint(.white)
                 } else {
                     if let iconName = iconName {
                         Image(systemName: iconName)
-                            .font(.headline)
+                            .font(.subheadline)
                     }
                     Text(title)
                         .font(.headline)
                         .fontWeight(.semibold)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.85)
                 }
             }
             .foregroundColor(.white)
             .frame(maxWidth: .infinity)
-            .frame(height: 52)
+            .frame(height: 50)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(isDisabled ? AppColors.tertiaryText.opacity(0.28) : Color.assembleBrandPrimary)
+                    .fill(isDisabled ? AppColors.tertiaryText.opacity(0.3) : Color.assembleBrandPrimary)
             )
-            .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(ScaleButtonStyle())
         .disabled(isDisabled || isLoading)
-        .opacity(isDisabled ? 0.78 : 1)
+        .opacity(isDisabled ? 0.75 : 1.0)
         .accessibilityLabel(title)
-        .accessibilityHint(isDisabled ? "Button is disabled" : "Tap to proceed")
     }
 }
 
-// MARK: - Secondary Action Button
+// MARK: - Native Secondary Action Button
 
-/// Secondary bordered button style.
+/// Clean secondary bordered button style.
 struct SecondaryButton: View {
     let title: String
     var iconName: String? = nil
@@ -300,40 +284,38 @@ struct SecondaryButton: View {
     
     var body: some View {
         Button(action: action) {
-            HStack(spacing: AppSpacing.sm) {
+            HStack(spacing: AppSpacing.xs) {
                 if let iconName = iconName {
                     Image(systemName: iconName)
-                        .font(.headline)
+                        .font(.subheadline)
                 }
                 Text(title)
                     .font(.headline)
                     .fontWeight(.medium)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.85)
             }
             .foregroundColor(AppColors.primaryText)
             .frame(maxWidth: .infinity)
-            .frame(height: 52)
+            .frame(height: 50)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(AppColors.secondaryBackground)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(AppColors.border.opacity(0.75), lineWidth: 1)
+                    .strokeBorder(AppColors.border.opacity(0.4), lineWidth: 1)
             )
-            .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(ScaleButtonStyle())
         .disabled(isDisabled)
-        .opacity(isDisabled ? 0.55 : 1)
+        .opacity(isDisabled ? 0.55 : 1.0)
         .accessibilityLabel(title)
     }
 }
 
-// MARK: - Badge
+// MARK: - Status Badge
 
-/// Compact status badge for labels like difficulty and sync state.
+/// Minimal status badge for difficulty level and sync state.
 struct BadgeView: View {
     let text: String
     var color: Color = .assembleBrandPrimary
@@ -343,9 +325,8 @@ struct BadgeView: View {
             .font(.caption2)
             .fontWeight(.semibold)
             .foregroundColor(color)
-            .lineLimit(1)
-            .padding(.horizontal, AppSpacing.sm)
-            .padding(.vertical, AppSpacing.xxs)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
             .background(
                 Capsule()
                     .fill(color.opacity(0.12))
@@ -356,7 +337,7 @@ struct BadgeView: View {
 
 // MARK: - Custom Input Text Field
 
-/// Standardized native text field with icon, focus highlighting, and error feedback.
+/// Standardized native text field with icon, focus highlighting, and error message support.
 struct CustomTextField: View {
     let title: String
     let placeholder: String
@@ -372,7 +353,7 @@ struct CustomTextField: View {
     @State private var isPasswordVisible: Bool = false
     
     var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+        VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(.subheadline)
                 .fontWeight(.medium)
@@ -414,7 +395,7 @@ struct CustomTextField: View {
                 }
             }
             .padding(.horizontal, AppSpacing.md)
-            .frame(height: 50)
+            .frame(height: 48)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(AppColors.secondaryBackground)
@@ -422,10 +403,11 @@ struct CustomTextField: View {
             .overlay(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .strokeBorder(
-                        errorMessage != nil ? AppColors.error : (isFocused ? Color.assembleBrandPrimary : AppColors.border.opacity(0.65)),
+                        errorMessage != nil ? AppColors.error : (isFocused ? Color.assembleBrandPrimary : AppColors.border.opacity(0.4)),
                         lineWidth: isFocused || errorMessage != nil ? 1.5 : 1
                     )
             )
+            .animation(.spring(response: 0.25, dampingFraction: 0.8), value: isFocused)
             
             if let errorMessage = errorMessage {
                 HStack(spacing: 4) {
@@ -436,7 +418,7 @@ struct CustomTextField: View {
                         .font(.caption)
                         .foregroundColor(AppColors.error)
                 }
-                .padding(.leading, AppSpacing.xs)
+                .padding(.leading, 4)
                 .transition(.opacity)
             }
         }

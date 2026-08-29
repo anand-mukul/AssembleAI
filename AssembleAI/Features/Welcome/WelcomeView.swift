@@ -5,66 +5,64 @@
 
 import SwiftUI
 
-/// First primary screen introducing AssembleAI's visual guidance capabilities.
+/// First primary launch screen introducing AssembleAI's camera verification guidance capabilities.
 struct WelcomeView: View {
     @EnvironmentObject private var router: AppRouter
     
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: AppSpacing.xl) {
-                header
-                    .padding(.top, AppSpacing.xl)
+            VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                // Spacious Header Section
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                    Text("AssembleAI")
+                        .font(.subheadline)
+                        .fontWeight(.bold)
+                        .foregroundColor(.assembleBrandPrimary)
+                        .textCase(.uppercase)
+                    
+                    Text("State-Aware Task Guidance")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundColor(AppColors.primaryText)
+                    
+                    Text("Visual verification for physical assembly tasks. Observe your workspace, follow instructions, and verify each step.")
+                        .font(.body)
+                        .foregroundColor(AppColors.secondaryText)
+                }
+                .padding(.top, AppSpacing.lg)
                 
+                // Camera Inspection Visual Centerpiece
                 AssemblyCameraMotifView()
+                    .padding(.vertical, AppSpacing.xs)
                 
-                valueProposition
-                capabilityList
+                // Capability Feature Rows
+                VStack(spacing: AppSpacing.md) {
+                    CapabilityRow(
+                        iconName: "viewfinder",
+                        title: "Observe & Scan",
+                        subtitle: "Compare physical assembly progress against expected task states."
+                    )
+                    
+                    CapabilityRow(
+                        iconName: "list.bullet.rectangle",
+                        title: "Sequential Guidance",
+                        subtitle: "Follow precise instructions tailored to electronic and mechanical builds."
+                    )
+                    
+                    CapabilityRow(
+                        iconName: "checkmark.shield",
+                        title: "State Verification",
+                        subtitle: "Verify step completion locally with full on-device privacy."
+                    )
+                }
+                .padding(.top, AppSpacing.xs)
             }
             .padding(.horizontal, AppSpacing.lg)
-            .padding(.bottom, 128)
+            .padding(.bottom, 120)
         }
         .background(AppColors.appBackground.ignoresSafeArea())
         .safeAreaInset(edge: .bottom) {
             bottomActions
-        }
-    }
-    
-    private var header: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            BrandHeaderView(size: .compact)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            
-            Text("Visual guidance for hands-on work")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-                .foregroundColor(AppColors.primaryText)
-                .fixedSize(horizontal: false, vertical: true)
-            
-            Text("Follow assembly workflows, verify each state, and keep project history available on-device or synced when you sign in.")
-                .font(.body)
-                .foregroundColor(AppColors.secondaryText)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-    
-    private var valueProposition: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Text("Built for the bench")
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundColor(AppColors.primaryText)
-            
-            Text("A quiet, step-by-step workspace for physical tasks where clarity matters more than decoration.")
-                .font(.subheadline)
-                .foregroundColor(AppColors.secondaryText)
-        }
-    }
-    
-    private var capabilityList: some View {
-        VStack(spacing: AppSpacing.md) {
-            CapabilityRow(iconName: "viewfinder", title: "Observe", subtitle: "Use visual checkpoints to compare the current state.")
-            CapabilityRow(iconName: "list.bullet.rectangle", title: "Guide", subtitle: "Keep instructions, timing, and difficulty in one workflow.")
-            CapabilityRow(iconName: "checkmark.seal", title: "Verify", subtitle: "Track progress locally and sync when an account is available.")
         }
     }
     
@@ -77,7 +75,7 @@ struct WelcomeView: View {
             Button(action: {
                 router.navigateToSignIn()
             }) {
-                HStack(spacing: AppSpacing.xs) {
+                HStack(spacing: 4) {
                     Text("Already have an account?")
                         .foregroundColor(AppColors.secondaryText)
                     Text("Sign In")
@@ -105,14 +103,14 @@ private struct CapabilityRow: View {
             Image(systemName: iconName)
                 .font(.headline)
                 .foregroundColor(.assembleBrandPrimary)
-                .frame(width: 32, height: 32)
+                .frame(width: 36, height: 36)
                 .background(
                     Circle()
-                        .fill(Color.assembleBrandPrimary.opacity(0.12))
+                        .fill(Color.assembleBrandPrimary.opacity(0.1))
                 )
                 .accessibilityHidden(true)
             
-            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.headline)
                     .foregroundColor(AppColors.primaryText)

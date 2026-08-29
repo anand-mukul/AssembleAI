@@ -16,6 +16,8 @@ enum AppRoute: Hashable, Identifiable {
     case createAccount
     case forgotPassword
     case home
+    case camera(AssemblyStep)
+    case analyzing(AssemblyStep)
     
     var id: String {
         switch self {
@@ -27,6 +29,8 @@ enum AppRoute: Hashable, Identifiable {
         case .createAccount: return "createAccount"
         case .forgotPassword: return "forgotPassword"
         case .home: return "home"
+        case .camera(let step): return "camera_\(step.id.uuidString)"
+        case .analyzing(let step): return "analyzing_\(step.id.uuidString)"
         }
     }
 }
@@ -82,6 +86,14 @@ final class AppRouter: ObservableObject {
     
     func navigateToForgotPassword() {
         navigationPath.append(AppRoute.forgotPassword)
+    }
+    
+    func navigateToCamera(step: AssemblyStep) {
+        navigationPath.append(AppRoute.camera(step))
+    }
+    
+    func navigateToAnalyzing(step: AssemblyStep) {
+        navigationPath.append(AppRoute.analyzing(step))
     }
     
     func pop() {
