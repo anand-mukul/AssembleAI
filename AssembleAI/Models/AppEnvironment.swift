@@ -6,20 +6,22 @@
 import Foundation
 
 /// Application execution environment mode.
-enum AppEnvironment: String, CaseIterable, Codable, Hashable, Equatable, Sendable {
+public enum AppEnvironment: String, CaseIterable, Codable, Hashable, Equatable, Sendable {
     case demo = "Demo Mode"
     case development = "Development"
     case production = "Production"
 }
 
 /// Interaction evaluation mode for comparative research experiments.
-enum InteractionMode: String, CaseIterable, Codable, Hashable, Equatable, Sendable {
-    case guided = "Guided (AssembleAI)"
-    case baseline = "Baseline (Static Text)"
+public enum InteractionMode: String, CaseIterable, Codable, Hashable, Equatable, Sendable {
+    case liveTutor = "liveTutor"
+    case manual = "manual"
+    case guided = "guided"
+    case baseline = "baseline"
 }
 
 /// Reproducible deterministic demo scenario selector for presentations and evaluation.
-enum DemoScenario: String, CaseIterable, Identifiable, Codable, Hashable, Equatable, Sendable {
+public enum DemoScenario: String, CaseIterable, Identifiable, Codable, Hashable, Equatable, Sendable {
     case correctPlacement = "Correct Placement"
     case wrongPosition = "Wrong Position (Step 2)"
     case missingComponent = "Missing Component"
@@ -27,5 +29,5 @@ enum DemoScenario: String, CaseIterable, Identifiable, Codable, Hashable, Equata
     case uncertainImage = "Uncertain Image (Step 3)"
     case completeAssembly = "Full Assembly Script"
     
-    var id: String { rawValue }
+    public var id: String { rawValue }
 }

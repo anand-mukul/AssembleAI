@@ -5,14 +5,6 @@
 
 import Foundation
 
-// MARK: - Interaction Mode
-
-/// Evaluation mode representing experimental condition (Manual Photo Analysis vs Continuous Live Tutor).
-public enum InteractionMode: String, Codable, Hashable, Equatable, Sendable {
-    case manual = "manual"
-    case liveTutor = "liveTutor"
-}
-
 // MARK: - Research Event Type Taxonomy
 
 /// Controlled event taxonomy for experimental evaluation and CSE thesis research metrics.
