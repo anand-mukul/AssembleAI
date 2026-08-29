@@ -6,7 +6,7 @@
 import SwiftUI
 import SwiftData
 
-/// Main application home screen demonstrating local-first SwiftData persistence and Supabase synchronization status.
+/// Main application home screen demonstrating local-first SwiftData persistence, verification service, and Supabase synchronization status.
 struct HomePlaceholderView: View {
     @EnvironmentObject private var router: AppRouter
     @EnvironmentObject private var authService: SupabaseAuthService
@@ -84,14 +84,26 @@ struct HomePlaceholderView: View {
                         .font(.subheadline)
                         .foregroundColor(AppColors.secondaryText)
                     
-                    PrimaryButton(title: "Start Camera Inspection", iconName: "viewfinder") {
-                        let sampleStep = AssemblyStep(
-                            projectId: projects.first?.id ?? UUID(),
-                            stepOrder: 1,
-                            title: "Attach 10K Resistor to R1 Pin Header",
-                            instruction: "Insert resistor leads into R1 slots and verify orientation."
-                        )
-                        router.navigateToCamera(step: sampleStep)
+                    VStack(spacing: AppSpacing.xs) {
+                        PrimaryButton(title: "Start Camera Inspection (Step 1 - Correct)", iconName: "viewfinder") {
+                            let sampleStep = AssemblyStep(
+                                projectId: projects.first?.id ?? UUID(),
+                                stepOrder: 1,
+                                title: "Attach 10K Resistor to R1 Pin Header",
+                                instruction: "Insert resistor leads into R1 slots and verify orientation."
+                            )
+                            router.navigateToCamera(step: sampleStep)
+                        }
+                        
+                        SecondaryButton(title: "Test Step 2 Demo (Incorrect Outcome)", iconName: "exclamationmark.triangle") {
+                            let sampleStep = AssemblyStep(
+                                projectId: projects.first?.id ?? UUID(),
+                                stepOrder: 2,
+                                title: "Attach 100uF Capacitor to C2 Header",
+                                instruction: "Insert capacitor leads observing polarity."
+                            )
+                            router.navigateToCamera(step: sampleStep)
+                        }
                     }
                     .padding(.top, AppSpacing.xs)
                 }
