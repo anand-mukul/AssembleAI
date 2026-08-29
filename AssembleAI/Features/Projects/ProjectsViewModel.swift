@@ -26,8 +26,8 @@ final class ProjectsViewModel: ObservableObject {
     
     private let repository: ProjectRepository
     
-    init(repository: ProjectRepository = MockProjectRepository()) {
-        self.repository = repository
+    init(repository: ProjectRepository? = nil) {
+        self.repository = repository ?? MockProjectRepository()
     }
     
     /// Filtered list of projects based on search query and selected filter segment.

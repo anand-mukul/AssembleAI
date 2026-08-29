@@ -7,13 +7,13 @@ import Foundation
 import CoreGraphics
 
 /// Detected text observation extracted by Apple Vision OCR.
-struct DetectedText: Identifiable, Hashable, Codable, Sendable {
+nonisolated struct DetectedText: Identifiable, Hashable, Codable, Sendable {
     let id: UUID
     let text: String
     let confidence: Float
     let boundingBox: CGRect // Normalized [0...1] coordinates
     
-    init(id: UUID = UUID(), text: String, confidence: Float, boundingBox: CGRect) {
+    nonisolated init(id: UUID = UUID(), text: String, confidence: Float, boundingBox: CGRect) {
         self.id = id
         self.text = text
         self.confidence = confidence
@@ -22,13 +22,13 @@ struct DetectedText: Identifiable, Hashable, Codable, Sendable {
 }
 
 /// Detected physical component/region feature observation.
-struct DetectedRegion: Identifiable, Hashable, Codable, Sendable {
+nonisolated struct DetectedRegion: Identifiable, Hashable, Codable, Sendable {
     let id: UUID
     let label: String
     let confidence: Float
     let boundingBox: CGRect // Normalized [0...1] coordinates
     
-    init(id: UUID = UUID(), label: String, confidence: Float, boundingBox: CGRect) {
+    nonisolated init(id: UUID = UUID(), label: String, confidence: Float, boundingBox: CGRect) {
         self.id = id
         self.label = label
         self.confidence = confidence
@@ -37,7 +37,7 @@ struct DetectedRegion: Identifiable, Hashable, Codable, Sendable {
 }
 
 /// Structured output returned by `VisionAnalyzing` without exposing raw Vision framework types to the UI.
-struct VisualObservation: Identifiable, Hashable, Codable, Sendable {
+nonisolated struct VisualObservation: Identifiable, Hashable, Codable, Sendable {
     let id: UUID
     let imageSize: CGSize
     let detectedText: [DetectedText]
@@ -45,7 +45,7 @@ struct VisualObservation: Identifiable, Hashable, Codable, Sendable {
     let timestamp: Date
     let processingTimeMs: Double
     
-    init(
+    nonisolated init(
         id: UUID = UUID(),
         imageSize: CGSize,
         detectedText: [DetectedText],

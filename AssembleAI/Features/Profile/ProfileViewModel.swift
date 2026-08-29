@@ -88,9 +88,9 @@ final class ProfileViewModel: ObservableObject {
     
     func updateUser(user: User?) {
         if let user = user {
-            self.isGuest = user.isAnonymous
-            self.email = user.email ?? (user.isAnonymous ? "Guest Mode" : "user@assemble.ai")
-            if let name = user.fullName, !name.isEmpty {
+            self.isGuest = user.isGuest
+            self.email = user.email ?? (user.isGuest ? "Guest Mode" : "user@assemble.ai")
+            if let name = user.displayName as String?, !name.isEmpty {
                 self.displayName = name
             }
         } else {

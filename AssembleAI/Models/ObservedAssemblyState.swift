@@ -7,14 +7,14 @@ import Foundation
 import CoreGraphics
 
 /// Component detected during visual state estimation.
-struct ObservedComponent: Identifiable, Hashable, Codable, Sendable {
+nonisolated struct ObservedComponent: Identifiable, Hashable, Codable, Sendable {
     let id: UUID
     let identifier: String?
     let name: String
     let confidence: Double
     let boundingBox: CGRect
     
-    init(id: UUID = UUID(), identifier: String? = nil, name: String, confidence: Double, boundingBox: CGRect = .zero) {
+    nonisolated init(id: UUID = UUID(), identifier: String? = nil, name: String, confidence: Double, boundingBox: CGRect = .zero) {
         self.id = id
         self.identifier = identifier
         self.name = name
@@ -28,13 +28,13 @@ struct ObservedComponent: Identifiable, Hashable, Codable, Sendable {
 }
 
 /// Connection relationship detected during visual state estimation.
-struct ObservedConnection: Identifiable, Hashable, Codable, Sendable {
+nonisolated struct ObservedConnection: Identifiable, Hashable, Codable, Sendable {
     let id: UUID
     let from: String
     let to: String
     let confidence: Double
     
-    init(id: UUID = UUID(), from: String, to: String, confidence: Double) {
+    nonisolated init(id: UUID = UUID(), from: String, to: String, confidence: Double) {
         self.id = id
         self.from = from
         self.to = to
@@ -43,14 +43,14 @@ struct ObservedConnection: Identifiable, Hashable, Codable, Sendable {
 }
 
 /// Component position detected during visual state estimation.
-struct ObservedPosition: Identifiable, Hashable, Codable, Sendable {
+nonisolated struct ObservedPosition: Identifiable, Hashable, Codable, Sendable {
     let id: UUID
     let componentID: String
     let detectedDescription: String
     let region: CGRect
     let confidence: Double
     
-    init(id: UUID = UUID(), componentID: String, detectedDescription: String, region: CGRect = .zero, confidence: Double) {
+    nonisolated init(id: UUID = UUID(), componentID: String, detectedDescription: String, region: CGRect = .zero, confidence: Double) {
         self.id = id
         self.componentID = componentID
         self.detectedDescription = detectedDescription
@@ -59,8 +59,8 @@ struct ObservedPosition: Identifiable, Hashable, Codable, Sendable {
     }
 }
 
-/// Higher-level observed physical state converted from `VisualObservation`.
-struct ObservedAssemblyState: Identifiable, Hashable, Codable, Sendable {
+/// Reconstructed physical state derived from computer vision visual observation.
+nonisolated struct ObservedAssemblyState: Identifiable, Hashable, Codable, Sendable {
     let id: UUID
     let detectedComponents: [ObservedComponent]
     let detectedConnections: [ObservedConnection]
@@ -68,12 +68,12 @@ struct ObservedAssemblyState: Identifiable, Hashable, Codable, Sendable {
     let overallConfidence: Double
     let timestamp: Date
     
-    init(
+    nonisolated init(
         id: UUID = UUID(),
         detectedComponents: [ObservedComponent] = [],
         detectedConnections: [ObservedConnection] = [],
         detectedPositions: [ObservedPosition] = [],
-        overallConfidence: Double,
+        overallConfidence: Double = 1.0,
         timestamp: Date = Date()
     ) {
         self.id = id
@@ -83,4 +83,7 @@ struct ObservedAssemblyState: Identifiable, Hashable, Codable, Sendable {
         self.overallConfidence = overallConfidence
         self.timestamp = timestamp
     }
+    
+    var componentCount: Int { detectedComponents.count }
+    var connectionCount: Int { detectedConnections.count }
 }

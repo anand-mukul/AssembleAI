@@ -44,6 +44,14 @@ nonisolated struct User: Identifiable, Hashable, Codable, Equatable, Sendable {
         return provider == .guest
     }
     
+    var isAnonymous: Bool {
+        return isGuest
+    }
+    
+    var fullName: String? {
+        return name
+    }
+    
     var displayName: String {
         if isGuest {
             return "Guest User"

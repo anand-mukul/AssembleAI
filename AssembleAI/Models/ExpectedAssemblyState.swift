@@ -7,13 +7,13 @@ import Foundation
 import CoreGraphics
 
 /// Component requirement for an expected physical assembly state.
-struct ExpectedComponent: Identifiable, Hashable, Codable, Sendable {
+nonisolated struct ExpectedComponent: Identifiable, Hashable, Codable, Sendable {
     let id: UUID
     let identifier: String
     let name: String
     let quantity: Int
     
-    init(id: UUID = UUID(), identifier: String, name: String, quantity: Int = 1) {
+    nonisolated init(id: UUID = UUID(), identifier: String, name: String, quantity: Int = 1) {
         self.id = id
         self.identifier = identifier
         self.name = name
@@ -22,12 +22,12 @@ struct ExpectedComponent: Identifiable, Hashable, Codable, Sendable {
 }
 
 /// Electrical or mechanical connection requirement between two pin points or rails.
-struct ExpectedConnection: Identifiable, Hashable, Codable, Sendable {
+nonisolated struct ExpectedConnection: Identifiable, Hashable, Codable, Sendable {
     let id: UUID
     let from: String
     let to: String
     
-    init(id: UUID = UUID(), from: String, to: String) {
+    nonisolated init(id: UUID = UUID(), from: String, to: String) {
         self.id = id
         self.from = from
         self.to = to
@@ -35,13 +35,13 @@ struct ExpectedConnection: Identifiable, Hashable, Codable, Sendable {
 }
 
 /// Expected physical position or bounding region for a component.
-struct ExpectedPosition: Identifiable, Hashable, Codable, Sendable {
+nonisolated struct ExpectedPosition: Identifiable, Hashable, Codable, Sendable {
     let id: UUID
     let componentID: String
     let targetDescription: String
     let region: CGRect
     
-    init(id: UUID = UUID(), componentID: String, targetDescription: String, region: CGRect = .zero) {
+    nonisolated init(id: UUID = UUID(), componentID: String, targetDescription: String, region: CGRect = .zero) {
         self.id = id
         self.componentID = componentID
         self.targetDescription = targetDescription
@@ -50,7 +50,7 @@ struct ExpectedPosition: Identifiable, Hashable, Codable, Sendable {
 }
 
 /// Explicit expected physical state for a specific assembly step.
-struct ExpectedAssemblyState: Identifiable, Hashable, Codable, Sendable {
+nonisolated struct ExpectedAssemblyState: Identifiable, Hashable, Codable, Sendable {
     let id: UUID
     let stepID: UUID
     let stepOrder: Int
@@ -58,7 +58,7 @@ struct ExpectedAssemblyState: Identifiable, Hashable, Codable, Sendable {
     let requiredConnections: [ExpectedConnection]
     let requiredPositions: [ExpectedPosition]
     
-    init(
+    nonisolated init(
         id: UUID = UUID(),
         stepID: UUID,
         stepOrder: Int,

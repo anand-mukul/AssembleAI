@@ -9,6 +9,7 @@ import Foundation
 enum AppConfig {
     static let appName = "AssembleAI"
     static let appVersion = "1.0.0"
+    static let buildNumber = "1"
     
     /// Supabase Project URL (Replace with your free Supabase Project URL)
     nonisolated static var supabaseUrl: String {
