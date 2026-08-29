@@ -20,10 +20,10 @@ final class CloudKitAuthService: AuthenticationService {
     private let mockFallbackService: MockAuthenticationService
     private let userRepository: UserRepositoryImpl
     
-    init(cloudKitManager: CloudKitManager? = nil) {
+    init(cloudKitManager: CloudKitManager? = nil, userRepository: UserRepositoryImpl? = nil) {
         self.cloudKitManager = cloudKitManager ?? CloudKitManager.shared
         self.mockFallbackService = MockAuthenticationService()
-        self.userRepository = UserRepositoryImpl(modelContext: PersistenceController.shared.container.mainContext)
+        self.userRepository = userRepository ?? UserRepositoryImpl(modelContext: PersistenceController.shared.container.mainContext)
         
         Task {
             await checkExistingCloudKitSession()
