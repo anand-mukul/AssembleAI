@@ -17,15 +17,15 @@ struct WelcomeView: View {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 // Editorial Header Section
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Text("ASSEMBLEAI")
-                        .font(.system(size: 11, weight: .bold, design: .monospaced))
-                        .foregroundColor(AppColors.secondaryText)
-                        .tracking(1.2)
+                    Text("AssembleAI")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.assembleBrandPrimary)
                         .padding(.bottom, AppSpacing.xxs)
-                        .accessibilityHidden(true)
                     
                     Text("Build with\nprecision.")
-                        .font(.system(size: 34, weight: .bold))
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
                         .foregroundColor(AppColors.primaryText)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityAddTraits(.isHeader)
@@ -33,7 +33,6 @@ struct WelcomeView: View {
                     Text("Real-time camera verification for physical hardware assembly. Point your iPhone at your workspace and verify each step as you build.")
                         .font(.body)
                         .foregroundColor(AppColors.secondaryText)
-                        .lineSpacing(3)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.top, 2)
                 }
@@ -117,17 +116,9 @@ private struct CapabilityRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: AppSpacing.md) {
             Image(systemName: iconName)
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(AppColors.primaryText)
-                .frame(width: 38, height: 38)
-                .background(
-                    RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
-                        .fill(AppColors.secondaryGroupedBackground)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
-                        .strokeBorder(AppColors.borderSubtle, lineWidth: 1)
-                )
+                .font(.system(size: 20, weight: .medium))
+                .foregroundColor(.assembleBrandPrimary)
+                .frame(width: 32, height: 32)
                 .accessibilityHidden(true)
             
             VStack(alignment: .leading, spacing: 2) {

@@ -107,16 +107,15 @@ struct AssemblyCameraMotifView: View {
                     Circle()
                         .fill(AppColors.statusLive)
                         .frame(width: 6, height: 6)
-                    Text("CAMERA OBSERVATION")
-                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    Text("Camera Observation")
+                        .font(.caption)
+                        .fontWeight(.medium)
                         .foregroundColor(AppColors.secondaryText)
-                        .tracking(0.8)
                 }
                 Spacer()
-                Text("STEP 1 OF 4")
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                Text("Step 1 of 4")
+                    .font(.caption)
                     .foregroundColor(AppColors.tertiaryText)
-                    .tracking(0.5)
             }
             .padding(.horizontal, AppSpacing.md)
             .padding(.top, AppSpacing.mdSm)
@@ -130,7 +129,7 @@ struct AssemblyCameraMotifView: View {
                     .frame(height: 94)
                     .overlay(
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .stroke(AppColors.borderSubtle, lineWidth: 1)
+                            .stroke(AppColors.borderSubtle, lineWidth: 0.5)
                     )
 
                 // Grid Pin Holes
@@ -139,7 +138,7 @@ struct AssemblyCameraMotifView: View {
                         HStack(spacing: 12) {
                             ForEach(0..<8, id: \.self) { _ in
                                 Circle()
-                                    .fill(AppColors.borderStrong.opacity(0.4))
+                                    .fill(AppColors.borderStrong.opacity(0.35))
                                     .frame(width: 3.5, height: 3.5)
                             }
                         }
@@ -201,23 +200,14 @@ struct AssemblyCameraMotifView: View {
                 Spacer()
 
                 HStack(spacing: 4) {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 9, weight: .bold))
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.caption)
                         .foregroundColor(AppColors.statusLive)
                     Text("Aligned")
-                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .font(.caption)
+                        .fontWeight(.medium)
                         .foregroundColor(AppColors.secondaryText)
                 }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .background(
-                    Capsule()
-                        .fill(AppColors.appBackground)
-                )
-                .overlay(
-                    Capsule()
-                        .strokeBorder(AppColors.borderSubtle, lineWidth: 1)
-                )
             }
             .padding(.horizontal, AppSpacing.md)
             .padding(.top, AppSpacing.xs)
@@ -227,9 +217,8 @@ struct AssemblyCameraMotifView: View {
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                .strokeBorder(AppColors.borderSubtle, lineWidth: 1)
+                .strokeBorder(AppColors.borderSubtle, lineWidth: 0.5)
         )
-        .shadow(color: AppShadow.subtleColor, radius: 10, x: 0, y: 4)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Hardware inspection preview showing breadboard with resistor placement step.")
     }
@@ -355,7 +344,7 @@ struct SecondaryButton: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                    .strokeBorder(AppColors.borderSubtle, lineWidth: 1)
+                    .strokeBorder(AppColors.borderSubtle, lineWidth: 0.5)
             )
             .contentShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
@@ -384,7 +373,7 @@ struct AppCardModifier: ViewModifier {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .strokeBorder(borderColor, lineWidth: 1)
+                    .strokeBorder(borderColor, lineWidth: 0.5)
             )
     }
 }
@@ -414,20 +403,20 @@ struct StatTile: View {
         VStack(spacing: 4) {
             if let icon = icon {
                 Image(systemName: icon)
-                    .font(.caption)
+                    .font(.subheadline)
                     .foregroundColor(iconColor)
             }
             
             Text(value)
-                .font(.headline)
-                .fontWeight(.bold)
+                .font(.title3)
+                .fontWeight(.semibold)
                 .foregroundColor(AppColors.primaryText)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
 
             Text(title)
-                .font(.system(size: 9, weight: .bold, design: .monospaced))
-                .foregroundColor(AppColors.tertiaryText)
+                .font(.caption)
+                .foregroundColor(AppColors.secondaryText)
                 .lineLimit(1)
         }
         .frame(maxWidth: .infinity)
@@ -439,7 +428,7 @@ struct StatTile: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                .strokeBorder(AppColors.borderSubtle, lineWidth: 1)
+                .strokeBorder(AppColors.borderSubtle, lineWidth: 0.5)
         )
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(title): \(value)")
@@ -465,7 +454,8 @@ struct StatusPill: View {
             }
 
             Text(text)
-                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .font(.caption2)
+                .fontWeight(.semibold)
                 .foregroundColor(.white)
         }
         .padding(.horizontal, 10)
@@ -478,22 +468,16 @@ struct StatusPill: View {
 
 // MARK: - Status Badge
 
-/// Minimal status badge for difficulty level, sync state, and verification outcomes.
+/// Minimal semantic label for difficulty level, sync state, and verification outcomes without capsule clutter.
 struct BadgeView: View {
     let text: String
     var color: Color = .assembleBrandPrimary
     
     var body: some View {
         Text(text)
-            .font(.caption2)
-            .fontWeight(.semibold)
+            .font(.caption)
+            .fontWeight(.medium)
             .foregroundColor(color)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(
-                Capsule()
-                    .fill(color.opacity(0.12))
-            )
             .accessibilityLabel(text)
     }
 }

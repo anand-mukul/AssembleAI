@@ -54,7 +54,7 @@ struct AssemblyCameraView: View {
             VStack(spacing: 0) {
                 // Top Header Overlay: Assembly Step & Cancel Button
                 topStepOverlay
-                    .padding(.top, 54)
+                    .safeAreaPadding(.top)
                     .opacity(overlayVisible ? 1 : 0)
                     .offset(y: overlayVisible ? 0 : -20)
                 
@@ -135,13 +135,14 @@ struct AssemblyCameraView: View {
     private var topStepOverlay: some View {
         VStack(spacing: AppSpacing.sm) {
             HStack {
-                // Step Progress Pill
+                // Step Progress Indicator
                 HStack(spacing: 6) {
                     Circle()
                         .fill(AppColors.statusLive)
                         .frame(width: 7, height: 7)
-                    Text("STEP \(currentStep.stepOrder)")
-                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    Text("Step \(currentStep.stepOrder)")
+                        .font(.caption)
+                        .fontWeight(.semibold)
                         .foregroundColor(.white)
                 }
                 .padding(.horizontal, 12)

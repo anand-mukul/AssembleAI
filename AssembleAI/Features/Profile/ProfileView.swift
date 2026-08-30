@@ -38,15 +38,12 @@ struct ProfileView: View {
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button(action: {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Edit") {
                     viewModel.showEditProfileSheet = true
-                }) {
-                    Text("Edit")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(activeColor)
                 }
+                .font(.body)
+                .foregroundColor(.assembleBrandPrimary)
             }
         }
         .sheet(isPresented: $viewModel.showEditProfileSheet) {
@@ -84,15 +81,15 @@ struct ProfileView: View {
             // Avatar
             ZStack {
                 Circle()
-                    .fill(activeColor.opacity(0.15))
-                    .frame(width: 64, height: 64)
+                    .fill(activeColor.opacity(0.12))
+                    .frame(width: 60, height: 60)
                     .overlay(
                         Circle()
-                            .strokeBorder(activeColor.opacity(0.35), lineWidth: 2)
+                            .strokeBorder(activeColor.opacity(0.25), lineWidth: 1)
                     )
                 
                 Image(systemName: viewModel.avatarSymbol)
-                    .font(.system(size: 28, weight: .medium))
+                    .font(.system(size: 26, weight: .medium))
                     .foregroundColor(activeColor)
             }
             
@@ -107,14 +104,14 @@ struct ProfileView: View {
                     .font(.subheadline)
                     .foregroundColor(AppColors.secondaryText)
                 
-                // Status Pill
-                HStack(spacing: 4) {
+                // Status Indicator
+                HStack(spacing: 5) {
                     Circle()
                         .fill(viewModel.isGuest ? AppColors.warning : AppColors.success)
                         .frame(width: 6, height: 6)
-                    Text(viewModel.isGuest ? "GUEST MODE (LOCAL)" : "SYNCED TO SUPABASE")
-                        .font(.system(size: 8, weight: .bold, design: .monospaced))
-                        .foregroundColor(viewModel.isGuest ? AppColors.warning : AppColors.success)
+                    Text(viewModel.isGuest ? "Guest Mode (Local)" : "Synced to Supabase")
+                        .font(.caption)
+                        .foregroundColor(AppColors.secondaryText)
                 }
                 .padding(.top, 2)
             }
@@ -126,19 +123,19 @@ struct ProfileView: View {
     
     private var metricsGrid: some View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: AppSpacing.sm) {
-            StatTile(title: "SESSIONS", value: "\(viewModel.completedSessionsCount)", icon: "checkmark.circle.fill", iconColor: AppColors.statusSuccess)
-            StatTile(title: "ACCURACY", value: "\(viewModel.overallAccuracyScore)%", icon: "target", iconColor: .assembleBrandPrimary)
-            StatTile(title: "TIME", value: "\(viewModel.totalAssemblyMinutes)m", icon: "clock.fill", iconColor: AppColors.statusWarning)
+            StatTile(title: "Sessions", value: "\(viewModel.completedSessionsCount)", icon: "checkmark.circle.fill", iconColor: AppColors.statusSuccess)
+            StatTile(title: "Accuracy", value: "\(viewModel.overallAccuracyScore)%", icon: "target", iconColor: .assembleBrandPrimary)
+            StatTile(title: "Time", value: "\(viewModel.totalAssemblyMinutes)m", icon: "clock.fill", iconColor: AppColors.statusWarning)
         }
     }
     
     private var settingsSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Text("PREFERENCES & TOOLS")
-                .font(.system(size: 10, weight: .bold, design: .monospaced))
+            Text("Preferences & Tools")
+                .font(.subheadline)
+                .fontWeight(.semibold)
                 .foregroundColor(AppColors.secondaryText)
                 .padding(.horizontal, 4)
-                .tracking(1.0)
             
             VStack(spacing: 0) {
                 NavigationLink(value: ProfileNavigationDestination.appSettings) {
@@ -168,18 +165,33 @@ struct ProfileView: View {
     }
     
     private var accountActionsSection: some View {
-        VStack(spacing: AppSpacing.sm) {
-            SecondaryButton(title: "Sign Out", iconName: "rectangle.portrait.and.arrow.right") {
-                viewModel.showSignOutDialog = true
+        Button(role: .destructive) {
+            viewModel.showSignOutDialog = true
+        } label: {
+            HStack {
+                Spacer()
+                Text("Sign Out")
+                    .font(.body)
+                    .fontWeight(.semibold)
+                    .foregroundColor(AppColors.error)
+                Spacer()
             }
+            .frame(minHeight: 48)
+            .background(AppColors.secondaryGroupedBackground)
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                    .strokeBorder(AppColors.borderSubtle, lineWidth: 0.5)
+            )
         }
+        .buttonStyle(ScaleButtonStyle())
         .padding(.top, AppSpacing.xs)
     }
     
     private func settingLinkRow(icon: String, title: String, subtitle: String, color: Color) -> some View {
         HStack(spacing: AppSpacing.mdSm) {
             ZStack {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
                     .fill(color.opacity(0.12))
                     .frame(width: 32, height: 32)
                 Image(systemName: icon)
@@ -200,8 +212,7 @@ struct ProfileView: View {
             Spacer()
             
             Image(systemName: "chevron.right")
-                .font(.caption2)
-                .fontWeight(.bold)
+                .font(.caption.weight(.semibold))
                 .foregroundColor(AppColors.tertiaryText)
         }
         .padding(AppSpacing.md)

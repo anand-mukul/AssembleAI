@@ -18,17 +18,17 @@ struct ProjectCard: View {
             HStack(spacing: AppSpacing.md) {
                 // Category Symbol Icon
                 ZStack {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
                         .fill(Color.assembleBrandPrimary.opacity(0.1))
-                        .frame(width: 52, height: 52)
+                        .frame(width: 44, height: 44)
                     
                     Image(systemName: project.imageName ?? "cpu")
-                        .font(.system(size: 22, weight: .light))
+                        .font(.system(size: 20, weight: .regular))
                         .foregroundColor(.assembleBrandPrimary)
                 }
                 
                 // Details
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 3) {
                     HStack {
                         Text(project.title)
                             .font(.headline)
@@ -41,39 +41,27 @@ struct ProjectCard: View {
                     }
                     
                     Text(project.subtitle)
-                        .font(.caption)
+                        .font(.subheadline)
                         .foregroundColor(AppColors.secondaryText)
                         .lineLimit(1)
                     
-                    HStack(spacing: AppSpacing.md) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "clock")
-                                .font(.caption2)
-                            Text("~\(project.estimatedMinutes) min")
-                                .font(.caption2)
-                        }
-                        .foregroundColor(AppColors.tertiaryText)
-                        
-                        HStack(spacing: 4) {
-                            Image(systemName: "list.bullet")
-                                .font(.caption2)
-                            Text("\(project.completedSteps)/\(project.totalSteps) steps")
-                                .font(.caption2)
-                        }
-                        .foregroundColor(AppColors.tertiaryText)
+                    HStack {
+                        Text("~\(project.estimatedMinutes) min • \(project.completedSteps)/\(project.totalSteps) steps")
+                            .font(.caption)
+                            .foregroundColor(AppColors.secondaryText)
                         
                         Spacer()
                         
                         Text(project.progressText)
                             .font(.caption)
-                            .fontWeight(.bold)
+                            .fontWeight(.semibold)
                             .foregroundColor(project.isCompleted ? AppColors.success : AppColors.secondaryText)
                     }
                     .padding(.top, 2)
                     
                     ProgressBar(
                         value: project.progress,
-                        height: 4,
+                        height: 3,
                         fillColor: project.isCompleted ? AppColors.success : Color.assembleBrandPrimary
                     )
                     .padding(.top, 2)

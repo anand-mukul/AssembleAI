@@ -33,15 +33,15 @@ enum AppColors {
     static let tertiaryText = Color(uiColor: .tertiaryLabel)
     static let placeholderText = Color(uiColor: .placeholderText)
     
-    // Precision Signal Status Colors (Laser calibrated, calm Apple palette)
-    static let success = Color(red: 0.19, green: 0.82, blue: 0.35) // Signal Green
-    static let warning = Color(red: 1.0, green: 0.62, blue: 0.04) // Calibration Amber
-    static let error = Color(red: 1.0, green: 0.27, blue: 0.23)   // Discrepancy Crimson
+    // Semantic Status Colors (Native Apple HIG System Colors)
+    static let success = Color(uiColor: .systemGreen)
+    static let warning = Color(uiColor: .systemOrange)
+    static let error = Color(uiColor: .systemRed)
 
     // Semantic Status Colors (Tutor & Live Feedback States)
-    static let statusLive = Color(red: 0.19, green: 0.82, blue: 0.35)
-    static let statusListening = Color(red: 0.18, green: 0.52, blue: 0.98) // Voice Acoustic Blue
-    static let statusSpeaking = Color(red: 0.68, green: 0.38, blue: 0.98)  // Spoken Dialogue Violet
+    static let statusLive = Color(uiColor: .systemGreen)
+    static let statusListening = Color(uiColor: .systemBlue)
+    static let statusSpeaking = Color(uiColor: .systemPurple)
     static let statusVerifying = brandPrimary
     static let statusPaused = Color(uiColor: .systemGray)
     static let statusSuccess = success
@@ -58,9 +58,9 @@ enum AppColors {
     static let separator = Color(uiColor: .separator)
     static let opaqueSeparator = Color(uiColor: .opaqueSeparator)
     static let border = Color(uiColor: .separator).opacity(0.3)
-    static let borderSubtle = Color(uiColor: .separator).opacity(0.25)
-    static let borderStrong = Color(uiColor: .separator).opacity(0.55)
-    static let precisionBorder = Color(uiColor: .separator).opacity(0.6)
+    static let borderSubtle = Color(uiColor: .separator).opacity(0.2)
+    static let borderStrong = Color(uiColor: .separator).opacity(0.5)
+    static let precisionBorder = Color(uiColor: .separator).opacity(0.5)
     
     // Viewfinder & Optical Measurement Reticles
     static let motifAccent = Color("BrandPrimary", bundle: nil)

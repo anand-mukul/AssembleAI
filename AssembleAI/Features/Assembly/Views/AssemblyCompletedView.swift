@@ -57,9 +57,9 @@ struct AssemblyCompletedView: View {
                 
                 // Stats Card Grid
                 HStack(spacing: AppSpacing.md) {
-                    statTile(title: "TIME", value: session.timeElapsedText, icon: "clock")
-                    statTile(title: "ATTEMPTS", value: "\(session.attempts)", icon: "viewfinder")
-                    statTile(title: "CORRECTIONS", value: "\(session.errors)", icon: "wrench.and.screwdriver")
+                    statTile(title: "Time", value: session.timeElapsedText, icon: "clock")
+                    statTile(title: "Attempts", value: "\(session.attempts)", icon: "viewfinder")
+                    statTile(title: "Corrections", value: "\(session.errors)", icon: "wrench.and.screwdriver")
                 }
                 .appCard()
                 

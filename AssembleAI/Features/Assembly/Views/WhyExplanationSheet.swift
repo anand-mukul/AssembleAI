@@ -65,7 +65,7 @@ struct WhyExplanationSheet: View {
             
             Spacer()
             
-            PrimaryButton(title: "Got It") {
+            PrimaryButton(title: "Done") {
                 dismiss()
             }
             .padding(.horizontal, AppSpacing.screenEdge)

@@ -93,20 +93,8 @@ struct LiveTutorHUDView: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                    .strokeBorder(
-                        LinearGradient(
-                            colors: [
-                                cardBorderColor.opacity(0.6),
-                                cardBorderColor.opacity(0.2),
-                                Color.white.opacity(0.1)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 1
-                    )
+                    .strokeBorder(Color.white.opacity(0.2), lineWidth: 0.5)
             )
-            .shadow(color: AppShadow.elevatedColor, radius: 12, x: 0, y: 6)
             
             // Bottom Controls Bar: Tap-to-Talk Button & Secondary Actions
             HStack(spacing: AppSpacing.md) {
@@ -119,12 +107,12 @@ struct LiveTutorHUDView: View {
                         if isListening {
                             ThinkingOrbView(status: .listening, diameter: 18, customColor: .white)
                             Text("Listening...")
-                                .font(.system(size: 14, weight: .bold))
+                                .font(.body.weight(.semibold))
                         } else {
                             Image(systemName: "mic.fill")
-                                .font(.system(size: 15, weight: .bold))
+                                .font(.body.weight(.semibold))
                             Text("Talk to AssembleAI")
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(.body.weight(.semibold))
                         }
                     }
                     .foregroundColor(.white)
@@ -132,10 +120,9 @@ struct LiveTutorHUDView: View {
                     .frame(minHeight: 48)
                     .padding(.vertical, 10)
                     .background(
-                        Capsule()
+                        RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                             .fill(isListening ? AppColors.statusListening : Color.assembleBrandPrimary)
                     )
-                    .shadow(color: (isListening ? AppColors.statusListening : Color.assembleBrandPrimary).opacity(0.35), radius: 8, x: 0, y: 3)
                 }
                 .buttonStyle(ScaleButtonStyle())
                 .accessibilityLabel(isListening ? "Stop listening" : "Talk to AssembleAI")

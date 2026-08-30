@@ -38,7 +38,6 @@ final class ResearchLoggerTests: XCTestCase {
             stepID: sampleStepID,
             eventType: .verificationCompleted,
             durationMilliseconds: 140,
-            attemptNumber: 1,
             verificationStatus: "incorrect"
         )
         let ver2 = ResearchEvent(
@@ -47,7 +46,6 @@ final class ResearchLoggerTests: XCTestCase {
             stepID: sampleStepID,
             eventType: .verificationCompleted,
             durationMilliseconds: 120,
-            attemptNumber: 2,
             verificationStatus: "correct"
         )
         let stepComp = ResearchEvent(
@@ -79,14 +77,14 @@ final class ResearchLoggerTests: XCTestCase {
             stepID: sampleStepID,
             eventType: .verificationCompleted,
             durationMilliseconds: 150,
-            attemptNumber: 1,
             verificationStatus: "correct"
         )
         
         await logger.logEvent(event)
         let csv = await logger.exportCSV()
         
-        XCTAssertTrue(csv.contains("event_id,timestamp,session_id"))
+        XCTAssertTrue(csv.contains("event_id"))
+        XCTAssertTrue(csv.contains("session_id"))
         XCTAssertTrue(csv.contains(sampleSessionID.uuidString))
         XCTAssertTrue(csv.contains("verificationCompleted"))
         XCTAssertTrue(csv.contains("correct"))

@@ -12,14 +12,15 @@ struct ActiveProjectCard: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
-            // Header Pill & Status
+            // Header Status & Difficulty
             HStack {
                 HStack(spacing: 6) {
                     Circle()
                         .fill(AppColors.statusLive)
-                        .frame(width: 7, height: 7)
-                    Text("CONTINUE ASSEMBLY")
-                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .frame(width: 6, height: 6)
+                    Text("In Progress")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
                         .foregroundColor(AppColors.secondaryText)
                 }
                 
@@ -46,39 +47,38 @@ struct ActiveProjectCard: View {
                 HStack {
                     Text("Step \(project.completedSteps + 1) of \(project.totalSteps)")
                         .font(.subheadline)
-                        .fontWeight(.semibold)
+                        .fontWeight(.medium)
                         .foregroundColor(AppColors.primaryText)
                     
                     Spacer()
                     
                     Text(project.progressText)
                         .font(.subheadline)
-                        .fontWeight(.bold)
+                        .fontWeight(.semibold)
                         .foregroundColor(.assembleBrandPrimary)
                 }
                 
-                ProgressBar(value: project.progress, height: 8)
+                ProgressBar(value: project.progress, height: 6)
             }
             
             // Next Action Hint
             if let nextAction = project.nextAction, !nextAction.isEmpty {
-                HStack(alignment: .top, spacing: 4) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Image(systemName: "arrow.right.circle.fill")
                         .font(.caption)
                         .foregroundColor(.assembleBrandPrimary)
-                        .padding(.top, 2)
                     
                     HStack(spacing: 2) {
-                        Text("Next: ")
+                        Text("Next:")
                             .font(.caption)
-                            .fontWeight(.bold)
+                            .fontWeight(.semibold)
                             .foregroundColor(AppColors.primaryText)
                         Text(nextAction)
                             .font(.caption)
                             .foregroundColor(AppColors.secondaryText)
                     }
                 }
-                .padding(.vertical, 4)
+                .padding(.vertical, 2)
             }
             
             // Primary Action CTA
@@ -87,8 +87,7 @@ struct ActiveProjectCard: View {
             }
             .padding(.top, AppSpacing.xs)
         }
-        .appCard(borderColor: Color.assembleBrandPrimary.opacity(0.3))
-        .shadow(color: AppShadow.subtleColor, radius: 10, x: 0, y: 4)
+        .appCard()
         .accessibilityElement(children: .combine)
         .accessibilityLabel(project.accessibilityLabelSummary)
         .accessibilityHint("Double tap to view project details and continue assembly.")

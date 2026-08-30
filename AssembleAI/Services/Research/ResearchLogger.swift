@@ -23,11 +23,45 @@ nonisolated struct ResearchSessionMetrics: Sendable, Equatable {
     let avgModelLatencyMs: Int
     let avgSpeechLatencyMs: Int
     let avgProgressionLatencyMs: Int
+    let avgVerificationLatencyMs: Int
     
     var durationSeconds: Int { Int(taskCompletionTimeSeconds) }
     var totalAttempts: Int { totalVerificationAttempts }
-    var avgVerificationLatencyMs: Int { avgInterventionLatencyMs }
     var avgGuidanceLatencyMs: Int { avgModelLatencyMs }
+    
+    init(
+        sessionID: UUID,
+        mode: InteractionMode,
+        taskCompletionTimeSeconds: Double,
+        completedStepsCount: Int,
+        totalVerificationAttempts: Int,
+        errorCount: Int,
+        uncertainCount: Int,
+        totalCorrectionTimeSeconds: Double,
+        interventionCount: Int,
+        userQuestionCount: Int,
+        avgInterventionLatencyMs: Int,
+        avgModelLatencyMs: Int,
+        avgSpeechLatencyMs: Int,
+        avgProgressionLatencyMs: Int,
+        avgVerificationLatencyMs: Int? = nil
+    ) {
+        self.sessionID = sessionID
+        self.mode = mode
+        self.taskCompletionTimeSeconds = taskCompletionTimeSeconds
+        self.completedStepsCount = completedStepsCount
+        self.totalVerificationAttempts = totalVerificationAttempts
+        self.errorCount = errorCount
+        self.uncertainCount = uncertainCount
+        self.totalCorrectionTimeSeconds = totalCorrectionTimeSeconds
+        self.interventionCount = interventionCount
+        self.userQuestionCount = userQuestionCount
+        self.avgInterventionLatencyMs = avgInterventionLatencyMs
+        self.avgModelLatencyMs = avgModelLatencyMs
+        self.avgSpeechLatencyMs = avgSpeechLatencyMs
+        self.avgProgressionLatencyMs = avgProgressionLatencyMs
+        self.avgVerificationLatencyMs = avgVerificationLatencyMs ?? avgInterventionLatencyMs
+    }
 }
 
 // MARK: - Research Logging Protocol
@@ -97,19 +131,24 @@ actor ResearchLogger: ResearchLogging {
         // 2. Step Completion Count
         let completedSteps = sessionEvents.filter { $0.eventType == .stepCompleted }.count
         
-        // 3. Verification Counts
-        let correctEvents = sessionEvents.filter { $0.eventType == .verificationCorrect }
-        let incorrectEvents = sessionEvents.filter { $0.eventType == .verificationIncorrect }
-        let uncertainEvents = sessionEvents.filter { $0.eventType == .verificationUncertain }
-        let totalVerifications = correctEvents.count + incorrectEvents.count + uncertainEvents.count
+        // 3. Verification Counts & Latency
+        let correctEvents = sessionEvents.filter { $0.eventType == .verificationCorrect || ($0.eventType == .verificationCompleted && $0.verificationStatus == "correct") }
+        let incorrectEvents = sessionEvents.filter { $0.eventType == .verificationIncorrect || ($0.eventType == .verificationCompleted && $0.verificationStatus == "incorrect") }
+        let uncertainEvents = sessionEvents.filter { $0.eventType == .verificationUncertain || ($0.eventType == .verificationCompleted && $0.verificationStatus == "uncertain") }
+        let otherVerEvents = sessionEvents.filter { $0.eventType == .verificationCompleted && $0.verificationStatus != "correct" && $0.verificationStatus != "incorrect" && $0.verificationStatus != "uncertain" }
+        let totalVerifications = correctEvents.count + incorrectEvents.count + uncertainEvents.count + otherVerEvents.count
+        
+        let allVerEvents = correctEvents + incorrectEvents + uncertainEvents + otherVerEvents
+        let verLatencies = allVerEvents.compactMap(\.durationMilliseconds)
+        let avgVerLatency = verLatencies.isEmpty ? 0 : verLatencies.reduce(0, +) / verLatencies.count
         
         // 4. Correction Time Calculation (Time from first incorrect to correct per step)
         var totalCorrectionTime: Double = 0.0
         let stepIDs = Set(sessionEvents.compactMap(\.stepID))
         for stepID in stepIDs {
             let stepEvents = sessionEvents.filter { $0.stepID == stepID }
-            if let firstIncorrect = stepEvents.first(where: { $0.eventType == .verificationIncorrect }),
-               let firstCorrectAfter = stepEvents.first(where: { $0.eventType == .verificationCorrect && $0.timestamp >= firstIncorrect.timestamp }) {
+            if let firstIncorrect = stepEvents.first(where: { $0.eventType == .verificationIncorrect || ($0.eventType == .verificationCompleted && $0.verificationStatus == "incorrect") }),
+               let firstCorrectAfter = stepEvents.first(where: { ($0.eventType == .verificationCorrect || ($0.eventType == .verificationCompleted && $0.verificationStatus == "correct")) && $0.timestamp >= firstIncorrect.timestamp }) {
                 totalCorrectionTime += max(0.0, firstCorrectAfter.timestamp.timeIntervalSince(firstIncorrect.timestamp))
             }
         }
@@ -145,7 +184,8 @@ actor ResearchLogger: ResearchLogging {
             avgInterventionLatencyMs: avgInterventionLatency,
             avgModelLatencyMs: avgModelLatency,
             avgSpeechLatencyMs: avgSpeechLatency,
-            avgProgressionLatencyMs: avgProgressionLatency
+            avgProgressionLatencyMs: avgProgressionLatency,
+            avgVerificationLatencyMs: avgVerLatency
         )
     }
     

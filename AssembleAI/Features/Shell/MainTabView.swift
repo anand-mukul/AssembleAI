@@ -115,6 +115,12 @@ struct MainTabView: View {
             .tag(4)
         }
         .tint(.assembleBrandPrimary)
+        .onAppear {
+            let appearance = UITabBarAppearance()
+            appearance.configureWithDefaultBackground()
+            UITabBar.appearance().standardAppearance = appearance
+            UITabBar.appearance().scrollEdgeAppearance = appearance
+        }
     }
 }
 
