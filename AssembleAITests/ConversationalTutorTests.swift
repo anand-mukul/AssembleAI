@@ -6,6 +6,7 @@
 import XCTest
 @testable import AssembleAI
 
+@MainActor
 final class ConversationalTutorTests: XCTestCase {
     
     private var hybridProvider: HybridTutorResponseProvider!
@@ -59,14 +60,22 @@ final class ConversationalTutorTests: XCTestCase {
         XCTAssertTrue(response?.text.contains("Perfect") == true || response?.text.contains("Great job") == true || response?.text.contains("Nicely done") == true)
     }
     
-    // MARK: - Test 2: Correct Decision Generates Grounded Error Explanation
-    func testCorrectDecisionResponse() async {
-        let issue = StateIssue(type: .wrongPosition, title: "Wrong Row", explanation: "Inserted in Row 14 instead of 15")
+    // MARK: - Test 2: Explicit Correction Response
+    func testExplicitCorrectionDecisionResponse() async {
+        let issue = StateIssue(type: .wrongPosition, title: "Misplaced Resistor", explanation: "Lead in Row 14 instead of Row 15.")
+        let verificationResult = VerificationResult(
+            status: .incorrect,
+            confidence: 0.90,
+            detectedDescription: "Lead in Row 14",
+            expectedDescription: "Lead in Row 15",
+            explanation: issue.explanation,
+            issues: [issue]
+        )
         let decision = InterventionDecision(action: .correct(description: issue.explanation, level: .explicit), reason: "Mistake")
         let context = AssistantContext(
             currentStep: step1,
-            verificationResult: VerificationResult(status: .incorrect, confidence: 0.85, detectedDescription: "Row 14", expectedDescription: "Row 15", explanation: issue.explanation),
-            primaryIssue: issue
+            verificationResult: verificationResult,
+            attemptCount: 2
         )
         
         let response = await hybridProvider.generateResponse(for: decision, context: context)
@@ -74,26 +83,26 @@ final class ConversationalTutorTests: XCTestCase {
         XCTAssertNotNil(response)
         XCTAssertEqual(response?.priority, .high)
         XCTAssertEqual(response?.category, "correction")
-        XCTAssertTrue(response?.text.contains("Row 14") == true)
+        XCTAssertTrue(response?.text.contains("Lead in Row 14") == true)
     }
     
     // MARK: - Test 3: User "Why?" Question Answering
     func testUserWhyQuestionAnswering() async {
-        let issue = StateIssue(type: .wrongPosition, title: "Wrong Row", explanation: "Inserted in Row 14 instead of 15")
         let context = AssistantContext(
             currentStep: step1,
-            primaryIssue: issue
+            userTranscript: "why does it go in row 15?"
         )
         
         let response = await mockProvider.answerUserQuestion(
-            query: "Why is Row 14 wrong?",
+            query: "why row 15?",
             intent: .askWhy,
             context: context
         )
         
         XCTAssertEqual(response.priority, .immediate)
         XCTAssertTrue(response.text.contains("power rail") || response.text.contains("circuit"))
-        XCTAssertEqual(await mockProvider.answerQuestionCallCount, 1)
+        let questionCallCount = await mockProvider.answerQuestionCallCount
+        XCTAssertEqual(questionCallCount, 1)
     }
     
     // MARK: - Test 4: User "What Next?" Question Answering
@@ -117,7 +126,8 @@ final class ConversationalTutorTests: XCTestCase {
         let response = await mockProvider.generateResponse(for: silentDecision, context: context)
         
         XCTAssertNil(response, "Silent decisions must produce nil tutor response")
-        XCTAssertEqual(await mockProvider.generateResponseCallCount, 1)
+        let generateCallCount = await mockProvider.generateResponseCallCount
+        XCTAssertEqual(generateCallCount, 1)
     }
     
     // MARK: - Test 6: Grounding Invariant — Model Output Cannot Change Verification State
@@ -151,9 +161,11 @@ final class ConversationalTutorTests: XCTestCase {
     func testSessionMemoryReset() async {
         let context = AssistantContext(currentStep: step1)
         _ = await mockProvider.answerUserQuestion(query: "Where is R1?", intent: .askWhere, context: context)
-        XCTAssertNotNil(await mockProvider.lastReceivedContext)
+        let lastCtx = await mockProvider.lastReceivedContext
+        XCTAssertNotNil(lastCtx)
         
         await mockProvider.clearSessionContext()
-        XCTAssertNil(await mockProvider.lastReceivedContext)
+        let clearedCtx = await mockProvider.lastReceivedContext
+        XCTAssertNil(clearedCtx)
     }
 }

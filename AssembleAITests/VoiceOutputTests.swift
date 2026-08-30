@@ -6,6 +6,7 @@
 import XCTest
 @testable import AssembleAI
 
+@MainActor
 final class VoiceOutputTests: XCTestCase {
     
     private var responseProvider: DeterministicTutorResponseProvider!
@@ -82,26 +83,36 @@ final class VoiceOutputTests: XCTestCase {
     
     // MARK: - Test 2: Voice Service Playback & State
     func testVoiceServicePlaybackLifecycle() async {
-        XCTAssertEqual(await mockVoiceService.state, .idle)
+        let initialState = await mockVoiceService.state
+        XCTAssertEqual(initialState, .idle)
         
         let response = TutorResponse(text: "Hello World", priority: .normal)
         await mockVoiceService.speak(response)
         
-        XCTAssertEqual(await mockVoiceService.state, .speaking)
-        XCTAssertEqual(await mockVoiceService.spokenResponses.count, 1)
-        XCTAssertEqual(await mockVoiceService.spokenResponses.first?.text, "Hello World")
+        let speakingState = await mockVoiceService.state
+        XCTAssertEqual(speakingState, .speaking)
+        let spokenCount1 = await mockVoiceService.spokenResponses.count
+        XCTAssertEqual(spokenCount1, 1)
+        let firstSpokenText = await mockVoiceService.spokenResponses.first?.text
+        XCTAssertEqual(firstSpokenText, "Hello World")
         
         await mockVoiceService.pause()
-        XCTAssertEqual(await mockVoiceService.state, .paused)
-        XCTAssertEqual(await mockVoiceService.pauseCount, 1)
+        let pausedState = await mockVoiceService.state
+        XCTAssertEqual(pausedState, .paused)
+        let pauseCount = await mockVoiceService.pauseCount
+        XCTAssertEqual(pauseCount, 1)
         
         await mockVoiceService.resume()
-        XCTAssertEqual(await mockVoiceService.state, .speaking)
-        XCTAssertEqual(await mockVoiceService.resumeCount, 1)
+        let resumedState = await mockVoiceService.state
+        XCTAssertEqual(resumedState, .speaking)
+        let resumeCount = await mockVoiceService.resumeCount
+        XCTAssertEqual(resumeCount, 1)
         
         await mockVoiceService.stop()
-        XCTAssertEqual(await mockVoiceService.state, .idle)
-        XCTAssertEqual(await mockVoiceService.stopCount, 1)
+        let stoppedState = await mockVoiceService.state
+        XCTAssertEqual(stoppedState, .idle)
+        let stopCount = await mockVoiceService.stopCount
+        XCTAssertEqual(stopCount, 1)
     }
     
     // MARK: - Test 3: Priority Interruption / Stale Speech Preemption
@@ -112,18 +123,24 @@ final class VoiceOutputTests: XCTestCase {
         
         // 1. Start normal speech
         await mockVoiceService.speak(normalResponse)
-        XCTAssertEqual(await mockVoiceService.spokenResponses.count, 1)
-        XCTAssertEqual(await mockVoiceService.stopCount, 0)
+        var spokenCount = await mockVoiceService.spokenResponses.count
+        XCTAssertEqual(spokenCount, 1)
+        var stopCount = await mockVoiceService.stopCount
+        XCTAssertEqual(stopCount, 0)
         
         // 2. High priority speech arrives -> Interrupts normal speech!
         await mockVoiceService.speak(highPriorityResponse)
-        XCTAssertEqual(await mockVoiceService.spokenResponses.count, 2)
-        XCTAssertEqual(await mockVoiceService.stopCount, 1, "High priority response must interrupt active lower priority speech")
-        XCTAssertEqual(await mockVoiceService.spokenResponses.last?.text, "Urgent correction needed!")
+        spokenCount = await mockVoiceService.spokenResponses.count
+        XCTAssertEqual(spokenCount, 2)
+        stopCount = await mockVoiceService.stopCount
+        XCTAssertEqual(stopCount, 1, "High priority response must interrupt active lower priority speech")
+        let lastSpokenText = await mockVoiceService.spokenResponses.last?.text
+        XCTAssertEqual(lastSpokenText, "Urgent correction needed!")
         
         // 3. Low priority speech arrives while high priority is speaking -> Dropped!
         await mockVoiceService.speak(lowPriorityResponse)
-        XCTAssertEqual(await mockVoiceService.spokenResponses.count, 2, "Lower priority speech must not preempt active high priority speech")
+        spokenCount = await mockVoiceService.spokenResponses.count
+        XCTAssertEqual(spokenCount, 2, "Lower priority speech must not preempt active high priority speech")
     }
     
     // MARK: - Test 4: Duplicate Speech Suppression
@@ -132,11 +149,13 @@ final class VoiceOutputTests: XCTestCase {
         let response2 = TutorResponse(text: "Perfect. Step complete.", priority: .normal)
         
         await mockVoiceService.speak(response1)
-        XCTAssertEqual(await mockVoiceService.spokenResponses.count, 1)
+        var spokenCount = await mockVoiceService.spokenResponses.count
+        XCTAssertEqual(spokenCount, 1)
         
         // Duplicate immediately following
         await mockVoiceService.speak(response2)
-        XCTAssertEqual(await mockVoiceService.spokenResponses.count, 1, "Duplicate identical speech must be suppressed")
+        spokenCount = await mockVoiceService.spokenResponses.count
+        XCTAssertEqual(spokenCount, 1, "Duplicate identical speech must be suppressed")
     }
     
     // MARK: - Test 5: End-to-End Decision -> Spoken Response Pipeline
@@ -150,8 +169,11 @@ final class VoiceOutputTests: XCTestCase {
         
         await mockVoiceService.speak(tutorResponse)
         
-        XCTAssertEqual(await mockVoiceService.spokenResponses.count, 1)
-        XCTAssertEqual(await mockVoiceService.state, .speaking)
-        XCTAssertTrue(await mockVoiceService.spokenResponses.first?.category == "confirmation")
+        let spokenCount = await mockVoiceService.spokenResponses.count
+        XCTAssertEqual(spokenCount, 1)
+        let state = await mockVoiceService.state
+        XCTAssertEqual(state, .speaking)
+        let firstCategory = await mockVoiceService.spokenResponses.first?.category
+        XCTAssertTrue(firstCategory == "confirmation")
     }
 }

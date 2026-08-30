@@ -196,8 +196,10 @@ final class StepProgressionTests: XCTestCase {
         
         try? await Task.sleep(nanoseconds: 100_000_000)
         
-        XCTAssertEqual(await mockVoiceOutput.spokenResponses.count, 1)
-        XCTAssertTrue(await mockVoiceOutput.spokenResponses.first?.text.contains("Insert 220Ω Resistor") == true)
+        let count = await mockVoiceOutput.spokenResponses.count
+        XCTAssertEqual(count, 1)
+        let firstSpoken = await mockVoiceOutput.spokenResponses.first?.text
+        XCTAssertTrue(firstSpoken?.contains("Insert 220Ω Resistor") == true)
     }
     
     // MARK: - Helper

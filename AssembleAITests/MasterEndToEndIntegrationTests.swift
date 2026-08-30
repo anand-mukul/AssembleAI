@@ -153,7 +153,8 @@ final class MasterEndToEndIntegrationTests: XCTestCase {
         cont2.finish()
         viewModel.stopLiveTutor()
         
-        XCTAssertEqual(await mockVoiceOutput.state, .idle)
+        let state = await mockVoiceOutput.state
+        XCTAssertEqual(state, .idle)
     }
     
     // MARK: - Test 3: Model Authority Invariant (Physical Truth Guaranteed)
@@ -192,7 +193,8 @@ final class MasterEndToEndIntegrationTests: XCTestCase {
         
         let response = await mockTutor.generateResponse(for: silentDecision, context: context)
         XCTAssertNil(response, "Silent decisions must not produce tutor responses")
-        XCTAssertEqual(await mockVoiceOutput.spokenResponses.count, 0)
+        let spokenCount = await mockVoiceOutput.spokenResponses.count
+        XCTAssertEqual(spokenCount, 0)
     }
     
     // MARK: - Test 5: Research Telemetry Isolation & Privacy

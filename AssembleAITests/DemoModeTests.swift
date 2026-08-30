@@ -6,6 +6,7 @@
 import XCTest
 @testable import AssembleAI
 
+@MainActor
 final class DemoModeTests: XCTestCase {
     
     private var mockService: MockVerificationService!

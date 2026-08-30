@@ -102,7 +102,8 @@ final class LiveTutorHUDTests: XCTestCase {
         
         XCTAssertFalse(viewModel.isListening)
         XCTAssertEqual(mockTutor.answerQuestionCallCount, 1)
-        XCTAssertEqual(await mockVoiceOutput.spokenResponses.count, 1)
+        let spokenCount = await mockVoiceOutput.spokenResponses.count
+        XCTAssertEqual(spokenCount, 1)
     }
     
     // MARK: - Test 3: Step Transition Resets Live State

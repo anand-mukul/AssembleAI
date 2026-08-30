@@ -7,6 +7,7 @@ import XCTest
 import CoreGraphics
 @testable import AssembleAI
 
+@MainActor
 final class GuidanceOverlayTests: XCTestCase {
     
     private var provider: DefaultGuidanceProvider!

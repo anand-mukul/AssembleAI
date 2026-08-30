@@ -9,6 +9,7 @@ import CoreVideo
 import UIKit
 @testable import AssembleAI
 
+@MainActor
 final class LiveVisionPipelineTests: XCTestCase {
     
     private var visionService: VisionService!

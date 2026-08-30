@@ -6,6 +6,7 @@
 import XCTest
 @testable import AssembleAI
 
+@MainActor
 final class FoundationModelsGuidanceTests: XCTestCase {
     
     private var mockGenerator: MockGuidanceGenerator!

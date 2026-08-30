@@ -51,9 +51,9 @@ nonisolated struct TutorResponse: Sendable, Equatable, Identifiable {
 // MARK: - Tutor Response Providing Protocol
 
 /// Protocol for translating behavioral intervention decisions into spoken natural language responses.
-protocol TutorResponseProviding: Sendable {
+nonisolated protocol TutorResponseProviding: Sendable {
     /// Generates a spoken tutor response for an intervention decision.
-    func response(for decision: InterventionDecision) -> TutorResponse?
+    nonisolated func response(for decision: InterventionDecision) -> TutorResponse?
 }
 
 // MARK: - Deterministic Tutor Response Provider
@@ -64,7 +64,7 @@ protocol TutorResponseProviding: Sendable {
 nonisolated struct DeterministicTutorResponseProvider: TutorResponseProviding {
     nonisolated init() {}
     
-    func response(for decision: InterventionDecision) -> TutorResponse? {
+    nonisolated func response(for decision: InterventionDecision) -> TutorResponse? {
         guard decision.shouldIntervene else { return nil }
         
         switch decision.action {

@@ -7,6 +7,7 @@ import XCTest
 import SwiftUI
 @testable import AssembleAI
 
+@MainActor
 final class DesignSystemTests: XCTestCase {
     
     // MARK: - Test 1: Corner Radius Tokens Adhere to Apple Continuous Curvature Standard

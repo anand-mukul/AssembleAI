@@ -6,6 +6,7 @@
 import XCTest
 @testable import AssembleAI
 
+@MainActor
 final class AssistantInterventionPolicyTests: XCTestCase {
     
     private var policy: AssistantInterventionPolicy!

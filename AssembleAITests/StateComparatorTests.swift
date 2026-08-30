@@ -6,6 +6,7 @@
 import XCTest
 @testable import AssembleAI
 
+@MainActor
 final class StateComparatorTests: XCTestCase {
     
     private var comparator: AssemblyStateComparator!

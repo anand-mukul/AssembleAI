@@ -6,6 +6,7 @@
 import XCTest
 @testable import AssembleAI
 
+@MainActor
 final class VoiceInputTests: XCTestCase {
     
     private var intentParser: VoiceIntentParser!
@@ -93,13 +94,16 @@ final class VoiceInputTests: XCTestCase {
     
     // MARK: - Test 3: Voice Input Service State Lifecycle
     func testVoiceInputServiceLifecycle() async throws {
-        XCTAssertEqual(await mockVoiceInput.state, .idle)
+        let initialState = await mockVoiceInput.state
+        XCTAssertEqual(initialState, .idle)
         
         try await mockVoiceInput.startListening()
-        XCTAssertEqual(await mockVoiceInput.state, .listening)
+        let listeningState = await mockVoiceInput.state
+        XCTAssertEqual(listeningState, .listening)
         
         await mockVoiceInput.stopListening()
-        XCTAssertEqual(await mockVoiceInput.state, .idle)
+        let finalState = await mockVoiceInput.state
+        XCTAssertEqual(finalState, .idle)
     }
     
     // MARK: - Test 4: Partial vs Final Transcript Streaming
@@ -153,8 +157,11 @@ final class VoiceInputTests: XCTestCase {
         
         // Deliver to Voice Output
         await mockVoiceOutput.speak(response)
-        XCTAssertEqual(await mockVoiceOutput.spokenResponses.count, 1)
-        XCTAssertEqual(await mockVoiceOutput.state, .speaking)
-        XCTAssertTrue(await mockVoiceOutput.spokenResponses.first?.text.contains("where does this go?") == true)
+        let spokenCount = await mockVoiceOutput.spokenResponses.count
+        XCTAssertEqual(spokenCount, 1)
+        let outputState = await mockVoiceOutput.state
+        XCTAssertEqual(outputState, .speaking)
+        let firstSpoken = await mockVoiceOutput.spokenResponses.first?.text
+        XCTAssertTrue(firstSpoken?.contains("where does this go?") == true)
     }
 }

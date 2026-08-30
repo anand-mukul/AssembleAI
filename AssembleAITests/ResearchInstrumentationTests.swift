@@ -6,6 +6,7 @@
 import XCTest
 @testable import AssembleAI
 
+@MainActor
 final class ResearchInstrumentationTests: XCTestCase {
     
     private var logger: ResearchLogger!

@@ -9,6 +9,7 @@ import CoreVideo
 import UIKit
 @testable import AssembleAI
 
+@MainActor
 final class FrameSamplingTests: XCTestCase {
     
     private var samplingService: FrameSamplingService!

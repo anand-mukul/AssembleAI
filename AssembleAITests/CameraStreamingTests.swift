@@ -8,6 +8,7 @@ import CoreVideo
 import AVFoundation
 @testable import AssembleAI
 
+@MainActor
 final class CameraStreamingTests: XCTestCase {
     
     private var cameraService: CameraService!
