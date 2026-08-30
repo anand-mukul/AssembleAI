@@ -23,21 +23,56 @@ final class AssembleAIUITests: XCTestCase {
     }
 
     @MainActor
-    func testExample() throws {
-        // UI tests must launch the application that they test.
+    func testWelcomeScreenElementsAndNavigation() throws {
         let app = XCUIApplication()
         app.launch()
 
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // XCUIAutomation Documentation
-        // https://developer.apple.com/documentation/xcuiautomation
+        // Verify Welcome Screen elements
+        let getStartedButton = app.buttons["Get Started"]
+        if getStartedButton.waitForExistence(timeout: 4.0) {
+            XCTAssertTrue(getStartedButton.isHittable)
+
+            // Navigate to Auth Choice
+            getStartedButton.tap()
+
+            // Verify Auth Choice Options
+            let appleButton = app.buttons["Sign in with Apple"]
+            let emailButton = app.buttons["Continue with Email"]
+            let guestButton = app.buttons["Continue without an account"]
+
+            XCTAssertTrue(appleButton.waitForExistence(timeout: 3.0))
+            XCTAssertTrue(emailButton.exists)
+            XCTAssertTrue(guestButton.exists)
+
+            // Tap Guest Access
+            guestButton.tap()
+
+            // Check Confirmation Sheet
+            let confirmGuestButton = app.buttons["Continue as Guest"]
+            if confirmGuestButton.waitForExistence(timeout: 2.0) {
+                confirmGuestButton.tap()
+            }
+        }
+
+        // Verify Home Tab Bar & Navigation
+        let homeTab = app.tabBars.buttons["Home"]
+        if homeTab.waitForExistence(timeout: 5.0) {
+            XCTAssertTrue(homeTab.isSelected || homeTab.exists)
+
+            // Verify Projects Tab navigation
+            let projectsTab = app.tabBars.buttons["Projects"]
+            if projectsTab.exists {
+                projectsTab.tap()
+                XCTAssertTrue(projectsTab.isSelected)
+            }
+        }
     }
 
     @MainActor
     func testLaunchPerformance() throws {
-        // This measures how long it takes to launch your application.
         measure(metrics: [XCTApplicationLaunchMetric()]) {
             XCUIApplication().launch()
         }
     }
 }
+

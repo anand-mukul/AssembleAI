@@ -129,7 +129,32 @@ final class LiveTutorHUDTests: XCTestCase {
         
         // Stream should not engage live task
         continuation.finish()
-        
+
         XCTAssertFalse(viewModel.liveTutorEnabled)
     }
+
+    // MARK: - Test 5: Live Tutor Status Enum & Raw Values
+    func testLiveTutorAllStatusRawValues() {
+        XCTAssertEqual(LiveTutorStatus.live.rawValue, "LIVE")
+        XCTAssertEqual(LiveTutorStatus.paused.rawValue, "PAUSED")
+        XCTAssertEqual(LiveTutorStatus.listening.rawValue, "LISTENING")
+        XCTAssertEqual(LiveTutorStatus.speaking.rawValue, "SPEAKING")
+        XCTAssertEqual(LiveTutorStatus.verifying.rawValue, "VERIFYING")
+    }
+
+    // MARK: - Test 6: Tutor Response Category & Priority Invariants
+    func testTutorMessageCategoriesAndPriorities() {
+        let correction = TutorResponse(text: "Check your placement", priority: .high, category: "correction")
+        XCTAssertEqual(correction.priority, .high)
+        XCTAssertEqual(correction.category, "correction")
+
+        let confirmation = TutorResponse(text: "Perfect match", priority: .normal, category: "confirmation")
+        XCTAssertEqual(confirmation.priority, .normal)
+        XCTAssertEqual(confirmation.category, "confirmation")
+
+        viewModel.currentTutorMessage = correction
+        XCTAssertEqual(viewModel.currentTutorMessage?.category, "correction")
+        XCTAssertEqual(viewModel.currentTutorMessage?.priority, .high)
+    }
 }
+
