@@ -36,7 +36,7 @@ nonisolated struct DefaultGuidanceProvider: GuidanceProviding {
         switch comparison.status {
         case .correct:
             return GuidanceOverlay(
-                title: "✓ Verified",
+                title: "Verified",
                 message: "Physical setup matches target step contract.",
                 style: .success
             )

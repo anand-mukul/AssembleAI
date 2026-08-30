@@ -97,58 +97,141 @@ struct BrandHeaderView: View {
 
 // MARK: - Assembly Camera Visual Centerpiece Motif
 
-/// Calm, serene visual centerpiece representing AssembleAI's quiet spatial awareness.
+/// Apple / Uber / Airbnb-grade hardware inspection preview card representing physical assembly verification.
 struct AssemblyCameraMotifView: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var isBreathing = false
-    
     var body: some View {
-        ZStack {
-            // Ambient soft glow
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [
-                            Color.assembleBrandPrimary.opacity(0.12),
-                            Color.assembleBrandPrimary.opacity(0.0)
-                        ],
-                        center: .center,
-                        startRadius: 20,
-                        endRadius: 75
-                    )
-                )
-                .frame(width: 150, height: 150)
-                .scaleEffect(reduceMotion ? 1.0 : (isBreathing ? 1.05 : 0.95))
-            
-            // Soft frosted disc container
-            Circle()
-                .fill(AppColors.secondaryGroupedBackground)
-                .frame(width: 96, height: 96)
-                .overlay(
+        VStack(spacing: 0) {
+            // Card Header
+            HStack {
+                HStack(spacing: 6) {
                     Circle()
+                        .fill(AppColors.statusLive)
+                        .frame(width: 6, height: 6)
+                    Text("CAMERA OBSERVATION")
+                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .foregroundColor(AppColors.secondaryText)
+                        .tracking(0.8)
+                }
+                Spacer()
+                Text("STEP 1 OF 4")
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundColor(AppColors.tertiaryText)
+                    .tracking(0.5)
+            }
+            .padding(.horizontal, AppSpacing.md)
+            .padding(.top, AppSpacing.mdSm)
+            .padding(.bottom, AppSpacing.xs)
+
+            // Hardware Schematic / Blueprint Canvas
+            ZStack {
+                // Minimalist Breadboard Base
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(AppColors.tertiaryBackground)
+                    .frame(height: 94)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(AppColors.borderSubtle, lineWidth: 1)
+                    )
+
+                // Grid Pin Holes
+                VStack(spacing: 8) {
+                    ForEach(0..<3, id: \.self) { _ in
+                        HStack(spacing: 12) {
+                            ForEach(0..<8, id: \.self) { _ in
+                                Circle()
+                                    .fill(AppColors.borderStrong.opacity(0.4))
+                                    .frame(width: 3.5, height: 3.5)
+                            }
+                        }
+                    }
+                }
+
+                // Component Wire / Resistor Vector (Grounded Physical Hardware)
+                HStack(spacing: 0) {
+                    // Left lead
+                    Rectangle()
+                        .fill(Color(uiColor: .systemGray))
+                        .frame(width: 24, height: 2)
+
+                    // Resistor body
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 4, style: .continuous)
+                            .fill(Color(red: 0.85, green: 0.72, blue: 0.52))
+                            .frame(width: 44, height: 16)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                    .stroke(AppColors.borderStrong.opacity(0.3), lineWidth: 0.5)
+                            )
+
+                        // Color bands (220 ohm: Red, Red, Brown, Gold)
+                        HStack(spacing: 4) {
+                            Rectangle().fill(Color.red).frame(width: 2.5, height: 16)
+                            Rectangle().fill(Color.red).frame(width: 2.5, height: 16)
+                            Rectangle().fill(Color.brown).frame(width: 2.5, height: 16)
+                            Spacer().frame(width: 4)
+                            Rectangle().fill(Color.yellow.opacity(0.9)).frame(width: 2, height: 16)
+                        }
+                    }
+
+                    // Right lead
+                    Rectangle()
+                        .fill(Color(uiColor: .systemGray))
+                        .frame(width: 24, height: 2)
+                }
+
+                // Subtle Viewfinder Reticle Corners
+                CameraCornersView()
+                    .frame(width: 140, height: 76)
+                    .foregroundColor(AppColors.primaryText.opacity(0.25))
+            }
+            .padding(.horizontal, AppSpacing.md)
+            .padding(.vertical, AppSpacing.xs)
+
+            // Card Footer Status
+            HStack {
+                Text("220Ω Resistor")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(AppColors.primaryText)
+
+                Text("Row 10 to 15")
+                    .font(.caption)
+                    .foregroundColor(AppColors.secondaryText)
+
+                Spacer()
+
+                HStack(spacing: 4) {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundColor(AppColors.statusLive)
+                    Text("Aligned")
+                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .foregroundColor(AppColors.secondaryText)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(
+                    Capsule()
+                        .fill(AppColors.appBackground)
+                )
+                .overlay(
+                    Capsule()
                         .strokeBorder(AppColors.borderSubtle, lineWidth: 1)
                 )
-                .shadow(color: AppShadow.subtleColor, radius: 10, x: 0, y: 4)
-
-            // Central calm Thinking Orb
-            ThinkingOrbView(status: .live, diameter: 54)
-
-            // Minimal subtle viewfinder reticle marks
-            CameraCornersView()
-                .frame(width: 120, height: 120)
-                .foregroundColor(Color.assembleBrandPrimary.opacity(0.35))
-        }
-        .frame(height: 140)
-        .frame(maxWidth: .infinity)
-        .onAppear {
-            if !reduceMotion {
-                withAnimation(.easeInOut(duration: 3.0).repeatForever(autoreverses: true)) {
-                    isBreathing = true
-                }
             }
+            .padding(.horizontal, AppSpacing.md)
+            .padding(.top, AppSpacing.xs)
+            .padding(.bottom, AppSpacing.mdSm)
         }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("AssembleAI ambient visual guide.")
+        .background(AppColors.secondaryGroupedBackground)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                .strokeBorder(AppColors.borderSubtle, lineWidth: 1)
+        )
+        .shadow(color: AppShadow.subtleColor, radius: 10, x: 0, y: 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Hardware inspection preview showing breadboard with resistor placement step.")
     }
 }
 

@@ -15,27 +15,22 @@ struct WelcomeView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                // Calm, Airy Header Section
+                // Editorial Header Section
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    HStack(spacing: 6) {
-                        Circle()
-                            .fill(AppColors.statusLive)
-                            .frame(width: 7, height: 7)
-                        Text("ASSEMBLEAI")
-                            .font(.system(size: 11, weight: .bold, design: .monospaced))
-                            .foregroundColor(AppColors.secondaryText)
-                            .tracking(1.2)
-                    }
-                    .padding(.bottom, AppSpacing.xxs)
-                    .accessibilityHidden(true)
+                    Text("ASSEMBLEAI")
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .foregroundColor(AppColors.secondaryText)
+                        .tracking(1.2)
+                        .padding(.bottom, AppSpacing.xxs)
+                        .accessibilityHidden(true)
                     
-                    Text("Assemble with\nconfidence.")
+                    Text("Build with\nprecision.")
                         .font(.system(size: 34, weight: .bold))
                         .foregroundColor(AppColors.primaryText)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityAddTraits(.isHeader)
                     
-                    Text("A quiet visual guide that watches your hands as you build, confirming each step in real time.")
+                    Text("Real-time camera verification for physical hardware assembly. Point your iPhone at your workspace and verify each step as you build.")
                         .font(.body)
                         .foregroundColor(AppColors.secondaryText)
                         .lineSpacing(3)
@@ -44,11 +39,11 @@ struct WelcomeView: View {
                 }
                 .padding(.top, AppSpacing.xl)
                 
-                // Serene, Ambient Visual Centerpiece
+                // Hardware Inspection Preview Card
                 AssemblyCameraMotifView()
                     .padding(.vertical, AppSpacing.xs)
                 
-                // Calm Capability Pillars
+                // Physical Capability Pillars (Monochrome, Architectural)
                 VStack(spacing: AppSpacing.md) {
                     ForEach(Array(capabilities.enumerated()), id: \.offset) { index, cap in
                         CapabilityRow(
@@ -57,9 +52,9 @@ struct WelcomeView: View {
                             subtitle: cap.subtitle
                         )
                         .opacity(rowsAppeared ? 1 : 0)
-                        .offset(y: rowsAppeared ? 0 : 10)
+                        .offset(y: rowsAppeared ? 0 : 8)
                         .animation(
-                            reduceMotion ? .none : .spring(response: 0.45, dampingFraction: 0.8).delay(Double(index) * 0.08),
+                            reduceMotion ? .none : .spring(response: 0.4, dampingFraction: 0.82).delay(Double(index) * 0.06),
                             value: rowsAppeared
                         )
                     }
@@ -79,9 +74,9 @@ struct WelcomeView: View {
     
     private var capabilities: [(icon: String, title: String, subtitle: String)] {
         [
-            ("eye.fill", "Live Observation", "Quietly watches your workspace to understand what you're assembling."),
-            ("checkmark.shield.fill", "Step Verification", "Confirms every component and wire is in place before you move ahead."),
-            ("lock.shield.fill", "Private & On-Device", "All visual intelligence runs locally. No camera frames ever leave your iPhone.")
+            ("viewfinder", "Live Guidance", "Follows your hands as you build and highlights where each component connects."),
+            ("checkmark.seal", "Physical Verification", "Confirms pin positions, wire rows, and polarities before you power on."),
+            ("lock.shield", "Private & On-Device", "All camera processing stays strictly on your iPhone. Zero cloud uploads.")
         ]
     }
     
@@ -99,7 +94,7 @@ struct WelcomeView: View {
                         .foregroundColor(AppColors.secondaryText)
                     Text("Sign In")
                         .fontWeight(.semibold)
-                        .foregroundColor(.assembleBrandPrimary)
+                        .foregroundColor(AppColors.primaryText)
                 }
                 .font(.subheadline)
                 .frame(minHeight: 44)
@@ -123,11 +118,15 @@ private struct CapabilityRow: View {
         HStack(alignment: .top, spacing: AppSpacing.md) {
             Image(systemName: iconName)
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(.assembleBrandPrimary)
-                .frame(width: 36, height: 36)
+                .foregroundColor(AppColors.primaryText)
+                .frame(width: 38, height: 38)
                 .background(
-                    Circle()
-                        .fill(Color.assembleBrandPrimary.opacity(0.1))
+                    RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
+                        .fill(AppColors.secondaryGroupedBackground)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
+                        .strokeBorder(AppColors.borderSubtle, lineWidth: 1)
                 )
                 .accessibilityHidden(true)
             
