@@ -31,7 +31,13 @@ final class PersistenceController {
         do {
             container = try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
-            fatalError("Failed to initialize SwiftData ModelContainer: \(error)")
+            print("⚠️ SwiftData on-disk store initialization failed: \(error). Falling back to in-memory store.")
+            do {
+                let fallbackConfig = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+                container = try ModelContainer(for: schema, configurations: [fallbackConfig])
+            } catch {
+                fatalError("Failed to initialize fallback SwiftData ModelContainer: \(error)")
+            }
         }
     }
     

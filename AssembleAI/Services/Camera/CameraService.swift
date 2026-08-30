@@ -28,8 +28,8 @@ final class CameraService: NSObject, ObservableObject {
     nonisolated let captureSession = AVCaptureSession()
     nonisolated private let photoOutput = AVCapturePhotoOutput()
     nonisolated private let videoOutput = AVCaptureVideoDataOutput()
-    nonisolated private let cameraQueue = DispatchQueue(label: "com.assembleai.cameraQueue")
-    nonisolated private let videoQueue = DispatchQueue(label: "com.assembleai.videoQueue", qos: .userInitiated)
+    nonisolated private let cameraQueue = DispatchQueue(label: "com.mukul.assembleai.cameraQueue")
+    nonisolated private let videoQueue = DispatchQueue(label: "com.mukul.assembleai.videoQueue", qos: .userInitiated)
     
     nonisolated private let broadcaster = FrameStreamBroadcaster()
     

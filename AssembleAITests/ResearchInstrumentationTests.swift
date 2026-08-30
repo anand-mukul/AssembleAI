@@ -16,8 +16,8 @@ final class ResearchInstrumentationTests: XCTestCase {
     private var step1ID: UUID!
     private var step2ID: UUID!
     
-    override func setUp() async {
-        await super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         logger = ResearchLogger()
         sessionA = UUID()
         sessionB = UUID()
@@ -26,10 +26,10 @@ final class ResearchInstrumentationTests: XCTestCase {
         step2ID = UUID()
     }
     
-    override func tearDown() async {
+    override func tearDown() async throws {
         await logger.clearLogs()
         logger = nil
-        await super.tearDown()
+        try await super.tearDown()
     }
     
     // MARK: - Test 1: Sequence Numbering & Event Logging

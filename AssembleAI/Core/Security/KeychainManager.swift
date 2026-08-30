@@ -10,7 +10,7 @@ import Security
 final class KeychainManager: @unchecked Sendable {
     static let shared = KeychainManager()
     
-    private let service = "com.assembleai.app.auth"
+    private let service = "com.mukul.assembleai.app.auth"
     
     private init() {}
     
