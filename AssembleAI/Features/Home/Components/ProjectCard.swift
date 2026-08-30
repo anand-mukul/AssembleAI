@@ -79,16 +79,8 @@ struct ProjectCard: View {
                     .padding(.top, 2)
                 }
             }
-            .padding(AppSpacing.md)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(AppColors.secondaryGroupedBackground)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(AppColors.border.opacity(0.3), lineWidth: 1)
-            )
-            .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .appCard()
+            .contentShape(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous))
         }
         .buttonStyle(ScaleButtonStyle())
         .accessibilityElement(children: .combine)

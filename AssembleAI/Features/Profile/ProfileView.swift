@@ -121,48 +121,15 @@ struct ProfileView: View {
             
             Spacer()
         }
-        .padding(AppSpacing.md)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(AppColors.secondaryGroupedBackground)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .strokeBorder(AppColors.border.opacity(0.35), lineWidth: 1)
-        )
+        .appCard()
     }
     
     private var metricsGrid: some View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: AppSpacing.sm) {
-            metricTile(title: "SESSIONS", value: "\(viewModel.completedSessionsCount)", icon: "checkmark.circle.fill", color: AppColors.success)
-            metricTile(title: "ACCURACY", value: "\(viewModel.overallAccuracyScore)%", icon: "target", color: .assembleBrandPrimary)
-            metricTile(title: "TIME", value: "\(viewModel.totalAssemblyMinutes)m", icon: "clock.fill", color: AppColors.warning)
+            StatTile(title: "SESSIONS", value: "\(viewModel.completedSessionsCount)", icon: "checkmark.circle.fill", iconColor: AppColors.statusSuccess)
+            StatTile(title: "ACCURACY", value: "\(viewModel.overallAccuracyScore)%", icon: "target", iconColor: .assembleBrandPrimary)
+            StatTile(title: "TIME", value: "\(viewModel.totalAssemblyMinutes)m", icon: "clock.fill", iconColor: AppColors.statusWarning)
         }
-    }
-    
-    private func metricTile(title: String, value: String, icon: String, color: Color) -> some View {
-        VStack(spacing: 4) {
-            Image(systemName: icon)
-                .font(.caption)
-                .foregroundColor(color)
-            Text(value)
-                .font(.title3)
-                .fontWeight(.bold)
-                .foregroundColor(AppColors.primaryText)
-            Text(title)
-                .font(.system(size: 8, weight: .bold, design: .monospaced))
-                .foregroundColor(AppColors.tertiaryText)
-        }
-        .padding(.vertical, AppSpacing.sm)
-        .frame(maxWidth: .infinity)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(AppColors.secondaryGroupedBackground)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(AppColors.border.opacity(0.3), lineWidth: 1)
-        )
     }
     
     private var settingsSection: some View {
@@ -181,13 +148,13 @@ struct ProfileView: View {
                 Divider().padding(.horizontal, AppSpacing.md)
                 
                 NavigationLink(value: ProfileNavigationDestination.dataPrivacy) {
-                    settingLinkRow(icon: "lock.shield.fill", title: "Data & Privacy", subtitle: "On-device cache, research CSV export", color: AppColors.success)
+                    settingLinkRow(icon: "lock.shield.fill", title: "Data & Privacy", subtitle: "On-device cache, research CSV export", color: AppColors.statusSuccess)
                 }
                 
                 Divider().padding(.horizontal, AppSpacing.md)
                 
                 NavigationLink(value: ProfileNavigationDestination.notifications) {
-                    settingLinkRow(icon: "bell.fill", title: "Notifications", subtitle: "Reminders & daily building streak", color: AppColors.warning)
+                    settingLinkRow(icon: "bell.fill", title: "Notifications", subtitle: "Reminders & daily building streak", color: AppColors.statusWarning)
                 }
                 
                 Divider().padding(.horizontal, AppSpacing.md)
@@ -196,14 +163,7 @@ struct ProfileView: View {
                     settingLinkRow(icon: "book.pages.fill", title: "Assembly Guide & FAQ", subtitle: "Hardware pinouts, conventions, tips", color: Color(uiColor: .secondaryLabel))
                 }
             }
-            .background(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(AppColors.secondaryGroupedBackground)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .strokeBorder(AppColors.border.opacity(0.35), lineWidth: 1)
-            )
+            .appCard(padding: 0)
         }
     }
     

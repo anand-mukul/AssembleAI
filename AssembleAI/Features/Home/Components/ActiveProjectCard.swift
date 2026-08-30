@@ -16,7 +16,7 @@ struct ActiveProjectCard: View {
             HStack {
                 HStack(spacing: 6) {
                     Circle()
-                        .fill(Color.green)
+                        .fill(AppColors.statusLive)
                         .frame(width: 7, height: 7)
                     Text("CONTINUE ASSEMBLY")
                         .font(.system(size: 10, weight: .bold, design: .monospaced))
@@ -87,16 +87,8 @@ struct ActiveProjectCard: View {
             }
             .padding(.top, AppSpacing.xs)
         }
-        .padding(AppSpacing.md)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(AppColors.secondaryGroupedBackground)
-                .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 4)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .strokeBorder(Color.assembleBrandPrimary.opacity(0.25), lineWidth: 1)
-        )
+        .appCard(borderColor: Color.assembleBrandPrimary.opacity(0.3))
+        .shadow(color: AppShadow.subtleColor, radius: 10, x: 0, y: 4)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(project.accessibilityLabelSummary)
         .accessibilityHint("Double tap to view project details and continue assembly.")

@@ -110,15 +110,7 @@ struct HomeView: View {
                                 }
                             }
                         }
-                        .padding(AppSpacing.md)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .fill(AppColors.secondaryGroupedBackground)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .strokeBorder(AppColors.border.opacity(0.3), lineWidth: 1)
-                        )
+                        .appCard()
                         .padding(.horizontal, AppSpacing.screenEdge)
                     }
                 }
@@ -156,15 +148,7 @@ struct HomeView: View {
             }
             .padding(.top, AppSpacing.xs)
         }
-        .padding(AppSpacing.md)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(AppColors.secondaryGroupedBackground)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .strokeBorder(AppColors.border.opacity(0.3), lineWidth: 1)
-        )
+        .appCard()
     }
 }
 

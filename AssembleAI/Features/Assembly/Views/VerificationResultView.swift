@@ -71,16 +71,8 @@ struct VerificationResultView: View {
                         .foregroundColor(AppColors.primaryText)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                .padding(AppSpacing.md)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(AppColors.secondaryGroupedBackground)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .strokeBorder(AppColors.border.opacity(0.3), lineWidth: 1)
-                )
+                .appCard()
                 
                 // Uncertain State Suggestions Card
                 if result.status == .uncertain {
@@ -98,16 +90,8 @@ struct VerificationResultView: View {
                         .font(.subheadline)
                         .foregroundColor(AppColors.secondaryText)
                     }
-                    .padding(AppSpacing.md)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(AppColors.warning.opacity(0.08))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .strokeBorder(AppColors.warning.opacity(0.3), lineWidth: 1)
-                    )
+                    .appCard(backgroundColor: AppColors.warning.opacity(0.08), borderColor: AppColors.warning.opacity(0.3))
                 }
                 
                 // If incorrect: show quick expected vs detected summary
@@ -122,16 +106,8 @@ struct VerificationResultView: View {
                             .font(.subheadline)
                             .foregroundColor(AppColors.secondaryText)
                     }
-                    .padding(AppSpacing.md)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(AppColors.error.opacity(0.06))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .strokeBorder(AppColors.error.opacity(0.2), lineWidth: 1)
-                    )
+                    .appCard(backgroundColor: AppColors.error.opacity(0.06), borderColor: AppColors.error.opacity(0.2))
                 }
                 
                 Spacer(minLength: 32)
@@ -163,8 +139,10 @@ struct VerificationResultView: View {
                             .font(.subheadline)
                             .fontWeight(.medium)
                             .foregroundColor(.assembleBrandPrimary)
+                            .frame(minHeight: 44)
+                            .contentShape(Rectangle())
                         }
-                        .padding(.vertical, 4)
+                        .padding(.vertical, 2)
                         
                         SecondaryButton(title: "Try Again", iconName: "arrow.clockwise") {
                             onRetry()

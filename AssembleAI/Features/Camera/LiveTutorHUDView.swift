@@ -88,11 +88,11 @@ struct LiveTutorHUDView: View {
             }
             .padding(AppSpacing.md)
             .background(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
                     .fill(.ultraThinMaterial)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
                     .strokeBorder(
                         LinearGradient(
                             colors: [
@@ -106,7 +106,7 @@ struct LiveTutorHUDView: View {
                         lineWidth: 1
                     )
             )
-            .shadow(color: Color.black.opacity(0.25), radius: 12, x: 0, y: 6)
+            .shadow(color: AppShadow.elevatedColor, radius: 12, x: 0, y: 6)
             
             // Bottom Controls Bar: Tap-to-Talk Button & Secondary Actions
             HStack(spacing: AppSpacing.md) {
@@ -129,12 +129,13 @@ struct LiveTutorHUDView: View {
                     }
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
+                    .frame(minHeight: 48)
+                    .padding(.vertical, 10)
                     .background(
                         Capsule()
-                            .fill(isListening ? AppColors.error : Color.assembleBrandPrimary)
+                            .fill(isListening ? AppColors.statusListening : Color.assembleBrandPrimary)
                     )
-                    .shadow(color: (isListening ? AppColors.error : Color.assembleBrandPrimary).opacity(0.35), radius: 8, x: 0, y: 3)
+                    .shadow(color: (isListening ? AppColors.statusListening : Color.assembleBrandPrimary).opacity(0.35), radius: 8, x: 0, y: 3)
                 }
                 .buttonStyle(ScaleButtonStyle())
                 .accessibilityLabel(isListening ? "Stop listening" : "Talk to AssembleAI")
@@ -148,7 +149,7 @@ struct LiveTutorHUDView: View {
                         Image(systemName: "camera.viewfinder")
                             .font(.system(size: 16, weight: .medium))
                             .foregroundColor(.white.opacity(0.9))
-                            .padding(12)
+                            .frame(width: 48, height: 48)
                             .background(Circle().fill(.ultraThinMaterial))
                     }
                     .buttonStyle(ScaleButtonStyle())
@@ -162,19 +163,17 @@ struct LiveTutorHUDView: View {
     
     private var statusBadge: some View {
         HStack(spacing: 6) {
-            ThinkingOrbView(status: status, diameter: 16)
+            ThinkingOrbView(status: status, diameter: 14)
             
             Text(status.rawValue)
                 .font(.system(size: 10, weight: .bold, design: .monospaced))
                 .foregroundColor(.white)
-            
-            Text("AssembleAI")
-                .font(.system(size: 11, weight: .medium))
-                .foregroundColor(.white.opacity(0.7))
         }
-        .padding(.horizontal, 8)
+        .padding(.horizontal, 10)
         .padding(.vertical, 4)
         .background(Capsule().fill(.ultraThinMaterial))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Status: \(status.rawValue)")
     }
     
     private func assistantMessageView(_ message: TutorResponse) -> some View {
@@ -182,6 +181,16 @@ struct LiveTutorHUDView: View {
             if status == .speaking {
                 VoiceEqualizerView()
                     .padding(.top, 3)
+            } else if message.priority == .high || message.category == "correction" {
+                Image(systemName: "exclamationmark.circle.fill")
+                    .font(.caption)
+                    .foregroundColor(AppColors.statusWarning)
+                    .padding(.top, 2)
+            } else if message.category == "confirmation" {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.caption)
+                    .foregroundColor(AppColors.statusSuccess)
+                    .padding(.top, 2)
             }
             
             Text(message.text)
@@ -224,11 +233,11 @@ struct LiveTutorHUDView: View {
     
     private var cardBorderColor: Color {
         switch status {
-        case .live: return AppColors.success
-        case .paused: return Color.gray
-        case .speaking: return Color.purple
-        case .listening: return AppColors.warning
-        case .verifying: return Color.assembleBrandPrimary
+        case .live: return AppColors.statusLive
+        case .paused: return AppColors.statusPaused
+        case .speaking: return AppColors.statusSpeaking
+        case .listening: return AppColors.statusListening
+        case .verifying: return AppColors.statusVerifying
         }
     }
 }
@@ -257,7 +266,8 @@ struct VoiceEqualizerView: View {
     
     private func bar(delay: Double, height: CGFloat) -> some View {
         RoundedRectangle(cornerRadius: 1.5)
-            .fill(Color.purple)
+            .fill(AppColors.statusSpeaking)
             .frame(width: 2.5, height: height)
     }
 }
+

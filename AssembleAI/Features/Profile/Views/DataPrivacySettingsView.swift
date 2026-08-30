@@ -29,15 +29,7 @@ struct DataPrivacySettingsView: View {
                             .foregroundColor(AppColors.secondaryText)
                     }
                 }
-                .padding(AppSpacing.md)
-                .background(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(AppColors.success.opacity(0.08))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .strokeBorder(AppColors.success.opacity(0.25), lineWidth: 1)
-                )
+                .appCard(backgroundColor: AppColors.statusSuccess.opacity(0.08), borderColor: AppColors.statusSuccess.opacity(0.25))
                 
                 // On-Device Storage Breakdown
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
@@ -68,14 +60,7 @@ struct DataPrivacySettingsView: View {
                             action: nil
                         )
                     }
-                    .background(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(AppColors.secondaryGroupedBackground)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .strokeBorder(AppColors.border.opacity(0.35), lineWidth: 1)
-                    )
+                    .appCard(padding: 0)
                 }
                 
                 // Research & Telemetry Export
@@ -96,15 +81,7 @@ struct DataPrivacySettingsView: View {
                         }
                         .padding(.top, 4)
                     }
-                    .padding(AppSpacing.md)
-                    .background(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(AppColors.secondaryGroupedBackground)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .strokeBorder(AppColors.border.opacity(0.35), lineWidth: 1)
-                    )
+                    .appCard()
                 }
                 
                 // Danger Zone: Reset Local Data
@@ -131,14 +108,7 @@ struct DataPrivacySettingsView: View {
                             .padding(AppSpacing.md)
                         }
                     }
-                    .background(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(AppColors.secondaryGroupedBackground)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .strokeBorder(AppColors.error.opacity(0.3), lineWidth: 1)
-                    )
+                    .appCard(borderColor: AppColors.error.opacity(0.3), padding: 0)
                 }
                 
                 Spacer(minLength: 32)

@@ -84,15 +84,7 @@ struct ProjectDetailView: View {
                                 }
                             }
                         }
-                        .padding(.vertical, AppSpacing.xs)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .fill(AppColors.secondaryGroupedBackground)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .strokeBorder(AppColors.border.opacity(0.3), lineWidth: 1)
-                        )
+                        .appCard(padding: AppSpacing.xs)
                         .padding(.horizontal, AppSpacing.screenEdge)
                     }
                 }

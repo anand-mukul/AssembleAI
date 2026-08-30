@@ -68,14 +68,7 @@ struct AppSettingsView: View {
                         }
                         .padding(AppSpacing.md)
                     }
-                    .background(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(AppColors.secondaryGroupedBackground)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .strokeBorder(AppColors.border.opacity(0.35), lineWidth: 1)
-                    )
+                    .appCard(padding: 0)
                 }
                 
                 // Section 2: Camera & Viewfinder Experience
@@ -112,14 +105,7 @@ struct AppSettingsView: View {
                         }
                         .padding(AppSpacing.md)
                     }
-                    .background(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(AppColors.secondaryGroupedBackground)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .strokeBorder(AppColors.border.opacity(0.35), lineWidth: 1)
-                    )
+                    .appCard(padding: 0)
                 }
                 
                 // Section 3: Tactile & Audio Feedback
@@ -138,14 +124,7 @@ struct AppSettingsView: View {
                         }
                         .padding(AppSpacing.md)
                     }
-                    .background(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(AppColors.secondaryGroupedBackground)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .strokeBorder(AppColors.border.opacity(0.35), lineWidth: 1)
-                    )
+                    .appCard(padding: 0)
                 }
                 
                 Spacer(minLength: 32)

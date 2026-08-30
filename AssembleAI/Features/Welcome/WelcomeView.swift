@@ -96,6 +96,8 @@ struct WelcomeView: View {
                         .foregroundColor(.assembleBrandPrimary)
                 }
                 .font(.subheadline)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
             }
             .accessibilityLabel("Already have an account? Sign In")
         }

@@ -58,15 +58,7 @@ struct AssemblyIntroView: View {
                         checklistRow(title: "Camera available", subtitle: "Camera access is operational", icon: "checkmark.circle.fill")
                         checklistRow(title: "Workspace visible", subtitle: "Assembly area is clean and well-lit", icon: "checkmark.circle.fill")
                     }
-                    .padding(AppSpacing.md)
-                    .background(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(AppColors.secondaryGroupedBackground)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .strokeBorder(AppColors.border.opacity(0.3), lineWidth: 1)
-                    )
+                    .appCard()
                 }
                 
                 // Before we begin notice
@@ -80,11 +72,7 @@ struct AssemblyIntroView: View {
                         .foregroundColor(AppColors.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                .padding(AppSpacing.md)
-                .background(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(AppColors.secondaryBackground)
-                )
+                .appCard(backgroundColor: AppColors.secondaryBackground)
                 
                 Spacer(minLength: AppSpacing.lg)
                 

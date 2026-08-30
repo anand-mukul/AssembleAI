@@ -23,16 +23,16 @@ struct AssemblyCompletedView: View {
                 // Hero Seal Graphic
                 ZStack {
                     Circle()
-                        .fill(Color.assembleBrandPrimary.opacity(0.12))
+                        .fill(AppColors.statusSuccess.opacity(0.12))
                         .frame(width: 130, height: 130)
                     
                     Circle()
-                        .stroke(Color.assembleBrandPrimary.opacity(0.3), lineWidth: 2)
+                        .stroke(AppColors.statusSuccess.opacity(0.3), lineWidth: 2)
                         .frame(width: 160, height: 160)
                     
                     Image(systemName: "checkmark.seal.fill")
                         .font(.system(size: 68, weight: .light))
-                        .foregroundColor(.assembleBrandPrimary)
+                        .foregroundColor(AppColors.statusSuccess)
                         .scaleEffect(sealAppeared ? 1.0 : 0.7)
                 }
                 .frame(height: 180)
@@ -61,15 +61,7 @@ struct AssemblyCompletedView: View {
                     statTile(title: "ATTEMPTS", value: "\(session.attempts)", icon: "viewfinder")
                     statTile(title: "CORRECTIONS", value: "\(session.errors)", icon: "wrench.and.screwdriver")
                 }
-                .padding(AppSpacing.md)
-                .background(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(AppColors.secondaryGroupedBackground)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(AppColors.border.opacity(0.3), lineWidth: 1)
-                )
+                .appCard()
                 
                 // Great Work Callout
                 VStack(spacing: 4) {

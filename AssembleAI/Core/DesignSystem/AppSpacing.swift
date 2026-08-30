@@ -31,3 +31,27 @@ enum AppSpacing {
     /// Standard horizontal inset for screen-edge content (matches Apple native 20pt inset)
     static let screenEdge: CGFloat = 20
 }
+
+/// Unified corner radius tokens adhering to Apple iOS continuous curvature standards.
+enum AppRadius {
+    /// 8pt tight chips / small indicators
+    static let xs: CGFloat = 8
+    /// 10pt for buttons, badges, and smaller inputs
+    static let sm: CGFloat = 10
+    /// 14pt for interactive control fields and secondary buttons
+    static let md: CGFloat = 14
+    /// 18pt standard for cards, tiles, and containers
+    static let card: CGFloat = 18
+    /// 22pt for hero visual centerpieces and prominent modules
+    static let lg: CGFloat = 22
+    /// 28pt for bottom sheets and large presentation detents
+    static let sheet: CGFloat = 28
+}
+
+/// Standardized elevation shadows.
+enum AppShadow {
+    static let subtleColor = Color.black.opacity(0.04)
+    static let mediumColor = Color.black.opacity(0.08)
+    static let elevatedColor = Color.black.opacity(0.18)
+}
+

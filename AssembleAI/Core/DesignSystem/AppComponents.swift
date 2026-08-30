@@ -248,7 +248,7 @@ struct CameraCornersView: View {
 
 // MARK: - Native Primary Action Button
 
-/// Clean, minimal, full-width primary button styled strictly to Apple HIG standards.
+/// Clean, minimal, full-width primary button styled strictly to Apple HIG standards with Dynamic Type support.
 struct PrimaryButton: View {
     let title: String
     var iconName: String? = nil
@@ -273,17 +273,20 @@ struct PrimaryButton: View {
                     Text(title)
                         .font(.body)
                         .fontWeight(.semibold)
-                        .lineLimit(1)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.85)
                 }
             }
             .foregroundColor(.white)
             .frame(maxWidth: .infinity)
-            .frame(height: 50)
+            .frame(minHeight: 50)
+            .padding(.vertical, AppSpacing.xs)
+            .padding(.horizontal, AppSpacing.md)
             .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                     .fill(isDisabled ? AppColors.tertiaryText.opacity(0.3) : Color.assembleBrandPrimary)
             )
-            .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
         .buttonStyle(ScaleButtonStyle())
         .disabled(isDisabled || isLoading)
@@ -295,7 +298,7 @@ struct PrimaryButton: View {
 
 // MARK: - Native Secondary Action Button
 
-/// Clean secondary bordered button style.
+/// Clean secondary bordered button style with Dynamic Type support.
 struct SecondaryButton: View {
     let title: String
     var iconName: String? = nil
@@ -315,25 +318,138 @@ struct SecondaryButton: View {
                 Text(title)
                     .font(.body)
                     .fontWeight(.medium)
-                    .lineLimit(1)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
             }
             .foregroundColor(AppColors.primaryText)
             .frame(maxWidth: .infinity)
-            .frame(height: 50)
+            .frame(minHeight: 50)
+            .padding(.vertical, AppSpacing.xs)
+            .padding(.horizontal, AppSpacing.md)
             .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                     .fill(AppColors.secondaryBackground)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(AppColors.border.opacity(0.4), lineWidth: 1)
+                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                    .strokeBorder(AppColors.borderSubtle, lineWidth: 1)
             )
-            .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         }
         .buttonStyle(ScaleButtonStyle())
         .disabled(isDisabled)
         .opacity(isDisabled ? 0.55 : 1.0)
         .accessibilityLabel(title)
+    }
+}
+
+// MARK: - Unified Card Modifier & Container
+
+/// Standard Apple-quality card modifier unifying corner radius, background, and crisp subtle borders.
+struct AppCardModifier: ViewModifier {
+    var cornerRadius: CGFloat = AppRadius.card
+    var backgroundColor: Color = AppColors.secondaryGroupedBackground
+    var borderColor: Color = AppColors.borderSubtle
+    var padding: CGFloat = AppSpacing.md
+
+    func body(content: Content) -> some View {
+        content
+            .padding(padding)
+            .background(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(backgroundColor)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .strokeBorder(borderColor, lineWidth: 1)
+            )
+    }
+}
+
+extension View {
+    /// Applies the unified AssembleAI card styling.
+    func appCard(
+        cornerRadius: CGFloat = AppRadius.card,
+        backgroundColor: Color = AppColors.secondaryGroupedBackground,
+        borderColor: Color = AppColors.borderSubtle,
+        padding: CGFloat = AppSpacing.md
+    ) -> some View {
+        modifier(AppCardModifier(cornerRadius: cornerRadius, backgroundColor: backgroundColor, borderColor: borderColor, padding: padding))
+    }
+}
+
+// MARK: - Reusable Stat Tile
+
+/// Standardized statistic metric tile used across summary, completion, and profile screens.
+struct StatTile: View {
+    let title: String
+    let value: String
+    var icon: String? = nil
+    var iconColor: Color = .assembleBrandPrimary
+
+    var body: some View {
+        VStack(spacing: 4) {
+            if let icon = icon {
+                Image(systemName: icon)
+                    .font(.caption)
+                    .foregroundColor(iconColor)
+            }
+            
+            Text(value)
+                .font(.headline)
+                .fontWeight(.bold)
+                .foregroundColor(AppColors.primaryText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+
+            Text(title)
+                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .foregroundColor(AppColors.tertiaryText)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, AppSpacing.sm)
+        .padding(.horizontal, AppSpacing.xs)
+        .background(
+            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                .fill(AppColors.secondaryGroupedBackground)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                .strokeBorder(AppColors.borderSubtle, lineWidth: 1)
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title): \(value)")
+    }
+}
+
+// MARK: - Reusable Status Pill
+
+/// Calm, Apple-quality status indicator pill.
+struct StatusPill: View {
+    let text: String
+    var status: LiveTutorStatus? = nil
+    var dotColor: Color? = nil
+
+    var body: some View {
+        HStack(spacing: 6) {
+            if let status = status {
+                ThinkingOrbView(status: status, diameter: 14)
+            } else if let dotColor = dotColor {
+                Circle()
+                    .fill(dotColor)
+                    .frame(width: 6, height: 6)
+            }
+
+            Text(text)
+                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .foregroundColor(.white)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(Capsule().fill(.ultraThinMaterial))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Status: \(text)")
     }
 }
 
@@ -358,6 +474,7 @@ struct BadgeView: View {
             .accessibilityLabel(text)
     }
 }
+
 
 // MARK: - Custom Input Text Field
 

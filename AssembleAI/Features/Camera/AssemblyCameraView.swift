@@ -138,14 +138,14 @@ struct AssemblyCameraView: View {
                 // Step Progress Pill
                 HStack(spacing: 6) {
                     Circle()
-                        .fill(Color.green)
+                        .fill(AppColors.statusLive)
                         .frame(width: 7, height: 7)
                     Text("STEP \(currentStep.stepOrder)")
                         .font(.system(size: 11, weight: .bold, design: .monospaced))
                         .foregroundColor(.white)
                 }
                 .padding(.horizontal, 12)
-                .padding(.vertical, 5)
+                .padding(.vertical, 6)
                 .background(Capsule().fill(.ultraThinMaterial))
                 .accessibilityLabel("Step \(currentStep.stepOrder)")
                 
@@ -164,9 +164,11 @@ struct AssemblyCameraView: View {
                     }
                 }) {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 30))
+                        .font(.system(size: 32))
                         .symbolRenderingMode(.hierarchical)
                         .foregroundColor(.white)
+                        .frame(minWidth: 44, minHeight: 44)
+                        .contentShape(Circle())
                 }
                 .accessibilityLabel("Close camera")
             }
@@ -181,7 +183,7 @@ struct AssemblyCameraView: View {
                     if !currentStep.instruction.isEmpty {
                         Text(currentStep.instruction)
                             .font(.subheadline)
-                            .foregroundColor(.white.opacity(0.8))
+                            .foregroundColor(.white.opacity(0.85))
                             .lineLimit(2)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -189,8 +191,12 @@ struct AssemblyCameraView: View {
                 .padding(AppSpacing.md)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
                         .fill(.ultraThinMaterial)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                        .strokeBorder(AppColors.cameraCardBorder, lineWidth: 1)
                 )
                 .accessibilityElement(children: .combine)
             }
@@ -201,16 +207,16 @@ struct AssemblyCameraView: View {
     
     private var cameraReticleOverlay: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
                 .stroke(
-                    Color.assembleBrandPrimary.opacity(0.8),
+                    Color.assembleBrandPrimary.opacity(0.5),
                     style: StrokeStyle(lineWidth: 1.5, dash: [8, 5])
                 )
                 .frame(width: 260, height: 200)
             
             CameraCornersView()
                 .frame(width: 276, height: 216)
-                .foregroundColor(Color.assembleBrandPrimary)
+                .foregroundColor(Color.assembleBrandPrimary.opacity(0.75))
             
             Text(liveTutorEnabled ? "Live observation active" : "Position component in frame")
                 .font(.caption)

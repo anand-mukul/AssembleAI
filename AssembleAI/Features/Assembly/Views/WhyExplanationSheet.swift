@@ -59,16 +59,8 @@ struct WhyExplanationSheet: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
-            .padding(AppSpacing.md)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(AppColors.secondaryGroupedBackground)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(AppColors.border.opacity(0.3), lineWidth: 1)
-            )
+            .appCard()
             .padding(.horizontal, AppSpacing.screenEdge)
             
             Spacer()

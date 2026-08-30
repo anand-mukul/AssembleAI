@@ -55,15 +55,7 @@ struct ErrorGuidanceView: View {
                         .foregroundColor(AppColors.primaryText)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                .padding(AppSpacing.md)
-                .background(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(AppColors.secondaryGroupedBackground)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .strokeBorder(AppColors.error.opacity(0.3), lineWidth: 1)
-                )
+                .appCard(borderColor: AppColors.error.opacity(0.3))
                 
                 Spacer(minLength: AppSpacing.lg)
                 

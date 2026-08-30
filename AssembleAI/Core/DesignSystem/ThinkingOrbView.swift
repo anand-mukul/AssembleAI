@@ -227,14 +227,15 @@ struct ThinkingOrbView: View {
     
     private var primaryColor: Color {
         switch state {
-        case .live: return AppColors.success
-        case .listening: return AppColors.warning
-        case .speaking: return Color.purple
-        case .verifying: return Color.assembleBrandPrimary
-        case .paused: return Color.gray
+        case .live: return AppColors.statusLive
+        case .listening: return AppColors.statusListening
+        case .speaking: return AppColors.statusSpeaking
+        case .verifying: return AppColors.statusVerifying
+        case .paused: return AppColors.statusPaused
         }
     }
 }
+
 
 #Preview("Thinking Orbs") {
     VStack(spacing: 24) {

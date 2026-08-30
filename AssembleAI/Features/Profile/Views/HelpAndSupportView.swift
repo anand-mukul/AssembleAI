@@ -153,16 +153,8 @@ struct HelpAndSupportView: View {
             
             content()
         }
-        .padding(AppSpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(AppColors.secondaryGroupedBackground)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(AppColors.border.opacity(0.35), lineWidth: 1)
-        )
+        .appCard()
     }
     
     private func polarityRow(component: String, rule: String) -> some View {

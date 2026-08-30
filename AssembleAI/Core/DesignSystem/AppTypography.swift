@@ -51,4 +51,22 @@ enum AppTypography {
         Text(text)
             .font(.caption)
     }
+
+    /// Monospaced technical tags and status codes
+    static func monospacedTag(_ text: String) -> Text {
+        Text(text)
+            .font(.system(size: 10, weight: .bold, design: .monospaced))
+    }
 }
+
+extension View {
+    /// Standard section header text style
+    func sectionHeaderStyle() -> some View {
+        self
+            .font(.system(size: 11, weight: .bold, design: .monospaced))
+            .foregroundColor(AppColors.secondaryText)
+            .textCase(.uppercase)
+            .tracking(0.8)
+    }
+}
+
