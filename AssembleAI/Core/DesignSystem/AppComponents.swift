@@ -97,118 +97,58 @@ struct BrandHeaderView: View {
 
 // MARK: - Assembly Camera Visual Centerpiece Motif
 
-/// Apple-quality visual centerpiece displaying live spatial task observation, reticles, alignment crosshairs, and state verification.
+/// Calm, serene visual centerpiece representing AssembleAI's quiet spatial awareness.
 struct AssemblyCameraMotifView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var isPulseAnimating = false
+    @State private var isBreathing = false
     
     var body: some View {
         ZStack {
-            // Background Canvas Surface
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(AppColors.secondaryBackground)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .strokeBorder(AppColors.border, lineWidth: 1)
+            // Ambient soft glow
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [
+                            Color.assembleBrandPrimary.opacity(0.12),
+                            Color.assembleBrandPrimary.opacity(0.0)
+                        ],
+                        center: .center,
+                        startRadius: 20,
+                        endRadius: 75
+                    )
                 )
+                .frame(width: 150, height: 150)
+                .scaleEffect(reduceMotion ? 1.0 : (isBreathing ? 1.05 : 0.95))
             
-            VStack(spacing: AppSpacing.md) {
-                // Viewfinder Header Bar
-                HStack {
-                    HStack(spacing: 6) {
-                        Circle()
-                            .fill(AppColors.success)
-                            .frame(width: 7, height: 7)
-                        Text("OPTICAL SENSOR ACTIVE")
-                            .font(.system(size: 10, weight: .bold, design: .monospaced))
-                            .foregroundColor(AppColors.secondaryText)
-                            .tracking(0.8)
-                    }
-                    Spacer()
-                    Image(systemName: "viewfinder.circle.fill")
-                        .font(.subheadline)
-                        .foregroundColor(.assembleBrandPrimary)
-                }
-                .padding(.horizontal, AppSpacing.md)
-                .padding(.top, AppSpacing.sm)
-                
-                // Central Camera Reticle Target
-                ZStack {
-                    // Physical Task Component Grid Target
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(AppColors.tertiaryBackground)
-                        .frame(width: 156, height: 116)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                        )
-                    
-                    // Hardware Component Visual Symbol
-                    VStack(spacing: 6) {
-                        Image(systemName: "cpu.fill")
-                            .font(.system(size: 32, weight: .regular))
-                            .foregroundColor(AppColors.primaryText)
-                        
-                        HStack(spacing: 4) {
-                            Image(systemName: "checkmark.seal.fill")
-                                .font(.caption2)
-                                .foregroundColor(AppColors.success)
-                            Text("PHYSICAL CONTRACT MATCH")
-                                .font(.system(size: 8, weight: .bold, design: .monospaced))
-                                .foregroundColor(AppColors.secondaryText)
-                                .tracking(0.5)
-                        }
-                    }
-                    
-                    // Reticle Pulsing Boundary Box
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(
-                            Color.assembleBrandPrimary,
-                            style: StrokeStyle(lineWidth: 1.5, dash: [6, 4])
-                        )
-                        .frame(width: 180, height: 136)
-                        .scaleEffect(reduceMotion ? 1.0 : (isPulseAnimating ? 1.02 : 0.98))
-                    
-                    // Corner Alignment Markers
-                    CameraCornersView()
-                        .frame(width: 194, height: 150)
-                        .foregroundColor(Color.assembleBrandPrimary)
-                }
-                .padding(.vertical, AppSpacing.xs)
-                
-                // State Verification Badge
-                HStack(spacing: 6) {
-                    Image(systemName: "ruler.fill")
-                        .font(.caption2)
-                        .foregroundColor(.assembleBrandPrimary)
-                    Text("Optical State Verification")
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundColor(AppColors.primaryText)
-                }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 6)
-                .background(
-                    Capsule()
-                        .fill(AppColors.appBackground)
-                )
+            // Soft frosted disc container
+            Circle()
+                .fill(AppColors.secondaryGroupedBackground)
+                .frame(width: 96, height: 96)
                 .overlay(
-                    Capsule()
-                        .strokeBorder(AppColors.border, lineWidth: 1)
+                    Circle()
+                        .strokeBorder(AppColors.borderSubtle, lineWidth: 1)
                 )
-                .padding(.bottom, AppSpacing.sm)
-            }
+                .shadow(color: AppShadow.subtleColor, radius: 10, x: 0, y: 4)
+
+            // Central calm Thinking Orb
+            ThinkingOrbView(status: .live, diameter: 54)
+
+            // Minimal subtle viewfinder reticle marks
+            CameraCornersView()
+                .frame(width: 120, height: 120)
+                .foregroundColor(Color.assembleBrandPrimary.opacity(0.35))
         }
-        .frame(height: 236)
+        .frame(height: 140)
+        .frame(maxWidth: .infinity)
         .onAppear {
             if !reduceMotion {
-                withAnimation(.easeInOut(duration: 2.2).repeatForever(autoreverses: true)) {
-                    isPulseAnimating = true
+                withAnimation(.easeInOut(duration: 3.0).repeatForever(autoreverses: true)) {
+                    isBreathing = true
                 }
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("AssembleAI spatial camera observing assembly component for verification.")
+        .accessibilityLabel("AssembleAI ambient visual guide.")
     }
 }
 

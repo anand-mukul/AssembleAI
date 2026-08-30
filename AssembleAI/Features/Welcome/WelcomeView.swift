@@ -15,34 +15,41 @@ struct WelcomeView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                // Spacious Header Section
-                VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    Text("AssembleAI")
-                        .font(.subheadline)
-                        .fontWeight(.bold)
-                        .foregroundColor(.assembleBrandPrimary)
-                        .textCase(.uppercase)
-                        .accessibilityAddTraits(.isHeader)
+                // Calm, Airy Header Section
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(AppColors.statusLive)
+                            .frame(width: 7, height: 7)
+                        Text("ASSEMBLEAI")
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .foregroundColor(AppColors.secondaryText)
+                            .tracking(1.2)
+                    }
+                    .padding(.bottom, AppSpacing.xxs)
+                    .accessibilityHidden(true)
                     
-                    Text("State-Aware\nTask Guidance")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
+                    Text("Assemble with\nconfidence.")
+                        .font(.system(size: 34, weight: .bold))
                         .foregroundColor(AppColors.primaryText)
                         .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityAddTraits(.isHeader)
                     
-                    Text("Visual verification for physical assembly tasks. Follow instructions, observe state, and verify each step on-device.")
+                    Text("A quiet visual guide that watches your hands as you build, confirming each step in real time.")
                         .font(.body)
                         .foregroundColor(AppColors.secondaryText)
+                        .lineSpacing(3)
                         .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 2)
                 }
-                .padding(.top, AppSpacing.xxl)
+                .padding(.top, AppSpacing.xl)
                 
-                // Camera Inspection Visual Centerpiece
+                // Serene, Ambient Visual Centerpiece
                 AssemblyCameraMotifView()
-                    .padding(.vertical, AppSpacing.sm)
+                    .padding(.vertical, AppSpacing.xs)
                 
-                // Capability Feature Rows
-                VStack(spacing: AppSpacing.mdLg) {
+                // Calm Capability Pillars
+                VStack(spacing: AppSpacing.md) {
                     ForEach(Array(capabilities.enumerated()), id: \.offset) { index, cap in
                         CapabilityRow(
                             iconName: cap.icon,
@@ -50,17 +57,16 @@ struct WelcomeView: View {
                             subtitle: cap.subtitle
                         )
                         .opacity(rowsAppeared ? 1 : 0)
-                        .offset(y: rowsAppeared ? 0 : 12)
+                        .offset(y: rowsAppeared ? 0 : 10)
                         .animation(
-                            reduceMotion ? .none : .spring(response: 0.45, dampingFraction: 0.8).delay(Double(index) * 0.1),
+                            reduceMotion ? .none : .spring(response: 0.45, dampingFraction: 0.8).delay(Double(index) * 0.08),
                             value: rowsAppeared
                         )
                     }
                 }
-                .padding(.top, AppSpacing.sm)
             }
             .padding(.horizontal, AppSpacing.screenEdge)
-            .padding(.bottom, 120)
+            .padding(.bottom, 110)
         }
         .background(AppColors.appBackground.ignoresSafeArea())
         .safeAreaInset(edge: .bottom) {
@@ -73,15 +79,15 @@ struct WelcomeView: View {
     
     private var capabilities: [(icon: String, title: String, subtitle: String)] {
         [
-            ("viewfinder", "Observe & Scan", "Compare assembly progress against expected task states using your iPhone camera."),
-            ("list.bullet.rectangle", "Sequential Guidance", "Follow precise step-by-step instructions tailored to electronic and mechanical builds."),
-            ("checkmark.shield", "On-Device Verification", "Verify step completion locally with full privacy. No data leaves your device.")
+            ("eye.fill", "Live Observation", "Quietly watches your workspace to understand what you're assembling."),
+            ("checkmark.shield.fill", "Step Verification", "Confirms every component and wire is in place before you move ahead."),
+            ("lock.shield.fill", "Private & On-Device", "All visual intelligence runs locally. No camera frames ever leave your iPhone.")
         ]
     }
     
     private var bottomActions: some View {
         VStack(spacing: AppSpacing.mdSm) {
-            PrimaryButton(title: "Get Started", iconName: "arrow.right") {
+            PrimaryButton(title: "Get Started") {
                 router.navigateToAuthChoice()
             }
             
@@ -116,7 +122,7 @@ private struct CapabilityRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: AppSpacing.md) {
             Image(systemName: iconName)
-                .font(.body.weight(.medium))
+                .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(.assembleBrandPrimary)
                 .frame(width: 36, height: 36)
                 .background(
@@ -125,7 +131,7 @@ private struct CapabilityRow: View {
                 )
                 .accessibilityHidden(true)
             
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.headline)
                     .foregroundColor(AppColors.primaryText)
