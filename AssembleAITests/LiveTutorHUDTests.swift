@@ -139,7 +139,7 @@ final class LiveTutorHUDTests: XCTestCase {
         XCTAssertEqual(LiveTutorStatus.paused.rawValue, "PAUSED")
         XCTAssertEqual(LiveTutorStatus.listening.rawValue, "LISTENING")
         XCTAssertEqual(LiveTutorStatus.speaking.rawValue, "SPEAKING")
-        XCTAssertEqual(LiveTutorStatus.verifying.rawValue, "VERIFYING")
+        XCTAssertEqual(LiveTutorStatus.verifying.rawValue, "CHECKING")
     }
 
     // MARK: - Test 6: Tutor Response Category & Priority Invariants
