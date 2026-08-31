@@ -12,10 +12,28 @@ import ImageIO
 /// Mock computer vision analysis service for unit testing and simulator demonstration mode.
 ///
 /// Supports predetermined observation sequences, simulated processing latencies, and synthetic detection generation.
-actor MockVisionService: VisionAnalyzing {
+/// Mock computer vision analysis service for unit testing and simulator demonstration mode.
+///
+/// Supports predetermined observation sequences, simulated processing latencies, and synthetic detection generation.
+final class MockVisionService: VisionAnalyzing, @unchecked Sendable {
+    private let lock = NSLock()
     private var scriptedObservations: [VisualObservation] = []
     private var simulatedLatencyMs: Double
     private var callCount: Int = 0
+    
+    var mockObservations: [VisualObservation] {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return scriptedObservations
+        }
+        set {
+            lock.lock()
+            defer { lock.unlock() }
+            scriptedObservations = newValue
+            callCount = 0
+        }
+    }
     
     init(
         scriptedObservations: [VisualObservation] = [],
@@ -27,6 +45,8 @@ actor MockVisionService: VisionAnalyzing {
     
     /// Enqueues a predetermined sequence of observations to be emitted consecutively.
     func setScriptedObservations(_ observations: [VisualObservation]) {
+        lock.lock()
+        defer { lock.unlock() }
         self.scriptedObservations = observations
         self.callCount = 0
     }
@@ -38,10 +58,17 @@ actor MockVisionService: VisionAnalyzing {
             try await Task.sleep(nanoseconds: UInt64(simulatedLatencyMs * 1_000_000))
         }
         
-        if !scriptedObservations.isEmpty {
+        let nextObservation: VisualObservation? = {
+            lock.lock()
+            defer { lock.unlock() }
+            guard !scriptedObservations.isEmpty else { return nil }
             let index = min(callCount, scriptedObservations.count - 1)
             callCount += 1
             return scriptedObservations[index]
+        }()
+        
+        if let obs = nextObservation {
+            return obs
         }
         
         // Default synthesized observation
@@ -70,10 +97,17 @@ actor MockVisionService: VisionAnalyzing {
         let width = CVPixelBufferGetWidth(frame)
         let height = CVPixelBufferGetHeight(frame)
         
-        if !scriptedObservations.isEmpty {
+        let nextObservation: VisualObservation? = {
+            lock.lock()
+            defer { lock.unlock() }
+            guard !scriptedObservations.isEmpty else { return nil }
             let index = min(callCount, scriptedObservations.count - 1)
             callCount += 1
             return scriptedObservations[index]
+        }()
+        
+        if let obs = nextObservation {
+            return obs
         }
         
         let observationTimestamp: Date
@@ -96,7 +130,7 @@ actor MockVisionService: VisionAnalyzing {
         )
     }
     
-    nonisolated func observationStream(
+    func observationStream(
         from sampledFrames: AsyncStream<SampledFrame>,
         orientation: CGImagePropertyOrientation = .up
     ) -> AsyncStream<VisualObservation> {

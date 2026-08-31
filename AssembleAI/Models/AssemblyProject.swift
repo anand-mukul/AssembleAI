@@ -28,11 +28,36 @@ nonisolated struct ComponentRequirement: Identifiable, Hashable, Codable, Sendab
     let detail: String
     let isRequired: Bool
     
-    init(id: UUID = UUID(), name: String, detail: String, isRequired: Bool = true) {
+    /// Unique part identifier for BOM cross-referencing (e.g., "part_res_220").
+    let partId: String?
+    
+    /// Typed component classification for Core ML model class mapping.
+    let componentType: ComponentType?
+    
+    /// Physical attributes enabling on-device visual identification.
+    let physicalAttributes: ComponentPhysicalAttributes?
+    
+    /// Quantity of this component required for the project.
+    let quantity: Int
+    
+    init(
+        id: UUID = UUID(),
+        name: String,
+        detail: String,
+        isRequired: Bool = true,
+        partId: String? = nil,
+        componentType: ComponentType? = nil,
+        physicalAttributes: ComponentPhysicalAttributes? = nil,
+        quantity: Int = 1
+    ) {
         self.id = id
         self.name = name
         self.detail = detail
         self.isRequired = isRequired
+        self.partId = partId
+        self.componentType = componentType
+        self.physicalAttributes = physicalAttributes
+        self.quantity = quantity
     }
 }
 
@@ -43,15 +68,36 @@ nonisolated struct ProjectStepSummary: Identifiable, Hashable, Codable, Sendable
     let title: String
     let instruction: String
     let isCompleted: Bool
+    let expectedDurationMinutes: Int
     
-    init(id: UUID = UUID(), stepOrder: Int, title: String, instruction: String, isCompleted: Bool = false) {
+    /// Machine-verifiable visual contract defining the target physical state for this step.
+    let visualContract: VisualContract?
+    
+    /// Documented common mistakes with detection conditions and corrective guidance.
+    let commonMistakes: [CommonMistake]
+    
+    init(
+        id: UUID = UUID(),
+        stepOrder: Int,
+        title: String,
+        instruction: String,
+        isCompleted: Bool = false,
+        expectedDurationMinutes: Int = 0,
+        visualContract: VisualContract? = nil,
+        commonMistakes: [CommonMistake] = []
+    ) {
         self.id = id
         self.stepOrder = stepOrder
         self.title = title
         self.instruction = instruction
         self.isCompleted = isCompleted
+        self.expectedDurationMinutes = expectedDurationMinutes
+        self.visualContract = visualContract
+        self.commonMistakes = commonMistakes
     }
 }
+
+typealias StepSummary = ProjectStepSummary
 
 /// Domain model for an electronics or physical assembly project.
 nonisolated struct AssemblyProject: Identifiable, Hashable, Codable, Sendable {
@@ -70,25 +116,33 @@ nonisolated struct AssemblyProject: Identifiable, Hashable, Codable, Sendable {
     let components: [ComponentRequirement]
     let steps: [ProjectStepSummary]
     
+    /// Schema version for forward-compatible package evolution.
+    let schemaVersion: String
+    
+    /// Assembly domain (electronics, physical, or hybrid).
+    let domain: AssemblyDomain
+    
     init(
         id: UUID = UUID(),
         title: String,
-        subtitle: String,
+        subtitle: String = "",
         category: String,
         difficulty: Difficulty,
         estimatedMinutes: Int,
         totalSteps: Int,
-        completedSteps: Int,
+        completedSteps: Int = 0,
         imageName: String? = nil,
         isActive: Bool = false,
         nextAction: String? = nil,
         description: String = "",
         components: [ComponentRequirement] = [],
-        steps: [ProjectStepSummary] = []
+        steps: [ProjectStepSummary] = [],
+        schemaVersion: String = "1.0.0",
+        domain: AssemblyDomain = .electronics
     ) {
         self.id = id
         self.title = title
-        self.subtitle = subtitle
+        self.subtitle = subtitle.isEmpty ? description : subtitle
         self.category = category
         self.difficulty = difficulty
         self.estimatedMinutes = estimatedMinutes
@@ -97,9 +151,41 @@ nonisolated struct AssemblyProject: Identifiable, Hashable, Codable, Sendable {
         self.imageName = imageName
         self.isActive = isActive
         self.nextAction = nextAction
-        self.description = description
+        self.description = description.isEmpty ? subtitle : description
         self.components = components
         self.steps = steps
+        self.schemaVersion = schemaVersion
+        self.domain = domain
+    }
+    
+    /// Compatibility initializer for tests and legacy call sites.
+    init(
+        id: UUID = UUID(),
+        title: String,
+        description: String,
+        category: String,
+        difficulty: String,
+        estimatedDurationMinutes: Int,
+        completedSteps: Int = 0,
+        totalSteps: Int,
+        steps: [ProjectStepSummary] = []
+    ) {
+        self.id = id
+        self.title = title
+        self.subtitle = description
+        self.category = category
+        self.difficulty = Difficulty(rawValue: difficulty) ?? .beginner
+        self.estimatedMinutes = estimatedDurationMinutes
+        self.totalSteps = totalSteps
+        self.completedSteps = completedSteps
+        self.imageName = nil
+        self.isActive = false
+        self.nextAction = nil
+        self.description = description
+        self.components = []
+        self.steps = steps
+        self.schemaVersion = "1.0.0"
+        self.domain = .electronics
     }
     
     // MARK: - Computed Properties

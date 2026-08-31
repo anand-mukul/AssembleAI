@@ -18,7 +18,7 @@ final class HomeViewModel: ObservableObject {
     private let repository: ProjectRepository
     
     init(repository: ProjectRepository? = nil) {
-        self.repository = repository ?? MockProjectRepository()
+        self.repository = repository ?? ProjectRepositoryFactory.resolve()
     }
     
     /// Dynamic greeting string based on current hour of the day.

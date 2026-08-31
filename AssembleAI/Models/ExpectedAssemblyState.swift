@@ -76,44 +76,94 @@ nonisolated struct ExpectedAssemblyState: Identifiable, Hashable, Codable, Senda
 }
 
 extension ExpectedAssemblyState {
-    /// Builds the standard expected physical state specification for a given assembly step.
+    /// Builds the expected physical state specification from a step's visual contract.
+    ///
+    /// In production, this reads structured data from the step's `VisualContract`.
+    /// For legacy steps without contracts, it falls back to a generic component expectation.
     nonisolated static func forStep(_ step: AssemblyStep) -> ExpectedAssemblyState {
-        switch step.stepOrder {
-        case 1:
+        // Attempt to decode visual contract from step's expectedState JSON
+        if let contractData = step.expectedState.data(using: .utf8),
+           let contract = try? JSONDecoder().decode(VisualContract.self, from: contractData),
+           !contract.requiredComponentIds.isEmpty {
+            return fromVisualContract(contract, step: step)
+        }
+        
+        // Fallback: generic component expectation from step metadata
+        return ExpectedAssemblyState(
+            stepID: step.id,
+            stepOrder: step.stepOrder,
+            requiredComponents: [ExpectedComponent(identifier: "comp_\(step.stepOrder)", name: step.title)]
+        )
+    }
+    
+    /// Builds expected state from a typed `ProjectStepSummary` visual contract.
+    nonisolated static func forStepSummary(_ summary: ProjectStepSummary, projectId: UUID) -> ExpectedAssemblyState {
+        guard let contract = summary.visualContract else {
             return ExpectedAssemblyState(
-                stepID: step.id,
-                stepOrder: 1,
-                requiredComponents: [ExpectedComponent(identifier: "resistor_220", name: "220Ω Resistor")],
-                requiredPositions: [ExpectedPosition(componentID: "resistor_220", targetDescription: "Row 10 to Row 15")]
-            )
-        case 2:
-            return ExpectedAssemblyState(
-                stepID: step.id,
-                stepOrder: 2,
-                requiredComponents: [ExpectedComponent(identifier: "capacitor_100uF", name: "100uF Capacitor")],
-                requiredPositions: [ExpectedPosition(componentID: "capacitor_100uF", targetDescription: "C2 Header Slot")]
-            )
-        case 3:
-            return ExpectedAssemblyState(
-                stepID: step.id,
-                stepOrder: 3,
-                requiredComponents: [ExpectedComponent(identifier: "led_red", name: "Red LED")],
-                requiredConnections: [ExpectedConnection(from: "Anode", to: "Node 12A")]
-            )
-        case 5:
-            return ExpectedAssemblyState(
-                stepID: step.id,
-                stepOrder: 5,
-                requiredComponents: [ExpectedComponent(identifier: "jumper_gnd", name: "GND Jumper Wire")],
-                requiredConnections: [ExpectedConnection(from: "GND Rail", to: "Pin Header")]
-            )
-        default:
-            return ExpectedAssemblyState(
-                stepID: step.id,
-                stepOrder: step.stepOrder,
-                requiredComponents: [ExpectedComponent(identifier: "comp_\(step.stepOrder)", name: step.title)]
+                stepID: summary.id,
+                stepOrder: summary.stepOrder,
+                requiredComponents: [ExpectedComponent(identifier: "comp_\(summary.stepOrder)", name: summary.title)]
             )
         }
+        
+        return fromVisualContract(contract, stepID: summary.id, stepOrder: summary.stepOrder)
+    }
+    
+    /// Converts a `VisualContract` into an `ExpectedAssemblyState`.
+    private nonisolated static func fromVisualContract(
+        _ contract: VisualContract,
+        step: AssemblyStep? = nil,
+        stepID: UUID? = nil,
+        stepOrder: Int? = nil
+    ) -> ExpectedAssemblyState {
+        let resolvedStepID = stepID ?? step?.id ?? UUID()
+        let resolvedStepOrder = stepOrder ?? step?.stepOrder ?? 0
+        
+        // Map required component IDs to ExpectedComponent
+        let components = contract.requiredComponentIds.map { partId in
+            ExpectedComponent(identifier: partId, name: partId)
+        }
+        
+        // Map pin placements and expected connections to ExpectedConnection
+        var connections: [ExpectedConnection] = []
+        for placement in contract.pinPlacements {
+            connections.append(ExpectedConnection(
+                from: placement.fromPin.label,
+                to: placement.toPin.label
+            ))
+        }
+        for conn in contract.expectedConnections {
+            connections.append(ExpectedConnection(
+                from: conn.fromNode,
+                to: conn.toNode
+            ))
+        }
+        
+        // Map pin placements to ExpectedPosition
+        let positions = contract.pinPlacements.map { placement in
+            ExpectedPosition(
+                componentID: placement.partId,
+                targetDescription: "\(placement.fromPin.label) to \(placement.toPin.label)"
+            )
+        }
+        
+        // Map spatial placements to ExpectedPosition (physical domain)
+        let spatialPositions = contract.spatialPlacements.map { placement in
+            ExpectedPosition(
+                componentID: placement.partId,
+                targetDescription: placement.locationDescription,
+                region: placement.targetRegion ?? .zero
+            )
+        }
+        
+        return ExpectedAssemblyState(
+            stepID: resolvedStepID,
+            stepOrder: resolvedStepOrder,
+            requiredComponents: components,
+            requiredConnections: connections,
+            requiredPositions: positions + spatialPositions
+        )
     }
 }
+
 

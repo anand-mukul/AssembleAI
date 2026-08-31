@@ -10,8 +10,19 @@ protocol ProjectRepository: Sendable {
     /// Fetches all available projects.
     func fetchProjects() async throws -> [AssemblyProject]
     
+    /// Fetches a single project by its unique identifier.
+    func fetchProject(byId id: UUID) async throws -> AssemblyProject?
+    
     /// Fetches recent step activity history.
     func fetchRecentActivity() async throws -> [ActivityItemModel]
+}
+
+/// Default implementation for repositories that don't override single-project fetch.
+extension ProjectRepository {
+    func fetchProject(byId id: UUID) async throws -> AssemblyProject? {
+        let all = try await fetchProjects()
+        return all.first { $0.id == id }
+    }
 }
 
 /// Mock project data provider delivering structured prototype assembly projects.

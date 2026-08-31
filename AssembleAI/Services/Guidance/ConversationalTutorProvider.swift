@@ -355,18 +355,39 @@ final class HybridTutorResponseProvider: ConversationalTutorProviding, @unchecke
 
 // MARK: - Mock Conversational Tutor Provider
 
-/// Actor-isolated mock conversational tutor provider for unit testing with deterministic responses.
-actor MockConversationalTutorProvider: ConversationalTutorProviding {
+/// Thread-safe mock conversational tutor provider for unit testing with deterministic responses.
+final class MockConversationalTutorProvider: ConversationalTutorProviding, @unchecked Sendable {
+    private let lock = NSLock()
     private var scriptedResponses: [TutorResponse] = []
-    private(set) var generateResponseCallCount: Int = 0
-    private(set) var answerQuestionCallCount: Int = 0
-    private(set) var lastReceivedContext: AssistantContext? = nil
+    private var _generateResponseCallCount: Int = 0
+    private var _answerQuestionCallCount: Int = 0
+    private var _lastReceivedContext: AssistantContext? = nil
+    
+    var generateResponseCallCount: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return _generateResponseCallCount
+    }
+    
+    var answerQuestionCallCount: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return _answerQuestionCallCount
+    }
+    
+    var lastReceivedContext: AssistantContext? {
+        lock.lock()
+        defer { lock.unlock() }
+        return _lastReceivedContext
+    }
     
     init(scriptedResponses: [TutorResponse] = []) {
         self.scriptedResponses = scriptedResponses
     }
     
     func setScriptedResponses(_ responses: [TutorResponse]) {
+        lock.lock()
+        defer { lock.unlock() }
         self.scriptedResponses = responses
     }
     
@@ -374,13 +395,16 @@ actor MockConversationalTutorProvider: ConversationalTutorProviding {
         for decision: InterventionDecision,
         context: AssistantContext
     ) async -> TutorResponse? {
-        generateResponseCallCount += 1
-        lastReceivedContext = context
+        lock.lock()
+        _generateResponseCallCount += 1
+        _lastReceivedContext = context
+        let scripted = !scriptedResponses.isEmpty ? scriptedResponses.removeFirst() : nil
+        lock.unlock()
         
         guard decision.shouldIntervene else { return nil }
         
-        if !scriptedResponses.isEmpty {
-            return scriptedResponses.removeFirst()
+        if let response = scripted {
+            return response
         }
         
         let fallback = DeterministicTutorResponseProvider()
@@ -392,11 +416,14 @@ actor MockConversationalTutorProvider: ConversationalTutorProviding {
         intent: UserVoiceIntent,
         context: AssistantContext
     ) async -> TutorResponse {
-        answerQuestionCallCount += 1
-        lastReceivedContext = context
+        lock.lock()
+        _answerQuestionCallCount += 1
+        _lastReceivedContext = context
+        let scripted = !scriptedResponses.isEmpty ? scriptedResponses.removeFirst() : nil
+        lock.unlock()
         
-        if !scriptedResponses.isEmpty {
-            return scriptedResponses.removeFirst()
+        if let response = scripted {
+            return response
         }
         
         switch intent {
@@ -412,7 +439,9 @@ actor MockConversationalTutorProvider: ConversationalTutorProviding {
     }
     
     func clearSessionContext() async {
+        lock.lock()
+        defer { lock.unlock() }
         scriptedResponses.removeAll()
-        lastReceivedContext = nil
+        _lastReceivedContext = nil
     }
 }

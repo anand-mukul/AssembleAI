@@ -1,0 +1,278 @@
+{
+  "id": "11111111-1111-1111-1111-111111111111",
+  "schema_version": "1.0.0",
+  "domain": "Electronics",
+  "title": "LED Circuit",
+  "subtitle": "Basic breadboard circuit with resistor & LED",
+  "category": "Electronics",
+  "difficulty": "Beginner",
+  "estimated_minutes": 15,
+  "total_steps": 8,
+  "completed_steps": 0,
+  "image_name": "bolt.batteryblock.fill",
+  "is_active": true,
+  "next_action": "Insert the 220\u03a9 resistor into the breadboard",
+  "description": "Build a simple LED circuit using a breadboard, resistor, LED, and jumper wires. Learn basic pin header connections and current limiting.",
+  "components": [
+    {
+      "id": "C0000001-0001-0001-0001-000000000001",
+      "name": "Breadboard",
+      "detail": "830 tie-point solderless board",
+      "is_required": true,
+      "part_id": "part_breadboard",
+      "component_type": "board",
+      "quantity": 1
+    },
+    {
+      "id": "C0000001-0001-0001-0001-000000000002",
+      "name": "Red LED",
+      "detail": "5mm diffuse red LED",
+      "is_required": true,
+      "part_id": "part_led_red",
+      "component_type": "led",
+      "physical_attributes": {
+        "polarity_sensitive": true,
+        "orientation_marker": "Long lead is anode (positive). Flat edge on housing marks cathode (negative).",
+        "package_type": "5mm",
+        "nominal_value": "5mm red"
+      },
+      "quantity": 1
+    },
+    {
+      "id": "C0000001-0001-0001-0001-000000000003",
+      "name": "220\u03a9 Resistor",
+      "detail": "1/4W carbon film resistor",
+      "is_required": true,
+      "part_id": "part_res_220",
+      "component_type": "resistor",
+      "physical_attributes": {
+        "color_bands": ["red", "red", "brown", "gold"],
+        "polarity_sensitive": false,
+        "package_type": "axial",
+        "nominal_value": "220\u03a9"
+      },
+      "quantity": 1
+    },
+    {
+      "id": "C0000001-0001-0001-0001-000000000004",
+      "name": "Jumper Wires",
+      "detail": "Male-to-male wire set",
+      "is_required": true,
+      "part_id": "part_jumper",
+      "component_type": "jumper_wire",
+      "quantity": 3
+    },
+    {
+      "id": "C0000001-0001-0001-0001-000000000005",
+      "name": "5V Power Source",
+      "detail": "USB breadboard power supply",
+      "is_required": false,
+      "part_id": "part_psu_5v",
+      "component_type": "connector",
+      "quantity": 1
+    }
+  ],
+  "steps": [
+    {
+      "id": "S0000001-0001-0001-0001-000000000001",
+      "step_order": 1,
+      "title": "Insert 220\u03a9 Resistor",
+      "instruction": "Place the 220\u03a9 resistor bridging Row 10 to Row 15 across the center divider of the breadboard.",
+      "is_completed": false,
+      "expected_duration_minutes": 2,
+      "visual_contract": {
+        "required_component_ids": ["part_res_220"],
+        "pin_placements": [
+          {
+            "part_id": "part_res_220",
+            "from_pin": { "row": "10", "column": "E" },
+            "to_pin": { "row": "15", "column": "F" },
+            "tolerance_mm": 2.5
+          }
+        ],
+        "spatial_placements": [],
+        "expected_connections": [],
+        "orientation_constraints": [],
+        "tolerance_mm": 2.5
+      },
+      "common_mistakes": [
+        {
+          "id": "M0000001-0001-0001-0001-000000000001",
+          "condition": "Resistor bridging Row 10 to Row 14",
+          "explanation": "The resistor right lead is inserted into Row 14 instead of Row 15.",
+          "correction_action": "Shift the right lead one slot down from Row 14 to Row 15.",
+          "severity": "moderate"
+        },
+        {
+          "id": "M0000001-0001-0001-0001-000000000002",
+          "condition": "Both leads on same side of divider",
+          "explanation": "Both resistor leads are on the same half of the breadboard. The resistor must bridge across the center divider.",
+          "correction_action": "Move one lead to the opposite side so the resistor crosses the center channel.",
+          "severity": "critical"
+        }
+      ]
+    },
+    {
+      "id": "S0000001-0001-0001-0001-000000000002",
+      "step_order": 2,
+      "title": "Insert 100\u00b5F Capacitor",
+      "instruction": "Insert the 100\u00b5F electrolytic capacitor into the C2 header slot, observing polarity. The white stripe (negative) faces the GND rail.",
+      "is_completed": false,
+      "expected_duration_minutes": 2,
+      "visual_contract": {
+        "required_component_ids": ["part_cap_100u"],
+        "pin_placements": [],
+        "spatial_placements": [],
+        "expected_connections": [],
+        "orientation_constraints": [
+          {
+            "part_id": "part_cap_100u",
+            "rule": "White stripe (cathode) faces GND rail",
+            "marker_type": "polarity_stripe"
+          }
+        ],
+        "tolerance_mm": 2.5
+      },
+      "common_mistakes": [
+        {
+          "id": "M0000001-0001-0001-0001-000000000003",
+          "condition": "Reversed polarity",
+          "explanation": "The capacitor polarity is reversed. The white stripe should face the GND rail.",
+          "correction_action": "Rotate the capacitor 180 degrees so the white stripe aligns with the ground rail.",
+          "severity": "critical"
+        }
+      ]
+    },
+    {
+      "id": "S0000001-0001-0001-0001-000000000003",
+      "step_order": 3,
+      "title": "Connect LED Anode to Node 12A",
+      "instruction": "Align the long lead (anode) of the red LED with pin 12A on the breadboard.",
+      "is_completed": false,
+      "expected_duration_minutes": 2,
+      "visual_contract": {
+        "required_component_ids": ["part_led_red"],
+        "pin_placements": [
+          {
+            "part_id": "part_led_red",
+            "from_pin": { "row": "12", "column": "A" },
+            "to_pin": { "row": "12", "column": "B" },
+            "tolerance_mm": 2.5
+          }
+        ],
+        "spatial_placements": [],
+        "expected_connections": [
+          { "from_node": "led_anode", "to_node": "12A", "connection_type": "wire" }
+        ],
+        "orientation_constraints": [
+          {
+            "part_id": "part_led_red",
+            "rule": "Long lead (anode) inserted into Row 12A. Flat edge on housing faces away from resistor.",
+            "marker_type": "anode_cathode"
+          }
+        ],
+        "tolerance_mm": 2.5
+      },
+      "common_mistakes": [
+        {
+          "id": "M0000001-0001-0001-0001-000000000004",
+          "condition": "LED polarity reversed",
+          "explanation": "The LED leads are reversed. The longer lead (anode) should go into pin 12A.",
+          "correction_action": "Remove the LED and reinsert with the long lead in pin 12A.",
+          "severity": "moderate"
+        }
+      ]
+    },
+    {
+      "id": "S0000001-0001-0001-0001-000000000004",
+      "step_order": 4,
+      "title": "Place Current Limiting Resistor",
+      "instruction": "Bridge the current limiting resistor from pin 12B to the ground rail.",
+      "is_completed": false,
+      "expected_duration_minutes": 1,
+      "visual_contract": {
+        "required_component_ids": ["part_res_220"],
+        "pin_placements": [],
+        "spatial_placements": [],
+        "expected_connections": [
+          { "from_node": "12B", "to_node": "GND_rail", "connection_type": "wire" }
+        ],
+        "orientation_constraints": [],
+        "tolerance_mm": 2.5
+      },
+      "common_mistakes": [
+        {
+          "id": "M0000001-0001-0001-0001-000000000005",
+          "condition": "Connected to VCC rail instead of GND",
+          "explanation": "The resistor is connected to the positive VCC rail instead of the ground rail.",
+          "correction_action": "Move the lead from the red VCC rail to the blue GND rail.",
+          "severity": "critical"
+        }
+      ]
+    },
+    {
+      "id": "S0000001-0001-0001-0001-000000000005",
+      "step_order": 5,
+      "title": "Insert Ground Jumper Wire",
+      "instruction": "Connect a black jumper wire from the breadboard GND rail to the power supply ground terminal.",
+      "is_completed": false,
+      "expected_duration_minutes": 1,
+      "visual_contract": {
+        "required_component_ids": ["part_jumper"],
+        "pin_placements": [],
+        "spatial_placements": [],
+        "expected_connections": [
+          { "from_node": "GND_rail", "to_node": "PSU_GND", "connection_type": "wire" }
+        ],
+        "orientation_constraints": [],
+        "tolerance_mm": 2.5
+      },
+      "common_mistakes": []
+    },
+    {
+      "id": "S0000001-0001-0001-0001-000000000006",
+      "step_order": 6,
+      "title": "Connect VCC Jumper Wire",
+      "instruction": "Connect a red jumper wire from the VCC positive bus line to the power supply 5V terminal.",
+      "is_completed": false,
+      "expected_duration_minutes": 1,
+      "visual_contract": {
+        "required_component_ids": ["part_jumper"],
+        "pin_placements": [],
+        "spatial_placements": [],
+        "expected_connections": [
+          { "from_node": "VCC_rail", "to_node": "PSU_5V", "connection_type": "wire" }
+        ],
+        "orientation_constraints": [],
+        "tolerance_mm": 2.5
+      },
+      "common_mistakes": [
+        {
+          "id": "M0000001-0001-0001-0001-000000000006",
+          "condition": "Connected to wrong rail",
+          "explanation": "The wire is connected to the GND rail instead of the VCC rail.",
+          "correction_action": "Move the jumper wire from the blue GND rail to the red VCC rail.",
+          "severity": "critical"
+        }
+      ]
+    },
+    {
+      "id": "S0000001-0001-0001-0001-000000000007",
+      "step_order": 7,
+      "title": "Verify Voltage Drop Across Resistor",
+      "instruction": "Use a multimeter to measure the voltage drop across the 220\u03a9 resistor. Expected reading: approximately 2.8V.",
+      "is_completed": false,
+      "expected_duration_minutes": 3,
+      "common_mistakes": []
+    },
+    {
+      "id": "S0000001-0001-0001-0001-000000000008",
+      "step_order": 8,
+      "title": "Power Circuit and Observe",
+      "instruction": "Switch the power supply ON and confirm the LED illuminates bright red. If not, check all connections and polarity.",
+      "is_completed": false,
+      "expected_duration_minutes": 1,
+      "common_mistakes": []
+    }
+  ]
+}

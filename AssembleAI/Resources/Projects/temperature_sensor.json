@@ -1,0 +1,156 @@
+{
+  "id": "22222222-2222-2222-2222-222222222222",
+  "schema_version": "1.0.0",
+  "domain": "Electronics",
+  "title": "Temperature Sensor",
+  "subtitle": "Thermistor & analog pin setup",
+  "category": "Electronics",
+  "difficulty": "Beginner",
+  "estimated_minutes": 25,
+  "total_steps": 4,
+  "completed_steps": 0,
+  "image_name": "thermometer.medium",
+  "is_active": false,
+  "description": "Assemble a high-precision NTC thermistor circuit with voltage divider output feeding into an analog microcontroller pin.",
+  "components": [
+    {
+      "id": "C0000002-0001-0001-0001-000000000001",
+      "name": "NTC Thermistor 10K",
+      "detail": "10K ohm @ 25\u00b0C thermal sensor",
+      "is_required": true,
+      "part_id": "part_thermistor_10k",
+      "component_type": "sensor",
+      "physical_attributes": { "polarity_sensitive": false, "nominal_value": "10K\u03a9 NTC" },
+      "quantity": 1
+    },
+    {
+      "id": "C0000002-0001-0001-0001-000000000002",
+      "name": "10K Precision Resistor",
+      "detail": "1% metal film resistor",
+      "is_required": true,
+      "part_id": "part_res_10k",
+      "component_type": "resistor",
+      "physical_attributes": {
+        "color_bands": ["brown", "black", "orange", "brown"],
+        "polarity_sensitive": false,
+        "nominal_value": "10K\u03a9"
+      },
+      "quantity": 1
+    },
+    {
+      "id": "C0000002-0001-0001-0001-000000000003",
+      "name": "Breadboard",
+      "detail": "Half-size breadboard",
+      "is_required": true,
+      "part_id": "part_breadboard_half",
+      "component_type": "board",
+      "quantity": 1
+    },
+    {
+      "id": "C0000002-0001-0001-0001-000000000004",
+      "name": "Jumper Wires",
+      "detail": "Male-to-male wire set",
+      "is_required": true,
+      "part_id": "part_jumper",
+      "component_type": "jumper_wire",
+      "quantity": 3
+    }
+  ],
+  "steps": [
+    {
+      "id": "S0000002-0001-0001-0001-000000000001",
+      "step_order": 1,
+      "title": "Insert NTC Thermistor",
+      "instruction": "Place thermistor leads across pin A5 and pin A10 on the breadboard.",
+      "is_completed": false,
+      "expected_duration_minutes": 3,
+      "visual_contract": {
+        "required_component_ids": ["part_thermistor_10k"],
+        "pin_placements": [
+          {
+            "part_id": "part_thermistor_10k",
+            "from_pin": { "row": "5", "column": "A" },
+            "to_pin": { "row": "10", "column": "A" },
+            "tolerance_mm": 2.5
+          }
+        ],
+        "spatial_placements": [],
+        "expected_connections": [],
+        "orientation_constraints": [],
+        "tolerance_mm": 2.5
+      },
+      "common_mistakes": [
+        {
+          "id": "M0000002-0001-0001-0001-000000000001",
+          "condition": "Leads in same row",
+          "explanation": "Both thermistor leads are inserted into the same row, creating a short circuit.",
+          "correction_action": "Separate the leads so they span different rows (A5 to A10).",
+          "severity": "critical"
+        }
+      ]
+    },
+    {
+      "id": "S0000002-0001-0001-0001-000000000002",
+      "step_order": 2,
+      "title": "Insert Voltage Divider Resistor",
+      "instruction": "Place the 10K precision resistor from pin B10 to pin B15, forming the lower leg of the voltage divider.",
+      "is_completed": false,
+      "expected_duration_minutes": 3,
+      "visual_contract": {
+        "required_component_ids": ["part_res_10k"],
+        "pin_placements": [
+          {
+            "part_id": "part_res_10k",
+            "from_pin": { "row": "10", "column": "B" },
+            "to_pin": { "row": "15", "column": "B" },
+            "tolerance_mm": 2.5
+          }
+        ],
+        "spatial_placements": [],
+        "expected_connections": [],
+        "orientation_constraints": [],
+        "tolerance_mm": 2.5
+      },
+      "common_mistakes": []
+    },
+    {
+      "id": "S0000002-0001-0001-0001-000000000003",
+      "step_order": 3,
+      "title": "Connect VCC to Thermistor",
+      "instruction": "Connect a jumper wire from the 5V power rail to Row 5 to supply voltage to the thermistor.",
+      "is_completed": false,
+      "expected_duration_minutes": 2,
+      "visual_contract": {
+        "required_component_ids": ["part_jumper"],
+        "pin_placements": [],
+        "spatial_placements": [],
+        "expected_connections": [
+          { "from_node": "VCC_5V", "to_node": "Row5", "connection_type": "wire" }
+        ],
+        "orientation_constraints": [],
+        "tolerance_mm": 2.5
+      },
+      "common_mistakes": []
+    },
+    {
+      "id": "S0000002-0001-0001-0001-000000000004",
+      "step_order": 4,
+      "title": "Connect Analog Output and Ground",
+      "instruction": "Connect a jumper from Row 10 (voltage divider midpoint) to the analog input pin. Connect Row 15 to GND rail.",
+      "is_completed": false,
+      "expected_duration_minutes": 3,
+      "visual_contract": {
+        "required_component_ids": ["part_jumper"],
+        "pin_placements": [],
+        "spatial_placements": [],
+        "expected_connections": [
+          { "from_node": "Row10", "to_node": "ADC_A0", "connection_type": "wire" },
+          { "from_node": "Row15", "to_node": "GND_rail", "connection_type": "wire" }
+        ],
+        "orientation_constraints": [],
+        "tolerance_mm": 2.5
+      },
+      "common_mistakes": []
+    }
+  ]
+}

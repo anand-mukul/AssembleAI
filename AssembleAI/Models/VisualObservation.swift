@@ -7,17 +7,21 @@ import Foundation
 import CoreGraphics
 
 /// Detected text observation extracted by Apple Vision OCR.
-nonisolated struct DetectedText: Identifiable, Hashable, Codable, Sendable {
+nonisolated struct DetectedText: Identifiable, Hashable, Codable, Sendable, ExpressibleByStringLiteral {
     let id: UUID
     let text: String
     let confidence: Float
     let boundingBox: CGRect // Normalized [0...1] coordinates
     
-    nonisolated init(id: UUID = UUID(), text: String, confidence: Float, boundingBox: CGRect) {
+    nonisolated init(id: UUID = UUID(), text: String, confidence: Float = 1.0, boundingBox: CGRect = .zero) {
         self.id = id
         self.text = text
         self.confidence = confidence
         self.boundingBox = boundingBox
+    }
+    
+    nonisolated init(stringLiteral value: String) {
+        self.init(text: value, confidence: 1.0, boundingBox: .zero)
     }
 }
 
@@ -28,7 +32,7 @@ nonisolated struct DetectedRegion: Identifiable, Hashable, Codable, Sendable {
     let confidence: Float
     let boundingBox: CGRect // Normalized [0...1] coordinates
     
-    nonisolated init(id: UUID = UUID(), label: String, confidence: Float, boundingBox: CGRect) {
+    nonisolated init(id: UUID = UUID(), label: String, confidence: Float = 1.0, boundingBox: CGRect = .zero) {
         self.id = id
         self.label = label
         self.confidence = confidence
@@ -49,13 +53,29 @@ nonisolated struct VisualObservation: Identifiable, Hashable, Codable, Sendable 
         id: UUID = UUID(),
         imageSize: CGSize,
         detectedText: [DetectedText],
-        regions: [DetectedRegion],
+        regions: [DetectedRegion] = [],
         timestamp: Date = Date(),
         processingTimeMs: Double
     ) {
         self.id = id
         self.imageSize = imageSize
         self.detectedText = detectedText
+        self.regions = regions
+        self.timestamp = timestamp
+        self.processingTimeMs = processingTimeMs
+    }
+    
+    nonisolated init(
+        id: UUID = UUID(),
+        imageSize: CGSize,
+        detectedText: [String],
+        regions: [DetectedRegion] = [],
+        timestamp: Date = Date(),
+        processingTimeMs: Double
+    ) {
+        self.id = id
+        self.imageSize = imageSize
+        self.detectedText = detectedText.map { DetectedText(text: $0, confidence: 1.0, boundingBox: .zero) }
         self.regions = regions
         self.timestamp = timestamp
         self.processingTimeMs = processingTimeMs
