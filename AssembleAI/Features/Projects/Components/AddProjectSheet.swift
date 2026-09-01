@@ -10,7 +10,8 @@ struct AddProjectSheet: View {
     @Environment(\.dismiss) private var dismiss
     let onChooseProject: () -> Void
     
-    @State private var showScanPlaceholder = false
+    @State private var showCreator = false
+    @State private var showImporter = false
     
     var body: some View {
         VStack(spacing: AppSpacing.lg) {
@@ -39,22 +40,15 @@ struct AddProjectSheet: View {
                     onChooseProject()
                 }
                 
-                SecondaryButton(title: "Scan Instructions (Preview)", iconName: "viewfinder") {
-                    showScanPlaceholder = true
+                SecondaryButton(title: "Create New Project", iconName: "pencil.and.list.clipboard") {
+                    showCreator = true
+                }
+                
+                SecondaryButton(title: "Import from Guide", iconName: "doc.text.magnifyingglass") {
+                    showImporter = true
                 }
             }
             .padding(.top, AppSpacing.sm)
-            
-            if showScanPlaceholder {
-                HStack(spacing: 6) {
-                    Image(systemName: "info.circle")
-                        .foregroundColor(AppColors.warning)
-                    Text("Instruction scanning available in next release.")
-                        .font(.caption)
-                        .foregroundColor(AppColors.secondaryText)
-                }
-                .transition(.opacity)
-            }
             
             Spacer()
             
@@ -70,8 +64,29 @@ struct AddProjectSheet: View {
         }
         .padding(.horizontal, AppSpacing.screenEdge)
         .background(AppColors.secondaryGroupedBackground.ignoresSafeArea())
-        .presentationDetents([.height(340)])
+        .presentationDetents([.height(380)])
         .presentationCornerRadius(28)
+        .fullScreenCover(isPresented: $showCreator) {
+            ProjectCreatorView()
+        }
+        .fullScreenCover(isPresented: $showImporter) {
+            ImportGuideSheetView()
+        }
+    }
+}
+
+/// Convenience wrapper that opens ProjectCreatorView pre-configured for import mode.
+struct ImportGuideSheetView: View {
+    @StateObject private var viewModel: ProjectCreatorViewModel
+    
+    init() {
+        let vm = ProjectCreatorViewModel()
+        vm.creationMode = .importGuide
+        _viewModel = StateObject(wrappedValue: vm)
+    }
+    
+    var body: some View {
+        ProjectCreatorView()
     }
 }
 
