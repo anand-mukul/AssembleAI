@@ -27,6 +27,12 @@ nonisolated enum UserVoiceIntent: Sendable, Equatable {
     /// Request visual overlay highlight on the camera viewfinder ("show me", "highlight it").
     case requestVisualHelp
     
+    /// Ask about orientation or polarity ("which way does this face", "which side is positive", "is this the anode").
+    case askPolarity
+    
+    /// Ask if current placement is correct ("is this right", "did I do this right", "check this").
+    case askIsCorrect
+    
     /// Confirm and continue the assembly session ("continue", "let's go").
     case continueTask
     
@@ -120,18 +126,32 @@ nonisolated struct VoiceIntentParser: Sendable {
             return .requestVisualHelp
         }
         
-        // 7. Continue Task Patterns
+        // 7. Ask Polarity / Orientation Patterns
+        if text.contains("which way") || text.contains("positive") || text.contains("negative") ||
+           text.contains("anode") || text.contains("cathode") || text.contains("polarity") ||
+           text.contains("which side") || text.contains("how do i turn") || text.contains("orientation") {
+            return .askPolarity
+        }
+        
+        // 8. Ask If Correct Patterns
+        if text == "is this right" || text == "is this correct" || text == "did i do this right" ||
+           text == "check this" || text == "check my work" || text == "how does this look" ||
+           text.contains("is this right") || text.contains("is it right") || text.contains("did i get") {
+            return .askIsCorrect
+        }
+        
+        // 9. Continue Task Patterns
         if text == "continue" || text == "let's continue" || text == "next step" ||
            text == "proceed" || text == "i'm done" || text == "done" || text == "next" {
             return .continueTask
         }
         
-        // 8. Stop Task Patterns
+        // 10. Stop Task Patterns
         if text == "stop" || text == "pause" || text == "cancel" || text == "exit" {
             return .stopTask
         }
         
-        // 9. Unknown Fallback
+        // 11. Unknown Fallback
         return .unknown(transcript: rawTranscript)
     }
 }

@@ -113,7 +113,8 @@ final class AssemblyViewModel: ObservableObject {
                 projectId: project.id,
                 stepOrder: summary.stepOrder,
                 title: summary.title,
-                instruction: summary.instruction
+                instruction: summary.instruction,
+                visualContract: summary.visualContract
             )
         } else {
             return AssemblyStep(

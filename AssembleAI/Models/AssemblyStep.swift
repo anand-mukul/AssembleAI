@@ -16,6 +16,11 @@ nonisolated struct AssemblyStep: Identifiable, Hashable, Codable, Sendable {
     let createdAt: Date
     var updatedAt: Date
     
+    var visualContract: VisualContract? {
+        guard let data = expectedState.data(using: .utf8) else { return nil }
+        return try? JSONDecoder().decode(VisualContract.self, from: data)
+    }
+    
     nonisolated init(
         id: UUID = UUID(),
         projectId: UUID,
@@ -23,6 +28,7 @@ nonisolated struct AssemblyStep: Identifiable, Hashable, Codable, Sendable {
         title: String,
         instruction: String,
         expectedState: String = "{}",
+        visualContract: VisualContract? = nil,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -31,7 +37,13 @@ nonisolated struct AssemblyStep: Identifiable, Hashable, Codable, Sendable {
         self.stepOrder = stepOrder
         self.title = title
         self.instruction = instruction
-        self.expectedState = expectedState
+        if let contract = visualContract,
+           let data = try? JSONEncoder().encode(contract),
+           let str = String(data: data, encoding: .utf8) {
+            self.expectedState = str
+        } else {
+            self.expectedState = expectedState
+        }
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }

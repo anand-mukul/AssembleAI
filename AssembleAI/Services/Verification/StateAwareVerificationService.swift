@@ -28,6 +28,7 @@ final class StateAwareVerificationService: VerificationServiceProtocol {
     private let comparator: AssemblyStateComparator
     private let guidanceGenerator: GuidanceGenerating
     private let mockFallbackService: VerificationServiceProtocol
+    private let spatialEngine: StateAwareVerificationEngine
     
     var mode: VerificationMode = .hybrid
     
@@ -36,13 +37,15 @@ final class StateAwareVerificationService: VerificationServiceProtocol {
         estimator: AssemblyStateEstimating? = nil,
         comparator: AssemblyStateComparator? = nil,
         guidanceGenerator: GuidanceGenerating? = nil,
-        mockFallbackService: VerificationServiceProtocol? = nil
+        mockFallbackService: VerificationServiceProtocol? = nil,
+        spatialEngine: StateAwareVerificationEngine = StateAwareVerificationEngine()
     ) {
         self.visionService = visionService ?? VisionService()
-        self.estimator = estimator ?? VisionAssemblyStateEstimator()
+        self.estimator = estimator ?? SpatialAssemblyStateEstimator()
         self.comparator = comparator ?? AssemblyStateComparator()
         self.guidanceGenerator = guidanceGenerator ?? HybridGuidanceGenerator()
         self.mockFallbackService = mockFallbackService ?? MockVerificationService()
+        self.spatialEngine = spatialEngine
     }
     
     func verifyStep(_ step: AssemblyStep, image: UIImage?) async throws -> VerificationResult {
@@ -63,35 +66,53 @@ final class StateAwareVerificationService: VerificationServiceProtocol {
         // Phase 1: Extract visual observations using Apple Vision
         let observation = try await visionService.analyze(image: image)
         
-        // Phase 2: Estimate domain observed state
+        // Phase 2: Estimate domain observed state using spatial coordinate inference
         let observedState = try await estimator.estimate(observation: observation)
         
-        // Phase 3: State comparison logic
-        let comparison = comparator.compare(expected: expectedState, observed: observedState)
-        
-        // Phase 4: Generate human-readable guidance
-        let status: VerificationStatus
-        switch comparison.status {
-        case .correct:
-            status = .correct
-        case .incorrect:
-            status = .incorrect
-        case .uncertain:
-            status = .uncertain
+        // Phase 3: Spatial Contract Verification
+        var decodedContract: VisualContract? = nil
+        if let contractData = step.expectedState.data(using: .utf8) {
+            decodedContract = try? JSONDecoder().decode(VisualContract.self, from: contractData)
         }
         
+        let spatialOutcome = spatialEngine.verify(
+            contract: decodedContract,
+            observedState: observedState,
+            step: step
+        )
+        
+        // Phase 4: State comparison logic (legacy and invariant checks)
+        let comparison = comparator.compare(expected: expectedState, observed: observedState)
+        
+        // Prioritize spatial contract evaluation if defined
+        let status: VerificationStatus
         let explanationText: String
-        if let primaryIssue = comparison.issues.first {
-            let response = try await guidanceGenerator.generateGuidance(
-                issue: primaryIssue,
-                expectedState: expectedState,
-                observedState: observedState
-            )
-            explanationText = "\(response.explanation) \(response.action)"
-        } else if status == .correct {
-            explanationText = "All physical component relationships match the target step contract."
+        
+        if decodedContract != nil && (!decodedContract!.pinPlacements.isEmpty || !decodedContract!.spatialPlacements.isEmpty) {
+            status = spatialOutcome.status
+            explanationText = spatialOutcome.explanation
         } else {
-            explanationText = "Could not determine placement confidence. Please ensure good lighting and clear camera framing."
+            switch comparison.status {
+            case .correct:
+                status = .correct
+            case .incorrect:
+                status = .incorrect
+            case .uncertain:
+                status = .uncertain
+            }
+            
+            if let primaryIssue = comparison.issues.first {
+                let response = try await guidanceGenerator.generateGuidance(
+                    issue: primaryIssue,
+                    expectedState: expectedState,
+                    observedState: observedState
+                )
+                explanationText = "\(response.explanation) \(response.action)"
+            } else if status == .correct {
+                explanationText = "All physical component relationships match the target step contract."
+            } else {
+                explanationText = "Could not determine placement confidence. Please ensure good lighting and clear camera framing."
+            }
         }
         
         let detectedDesc: String
@@ -108,14 +129,14 @@ final class StateAwareVerificationService: VerificationServiceProtocol {
             expectedDesc = expectedState.requiredComponents.map(\.name).joined(separator: ", ")
         }
         
-        // Hybrid mode enhancement: for prototype demo consistency on steps 2, 3 & 4, merge step contract
-        if mode == .hybrid && (step.stepOrder == 2 || step.stepOrder == 3 || step.stepOrder == 4) {
+        // Hybrid mode enhancement: for prototype demo consistency on legacy steps without contracts, merge mock fallback
+        if mode == .hybrid && (decodedContract == nil || (decodedContract!.pinPlacements.isEmpty && decodedContract!.spatialPlacements.isEmpty)) && (step.stepOrder == 2 || step.stepOrder == 3 || step.stepOrder == 4) {
             return try await mockFallbackService.verifyStep(step, image: image)
         }
         
         return VerificationResult(
             status: status,
-            confidence: comparison.confidence,
+            confidence: max(comparison.confidence, spatialOutcome.confidence),
             detectedDescription: detectedDesc,
             expectedDescription: expectedDesc,
             explanation: explanationText

@@ -77,14 +77,15 @@ nonisolated struct ExpectedAssemblyState: Identifiable, Hashable, Codable, Senda
 
 extension ExpectedAssemblyState {
     /// Builds the expected physical state specification from a step's visual contract.
+    /// Builds the expected physical state specification from a step's visual contract.
     ///
     /// In production, this reads structured data from the step's `VisualContract`.
     /// For legacy steps without contracts, it falls back to a generic component expectation.
     nonisolated static func forStep(_ step: AssemblyStep) -> ExpectedAssemblyState {
-        // Attempt to decode visual contract from step's expectedState JSON
-        if let contractData = step.expectedState.data(using: .utf8),
-           let contract = try? JSONDecoder().decode(VisualContract.self, from: contractData),
-           !contract.requiredComponentIds.isEmpty {
+        // Direct visualContract on step or attempt to decode from step's expectedState JSON
+        if let contract = step.visualContract ?? (
+            step.expectedState.data(using: .utf8).flatMap { try? JSONDecoder().decode(VisualContract.self, from: $0) }
+        ), (!contract.requiredComponentIds.isEmpty || !contract.pinPlacements.isEmpty || !contract.spatialPlacements.isEmpty || !contract.expectedConnections.isEmpty) {
             return fromVisualContract(contract, step: step)
         }
         
@@ -120,8 +121,28 @@ extension ExpectedAssemblyState {
         let resolvedStepOrder = stepOrder ?? step?.stepOrder ?? 0
         
         // Map required component IDs to ExpectedComponent
-        let components = contract.requiredComponentIds.map { partId in
+        var components = contract.requiredComponentIds.map { partId in
             ExpectedComponent(identifier: partId, name: partId)
+        }
+        
+        // If requiredComponentIds was empty, infer from pin and spatial placements
+        if components.isEmpty {
+            for placement in contract.pinPlacements {
+                if !components.contains(where: { $0.identifier == placement.partId }) {
+                    components.append(ExpectedComponent(identifier: placement.partId, name: placement.partId))
+                }
+            }
+            for spatial in contract.spatialPlacements {
+                if !components.contains(where: { $0.identifier == spatial.partId }) {
+                    components.append(ExpectedComponent(identifier: spatial.partId, name: spatial.partId))
+                }
+            }
+        }
+        
+        // Final fallback if still empty
+        if components.isEmpty {
+            let fallbackName = step?.title ?? "Step \(resolvedStepOrder)"
+            components.append(ExpectedComponent(identifier: "comp_\(resolvedStepOrder)", name: fallbackName))
         }
         
         // Map pin placements and expected connections to ExpectedConnection

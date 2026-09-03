@@ -103,7 +103,7 @@ actor LiveObservationCoordinator: LiveObservationCoordinating {
     private var lastProcessedStepID: UUID? = nil
     
     init(
-        estimator: AssemblyStateEstimating = VisionAssemblyStateEstimator(),
+        estimator: AssemblyStateEstimating = SpatialAssemblyStateEstimator(),
         comparator: AssemblyStateComparator? = nil,
         configuration: LiveObservationConfiguration = .default
     ) {
