@@ -201,7 +201,7 @@ public struct QueryNextStepIntent: AppIntent {
     @MainActor
     public func perform() async throws -> some ProvidesDialog & ShowsSnippetView {
         let activeProject = BundledProjectRepository.bundledProjects.first
-        let targetStep: AssemblyStep?
+        let targetStep: ProjectStepSummary?
         if let num = stepNumber, let match = activeProject?.steps.first(where: { $0.stepOrder == num }) {
             targetStep = match
         } else {

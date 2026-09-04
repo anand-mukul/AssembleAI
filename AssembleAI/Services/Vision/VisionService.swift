@@ -141,7 +141,7 @@ actor VisionService: VisionAnalyzing {
                                 width: CVPixelBufferGetWidth(sampledFrame.pixelBuffer),
                                 height: CVPixelBufferGetHeight(sampledFrame.pixelBuffer)
                             ),
-                            detectedText: [],
+                            detectedText: [DetectedText](),
                             regions: [],
                             processingTimeMs: 0.0
                         )

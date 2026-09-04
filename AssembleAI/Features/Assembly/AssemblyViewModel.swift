@@ -468,7 +468,7 @@ final class AssemblyViewModel: ObservableObject {
             } catch {
                 observation = VisualObservation(
                     imageSize: targetImage.size,
-                    detectedText: [],
+                    detectedText: [DetectedText](),
                     regions: [],
                     processingTimeMs: 0.0
                 )
