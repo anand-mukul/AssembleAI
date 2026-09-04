@@ -5,6 +5,7 @@
 
 import Foundation
 import SwiftData
+import os
 
 /// Manages the SwiftData ModelContainer for local-first persistence.
 @MainActor
@@ -31,7 +32,7 @@ final class PersistenceController {
         do {
             container = try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
-            print("⚠️ SwiftData on-disk store initialization failed: \(error). Falling back to in-memory store.")
+            Logger(subsystem: "com.mukul.assembleai", category: "Persistence").error("⚠️ SwiftData on-disk store initialization failed: \(error.localizedDescription). Falling back to in-memory store.")
             do {
                 let fallbackConfig = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
                 container = try ModelContainer(for: schema, configurations: [fallbackConfig])

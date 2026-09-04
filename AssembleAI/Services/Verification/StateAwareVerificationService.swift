@@ -88,7 +88,7 @@ final class StateAwareVerificationService: VerificationServiceProtocol {
         let status: VerificationStatus
         let explanationText: String
         
-        if decodedContract != nil && (!decodedContract!.pinPlacements.isEmpty || !decodedContract!.spatialPlacements.isEmpty) {
+        if let contract = decodedContract, (!contract.pinPlacements.isEmpty || !contract.spatialPlacements.isEmpty) {
             status = spatialOutcome.status
             explanationText = spatialOutcome.explanation
         } else {
@@ -130,7 +130,7 @@ final class StateAwareVerificationService: VerificationServiceProtocol {
         }
         
         // Hybrid mode enhancement: for prototype demo consistency on legacy steps without contracts, merge mock fallback
-        if mode == .hybrid && (decodedContract == nil || (decodedContract!.pinPlacements.isEmpty && decodedContract!.spatialPlacements.isEmpty)) && (step.stepOrder == 2 || step.stepOrder == 3 || step.stepOrder == 4) {
+        if mode == .hybrid && (decodedContract == nil || (decodedContract?.pinPlacements.isEmpty == true && decodedContract?.spatialPlacements.isEmpty == true)) && (step.stepOrder == 2 || step.stepOrder == 3 || step.stepOrder == 4) {
             return try await mockFallbackService.verifyStep(step, image: image)
         }
         

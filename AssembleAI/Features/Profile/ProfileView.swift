@@ -129,6 +129,8 @@ struct ProfileView: View {
             Spacer()
         }
         .appCard()
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(viewModel.displayName), \(viewModel.email), Status: \(viewModel.isGuest ? "Guest Mode" : "Synced to Supabase")")
     }
     
     private var metricsGrid: some View {

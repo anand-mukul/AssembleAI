@@ -34,10 +34,14 @@ final class BreadboardHomographyTests: XCTestCase {
         let pos15F = geom.millimeterPosition(for: pin15F)
         XCTAssertNotNil(pos15F)
         
+        guard let pos10E = pos10E, let pos15F = pos15F else {
+            XCTFail("Positions should not be nil")
+            return
+        }
         // E should be to the left of the center trough, F to the right
-        XCTAssertLessThan(pos10E!.x, pos15F!.x)
+        XCTAssertLessThan(pos10E.x, pos15F.x)
         // Row 15 should be below Row 10 (higher y)
-        XCTAssertLessThan(pos10E!.y, pos15F!.y)
+        XCTAssertLessThan(pos10E.y, pos15F.y)
     }
     
     func testNormalizedPositionWithinBounds() {
@@ -69,9 +73,13 @@ final class BreadboardHomographyTests: XCTestCase {
         // Lookup with exact coordinate
         let result = geom.nearestPin(toMillimeterPoint: targetPos)
         XCTAssertNotNil(result)
-        XCTAssertEqual(result?.pin.row, "10")
-        XCTAssertEqual(result?.pin.column, "E")
-        XCTAssertLessThan(result!.distanceMm, 0.1)
+        guard let result = result else {
+            XCTFail("Result should not be nil")
+            return
+        }
+        XCTAssertEqual(result.pin.row, "10")
+        XCTAssertEqual(result.pin.column, "E")
+        XCTAssertLessThan(result.distanceMm, 0.1)
     }
     
     func testRowDeltaCalculation() {

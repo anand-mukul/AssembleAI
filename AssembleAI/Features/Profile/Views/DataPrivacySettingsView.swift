@@ -330,6 +330,9 @@ struct DataPrivacySettingsView: View {
             )
         }
         .buttonStyle(ScaleButtonStyle())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title), \(subtitle)\(badge != nil ? ", \(badge!)" : "")")
+        .accessibilityHint(isLoading ? "Currently generating export." : "Double tap to export data.")
     }
     
     private func storageRow(
@@ -378,6 +381,13 @@ struct DataPrivacySettingsView: View {
             }
         }
         .padding(AppSpacing.md)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(label), \(detail)")
+        .accessibilityAction(named: actionTitle ?? "") {
+            if let action = action {
+                action()
+            }
+        }
     }
     
     private func toastView(title: String, icon: String, color: Color) -> some View {
