@@ -30,11 +30,12 @@ struct LiveTutorConfiguration: Sendable, Equatable {
     static let `default` = LiveTutorConfiguration(isEnabled: true)
 }
 
-// MARK: - Live Tutor HUD View (Dual Glass Cards Layout)
+// MARK: - Live Tutor HUD View (Apple Vision Pro / iOS 18 Dynamic Island HUD)
 
-/// High-clarity dual-card HUD overlay matching Silicon Valley Apple design standards:
-/// Card 1: Step Guide (component name, pin routing chips, and step directive).
-/// Card 2: Live Instruction (real-time spoken feedback, voice transcript, and interaction controls).
+/// High-clarity unified floating glass island overlay matching Apple HIG & Vision Pro standards:
+/// - Header: Component icon badge, step indicator, and quick pause/resume control.
+/// - Adaptive Body: Crisp step directive, real-time AI spoken feedback, or active voice transcript.
+/// - Action Controls: Apple Intelligence voice interaction capsule and manual snapshot button.
 struct LiveTutorHUDView: View {
     let status: LiveTutorStatus
     let currentStep: AssemblyStep
@@ -51,31 +52,30 @@ struct LiveTutorHUDView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
     var body: some View {
-        VStack(spacing: AppSpacing.sm) {
-            // MARK: - Card 1: Step Guide Card
-            stepGuideCard
-            
-            // MARK: - Card 2: Live Instruction Card
-            liveInstructionCard
-        }
+        unifiedIslandHUD
     }
     
-    // MARK: - Step Guide Card
+    // MARK: - Unified Glass Island Layout
     
-    private var stepGuideCard: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            HStack(spacing: 8) {
-                // Component domain icon badge
-                ZStack {
-                    RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
-                        .fill(Color.assembleBrandPrimary.opacity(0.18))
-                        .frame(width: 26, height: 26)
+    private var unifiedIslandHUD: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            // Header Row: Step Badge + Component Title + Secondary Controls
+            HStack(alignment: .center, spacing: 8) {
+                // Step Badge Pill
+                HStack(spacing: 5) {
                     Image(systemName: componentIcon(for: currentStep.title))
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(.assembleBrandPrimary)
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(Color.assembleBrandPrimary)
+                    Text("STEP \(currentStep.stepOrder)")
+                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .foregroundColor(.white)
                 }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Capsule().fill(Color.white.opacity(0.10)))
+                .overlay(Capsule().strokeBorder(Color.white.opacity(0.18), lineWidth: 0.5))
                 
-                // Card title
+                // Component / Step Title
                 Text(currentStep.title)
                     .font(.subheadline.weight(.semibold))
                     .foregroundColor(.white)
@@ -83,90 +83,58 @@ struct LiveTutorHUDView: View {
                 
                 Spacer()
                 
-                // Step Pill Tag
-                HStack(spacing: 4) {
-                    Text("STEP \(currentStep.stepOrder)")
-                        .font(.system(size: 10, weight: .bold, design: .monospaced))
-                        .foregroundColor(.white.opacity(0.9))
+                // Why Explanation (if correction)
+                if currentMessage?.category == "correction", let onExplainWhy = onExplainWhy {
+                    Button(action: {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        onExplainWhy()
+                    }) {
+                        HStack(spacing: 3) {
+                            Text("Why?")
+                                .font(.system(size: 11, weight: .semibold))
+                            Image(systemName: "questionmark.circle.fill")
+                                .font(.system(size: 10))
+                        }
+                        .foregroundColor(Color.assembleBrandPrimary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Capsule().fill(Color.assembleBrandPrimary.opacity(0.15)))
+                        .overlay(Capsule().strokeBorder(Color.assembleBrandPrimary.opacity(0.3), lineWidth: 0.5))
+                    }
+                    .buttonStyle(ScaleButtonStyle())
+                    .accessibilityLabel("Why is this step wrong?")
                 }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .background(Capsule().fill(.ultraThinMaterial))
-                .overlay(
-                    Capsule()
-                        .strokeBorder(Color.white.opacity(0.25), lineWidth: 0.5)
-                )
-            }
-            
-            // Step Instruction Description
-            Text(currentStep.instruction)
-                .font(.footnote)
-                .foregroundColor(.white.opacity(0.85))
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(.horizontal, AppSpacing.md)
-        .padding(.vertical, AppSpacing.mdSm)
-        .background(
-            ZStack {
-                RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                    .fill(Color.black.opacity(0.35))
-                RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                    .fill(.ultraThinMaterial)
-            }
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.18), lineWidth: 0.5)
-        )
-        .shadow(color: AppColors.glassShadow, radius: 10, x: 0, y: 4)
-    }
-    
-    // MARK: - Live Instruction Card
-    
-    private var liveInstructionCard: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            // Status bar header
-            HStack {
-                statusBadge
                 
-                Spacer()
-                
-                // Pause / Resume Button
+                // Pause / Resume Button (clean compact glass pill)
                 Button(action: {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     onTogglePause()
                 }) {
-                    HStack(spacing: 4) {
-                        Image(systemName: isPaused ? "play.fill" : "pause.fill")
-                            .font(.system(size: 10, weight: .bold))
-                        Text(isPaused ? "Resume" : "Pause")
-                            .font(.system(size: 11, weight: .semibold))
-                    }
-                    .foregroundColor(.white.opacity(0.9))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
-                    .background(Capsule().fill(.ultraThinMaterial))
-                    .overlay(
-                        Capsule()
-                            .strokeBorder(Color.white.opacity(0.20), lineWidth: 0.5)
-                    )
+                    Image(systemName: isPaused ? "play.fill" : "pause.fill")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.white.opacity(0.9))
+                        .frame(width: 30, height: 30)
+                        .background(Circle().fill(Color.white.opacity(0.12)))
+                        .overlay(Circle().strokeBorder(Color.white.opacity(0.18), lineWidth: 0.5))
                 }
                 .buttonStyle(ScaleButtonStyle())
                 .accessibilityLabel(isPaused ? "Resume Live Tutor" : "Pause Live Tutor")
             }
             
-            // Conversational Dialogue Body
-            if isListening {
-                userTranscriptView
-            } else if let message = currentMessage {
-                assistantMessageView(message)
-            } else {
-                quietObservingView
+            // Middle Content: Adaptive Instruction / AI Spoken Feedback / Transcript
+            Group {
+                if isListening {
+                    userTranscriptView
+                } else if let message = currentMessage {
+                    assistantMessageView(message)
+                } else {
+                    stepInstructionView
+                }
             }
+            .padding(.vertical, 2)
             
-            // Action Control Bar
-            HStack(spacing: AppSpacing.sm) {
+            // Bottom Action Row: Siri Voice Pill + Snapshot Button
+            HStack(spacing: 10) {
                 // Talk to AssembleAI Button
                 Button(action: {
                     UIImpactFeedbackGenerator(style: .medium).impactOccurred()
@@ -174,44 +142,64 @@ struct LiveTutorHUDView: View {
                 }) {
                     HStack(spacing: 8) {
                         if isListening {
-                            ThinkingOrbView(status: .listening, diameter: 18, customColor: .white)
+                            ThinkingOrbView(status: .listening, diameter: 16, customColor: .white)
                             Text("Listening...")
+                                .font(.subheadline.weight(.semibold))
+                        } else if status == .speaking {
+                            VoiceEqualizerView()
+                            Text("AssembleAI is speaking...")
                                 .font(.subheadline.weight(.semibold))
                         } else {
                             Image(systemName: "mic.fill")
-                                .font(.subheadline.weight(.semibold))
+                                .font(.system(size: 14, weight: .semibold))
                             Text("Talk to AssembleAI")
                                 .font(.subheadline.weight(.semibold))
                         }
                     }
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
-                    .frame(minHeight: 44)
+                    .frame(height: 44)
                     .background(
-                        RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                            .fill(isListening ? AppColors.statusListening : Color.assembleBrandPrimary)
+                        ZStack {
+                            if isListening {
+                                LinearGradient(
+                                    colors: [AppColors.aiCyan, AppColors.aiBlue],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            } else {
+                                RoundedRectangle(cornerRadius: 13, style: .continuous)
+                                    .fill(Color.assembleBrandPrimary)
+                            }
+                        }
+                        .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
                     )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 13, style: .continuous)
+                            .strokeBorder(Color.white.opacity(0.25), lineWidth: 0.5)
+                    )
+                    .shadow(color: isListening ? AppColors.aiBlue.opacity(0.35) : Color.assembleBrandPrimary.opacity(0.28), radius: 8, x: 0, y: 3)
                 }
                 .buttonStyle(ScaleButtonStyle())
                 .accessibilityLabel(isListening ? "Stop listening" : "Talk to AssembleAI")
                 
-                // Snapshot Fallback Button
+                // Manual Snapshot Button
                 if let onManualFallback = onManualFallback {
                     Button(action: {
                         UIImpactFeedbackGenerator(style: .light).impactOccurred()
                         onManualFallback()
                     }) {
                         Image(systemName: "camera.viewfinder")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.white)
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.92))
                             .frame(width: 44, height: 44)
                             .background(
-                                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                                    .fill(.ultraThinMaterial)
+                                RoundedRectangle(cornerRadius: 13, style: .continuous)
+                                    .fill(Color.white.opacity(0.12))
                             )
                             .overlay(
-                                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                                    .strokeBorder(Color.white.opacity(0.22), lineWidth: 0.5)
+                                RoundedRectangle(cornerRadius: 13, style: .continuous)
+                                    .strokeBorder(Color.white.opacity(0.20), lineWidth: 0.5)
                             )
                     }
                     .buttonStyle(ScaleButtonStyle())
@@ -219,42 +207,40 @@ struct LiveTutorHUDView: View {
                 }
             }
         }
-        .padding(.horizontal, AppSpacing.md)
-        .padding(.vertical, AppSpacing.mdSm)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
         .background(
             ZStack {
-                RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                    .fill(Color.black.opacity(0.35))
-                RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(Color.black.opacity(0.40))
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
                     .fill(.ultraThinMaterial)
             }
         )
         .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .strokeBorder(Color.white.opacity(0.18), lineWidth: 0.5)
         )
-        .shadow(color: AppColors.glassShadow, radius: 10, x: 0, y: 4)
+        .shadow(color: Color.black.opacity(0.35), radius: 16, x: 0, y: 6)
     }
     
     // MARK: - Subviews & Indicators
     
-    private var statusBadge: some View {
-        HStack(spacing: 6) {
-            ThinkingOrbView(status: status, diameter: 14)
+    private var stepInstructionView: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: isPaused ? "pause.circle" : "eye.fill")
+                .font(.caption)
+                .foregroundColor(isPaused ? .secondary : Color.assembleBrandPrimary.opacity(0.85))
+                .padding(.top, 2)
             
-            Text(status.rawValue)
-                .font(.system(size: 10, weight: .bold, design: .monospaced))
-                .foregroundColor(.white)
+            Text(currentStep.instruction)
+                .font(.footnote)
+                .foregroundColor(.white.opacity(0.90))
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+            
+            Spacer()
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 4)
-        .background(Capsule().fill(.ultraThinMaterial))
-        .overlay(
-            Capsule()
-                .strokeBorder(Color.white.opacity(0.20), lineWidth: 0.5)
-        )
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Status: \(status.rawValue)")
     }
     
     private func assistantMessageView(_ message: TutorResponse) -> some View {
@@ -263,7 +249,7 @@ struct LiveTutorHUDView: View {
                 VoiceEqualizerView()
                     .padding(.top, 3)
             } else if message.priority == .high || message.category == "correction" {
-                Image(systemName: "exclamationmark.circle.fill")
+                Image(systemName: "exclamationmark.triangle.fill")
                     .font(.caption)
                     .foregroundColor(AppColors.statusWarning)
                     .padding(.top, 2)
@@ -272,35 +258,21 @@ struct LiveTutorHUDView: View {
                     .font(.caption)
                     .foregroundColor(AppColors.statusSuccess)
                     .padding(.top, 2)
+            } else {
+                Image(systemName: "sparkles")
+                    .font(.caption)
+                    .foregroundColor(Color.assembleBrandPrimary)
+                    .padding(.top, 2)
             }
             
-            VStack(alignment: .leading, spacing: 4) {
-                Text(message.text)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundColor(.white)
-                    .fixedSize(horizontal: false, vertical: true)
-                
-                if message.category == "correction", let onExplainWhy = onExplainWhy {
-                    Button(action: {
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        onExplainWhy()
-                    }) {
-                        HStack(spacing: 4) {
-                            Text("Why is this wrong?")
-                                .font(.caption.weight(.semibold))
-                            Image(systemName: "arrow.right.circle.fill")
-                                .font(.caption)
-                        }
-                        .foregroundColor(Color.assembleBrandPrimary)
-                    }
-                    .padding(.top, 2)
-                }
-            }
+            Text(message.text)
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundColor(.white)
+                .fixedSize(horizontal: false, vertical: true)
             
             Spacer()
         }
-        .padding(.vertical, 2)
     }
     
     private var userTranscriptView: some View {
@@ -313,20 +285,6 @@ struct LiveTutorHUDView: View {
                 .foregroundColor(.white.opacity(0.95))
                 .lineLimit(2)
         }
-        .padding(.vertical, 2)
-    }
-    
-    private var quietObservingView: some View {
-        HStack(spacing: 6) {
-            Image(systemName: isPaused ? "pause.circle" : "eye")
-                .font(.caption)
-                .foregroundColor(.white.opacity(0.6))
-            
-            Text(isPaused ? "Live guidance is paused." : "Watching assembly. Start when you're ready.")
-                .font(.subheadline)
-                .foregroundColor(.white.opacity(0.75))
-        }
-        .padding(.vertical, 2)
     }
     
     private func componentIcon(for title: String) -> String {

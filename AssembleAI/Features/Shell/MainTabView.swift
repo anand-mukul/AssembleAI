@@ -38,6 +38,7 @@ struct MainTabView: View {
                 }
                 .navigationDestination(for: AppRouteAssembly.self) { assembly in
                     AssemblyContainerView(project: assembly.project)
+                        .toolbar(.hidden, for: .tabBar)
                 }
             }
             .tabItem {
@@ -62,6 +63,7 @@ struct MainTabView: View {
                 }
                 .navigationDestination(for: AppRouteAssembly.self) { assembly in
                     AssemblyContainerView(project: assembly.project)
+                        .toolbar(.hidden, for: .tabBar)
                 }
             }
             .tabItem {
@@ -78,6 +80,7 @@ struct MainTabView: View {
                 )
                 .navigationDestination(for: AppRouteAssembly.self) { assembly in
                     AssemblyContainerView(project: assembly.project)
+                        .toolbar(.hidden, for: .tabBar)
                 }
             }
             .tabItem {

@@ -9,6 +9,7 @@ import AVFoundation
 /// Single task-flow container orchestrating phase view transitions for the assembly session.
 struct AssemblyContainerView: View {
     @EnvironmentObject private var router: AppRouter
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var viewModel: AssemblyViewModel
     
@@ -27,6 +28,7 @@ struct AssemblyContainerView: View {
                             viewModel.beginAssembly()
                         },
                         onBack: {
+                            dismiss()
                             router.pop()
                         }
                     )
@@ -42,6 +44,7 @@ struct AssemblyContainerView: View {
                             viewModel.openCamera()
                         },
                         onClose: {
+                            dismiss()
                             router.pop()
                         }
                     )
@@ -84,6 +87,7 @@ struct AssemblyContainerView: View {
                         },
                         onClose: {
                             viewModel.stopLiveTutor()
+                            dismiss()
                             router.pop()
                         }
                     )
@@ -145,6 +149,7 @@ struct AssemblyContainerView: View {
                         project: viewModel.project,
                         session: viewModel.session,
                         onDone: {
+                            dismiss()
                             router.pop()
                         }
                     )
@@ -153,6 +158,8 @@ struct AssemblyContainerView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+        .toolbar(.hidden, for: .tabBar)
+        .ignoresSafeArea()
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
     }
 }

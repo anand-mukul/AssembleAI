@@ -8,10 +8,10 @@ import AVFoundation
 import CoreVideo
 
 /// Flagship full-screen camera guidance experience designed to Apple Human Interface Guidelines:
-/// - Top Bar: Circular glass back button (leading) + "(steps)" capsule pill button (trailing).
-/// - Center: Unobstructed camera feed with spatial AR reticles.
-/// - Lower Center: Floating Apple Intelligence Thinking Orb (56pt) with ambient glowing aura.
-/// - Bottom: Dual glass cards (Card 1: Step Guide, Card 2: Live Instruction).
+/// - Top Bar: Circular glass back button (leading), Live Apple Intelligence status badge (center), Steps capsule pill button (trailing).
+/// - Center: Unobstructed camera feed with spatial AR reticles and zero colliding elements.
+/// - Lower Center: Floating Apple Intelligence Thinking Orb (52pt) with ambient glowing aura.
+/// - Bottom: Single unified Apple Vision Pro / iOS 18 Dynamic Island Glass HUD.
 struct AssemblyCameraView: View {
     @EnvironmentObject private var router: AppRouter
     @StateObject private var cameraService = CameraService()
@@ -49,7 +49,7 @@ struct AssemblyCameraView: View {
     
     var body: some View {
         ZStack {
-            // Full-Screen Live Camera Preview / Simulator Viewfinder Placeholder
+            // Full-Screen Live Camera Preview / Spatial Hardware Studio Canvas
             if cameraService.authorizationStatus == .authorized && cameraService.isCameraAvailable {
                 CameraPreviewView(session: cameraService.captureSession)
                     .ignoresSafeArea()
@@ -76,9 +76,9 @@ struct AssemblyCameraView: View {
                     .scaleEffect(reticleVisible ? (reticlePulsing ? pulseScale : 1.0) : 0.9)
             }
             
-            // Foreground UI Layout matching the Wireframe
+            // Foreground UI Layout: Apple Vision Pro & iOS 18 HIG
             VStack(spacing: 0) {
-                // Top Header Overlay: Circular Back (Left) + Capsule Steps Pill (Right)
+                // Top Header Overlay: Back (Left) + Status Pill (Center) + Steps (Right)
                 topNavigationBar
                     .safeAreaPadding(.top)
                     .opacity(overlayVisible ? 1 : 0)
@@ -86,16 +86,16 @@ struct AssemblyCameraView: View {
                 
                 Spacer()
                 
-                // Floating Apple Intelligence Thinking Orb (As in Wireframe)
+                // Floating Apple Intelligence Thinking Orb
                 if liveTutorEnabled {
-                    ThinkingOrbView(status: liveStatus, diameter: 56)
-                        .shadow(color: AppColors.glassShadow, radius: 14, x: 0, y: 8)
-                        .padding(.bottom, AppSpacing.sm)
+                    ThinkingOrbView(status: liveStatus, diameter: 52)
+                        .shadow(color: AppColors.glassShadow, radius: 16, x: 0, y: 6)
+                        .padding(.bottom, 12)
                         .opacity(overlayVisible ? 1 : 0)
-                        .scaleEffect(overlayVisible ? 1 : 0.8)
+                        .scaleEffect(overlayVisible ? 1 : 0.85)
                 }
                 
-                // Bottom Area: Dual Glass Cards (Step Guide + Live Instruction)
+                // Bottom Area: Unified Dynamic Island Glass HUD
                 if liveTutorEnabled {
                     LiveTutorHUDView(
                         status: liveStatus,
@@ -129,7 +129,7 @@ struct AssemblyCameraView: View {
                         .offset(y: overlayVisible ? 0 : 20)
                 }
             }
-            .padding(.horizontal, AppSpacing.screenEdge)
+            .padding(.horizontal, 16)
         }
         .navigationBarHidden(true)
         .statusBarHidden()
@@ -178,11 +178,11 @@ struct AssemblyCameraView: View {
         }
     }
     
-    // MARK: - Top Navigation Bar (Wireframe Layout)
+    // MARK: - Top Navigation Bar
     
     private var topNavigationBar: some View {
         HStack(alignment: .center) {
-            // Circular Frosted Glass Back Button (Wireframe Left)
+            // Circular Frosted Glass Back Button
             Button(action: {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 if liveTutorEnabled {
@@ -208,19 +208,46 @@ struct AssemblyCameraView: View {
                         .foregroundColor(.white)
                 }
                 .frame(width: 44, height: 44)
-                .shadow(color: AppColors.glassShadow, radius: 8, x: 0, y: 3)
+                .shadow(color: Color.black.opacity(0.25), radius: 8, x: 0, y: 3)
             }
             .buttonStyle(ScaleButtonStyle())
             .accessibilityLabel("Back")
             
             Spacer()
             
-            // Steps Capsule Glass Pill Button (Wireframe Right)
+            // Center Apple Intelligence Live Status Indicator
+            if liveTutorEnabled {
+                HStack(spacing: 6) {
+                    ThinkingOrbView(status: liveStatus, diameter: 14)
+                    
+                    Text(liveStatus.rawValue)
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(
+                    ZStack {
+                        Capsule().fill(Color.black.opacity(0.35))
+                        Capsule().fill(.ultraThinMaterial)
+                    }
+                )
+                .overlay(
+                    Capsule().strokeBorder(Color.white.opacity(0.18), lineWidth: 0.5)
+                )
+                .shadow(color: Color.black.opacity(0.25), radius: 6, x: 0, y: 2)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Tutor Status: \(liveStatus.rawValue)")
+            }
+            
+            Spacer()
+            
+            // Steps Capsule Glass Pill Button
             Button(action: {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 showStepsSheet = true
             }) {
-                HStack(spacing: 8) {
+                HStack(spacing: 7) {
                     Image(systemName: "list.bullet")
                         .font(.system(size: 12, weight: .bold))
                     Text("Steps")
@@ -234,7 +261,7 @@ struct AssemblyCameraView: View {
                         .background(Capsule().fill(Color.assembleBrandPrimary))
                 }
                 .foregroundColor(.white)
-                .padding(.horizontal, 14)
+                .padding(.horizontal, 12)
                 .frame(height: 44)
                 .background(
                     ZStack {
@@ -246,44 +273,26 @@ struct AssemblyCameraView: View {
                     Capsule()
                         .strokeBorder(Color.white.opacity(0.20), lineWidth: 0.5)
                 )
-                .shadow(color: AppColors.glassShadow, radius: 8, x: 0, y: 3)
+                .shadow(color: Color.black.opacity(0.25), radius: 8, x: 0, y: 3)
             }
             .buttonStyle(ScaleButtonStyle())
             .accessibilityLabel("Steps overview")
         }
     }
     
-    // MARK: - Center Reticle Crosshairs
+    // MARK: - Spatial AR Center Reticle
     
     private var cameraReticleOverlay: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                .stroke(
-                    Color.assembleBrandPrimary.opacity(0.5),
-                    style: StrokeStyle(lineWidth: 1.5, dash: [8, 5])
-                )
-                .frame(width: 260, height: 200)
-            
+            // Elegant hairline corner crosshairs
             CameraCornersView()
-                .frame(width: 276, height: 216)
-                .foregroundColor(Color.assembleBrandPrimary.opacity(0.75))
+                .frame(width: 260, height: 200)
+                .foregroundColor(Color.white.opacity(0.65))
             
-            Text(liveTutorEnabled ? "Live observation active" : "Position component in frame")
-                .font(.caption)
-                .fontWeight(.medium)
-                .foregroundColor(.white.opacity(0.9))
-                .padding(.horizontal, 14)
-                .padding(.vertical, 7)
-                .background(
-                    ZStack {
-                        Capsule().fill(Color.black.opacity(0.35))
-                        Capsule().fill(.ultraThinMaterial)
-                    }
-                )
-                .overlay(
-                    Capsule().strokeBorder(Color.white.opacity(0.18), lineWidth: 0.5)
-                )
-                .offset(y: 124)
+            // Subtle optical center guide
+            Image(systemName: "plus")
+                .font(.system(size: 11, weight: .ultraLight))
+                .foregroundColor(Color.white.opacity(0.35))
         }
         .accessibilityHidden(true)
     }
@@ -304,7 +313,7 @@ struct AssemblyCameraView: View {
                 path.move(to: CGPoint(x: 0, y: 2 * h / 3))
                 path.addLine(to: CGPoint(x: w, y: 2 * h / 3))
             }
-            .stroke(Color.white.opacity(0.15), lineWidth: 0.5)
+            .stroke(Color.white.opacity(0.12), lineWidth: 0.5)
         }
         .ignoresSafeArea()
         .allowsHitTesting(false)
@@ -340,44 +349,118 @@ struct AssemblyCameraView: View {
         }
     }
     
-    // MARK: - Simulator / Permission Denied Fallback
+    // MARK: - Spatial Hardware Studio Canvas (Simulator / Standby Mode)
     
     private var simulatorOrPermissionViewfinder: some View {
         ZStack {
-            Color.black
-            
-            VStack(spacing: AppSpacing.mdLg) {
-                Image(systemName: cameraService.authorizationStatus == .denied ? "camera.badge.ellipsis" : "viewfinder")
-                    .font(.system(size: 56, weight: .ultraLight))
-                    .foregroundColor(Color.assembleBrandPrimary)
-                
-                VStack(spacing: AppSpacing.xs) {
-                    Text(cameraService.authorizationStatus == .denied ? "Camera Access Required" : "Camera Preview")
-                        .font(.headline)
-                        .foregroundColor(.white)
+            if cameraService.authorizationStatus == .denied {
+                // Camera Permission Required View
+                ZStack {
+                    Color.black.ignoresSafeArea()
                     
-                    Text(cameraService.authorizationStatus == .denied
-                         ? "Enable camera access in Settings → Privacy → Camera to observe physical assembly tasks."
-                         : (liveTutorEnabled ? "Simulator mode. Live Tutor is observing mock frame stream." : "Simulator mode. Tap Analyze Step to preview."))
-                        .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.6))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, AppSpacing.xl)
-                }
-                
-                if cameraService.authorizationStatus == .denied {
-                    Button("Open Settings") {
-                        if let url = URL(string: UIApplication.openSettingsURLString) {
-                            UIApplication.shared.open(url)
+                    VStack(spacing: AppSpacing.mdLg) {
+                        Image(systemName: "camera.badge.ellipsis")
+                            .font(.system(size: 52, weight: .ultraLight))
+                            .foregroundColor(Color.assembleBrandPrimary)
+                        
+                        VStack(spacing: AppSpacing.xs) {
+                            Text("Camera Access Required")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                            
+                            Text("Enable camera access in Settings → Privacy → Camera to observe physical hardware assembly tasks.")
+                                .font(.subheadline)
+                                .foregroundColor(.white.opacity(0.65))
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, AppSpacing.xl)
                         }
+                        
+                        Button("Open Settings") {
+                            if let url = URL(string: UIApplication.openSettingsURLString) {
+                                UIApplication.shared.open(url)
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(AppColors.brandPrimary)
+                        .accessibilityHint("Opens iOS Settings to enable camera access")
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(AppColors.brandPrimary)
-                    .accessibilityHint("Opens iOS Settings to enable camera access")
                 }
+            } else {
+                // Spatial Studio Inspection Backdrop
+                ZStack {
+                    // Deep Obsidian Studio Gradient
+                    RadialGradient(
+                        colors: [Color(white: 0.12), Color.black],
+                        center: .center,
+                        startRadius: 60,
+                        endRadius: 420
+                    )
+                    .ignoresSafeArea()
+                    
+                    // Hardware Workbench Schematic Simulation
+                    VStack(spacing: 16) {
+                        Spacer()
+                        
+                        // Holographic Circuit Alignment Canvas
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .fill(Color.white.opacity(0.04))
+                                .frame(width: 250, height: 180)
+                            
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .strokeBorder(Color.white.opacity(0.12), lineWidth: 0.5)
+                                .frame(width: 250, height: 180)
+                            
+                            VStack(spacing: 12) {
+                                HStack(spacing: 8) {
+                                    Circle()
+                                        .fill(Color.assembleBrandPrimary.opacity(0.8))
+                                        .frame(width: 6, height: 6)
+                                    Text("CIRCUIT WORKSPACE")
+                                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                        .foregroundColor(.white.opacity(0.6))
+                                    Spacer()
+                                    Text("REV 2.4")
+                                        .font(.system(size: 9, weight: .medium, design: .monospaced))
+                                        .foregroundColor(.white.opacity(0.4))
+                                }
+                                .padding(.horizontal, 16)
+                                
+                                // Simulated Breadboard Grid Lines
+                                VStack(spacing: 6) {
+                                    ForEach(0..<4) { _ in
+                                        HStack(spacing: 8) {
+                                            ForEach(0..<10) { _ in
+                                                Circle()
+                                                    .fill(Color.white.opacity(0.20))
+                                                    .frame(width: 3, height: 3)
+                                            }
+                                        }
+                                    }
+                                }
+                                .padding(.vertical, 8)
+                                
+                                // Status indicator
+                                HStack(spacing: 5) {
+                                    Image(systemName: "sparkles")
+                                        .font(.system(size: 10))
+                                    Text("Simulated Optical Stream")
+                                        .font(.system(size: 10, weight: .medium))
+                                }
+                                .foregroundColor(Color.assembleBrandPrimary.opacity(0.85))
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 4)
+                                .background(Capsule().fill(Color.white.opacity(0.08)))
+                            }
+                            .frame(width: 250, height: 180)
+                        }
+                        
+                        Spacer()
+                    }
+                }
+                .accessibilityHidden(true)
             }
         }
-        .accessibilityElement(children: .combine)
     }
 }
 
