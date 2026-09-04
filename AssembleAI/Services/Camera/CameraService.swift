@@ -351,7 +351,7 @@ extension CameraService: AVCaptureVideoDataOutputSampleBufferDelegate {
 
 // MARK: - Thread-Safe Frame Stream Broadcaster
 
-private final class FrameStreamBroadcaster: @unchecked Sendable {
+nonisolated private final class FrameStreamBroadcaster: @unchecked Sendable {
     private let lock = NSLock()
     private var continuations: [UUID: AsyncStream<CVPixelBuffer>.Continuation] = [:]
     
@@ -392,12 +392,14 @@ private final class FrameStreamBroadcaster: @unchecked Sendable {
 }
 
 #if DEBUG
-private final class DebugFrameCounter: @unchecked Sendable {
+nonisolated private final class DebugFrameCounter: @unchecked Sendable {
     private let lock = NSLock()
     private var count: Int = 0
     private var lastReport = Date()
     
-    func tick(onReport: (Int, Date) -> Void) {
+    nonisolated init() {}
+    
+    nonisolated func tick(onReport: (Int, Date) -> Void) {
         lock.lock()
         count += 1
         let now = Date()

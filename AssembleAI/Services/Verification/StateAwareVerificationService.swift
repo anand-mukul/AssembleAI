@@ -59,10 +59,15 @@ final class StateAwareVerificationService: VerificationServiceProtocol {
         
         // Mode 2 & 3: Vision / Hybrid Pipeline
         guard let image = image else {
-            // No image provided — fallback to mock service for step contract demo
-            return try await mockFallbackService.verifyStep(step, image: nil)
+            return VerificationResult(
+                status: .uncertain,
+                confidence: 0.0,
+                detectedDescription: "No camera image provided for visual verification.",
+                expectedDescription: step.title,
+                explanation: "Could not capture a camera frame. Please aim your camera at the assembly and try again."
+            )
         }
-        
+
         // Phase 1: Extract visual observations using Apple Vision
         let observation = try await visionService.analyze(image: image)
         
@@ -127,11 +132,6 @@ final class StateAwareVerificationService: VerificationServiceProtocol {
             expectedDesc = step.title
         } else {
             expectedDesc = expectedState.requiredComponents.map(\.name).joined(separator: ", ")
-        }
-        
-        // Hybrid mode enhancement: for prototype demo consistency on legacy steps without contracts, merge mock fallback
-        if mode == .hybrid && (decodedContract == nil || (decodedContract?.pinPlacements.isEmpty == true && decodedContract?.spatialPlacements.isEmpty == true)) && (step.stepOrder == 2 || step.stepOrder == 3 || step.stepOrder == 4) {
-            return try await mockFallbackService.verifyStep(step, image: image)
         }
         
         return VerificationResult(

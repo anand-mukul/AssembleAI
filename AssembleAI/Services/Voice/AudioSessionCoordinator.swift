@@ -5,6 +5,7 @@
 
 import Foundation
 import AVFoundation
+import Combine
 
 /// Centralized manager for iOS `AVAudioSession` configuration and hardware route coordination.
 ///

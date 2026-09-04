@@ -1,6 +1,6 @@
 //
 //  MockVisionService.swift
-//  AssembleAI
+//  AssembleAITests
 //
 
 import Foundation
@@ -8,14 +8,12 @@ import UIKit
 import CoreVideo
 import CoreMedia
 import ImageIO
+@testable import AssembleAI
 
-/// Mock computer vision analysis service for unit testing and simulator demonstration mode.
+/// Mock computer vision analysis service for unit testing and deterministic simulation.
 ///
 /// Supports predetermined observation sequences, simulated processing latencies, and synthetic detection generation.
-/// Mock computer vision analysis service for unit testing and simulator demonstration mode.
-///
-/// Supports predetermined observation sequences, simulated processing latencies, and synthetic detection generation.
-final class MockVisionService: VisionAnalyzing, @unchecked Sendable {
+nonisolated final class MockVisionService: VisionAnalyzing, @unchecked Sendable {
     private let lock = NSLock()
     private var scriptedObservations: [VisualObservation] = []
     private var simulatedLatencyMs: Double
@@ -23,19 +21,17 @@ final class MockVisionService: VisionAnalyzing, @unchecked Sendable {
     
     var mockObservations: [VisualObservation] {
         get {
-            lock.lock()
-            defer { lock.unlock() }
-            return scriptedObservations
+            lock.withLock { scriptedObservations }
         }
         set {
-            lock.lock()
-            defer { lock.unlock() }
-            scriptedObservations = newValue
-            callCount = 0
+            lock.withLock {
+                scriptedObservations = newValue
+                callCount = 0
+            }
         }
     }
     
-    init(
+    nonisolated init(
         scriptedObservations: [VisualObservation] = [],
         simulatedLatencyMs: Double = 50.0
     ) {
@@ -45,10 +41,10 @@ final class MockVisionService: VisionAnalyzing, @unchecked Sendable {
     
     /// Enqueues a predetermined sequence of observations to be emitted consecutively.
     func setScriptedObservations(_ observations: [VisualObservation]) {
-        lock.lock()
-        defer { lock.unlock() }
-        self.scriptedObservations = observations
-        self.callCount = 0
+        lock.withLock {
+            self.scriptedObservations = observations
+            self.callCount = 0
+        }
     }
     
     // MARK: - VisionAnalyzing Conformance
@@ -58,14 +54,12 @@ final class MockVisionService: VisionAnalyzing, @unchecked Sendable {
             try await Task.sleep(nanoseconds: UInt64(simulatedLatencyMs * 1_000_000))
         }
         
-        let nextObservation: VisualObservation? = {
-            lock.lock()
-            defer { lock.unlock() }
+        let nextObservation: VisualObservation? = lock.withLock {
             guard !scriptedObservations.isEmpty else { return nil }
             let index = min(callCount, scriptedObservations.count - 1)
             callCount += 1
             return scriptedObservations[index]
-        }()
+        }
         
         if let obs = nextObservation {
             return obs
@@ -97,14 +91,12 @@ final class MockVisionService: VisionAnalyzing, @unchecked Sendable {
         let width = CVPixelBufferGetWidth(frame)
         let height = CVPixelBufferGetHeight(frame)
         
-        let nextObservation: VisualObservation? = {
-            lock.lock()
-            defer { lock.unlock() }
+        let nextObservation: VisualObservation? = lock.withLock {
             guard !scriptedObservations.isEmpty else { return nil }
             let index = min(callCount, scriptedObservations.count - 1)
             callCount += 1
             return scriptedObservations[index]
-        }()
+        }
         
         if let obs = nextObservation {
             return obs

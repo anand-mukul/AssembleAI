@@ -239,11 +239,11 @@ protocol BreadboardHomographyServicing: Sendable {
 }
 
 /// Production implementation of breadboard planar homography detection and coordinate transformation.
-final class BreadboardHomographyService: BreadboardHomographyServicing {
+nonisolated final class BreadboardHomographyService: BreadboardHomographyServicing, @unchecked Sendable {
     
     private let geometry: BreadboardGeometry
     
-    init(geometry: BreadboardGeometry = BreadboardGeometry()) {
+    nonisolated init(geometry: BreadboardGeometry = BreadboardGeometry()) {
         self.geometry = geometry
     }
     

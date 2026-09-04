@@ -20,24 +20,18 @@ enum ProjectRepositoryFactory {
     /// returns a `BundledProjectRepository`. Otherwise, falls back to `MockProjectRepository`
     /// to ensure the app always has content to display.
     static func resolve() -> ProjectRepository {
-        let hasBundledProjects = Bundle.main.urls(
-            forResourcesWithExtension: "json",
-            subdirectory: "Projects"
-        )?.isEmpty == false
-        
-        if hasBundledProjects {
+        let bundledProjects = ProjectPackageLoader.loadAllFromBundle()
+        if !bundledProjects.isEmpty {
             return BundledProjectRepository()
         } else {
-            // Fallback to mock data when no JSON packages are bundled.
-            // This ensures the app runs correctly during development and in
-            // Xcode Previews where bundle resources may not be available.
-            return MockProjectRepository()
+            // Fallback to sample data when running in environments where bundle resources are not present (e.g., Xcode Previews)
+            return SampleProjectRepository()
         }
     }
     
-    /// Returns a mock repository for test injection.
+    /// Returns a sample repository for preview/test injection.
     static func mock() -> ProjectRepository {
-        MockProjectRepository()
+        SampleProjectRepository()
     }
     
     /// Returns a bundled repository with a custom directory.
@@ -48,9 +42,10 @@ enum ProjectRepositoryFactory {
     /// Returns a local SwiftData-first repository with optional Supabase backend sync.
     @MainActor
     static func localFirst(
-        modelContext: ModelContext = PersistenceController.shared.container.mainContext,
+        modelContext: ModelContext? = nil,
         supabaseService: SupabaseProjectService? = nil
     ) -> LocalFirstProjectRepository {
-        LocalFirstProjectRepository(modelContext: modelContext, supabaseService: supabaseService)
+        let context = modelContext ?? PersistenceController.shared.container.mainContext
+        return LocalFirstProjectRepository(modelContext: context, supabaseService: supabaseService)
     }
 }

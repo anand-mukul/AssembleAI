@@ -47,6 +47,17 @@ nonisolated struct ProjectAnalyticsSummary: Sendable, Equatable {
     let averageDurationSeconds: Double
     let highestFrictionStepOrder: Int?
     let topMistakes: [(mistake: String, count: Int)]
+    
+    static func == (lhs: ProjectAnalyticsSummary, rhs: ProjectAnalyticsSummary) -> Bool {
+        lhs.totalSessions == rhs.totalSessions &&
+        lhs.completionRate == rhs.completionRate &&
+        lhs.averageDurationSeconds == rhs.averageDurationSeconds &&
+        lhs.highestFrictionStepOrder == rhs.highestFrictionStepOrder &&
+        lhs.topMistakes.count == rhs.topMistakes.count &&
+        zip(lhs.topMistakes, rhs.topMistakes).allSatisfy {
+            $0.mistake == $1.mistake && $0.count == $1.count
+        }
+    }
 }
 
 /// Service aggregating mistake frequencies, step durations, and user friction telemetry.

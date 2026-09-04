@@ -56,7 +56,7 @@ struct BundledProjectRepository: ProjectRepository {
     public static var bundledProjects: [AssemblyProject] {
         let loaded = ProjectPackageLoader.loadAllFromBundle(directory: "Projects")
         if loaded.isEmpty {
-            return MockProjectData.sampleProjects
+            return SampleProjectData.sampleProjects
         }
         return loaded
     }

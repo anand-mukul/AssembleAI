@@ -62,23 +62,48 @@ struct ProjectPackageLoader {
     /// - Parameter filename: The JSON file name without extension (e.g., "led_circuit").
     /// - Returns: A decoded and validated `AssemblyProject`.
     static func loadFromBundle(filename: String) throws -> AssemblyProject {
-        guard let url = Bundle.main.url(forResource: filename, withExtension: "json") else {
+        let possibleURLs = [
+            Bundle.main.url(forResource: filename, withExtension: "json", subdirectory: "Projects"),
+            Bundle.main.url(forResource: filename, withExtension: "json", subdirectory: "Resources/Projects"),
+            Bundle.main.url(forResource: filename, withExtension: "json")
+        ].compactMap { $0 }
+        
+        guard let url = possibleURLs.first else {
             throw ProjectPackageError.fileNotFound("Bundle:\(filename).json")
         }
         return try loadFromURL(url)
     }
     
-    /// Loads all project JSON files from a specific bundle directory.
-    /// - Parameter directory: The bundle subdirectory containing project JSON files (e.g., "Projects").
-    /// - Returns: Array of decoded projects, skipping any that fail validation.
+    /// Loads all project JSON files from the app bundle, checking common resource subdirectories.
+    /// - Parameter directory: Primary bundle subdirectory to search (default "Projects").
+    /// - Returns: Array of decoded projects, deduplicated by ID.
     static func loadAllFromBundle(directory: String = "Projects") -> [AssemblyProject] {
-        guard let urls = Bundle.main.urls(forResourcesWithExtension: "json", subdirectory: directory) else {
-            return []
+        var foundURLs: [URL] = []
+        
+        if let urls = Bundle.main.urls(forResourcesWithExtension: "json", subdirectory: directory), !urls.isEmpty {
+            foundURLs.append(contentsOf: urls)
         }
         
-        return urls.compactMap { url in
-            try? loadFromURL(url)
+        if let urls = Bundle.main.urls(forResourcesWithExtension: "json", subdirectory: "Resources/\(directory)"), !urls.isEmpty {
+            foundURLs.append(contentsOf: urls)
         }
+        
+        // Fallback to top-level bundle if subdirectory was flattened
+        if foundURLs.isEmpty, let rootURLs = Bundle.main.urls(forResourcesWithExtension: "json", subdirectory: nil) {
+            foundURLs.append(contentsOf: rootURLs)
+        }
+        
+        var seenIDs = Set<UUID>()
+        var projects: [AssemblyProject] = []
+        
+        for url in foundURLs {
+            if let project = try? loadFromURL(url), !seenIDs.contains(project.id) {
+                seenIDs.insert(project.id)
+                projects.append(project)
+            }
+        }
+        
+        return projects
     }
     
     // MARK: - Loading from Documents Directory

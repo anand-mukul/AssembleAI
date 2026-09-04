@@ -76,14 +76,14 @@ nonisolated struct AssistantContext: Sendable {
 // MARK: - Apple Intelligence Structured Tutor Feedback Models
 
 /// Structured Apple Intelligence tutor output model for typed on-device generation.
-public struct StructuredTutorFeedback: Sendable, Codable, Equatable {
-    public let spokenMessage: String
-    public let targetHoleCoordinates: [String]
-    public let isUrgentCorrection: Bool
-    public let suggestedAction: String
-    public let confidenceScore: Double
+nonisolated struct StructuredTutorFeedback: Sendable, Codable, Equatable {
+    let spokenMessage: String
+    let targetHoleCoordinates: [String]
+    let isUrgentCorrection: Bool
+    let suggestedAction: String
+    let confidenceScore: Double
     
-    public init(
+    nonisolated init(
         spokenMessage: String,
         targetHoleCoordinates: [String] = [],
         isUrgentCorrection: Bool = false,
@@ -99,11 +99,11 @@ public struct StructuredTutorFeedback: Sendable, Codable, Equatable {
 }
 
 /// On-device tool calling service exposing deterministic CV queries to Apple Intelligence Foundation Models.
-public struct FoundationModelsToolCallingService: Sendable {
+nonisolated struct FoundationModelsToolCallingService: Sendable {
     private let verificationEngine: StateAwareVerificationEngine
     private let homographyService: BreadboardHomographyService
     
-    public init(
+    init(
         verificationEngine: StateAwareVerificationEngine = StateAwareVerificationEngine(),
         homographyService: BreadboardHomographyService = BreadboardHomographyService()
     ) {
@@ -112,7 +112,7 @@ public struct FoundationModelsToolCallingService: Sendable {
     }
     
     /// Tool query for checking physical component alignment at designated coordinates.
-    public func queryPinPlacement(
+    func queryPinPlacement(
         step: AssemblyStep,
         contract: VisualContract?,
         observedState: ObservedAssemblyState
@@ -158,11 +158,12 @@ extension ConversationalTutorProviding {
         for decision: InterventionDecision,
         context: AssistantContext
     ) async -> StructuredTutorFeedback {
-        let text = await generateResponse(for: decision, context: context)?.text ?? ""
+        let response = await generateResponse(for: decision, context: context)
+        let text = response?.text ?? ""
         return StructuredTutorFeedback(
             spokenMessage: text,
             targetHoleCoordinates: [],
-            isUrgentCorrection: decision.priority == .high || decision.priority == .immediate,
+            isUrgentCorrection: response?.priority == .high || response?.priority == .immediate,
             suggestedAction: text,
             confidenceScore: 1.0
         )
@@ -457,119 +458,15 @@ final class HybridTutorResponseProvider: ConversationalTutorProviding, @unchecke
         }
         #endif
         
-        let text = await generateResponse(for: decision, context: context)?.text ?? ""
+        let response = await generateResponse(for: decision, context: context)
+        let text = response?.text ?? ""
         return StructuredTutorFeedback(
             spokenMessage: text,
             targetHoleCoordinates: [],
-            isUrgentCorrection: decision.priority == .high || decision.priority == .immediate,
+            isUrgentCorrection: response?.priority == .high || response?.priority == .immediate,
             suggestedAction: text,
             confidenceScore: 1.0
         )
     }
 }
 
-// MARK: - Mock Conversational Tutor Provider
-
-/// Thread-safe mock conversational tutor provider for unit testing with deterministic responses.
-final class MockConversationalTutorProvider: ConversationalTutorProviding, @unchecked Sendable {
-    private let lock = NSLock()
-    private var scriptedResponses: [TutorResponse] = []
-    private var _generateResponseCallCount: Int = 0
-    private var _answerQuestionCallCount: Int = 0
-    private var _lastReceivedContext: AssistantContext? = nil
-    
-    var generateResponseCallCount: Int {
-        lock.lock()
-        defer { lock.unlock() }
-        return _generateResponseCallCount
-    }
-    
-    var answerQuestionCallCount: Int {
-        lock.lock()
-        defer { lock.unlock() }
-        return _answerQuestionCallCount
-    }
-    
-    var lastReceivedContext: AssistantContext? {
-        lock.lock()
-        defer { lock.unlock() }
-        return _lastReceivedContext
-    }
-    
-    init(scriptedResponses: [TutorResponse] = []) {
-        self.scriptedResponses = scriptedResponses
-    }
-    
-    func setScriptedResponses(_ responses: [TutorResponse]) {
-        lock.lock()
-        defer { lock.unlock() }
-        self.scriptedResponses = responses
-    }
-    
-    func generateResponse(
-        for decision: InterventionDecision,
-        context: AssistantContext
-    ) async -> TutorResponse? {
-        lock.lock()
-        _generateResponseCallCount += 1
-        _lastReceivedContext = context
-        let scripted = !scriptedResponses.isEmpty ? scriptedResponses.removeFirst() : nil
-        lock.unlock()
-        
-        guard decision.shouldIntervene else { return nil }
-        
-        if let response = scripted {
-            return response
-        }
-        
-        let fallback = DeterministicTutorResponseProvider()
-        return fallback.response(for: decision)
-    }
-    
-    func answerUserQuestion(
-        query: String,
-        intent: UserVoiceIntent,
-        context: AssistantContext
-    ) async -> TutorResponse {
-        lock.lock()
-        _answerQuestionCallCount += 1
-        _lastReceivedContext = context
-        let scripted = !scriptedResponses.isEmpty ? scriptedResponses.removeFirst() : nil
-        lock.unlock()
-        
-        if let response = scripted {
-            return response
-        }
-        
-        switch intent {
-        case .askWhy:
-            return TutorResponse(text: "Row 15 connects to the power rail for this circuit.", priority: .immediate)
-        case .askWhatNext:
-            return TutorResponse(text: "Next, insert the red LED into node 12A.", priority: .immediate)
-        case .repeatInstruction:
-            return TutorResponse(text: "Step 1: Place the 220 ohm resistor between row 10 and row 15.", priority: .immediate)
-        default:
-            return TutorResponse(text: "Regarding \(query): follow the active blueprint slot.", priority: .immediate)
-        }
-    }
-    
-    func clearSessionContext() async {
-        lock.lock()
-        defer { lock.unlock() }
-        scriptedResponses.removeAll()
-        _lastReceivedContext = nil
-    }
-    
-    func generateStructuredFeedback(
-        for decision: InterventionDecision,
-        context: AssistantContext
-    ) async -> StructuredTutorFeedback {
-        StructuredTutorFeedback(
-            spokenMessage: "Mock Structured Feedback",
-            targetHoleCoordinates: ["15E", "17E"],
-            isUrgentCorrection: false,
-            suggestedAction: "Proceed to next step",
-            confidenceScore: 1.0
-        )
-    }
-}

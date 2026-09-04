@@ -25,23 +25,23 @@ extension ProjectRepository {
     }
 }
 
-/// Mock project data provider delivering structured prototype assembly projects.
-struct MockProjectRepository: ProjectRepository {
+/// Sample project data provider delivering structured preview assembly projects.
+struct SampleProjectRepository: ProjectRepository {
     
     func fetchProjects() async throws -> [AssemblyProject] {
-        // Simulated micro network delay
-        try await Task.sleep(nanoseconds: 100_000_000)
-        return MockProjectData.sampleProjects
+        return SampleProjectData.sampleProjects
     }
     
     func fetchRecentActivity() async throws -> [ActivityItemModel] {
-        try await Task.sleep(nanoseconds: 50_000_000)
-        return MockProjectData.sampleActivity
+        return SampleProjectData.sampleActivity
     }
 }
 
-/// Dedicated mock dataset for prototype presentation.
-enum MockProjectData {
+/// Backwards-compatible alias for unit test suites and existing callers
+typealias MockProjectRepository = SampleProjectRepository
+
+/// Dedicated sample dataset for SwiftUI Previews and offline fallback presentation.
+enum SampleProjectData {
     
     static let sampleProjects: [AssemblyProject] = [
         // 1. Active Project: LED Circuit
@@ -194,3 +194,7 @@ enum MockProjectData {
         )
     ]
 }
+
+/// Backwards-compatible alias for unit test suites and preview helpers
+typealias MockProjectData = SampleProjectData
+

@@ -87,6 +87,14 @@ nonisolated struct InterventionDecision: Sendable, Equatable {
         return true
     }
     
+    /// Indicates whether the intervention is an urgent correction.
+    var isUrgent: Bool {
+        if case .correct(_, let level) = action {
+            return level == .explicit || level == .detailed
+        }
+        return false
+    }
+    
     /// Convenience static factory for silence.
     nonisolated static func silent(reason: String) -> InterventionDecision {
         InterventionDecision(action: .remainSilent, reason: reason)

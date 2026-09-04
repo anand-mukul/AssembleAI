@@ -25,13 +25,13 @@ import UIKit
 /// - `lastNFrames`: Strategy B — Sliding window of the most recent N visual frames.
 /// - `fullVisualHistory`: Strategy C — Unbounded chronological accumulation of all session frames.
 /// - `compressedStateHistory`: Strategy D — Semantic state-aware keyframe representation with structural state summaries.
-public enum VisualHistoryStrategy: String, Codable, Sendable, CaseIterable {
+enum VisualHistoryStrategy: String, Codable, Sendable, CaseIterable {
     case currentFrame = "currentFrame"
     case lastNFrames = "lastNFrames"
     case fullVisualHistory = "fullVisualHistory"
     case compressedStateHistory = "compressedStateHistory"
     
-    public var displayName: String {
+    var displayName: String {
         switch self {
         case .currentFrame: return "Strategy A: Current Frame Only"
         case .lastNFrames: return "Strategy B: Last N Frames"
@@ -43,29 +43,29 @@ public enum VisualHistoryStrategy: String, Codable, Sendable, CaseIterable {
 
 /// Persistent configuration and device metadata for a research evaluation session.
 /// Guarantees reproducibility without storing personally identifying information (PII).
-public struct ResearchSessionConfig: Identifiable, Codable, Sendable, Equatable {
-    public let id: UUID
-    public let projectID: String
-    public let interactionMode: InteractionMode
-    public let strategy: VisualHistoryStrategy
-    public let lastNFrames: Int?
-    public let startedAt: Date
-    public var endedAt: Date?
-    public let schemaVersion: Int
-    public let osVersion: String
-    public let deviceModel: String
-    public var memoryBeforeMB: Double?
-    public var memoryAfterMB: Double?
-    public var peakMemoryMB: Double?
-    public var batteryCost: Double?
-    public var batteryLevelStart: Float?
-    public var batteryLevelEnd: Float?
-    public var framesReceived: Int
-    public var framesProcessed: Int
-    public var framesIncludedInModelContext: Int
-    public var framesDropped: Int
+struct ResearchSessionConfig: Identifiable, Codable, Sendable, Equatable {
+    let id: UUID
+    let projectID: String
+    let interactionMode: InteractionMode
+    let strategy: VisualHistoryStrategy
+    let lastNFrames: Int?
+    let startedAt: Date
+    var endedAt: Date?
+    let schemaVersion: Int
+    let osVersion: String
+    let deviceModel: String
+    var memoryBeforeMB: Double?
+    var memoryAfterMB: Double?
+    var peakMemoryMB: Double?
+    var batteryCost: Double?
+    var batteryLevelStart: Float?
+    var batteryLevelEnd: Float?
+    var framesReceived: Int
+    var framesProcessed: Int
+    var framesIncludedInModelContext: Int
+    var framesDropped: Int
     
-    public init(
+    init(
         id: UUID = UUID(),
         projectID: String,
         interactionMode: InteractionMode = .liveTutor,
@@ -114,10 +114,10 @@ public struct ResearchSessionConfig: Identifiable, Codable, Sendable, Equatable 
 
 /// Hardware-level resident memory sampling using Darwin Mach kernel task information.
 /// Measures physical memory (resident size) actually occupied in RAM, rounded to megabytes.
-public enum MemorySampler: Sendable {
+enum MemorySampler: Sendable {
     /// Returns current resident memory size in Megabytes (MB).
     /// Does not use private APIs or synthetic estimates.
-    public static func currentResidentMemoryMB() -> Double {
+    static func currentResidentMemoryMB() -> Double {
         #if canImport(Darwin)
         var info = mach_task_basic_info()
         var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size / MemoryLayout<integer_t>.size)
@@ -138,14 +138,14 @@ public enum MemorySampler: Sendable {
 // MARK: - Latency Statistics
 
 /// Min, max, average, and total latency profile for a specific telemetry dimension.
-public struct LatencyProfile: Codable, Sendable, Equatable {
-    public let count: Int
-    public let totalMs: Int
-    public let avgMs: Int
-    public let minMs: Int?
-    public let maxMs: Int?
+struct LatencyProfile: Codable, Sendable, Equatable {
+    let count: Int
+    let totalMs: Int
+    let avgMs: Int
+    let minMs: Int?
+    let maxMs: Int?
     
-    public init(latencies: [Int]) {
+    init(latencies: [Int]) {
         self.count = latencies.count
         if latencies.isEmpty {
             self.totalMs = 0
@@ -165,89 +165,89 @@ public struct LatencyProfile: Codable, Sendable, Equatable {
 
 /// Comprehensive statistical metrics calculated for an experimental evaluation session.
 /// Keeps primary accuracy metrics and system efficiency metrics strictly decoupled.
-public nonisolated struct ResearchSessionMetrics: Codable, Sendable, Equatable {
+nonisolated struct ResearchSessionMetrics: Codable, Sendable, Equatable {
     // Session Identification & Configuration
-    public let sessionID: UUID
-    public let projectID: String
-    public let mode: InteractionMode
-    public let strategy: VisualHistoryStrategy
-    public let lastNFrames: Int?
-    public let schemaVersion: Int
-    public let startedAt: Date?
-    public let endedAt: Date?
-    public let deviceModel: String
-    public let iosVersion: String
+    let sessionID: UUID
+    let projectID: String
+    let mode: InteractionMode
+    let strategy: VisualHistoryStrategy
+    let lastNFrames: Int?
+    let schemaVersion: Int
+    let startedAt: Date?
+    let endedAt: Date?
+    let deviceModel: String
+    let iosVersion: String
     
     // Core Temporal & Progression Metrics
-    public let taskCompletionTimeSeconds: Double
-    public let completedStepsCount: Int
-    public let totalVerificationAttempts: Int
-    public let errorCount: Int
-    public let uncertainCount: Int
-    public let totalCorrectionTimeSeconds: Double
-    public let interventionCount: Int
-    public let userQuestionCount: Int
+    let taskCompletionTimeSeconds: Double
+    let completedStepsCount: Int
+    let totalVerificationAttempts: Int
+    let errorCount: Int
+    let uncertainCount: Int
+    let totalCorrectionTimeSeconds: Double
+    let interventionCount: Int
+    let userQuestionCount: Int
     
     // Primary Accuracy Metrics
-    public let verificationAccuracy: Double?
-    public let falseCompletionRate: Double?
-    public let missedCompletionRate: Double?
-    public let temporalConsistency: Double?
+    let verificationAccuracy: Double?
+    let falseCompletionRate: Double?
+    let missedCompletionRate: Double?
+    let temporalConsistency: Double?
     
     // Token Consumption Metrics (Actual counts; nil when unavailable)
-    public let totalInputTokens: Int?
-    public let totalOutputTokens: Int?
-    public let totalTokens: Int?
+    let totalInputTokens: Int?
+    let totalOutputTokens: Int?
+    let totalTokens: Int?
     
     // Latency Profiling (Milliseconds)
-    public let avgInterventionLatencyMs: Int
-    public let avgModelLatencyMs: Int
-    public let avgSpeechLatencyMs: Int
-    public let avgProgressionLatencyMs: Int
-    public let avgVerificationLatencyMs: Int
-    public let totalVerificationLatencyMs: Int
-    public let minVerificationLatencyMs: Int?
-    public let maxVerificationLatencyMs: Int?
-    public let totalModelLatencyMs: Int
-    public let minModelLatencyMs: Int?
-    public let maxModelLatencyMs: Int?
-    public let totalInterventionLatencyMs: Int
-    public let totalProgressionLatencyMs: Int
-    public let totalSpeechLatencyMs: Int
+    let avgInterventionLatencyMs: Int
+    let avgModelLatencyMs: Int
+    let avgSpeechLatencyMs: Int
+    let avgProgressionLatencyMs: Int
+    let avgVerificationLatencyMs: Int
+    let totalVerificationLatencyMs: Int
+    let minVerificationLatencyMs: Int?
+    let maxVerificationLatencyMs: Int?
+    let totalModelLatencyMs: Int
+    let minModelLatencyMs: Int?
+    let maxModelLatencyMs: Int?
+    let totalInterventionLatencyMs: Int
+    let totalProgressionLatencyMs: Int
+    let totalSpeechLatencyMs: Int
     
     // Memory Metrics (Megabytes)
-    public let memoryBeforeMB: Double?
-    public let memoryAfterMB: Double?
-    public let peakMemoryMB: Double?
+    let memoryBeforeMB: Double?
+    let memoryAfterMB: Double?
+    let peakMemoryMB: Double?
     
     // Energy / Battery Metrics
-    public let batteryCost: Double?
-    public let batteryLevelDelta: Float?
+    let batteryCost: Double?
+    let batteryLevelDelta: Float?
     
     // Visual Frame Processing Metrics
-    public let framesReceived: Int
-    public let framesProcessed: Int
-    public let framesIncludedInModelContext: Int
-    public let framesDropped: Int
+    let framesReceived: Int
+    let framesProcessed: Int
+    let framesIncludedInModelContext: Int
+    let framesDropped: Int
     
     // Legacy Convenience Computed Properties
-    public var durationSeconds: Int { Int(taskCompletionTimeSeconds) }
-    public var totalAttempts: Int { totalVerificationAttempts }
-    public var avgGuidanceLatencyMs: Int { avgModelLatencyMs }
+    var durationSeconds: Int { Int(taskCompletionTimeSeconds) }
+    var totalAttempts: Int { totalVerificationAttempts }
+    var avgGuidanceLatencyMs: Int { avgModelLatencyMs }
     
     /// Aggregate latency average across all non-zero operational latencies.
-    public var avgLatencyMs: Int {
+    var avgLatencyMs: Int {
         let values = [avgVerificationLatencyMs, avgModelLatencyMs, avgSpeechLatencyMs, avgProgressionLatencyMs, avgInterventionLatencyMs].filter { $0 > 0 }
         return values.isEmpty ? 0 : values.reduce(0, +) / values.count
     }
     
     /// Total operational latency accumulated during the session in milliseconds.
-    public var totalLatencyMs: Int {
+    var totalLatencyMs: Int {
         totalVerificationLatencyMs + totalModelLatencyMs + totalSpeechLatencyMs + totalProgressionLatencyMs + totalInterventionLatencyMs
     }
     
     // MARK: - Initializer (Preserves 100% Backward Compatibility)
-    public init(
+    init(
         sessionID: UUID,
         projectID: String = "",
         mode: InteractionMode,
@@ -357,7 +357,7 @@ public nonisolated struct ResearchSessionMetrics: Codable, Sendable, Equatable {
     // MARK: - Summary CSV Serialization (RFC 4180 Compliant)
     
     /// RFC 4180 header for session-level statistical summary export.
-    public static var summaryCSVHeader: String {
+    static var summaryCSVHeader: String {
         [
             "schema_version",
             "session_id",
@@ -403,7 +403,7 @@ public nonisolated struct ResearchSessionMetrics: Codable, Sendable, Equatable {
     }
     
     /// RFC 4180 row formatting for statistical analysis in Excel, Python/pandas, R, and SPSS.
-    public var summaryCSVLine: String {
+    var summaryCSVLine: String {
         let isoFormatter = ISO8601DateFormatter()
         let startStr = startedAt.map { isoFormatter.string(from: $0) } ?? ""
         let endStr = endedAt.map { isoFormatter.string(from: $0) } ?? ""
@@ -458,7 +458,7 @@ public nonisolated struct ResearchSessionMetrics: Codable, Sendable, Equatable {
 // MARK: - Research Logging Protocol
 
 /// Abstract interface for recording research telemetry events and managing evaluation sessions.
-public protocol ResearchLogging: Sendable {
+protocol ResearchLogging: Sendable {
     // Preserved Existing API
     func logEvent(_ event: ResearchEvent) async
     func fetchEvents(for sessionID: UUID) async -> [ResearchEvent]
@@ -492,7 +492,7 @@ public protocol ResearchLogging: Sendable {
 }
 
 // Default parameter extensions for convenience
-public extension ResearchLogging {
+extension ResearchLogging {
     func startResearchSession(
         projectID: String,
         strategy: VisualHistoryStrategy,
@@ -510,11 +510,11 @@ public extension ResearchLogging {
 
 /// Thread-safe local research logger capturing pseudonymous session metrics, monotonic sequencing,
 /// durable JSONL persistence in `Application Support/ResearchData/`, and RFC 4180 export to `Documents/ResearchExports/`.
-public actor ResearchLogger: ResearchLogging {
-    public static let shared = ResearchLogger()
+actor ResearchLogger: ResearchLogging {
+    static let shared = ResearchLogger()
     
     /// Current research data schema version. Incremented when telemetry model evolves.
-    public static let researchSchemaVersion: Int = 1
+    nonisolated static let researchSchemaVersion: Int = 1
     
     // In-Memory State
     private var events: [ResearchEvent] = []
@@ -528,7 +528,7 @@ public actor ResearchLogger: ResearchLogging {
     
     /// Initializes ResearchLogger with persistent local disk storage.
     /// - Parameter customBaseDirectory: Optional custom directory for testing or isolated environments.
-    public init(customBaseDirectory: URL? = nil) {
+    init(customBaseDirectory: URL? = nil) {
         let baseDir: URL
         if let custom = customBaseDirectory {
             baseDir = custom
@@ -543,15 +543,21 @@ public actor ResearchLogger: ResearchLogging {
         // Ensure directory exists
         try? FileManager.default.createDirectory(at: baseDir, withIntermediateDirectories: true)
         
-        // Load persisted records
-        self.loadPersistedRecords()
+        // Load persisted records synchronously from disk
+        let (loadedSessions, loadedEvents, loadedSequences) = Self.loadPersistedRecordsFromDisk(
+            sessionsFileURL: self.sessionsFileURL,
+            eventsFileURL: self.eventsFileURL
+        )
+        self.sessions = loadedSessions
+        self.events = loadedEvents
+        self.sessionSequences = loadedSequences
     }
     
     // MARK: - Session Lifecycle
     
     /// Starts a new experimental research session with the specified visual history strategy.
     /// Records initial memory snapshot and emits a `.sessionStarted` event.
-    public func startResearchSession(
+    func startResearchSession(
         projectID: String,
         strategy: VisualHistoryStrategy,
         lastNFrames: Int? = nil,
@@ -612,7 +618,7 @@ public actor ResearchLogger: ResearchLogging {
     
     /// Completes an active research run, records final memory and optional battery cost,
     /// persists final state, and computes comprehensive session metrics.
-    public func endResearchSession(
+    func endResearchSession(
         sessionID: UUID,
         externalBatteryCost: Double? = nil
     ) -> ResearchSessionMetrics {
@@ -658,17 +664,17 @@ public actor ResearchLogger: ResearchLogging {
     }
     
     /// Returns the active or saved session configuration.
-    public func getSessionConfig(for sessionID: UUID) -> ResearchSessionConfig? {
+    func getSessionConfig(for sessionID: UUID) -> ResearchSessionConfig? {
         sessions[sessionID]
     }
     
     /// Returns all registered research session configurations.
-    public func fetchAllSessions() -> [ResearchSessionConfig] {
+    func fetchAllSessions() -> [ResearchSessionConfig] {
         Array(sessions.values).sorted { $0.startedAt < $1.startedAt }
     }
     
     /// Returns live telemetry statistics (total unique sessions count and total event count).
-    public func getTelemetryStats() -> (sessionCount: Int, eventCount: Int) {
+    func getTelemetryStats() -> (sessionCount: Int, eventCount: Int) {
         let knownIDs = Set(sessions.keys)
         let eventIDs = Set(events.map(\.sessionID))
         let sessionCount = knownIDs.union(eventIDs).count
@@ -678,7 +684,7 @@ public actor ResearchLogger: ResearchLogging {
     // MARK: - Frame & Resource Tracking Helpers
     
     /// Updates frame counters for an active evaluation session.
-    public func recordFrameProcessing(
+    func recordFrameProcessing(
         sessionID: UUID,
         received: Int = 0,
         processed: Int = 0,
@@ -696,7 +702,7 @@ public actor ResearchLogger: ResearchLogging {
     }
     
     /// Samples resident memory and updates peak memory if higher than previous reading.
-    public func samplePeakMemory(for sessionID: UUID) {
+    func samplePeakMemory(for sessionID: UUID) {
         let mem = MemorySampler.currentResidentMemoryMB()
         guard mem > 0 else { return }
         if var config = sessions[sessionID] {
@@ -710,7 +716,7 @@ public actor ResearchLogger: ResearchLogging {
     
     /// Records a research telemetry event with automatic monotonic sequence numbering.
     /// Appends immediately to in-memory list and writes append-only JSONL to disk.
-    public func logEvent(_ event: ResearchEvent) {
+    func logEvent(_ event: ResearchEvent) {
         let seq = (sessionSequences[event.sessionID] ?? 0) + 1
         sessionSequences[event.sessionID] = seq
         
@@ -789,7 +795,7 @@ public actor ResearchLogger: ResearchLogging {
     }
     
     /// Returns all logged events for a given session sorted chronologically by sequence.
-    public func fetchEvents(for sessionID: UUID) -> [ResearchEvent] {
+    func fetchEvents(for sessionID: UUID) -> [ResearchEvent] {
         return events.filter { $0.sessionID == sessionID }.sorted { $0.sequence < $1.sequence }
     }
     
@@ -809,7 +815,7 @@ public actor ResearchLogger: ResearchLogging {
     /// - Physical resident memory (MB) before, after, and peak.
     /// - Energy / battery cost (external instrumented or nil).
     /// - Visual frame throughput (received, processed, in-context, dropped).
-    public func calculateMetrics(for sessionID: UUID) -> ResearchSessionMetrics {
+    func calculateMetrics(for sessionID: UUID) -> ResearchSessionMetrics {
         let sessionEvents = fetchEvents(for: sessionID)
         let config = sessions[sessionID]
         
@@ -1065,7 +1071,7 @@ public actor ResearchLogger: ResearchLogging {
     
     /// Exports recorded research events as an anonymized RFC 4180 CSV string (Event-Level).
     /// Preserves exact backward-compatible header and line formatting for unit tests.
-    public func exportCSV(for sessionID: UUID? = nil) -> String {
+    func exportCSV(for sessionID: UUID? = nil) -> String {
         let targetEvents = sessionID != nil ? events.filter { $0.sessionID == sessionID } : events
         var csv = ResearchEvent.csvHeader + "\n"
         for event in targetEvents {
@@ -1075,7 +1081,7 @@ public actor ResearchLogger: ResearchLogging {
     }
     
     /// Writes event-level CSV file into `Documents/ResearchExports/` and returns its file URL.
-    public func exportCSVFile(for sessionID: UUID? = nil) throws -> URL {
+    func exportCSVFile(for sessionID: UUID? = nil) throws -> URL {
         let content = exportCSV(for: sessionID)
         let dir = try getExportsDirectoryURL()
         let filename: String
@@ -1093,7 +1099,7 @@ public actor ResearchLogger: ResearchLogging {
     }
     
     /// Exports recorded research events as pretty-printed JSON.
-    public func exportJSON(for sessionID: UUID? = nil) throws -> String {
+    func exportJSON(for sessionID: UUID? = nil) throws -> String {
         let targetEvents = sessionID != nil ? events.filter { $0.sessionID == sessionID } : events
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -1105,7 +1111,7 @@ public actor ResearchLogger: ResearchLogging {
     }
     
     /// Writes event-level JSON file into `Documents/ResearchExports/` and returns its file URL.
-    public func exportJSONFile(for sessionID: UUID? = nil) throws -> URL {
+    func exportJSONFile(for sessionID: UUID? = nil) throws -> URL {
         let content = try exportJSON(for: sessionID)
         let dir = try getExportsDirectoryURL()
         let filename: String
@@ -1124,7 +1130,7 @@ public actor ResearchLogger: ResearchLogging {
     
     /// Exports a research-summary CSV containing ONE ROW PER SESSION.
     /// Ideal for statistical analysis in Python/pandas, R, SPSS, or Microsoft Excel.
-    public func exportSummaryCSV() -> String {
+    func exportSummaryCSV() -> String {
         let knownIDs = Set(sessions.keys)
         let eventIDs = Set(events.map(\.sessionID))
         let allIDs = Array(knownIDs.union(eventIDs)).sorted { id1, id2 in
@@ -1142,7 +1148,7 @@ public actor ResearchLogger: ResearchLogging {
     }
     
     /// Writes session-level summary CSV file into `Documents/ResearchExports/` and returns its file URL.
-    public func exportSummaryCSVFile() throws -> URL {
+    func exportSummaryCSVFile() throws -> URL {
         let content = exportSummaryCSV()
         let dir = try getExportsDirectoryURL()
         let formatter = DateFormatter()
@@ -1157,7 +1163,7 @@ public actor ResearchLogger: ResearchLogging {
     // MARK: - State Management & Disk Cleaning
     
     /// Clears all stored research logs from memory and deletes persisted records on disk.
-    public func clearLogs() {
+    func clearLogs() {
         events.removeAll()
         sessionSequences.removeAll()
         sessions.removeAll()
@@ -1172,14 +1178,21 @@ public actor ResearchLogger: ResearchLogging {
     
     // MARK: - Internal Persistence Helpers
     
-    private func loadPersistedRecords() {
+    private static func loadPersistedRecordsFromDisk(
+        sessionsFileURL: URL,
+        eventsFileURL: URL
+    ) -> (sessions: [UUID: ResearchSessionConfig], events: [ResearchEvent], sessionSequences: [UUID: Int]) {
+        var loadedSessions: [UUID: ResearchSessionConfig] = [:]
+        var loadedEvents: [ResearchEvent] = []
+        var loadedSequences: [UUID: Int] = [:]
+        
         // 1. Load Sessions
         if FileManager.default.fileExists(atPath: sessionsFileURL.path),
            let data = try? Data(contentsOf: sessionsFileURL) {
             let decoder = JSONDecoder()
             if let loaded = try? decoder.decode([ResearchSessionConfig].self, from: data) {
                 for s in loaded {
-                    self.sessions[s.id] = s
+                    loadedSessions[s.id] = s
                 }
             }
         }
@@ -1194,11 +1207,13 @@ public actor ResearchLogger: ResearchLogging {
                 guard !trimmed.isEmpty else { continue }
                 if let lineData = trimmed.data(using: .utf8),
                    let event = try? decoder.decode(ResearchEvent.self, from: lineData) {
-                    self.events.append(event)
-                    self.sessionSequences[event.sessionID] = max(self.sessionSequences[event.sessionID] ?? 0, event.sequence)
+                    loadedEvents.append(event)
+                    loadedSequences[event.sessionID] = max(loadedSequences[event.sessionID] ?? 0, event.sequence)
                 }
             }
         }
+        
+        return (loadedSessions, loadedEvents, loadedSequences)
     }
     
     private func appendEventToDisk(_ event: ResearchEvent) {
@@ -1240,7 +1255,7 @@ public actor ResearchLogger: ResearchLogging {
     // MARK: - Utility Functions
     
     /// Safely escapes CSV fields per RFC 4180 rules.
-    public static func escapeCSV(_ text: String) -> String {
+    nonisolated static func escapeCSV(_ text: String) -> String {
         if text.contains(",") || text.contains("\"") || text.contains("\n") || text.contains("\r") {
             return "\"" + text.replacingOccurrences(of: "\"", with: "\"\"") + "\""
         }
@@ -1248,7 +1263,7 @@ public actor ResearchLogger: ResearchLogging {
     }
     
     /// Obtains hardware device identifier without personal identifiers (e.g., "iPhone15,2").
-    public static func getDeviceModelIdentifier() -> String {
+    nonisolated static func getDeviceModelIdentifier() -> String {
         #if canImport(Darwin)
         var systemInfo = utsname()
         uname(&systemInfo)
@@ -1264,140 +1279,6 @@ public actor ResearchLogger: ResearchLogging {
     }
 }
 
-// MARK: - Mock Research Logger
-
-/// Actor-isolated mock research logger for unit and integration testing.
-public actor MockResearchLogger: ResearchLogging {
-    public private(set) var loggedEvents: [ResearchEvent] = []
-    private var mockSessions: [UUID: ResearchSessionConfig] = [:]
-    
-    public init() {}
-    
-    public func logEvent(_ event: ResearchEvent) async {
-        loggedEvents.append(event)
-    }
-    
-    public func fetchEvents(for sessionID: UUID) async -> [ResearchEvent] {
-        return loggedEvents.filter { $0.sessionID == sessionID }
-    }
-    
-    public func calculateMetrics(for sessionID: UUID) async -> ResearchSessionMetrics {
-        let sessionEvents = loggedEvents.filter { $0.sessionID == sessionID }
-        return ResearchSessionMetrics(
-            sessionID: sessionID,
-            mode: sessionEvents.first?.mode ?? .liveTutor,
-            taskCompletionTimeSeconds: 120.0,
-            completedStepsCount: 2,
-            totalVerificationAttempts: 5,
-            errorCount: 1,
-            uncertainCount: 1,
-            totalCorrectionTimeSeconds: 15.0,
-            interventionCount: 2,
-            userQuestionCount: 1,
-            avgInterventionLatencyMs: 80,
-            avgModelLatencyMs: 320,
-            avgSpeechLatencyMs: 65,
-            avgProgressionLatencyMs: 450
-        )
-    }
-    
-    public func exportCSV(for sessionID: UUID? = nil) async -> String {
-        let target = sessionID != nil ? loggedEvents.filter { $0.sessionID == sessionID } : loggedEvents
-        var csv = ResearchEvent.csvHeader + "\n"
-        for event in target {
-            csv += event.csvLine + "\n"
-        }
-        return csv
-    }
-    
-    public func clearLogs() async {
-        loggedEvents.removeAll()
-        mockSessions.removeAll()
-    }
-    
-    public func startResearchSession(
-        projectID: String,
-        strategy: VisualHistoryStrategy,
-        lastNFrames: Int?,
-        mode: InteractionMode
-    ) async -> UUID {
-        let sid = UUID()
-        let config = ResearchSessionConfig(
-            id: sid,
-            projectID: projectID,
-            interactionMode: mode,
-            strategy: strategy,
-            lastNFrames: lastNFrames,
-            startedAt: Date(),
-            endedAt: nil,
-            schemaVersion: ResearchLogger.researchSchemaVersion,
-            osVersion: "iOS 26.5",
-            deviceModel: "MockDevice",
-            memoryBeforeMB: 42.0,
-            memoryAfterMB: nil,
-            peakMemoryMB: 42.0,
-            batteryCost: nil,
-            batteryLevelStart: nil,
-            batteryLevelEnd: nil,
-            framesReceived: 0,
-            framesProcessed: 0,
-            framesIncludedInModelContext: 0,
-            framesDropped: 0
-        )
-        mockSessions[sid] = config
-        return sid
-    }
-    
-    public func endResearchSession(
-        sessionID: UUID,
-        externalBatteryCost: Double?
-    ) async -> ResearchSessionMetrics {
-        return await calculateMetrics(for: sessionID)
-    }
-    
-    public func getSessionConfig(for sessionID: UUID) async -> ResearchSessionConfig? {
-        return mockSessions[sessionID]
-    }
-    
-    public func fetchAllSessions() async -> [ResearchSessionConfig] {
-        return Array(mockSessions.values)
-    }
-    
-    public func getTelemetryStats() async -> (sessionCount: Int, eventCount: Int) {
-        let knownIDs = Set(mockSessions.keys)
-        let eventIDs = Set(loggedEvents.map(\.sessionID))
-        return (knownIDs.union(eventIDs).count, loggedEvents.count)
-    }
-    
-    public func exportCSVFile(for sessionID: UUID?) async throws -> URL {
-        let tempDir = FileManager.default.temporaryDirectory
-        let url = tempDir.appendingPathComponent("mock_export.csv")
-        try await exportCSV(for: sessionID).write(to: url, atomically: true, encoding: .utf8)
-        return url
-    }
-    
-    public func exportJSON(for sessionID: UUID?) async throws -> String {
-        return "[]"
-    }
-    
-    public func exportJSONFile(for sessionID: UUID?) async throws -> URL {
-        let tempDir = FileManager.default.temporaryDirectory
-        let url = tempDir.appendingPathComponent("mock_export.json")
-        try "[]".write(to: url, atomically: true, encoding: .utf8)
-        return url
-    }
-    
-    public func exportSummaryCSV() async -> String {
-        return ResearchSessionMetrics.summaryCSVHeader + "\n"
-    }
-    
-    public func exportSummaryCSVFile() async throws -> URL {
-        let tempDir = FileManager.default.temporaryDirectory
-        let url = tempDir.appendingPathComponent("mock_summary.csv")
-        try await exportSummaryCSV().write(to: url, atomically: true, encoding: .utf8)
-        return url
-    }
-}
 
 // MARK: - Developer Documentation & Usage Examples
 

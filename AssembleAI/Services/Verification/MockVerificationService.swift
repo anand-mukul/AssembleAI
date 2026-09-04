@@ -6,8 +6,8 @@
 import Foundation
 import UIKit
 
-/// Mock verification service for demonstration purposes.
-/// Implements `VerificationServiceProtocol` so it can later be replaced with Vision / Core ML / Foundation Models without changing any UI code.
+/// Deterministic demonstration and simulator verification service.
+/// Powers the user-facing "Demo Mock" verification engine mode when no physical breadboard or camera feed is available.
 final class MockVerificationService: VerificationServiceProtocol {
     
     func verifyStep(_ step: AssemblyStep, image: UIImage?) async throws -> VerificationResult {
@@ -98,3 +98,6 @@ final class MockVerificationService: VerificationServiceProtocol {
         }
     }
 }
+
+/// Production alias for simulator demo verification
+typealias DemoVerificationService = MockVerificationService

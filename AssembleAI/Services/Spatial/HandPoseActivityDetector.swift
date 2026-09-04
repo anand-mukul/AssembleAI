@@ -38,12 +38,12 @@ protocol HandPoseActivityDetecting: Sendable {
 }
 
 /// Production implementation using Apple Vision `VNDetectHumanHandPoseRequest`.
-final class HandPoseActivityDetector: HandPoseActivityDetecting {
+nonisolated final class HandPoseActivityDetector: HandPoseActivityDetecting, @unchecked Sendable {
     
     private var lastWasWorking: Bool = false
     private var lastStateChangeTime: Double = 0.0
     
-    init() {}
+    nonisolated init() {}
     
     func analyze(
         pixelBuffer: CVPixelBuffer,

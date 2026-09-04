@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import Combine
 
 /// Coordinator managing real-time speech barge-in and audio interruption.
 ///

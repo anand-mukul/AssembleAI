@@ -181,7 +181,8 @@ struct HistoryView: View {
     }
     
     private func findProject(for id: UUID) -> AssemblyProject? {
-        MockProjectData.sampleProjects.first { $0.id == id }
+        BundledProjectRepository.bundledProjects.first { $0.id == id }
+            ?? SampleProjectData.sampleProjects.first { $0.id == id }
     }
 }
 

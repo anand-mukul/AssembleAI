@@ -31,8 +31,8 @@ protocol GuidanceGenerating: Sendable {
     ) async throws -> String
 }
 
-/// Local template-based guidance generator when Foundation Models are unavailable.
-nonisolated struct MockGuidanceGenerator: GuidanceGenerating {
+/// Rule-based deterministic guidance generator providing template explanations when on-device Foundation Models are unavailable.
+nonisolated struct RuleBasedGuidanceGenerator: GuidanceGenerating {
     nonisolated init() {}
     
     func generateGuidance(
@@ -89,6 +89,9 @@ nonisolated struct MockGuidanceGenerator: GuidanceGenerating {
     }
 }
 
+/// Backwards-compatible alias for unit test suites
+typealias MockGuidanceGenerator = RuleBasedGuidanceGenerator
+
 #if canImport(FoundationModels)
 /// On-device Foundation Models guidance generator using Apple's `FoundationModels` framework (`LanguageModelSession`).
 ///
@@ -97,7 +100,7 @@ nonisolated struct MockGuidanceGenerator: GuidanceGenerating {
 /// It NEVER decides correctness — correctness is determined deterministically by `AssemblyStateComparator`.
 @available(iOS 26.0, *)
 actor FoundationModelGuidanceGenerator: GuidanceGenerating {
-    private let mockFallback = MockGuidanceGenerator()
+    private let fallback = RuleBasedGuidanceGenerator()
     
     func generateGuidance(
         issue: StateIssue,
@@ -123,7 +126,7 @@ actor FoundationModelGuidanceGenerator: GuidanceGenerating {
             let text = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
             
             guard !text.isEmpty else {
-                return try await mockFallback.generateGuidance(issue: issue, expectedState: expectedState, observedState: observedState)
+                return try await fallback.generateGuidance(issue: issue, expectedState: expectedState, observedState: observedState)
             }
             
             let validated = GuidanceResponse(
@@ -135,7 +138,7 @@ actor FoundationModelGuidanceGenerator: GuidanceGenerating {
             await GuidanceCache.shared.set(key: cacheKey, response: validated)
             return validated
         } catch {
-            return try await mockFallback.generateGuidance(issue: issue, expectedState: expectedState, observedState: observedState)
+            return try await fallback.generateGuidance(issue: issue, expectedState: expectedState, observedState: observedState)
         }
     }
     
@@ -148,9 +151,9 @@ actor FoundationModelGuidanceGenerator: GuidanceGenerating {
             let session = LanguageModelSession()
             let response = try await session.respond(to: prompt)
             let text = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
-            return text.isEmpty ? try await mockFallback.generateWhyExplanation(step: step, issue: issue) : text
+            return text.isEmpty ? try await fallback.generateWhyExplanation(step: step, issue: issue) : text
         } catch {
-            return try await mockFallback.generateWhyExplanation(step: step, issue: issue)
+            return try await fallback.generateWhyExplanation(step: step, issue: issue)
         }
     }
 }
@@ -158,7 +161,7 @@ actor FoundationModelGuidanceGenerator: GuidanceGenerating {
 
 /// Hybrid guidance generator routing requests to Foundation Models when available on device, falling back to local template generator.
 nonisolated struct HybridGuidanceGenerator: GuidanceGenerating {
-    private let mockGenerator = MockGuidanceGenerator()
+    private let ruleBasedGenerator = RuleBasedGuidanceGenerator()
     
     nonisolated init() {}
     
@@ -173,13 +176,13 @@ nonisolated struct HybridGuidanceGenerator: GuidanceGenerating {
             do {
                 return try await generator.generateGuidance(issue: issue, expectedState: expectedState, observedState: observedState)
             } catch {
-                return try await mockGenerator.generateGuidance(issue: issue, expectedState: expectedState, observedState: observedState)
+                return try await ruleBasedGenerator.generateGuidance(issue: issue, expectedState: expectedState, observedState: observedState)
             }
         } else {
-            return try await mockGenerator.generateGuidance(issue: issue, expectedState: expectedState, observedState: observedState)
+            return try await ruleBasedGenerator.generateGuidance(issue: issue, expectedState: expectedState, observedState: observedState)
         }
         #else
-        return try await mockGenerator.generateGuidance(issue: issue, expectedState: expectedState, observedState: observedState)
+        return try await ruleBasedGenerator.generateGuidance(issue: issue, expectedState: expectedState, observedState: observedState)
         #endif
     }
     
@@ -193,13 +196,13 @@ nonisolated struct HybridGuidanceGenerator: GuidanceGenerating {
             do {
                 return try await generator.generateWhyExplanation(step: step, issue: issue)
             } catch {
-                return try await mockGenerator.generateWhyExplanation(step: step, issue: issue)
+                return try await ruleBasedGenerator.generateWhyExplanation(step: step, issue: issue)
             }
         } else {
-            return try await mockGenerator.generateWhyExplanation(step: step, issue: issue)
+            return try await ruleBasedGenerator.generateWhyExplanation(step: step, issue: issue)
         }
         #else
-        return try await mockGenerator.generateWhyExplanation(step: step, issue: issue)
+        return try await ruleBasedGenerator.generateWhyExplanation(step: step, issue: issue)
         #endif
     }
 }
