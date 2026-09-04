@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import SwiftData
 
 /// Production project repository that loads project packages from JSON files.
 ///

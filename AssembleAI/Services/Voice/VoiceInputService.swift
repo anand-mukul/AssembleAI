@@ -179,25 +179,25 @@ extension VoiceInputService: SFSpeechRecognizerDelegate {
 
 // MARK: - Thread-Safe Transcript Stream Broadcaster
 
-final class TranscriptStreamBroadcaster: @unchecked Sendable {
+nonisolated final class TranscriptStreamBroadcaster: @unchecked Sendable {
     private let lock = NSLock()
     private var continuations: [UUID: AsyncStream<UserVoiceMessage>.Continuation] = [:]
     
     nonisolated init() {}
     
-    nonisolated func addContinuation(_ continuation: AsyncStream<UserVoiceMessage>.Continuation, id: UUID) {
+    func addContinuation(_ continuation: AsyncStream<UserVoiceMessage>.Continuation, id: UUID) {
         lock.lock()
         defer { lock.unlock() }
         continuations[id] = continuation
     }
     
-    nonisolated func removeContinuation(id: UUID) {
+    func removeContinuation(id: UUID) {
         lock.lock()
         defer { lock.unlock() }
         continuations.removeValue(forKey: id)
     }
     
-    nonisolated func broadcast(_ message: UserVoiceMessage) {
+    func broadcast(_ message: UserVoiceMessage) {
         lock.lock()
         let active = Array(continuations.values)
         lock.unlock()
@@ -207,7 +207,7 @@ final class TranscriptStreamBroadcaster: @unchecked Sendable {
         }
     }
     
-    nonisolated func finishAll() {
+    func finishAll() {
         lock.lock()
         let active = Array(continuations.values)
         continuations.removeAll()

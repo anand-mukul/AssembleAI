@@ -9,6 +9,7 @@ import SwiftUI
 import UIKit
 import CoreVideo
 import CoreMedia
+import SwiftData
 
 /// Verification execution mode selector.
 enum VerificationMode: String, CaseIterable, Identifiable, Codable, Hashable, Equatable, Sendable {
