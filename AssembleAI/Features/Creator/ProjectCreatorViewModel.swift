@@ -5,6 +5,7 @@
 
 import Foundation
 import Combine
+import SwiftUI
 
 /// Orchestrates manual project creation and AI-assisted guide import.
 ///

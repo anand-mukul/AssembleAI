@@ -6,6 +6,7 @@
 import Foundation
 import CoreGraphics
 import simd
+import UIKit
 
 #if canImport(RealityKit)
 import RealityKit
