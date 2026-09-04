@@ -118,6 +118,8 @@ struct HomeView: View {
             .padding(.bottom, AppSpacing.xxl)
         }
         .background(AppColors.appBackground.ignoresSafeArea())
+        .navigationTitle("AssembleAI")
+        .navigationBarTitleDisplayMode(.inline)
         .task {
             await viewModel.loadContent()
         }

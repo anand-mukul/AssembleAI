@@ -7,16 +7,21 @@ import SwiftUI
 import AVFoundation
 import CoreVideo
 
-/// Full-screen camera guidance experience featuring live AVCaptureSession preview, Live Tutor HUD, visual overlays, and fallback Analyze triggers.
+/// Flagship full-screen camera guidance experience designed to Apple Human Interface Guidelines:
+/// - Top Bar: Circular glass back button (leading) + "(steps)" capsule pill button (trailing).
+/// - Center: Unobstructed camera feed with spatial AR reticles.
+/// - Lower Center: Floating Apple Intelligence Thinking Orb (56pt) with ambient glowing aura.
+/// - Bottom: Dual glass cards (Card 1: Step Guide, Card 2: Live Instruction).
 struct AssemblyCameraView: View {
     @EnvironmentObject private var router: AppRouter
     @StateObject private var cameraService = CameraService()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
     let currentStep: AssemblyStep
+    var allSteps: [AssemblyStep] = []
     var activeGuidance: GuidanceOverlay? = nil
     
-    // Live Tutor Integration Properties (Phase 9)
+    // Live Tutor Integration Properties
     var liveTutorEnabled: Bool = true
     var liveStatus: LiveTutorStatus = .live
     var currentTutorMessage: TutorResponse? = nil
@@ -30,9 +35,12 @@ struct AssemblyCameraView: View {
     var onTogglePause: (() -> Void)? = nil
     var onAnalyze: ((UIImage?) -> Void)? = nil
     var onClose: (() -> Void)? = nil
+    var onSelectStep: ((AssemblyStep) -> Void)? = nil
     
     @State private var reticleVisible = false
     @State private var overlayVisible = false
+    @State private var showStepsSheet = false
+    @State private var showWhySheet = false
     
     var body: some View {
         ZStack {
@@ -50,26 +58,33 @@ struct AssemblyCameraView: View {
                 AssemblyGuidanceOverlayView(guidance: guidance)
             }
             
-            // HUD Overlay Layer
+            // Spatial Inspection Centerpiece Reticle (only if no custom coordinate guidance)
+            if activeGuidance == nil || activeGuidance?.hasCoordinates == false {
+                cameraReticleOverlay
+                    .opacity(reticleVisible ? 1 : 0)
+                    .scaleEffect(reticleVisible ? 1 : 0.9)
+            }
+            
+            // Foreground UI Layout matching the Wireframe
             VStack(spacing: 0) {
-                // Top Header Overlay: Assembly Step & Cancel Button
-                topStepOverlay
+                // Top Header Overlay: Circular Back (Left) + Capsule Steps Pill (Right)
+                topNavigationBar
                     .safeAreaPadding(.top)
                     .opacity(overlayVisible ? 1 : 0)
                     .offset(y: overlayVisible ? 0 : -20)
                 
                 Spacer()
                 
-                // Spatial Inspection Centerpiece Reticle (only if no custom coordinate guidance)
-                if activeGuidance == nil || activeGuidance?.hasCoordinates == false {
-                    cameraReticleOverlay
-                        .opacity(reticleVisible ? 1 : 0)
-                        .scaleEffect(reticleVisible ? 1 : 0.9)
+                // Floating Apple Intelligence Thinking Orb (As in Wireframe)
+                if liveTutorEnabled {
+                    ThinkingOrbView(status: liveStatus, diameter: 56)
+                        .shadow(color: AppColors.glassShadow, radius: 14, x: 0, y: 8)
+                        .padding(.bottom, AppSpacing.sm)
+                        .opacity(overlayVisible ? 1 : 0)
+                        .scaleEffect(overlayVisible ? 1 : 0.8)
                 }
                 
-                Spacer()
-                
-                // Bottom Area: Live Tutor HUD or Legacy Manual Action Bar
+                // Bottom Area: Dual Glass Cards (Step Guide + Live Instruction)
                 if liveTutorEnabled {
                     LiveTutorHUDView(
                         status: liveStatus,
@@ -86,14 +101,19 @@ struct AssemblyCameraView: View {
                         },
                         onManualFallback: {
                             triggerManualSnapshot()
+                        },
+                        onExplainWhy: {
+                            showWhySheet = true
                         }
                     )
-                    .padding(.bottom, AppSpacing.xl)
+                    .safeAreaPadding(.bottom)
+                    .padding(.bottom, AppSpacing.xs)
                     .opacity(overlayVisible ? 1 : 0)
                     .offset(y: overlayVisible ? 0 : 20)
                 } else {
                     bottomActionBar
-                        .padding(.bottom, AppSpacing.xl)
+                        .safeAreaPadding(.bottom)
+                        .padding(.bottom, AppSpacing.md)
                         .opacity(overlayVisible ? 1 : 0)
                         .offset(y: overlayVisible ? 0 : 20)
                 }
@@ -102,6 +122,23 @@ struct AssemblyCameraView: View {
         }
         .navigationBarHidden(true)
         .statusBarHidden()
+        .sheet(isPresented: $showStepsSheet) {
+            StepsOverviewSheet(
+                currentStep: currentStep,
+                allSteps: allSteps.isEmpty ? [currentStep] : allSteps,
+                onSelectStep: onSelectStep
+            )
+        }
+        .sheet(isPresented: $showWhySheet) {
+            WhyExplanationSheet(
+                step: currentStep,
+                issue: StateIssue(
+                    type: .wrongPosition,
+                    title: "Placement Adjustment",
+                    explanation: currentTutorMessage?.text ?? "Inspect the indicated pin routing on the breadboard."
+                )
+            )
+        }
         .onAppear {
             Task {
                 if cameraService.authorizationStatus == .notDetermined {
@@ -130,77 +167,78 @@ struct AssemblyCameraView: View {
         }
     }
     
-    // MARK: - Top Header Overlay
+    // MARK: - Top Navigation Bar (Wireframe Layout)
     
-    private var topStepOverlay: some View {
-        VStack(spacing: AppSpacing.sm) {
-            HStack {
-                // Step Progress Indicator
-                HStack(spacing: 6) {
+    private var topNavigationBar: some View {
+        HStack(alignment: .center) {
+            // Circular Frosted Glass Back Button (Wireframe Left)
+            Button(action: {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                if liveTutorEnabled {
+                    onStopLiveStream?()
+                }
+                cameraService.stopSession()
+                if let onClose = onClose {
+                    onClose()
+                } else {
+                    router.pop()
+                }
+            }) {
+                ZStack {
                     Circle()
-                        .fill(AppColors.statusLive)
-                        .frame(width: 7, height: 7)
-                    Text("Step \(currentStep.stepOrder)")
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(Capsule().fill(.ultraThinMaterial))
-                .accessibilityLabel("Step \(currentStep.stepOrder)")
-                
-                Spacer()
-                
-                // Cancel Button
-                Button(action: {
-                    if liveTutorEnabled {
-                        onStopLiveStream?()
-                    }
-                    cameraService.stopSession()
-                    if let onClose = onClose {
-                        onClose()
-                    } else {
-                        router.pop()
-                    }
-                }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 32))
-                        .symbolRenderingMode(.hierarchical)
-                        .foregroundColor(.white)
-                        .frame(minWidth: 44, minHeight: 44)
-                        .contentShape(Circle())
-                }
-                .accessibilityLabel("Close camera")
-            }
-            
-            // Step Instruction Text Card (if no guidance overlay text)
-            if activeGuidance == nil {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(currentStep.title)
-                        .font(.headline)
-                        .foregroundColor(.white)
-                    
-                    if !currentStep.instruction.isEmpty {
-                        Text(currentStep.instruction)
-                            .font(.subheadline)
-                            .foregroundColor(.white.opacity(0.85))
-                            .lineLimit(2)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-                .padding(AppSpacing.md)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                        .fill(Color.black.opacity(0.35))
+                    Circle()
                         .fill(.ultraThinMaterial)
+                    Circle()
+                        .strokeBorder(Color.white.opacity(0.20), lineWidth: 0.5)
+                    
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+                }
+                .frame(width: 44, height: 44)
+                .shadow(color: AppColors.glassShadow, radius: 8, x: 0, y: 3)
+            }
+            .buttonStyle(ScaleButtonStyle())
+            .accessibilityLabel("Back")
+            
+            Spacer()
+            
+            // Steps Capsule Glass Pill Button (Wireframe Right)
+            Button(action: {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                showStepsSheet = true
+            }) {
+                HStack(spacing: 8) {
+                    Image(systemName: "list.bullet")
+                        .font(.system(size: 12, weight: .bold))
+                    Text("Steps")
+                        .font(.subheadline.weight(.semibold))
+                    
+                    Text("\(currentStep.stepOrder)")
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 2.5)
+                        .background(Capsule().fill(Color.assembleBrandPrimary))
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, 14)
+                .frame(height: 44)
+                .background(
+                    ZStack {
+                        Capsule().fill(Color.black.opacity(0.35))
+                        Capsule().fill(.ultraThinMaterial)
+                    }
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                        .strokeBorder(AppColors.cameraCardBorder, lineWidth: 1)
+                    Capsule()
+                        .strokeBorder(Color.white.opacity(0.20), lineWidth: 0.5)
                 )
-                .accessibilityElement(children: .combine)
+                .shadow(color: AppColors.glassShadow, radius: 8, x: 0, y: 3)
             }
+            .buttonStyle(ScaleButtonStyle())
+            .accessibilityLabel("Steps overview")
         }
     }
     
@@ -225,7 +263,15 @@ struct AssemblyCameraView: View {
                 .foregroundColor(.white.opacity(0.9))
                 .padding(.horizontal, 14)
                 .padding(.vertical, 7)
-                .background(Capsule().fill(.ultraThinMaterial))
+                .background(
+                    ZStack {
+                        Capsule().fill(Color.black.opacity(0.35))
+                        Capsule().fill(.ultraThinMaterial)
+                    }
+                )
+                .overlay(
+                    Capsule().strokeBorder(Color.white.opacity(0.18), lineWidth: 0.5)
+                )
                 .offset(y: 124)
         }
         .accessibilityHidden(true)

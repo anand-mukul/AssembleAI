@@ -73,6 +73,59 @@ nonisolated struct AssistantContext: Sendable {
     }
 }
 
+// MARK: - Apple Intelligence Structured Tutor Feedback Models
+
+/// Structured Apple Intelligence tutor output model for typed on-device generation.
+public struct StructuredTutorFeedback: Sendable, Codable, Equatable {
+    public let spokenMessage: String
+    public let targetHoleCoordinates: [String]
+    public let isUrgentCorrection: Bool
+    public let suggestedAction: String
+    public let confidenceScore: Double
+    
+    public init(
+        spokenMessage: String,
+        targetHoleCoordinates: [String] = [],
+        isUrgentCorrection: Bool = false,
+        suggestedAction: String = "",
+        confidenceScore: Double = 1.0
+    ) {
+        self.spokenMessage = spokenMessage
+        self.targetHoleCoordinates = targetHoleCoordinates
+        self.isUrgentCorrection = isUrgentCorrection
+        self.suggestedAction = suggestedAction
+        self.confidenceScore = confidenceScore
+    }
+}
+
+/// On-device tool calling service exposing deterministic CV queries to Apple Intelligence Foundation Models.
+public struct FoundationModelsToolCallingService: Sendable {
+    private let verificationEngine: StateAwareVerificationEngine
+    private let homographyService: BreadboardHomographyService
+    
+    public init(
+        verificationEngine: StateAwareVerificationEngine = StateAwareVerificationEngine(),
+        homographyService: BreadboardHomographyService = BreadboardHomographyService()
+    ) {
+        self.verificationEngine = verificationEngine
+        self.homographyService = homographyService
+    }
+    
+    /// Tool query for checking physical component alignment at designated coordinates.
+    public func queryPinPlacement(
+        step: AssemblyStep,
+        contract: VisualContract?,
+        observedState: ObservedAssemblyState
+    ) -> SpatialVerificationOutcome {
+        verificationEngine.verify(
+            contract: contract,
+            commonMistakes: [],
+            observedState: observedState,
+            step: step
+        )
+    }
+}
+
 // MARK: - Conversational Tutor Protocol
 
 /// Protocol for generating conversational, grounded tutor responses using Apple Foundation Models or local fallbacks.
@@ -92,6 +145,28 @@ protocol ConversationalTutorProviding: Sendable {
     
     /// Clears active conversational memory when session ends.
     func clearSessionContext() async
+    
+    /// Generates structured Apple Intelligence tutor feedback.
+    func generateStructuredFeedback(
+        for decision: InterventionDecision,
+        context: AssistantContext
+    ) async -> StructuredTutorFeedback
+}
+
+extension ConversationalTutorProviding {
+    func generateStructuredFeedback(
+        for decision: InterventionDecision,
+        context: AssistantContext
+    ) async -> StructuredTutorFeedback {
+        let text = await generateResponse(for: decision, context: context)?.text ?? ""
+        return StructuredTutorFeedback(
+            spokenMessage: text,
+            targetHoleCoordinates: [],
+            isUrgentCorrection: decision.priority == .high || decision.priority == .immediate,
+            suggestedAction: text,
+            confidenceScore: 1.0
+        )
+    }
 }
 
 // MARK: - Foundation Models Tutor Response Provider
@@ -191,6 +266,25 @@ actor FoundationModelTutorResponseProvider: ConversationalTutorProviding {
     
     func clearSessionContext() {
         sessionMemory.removeAll()
+    }
+    
+    func generateStructuredFeedback(
+        for decision: InterventionDecision,
+        context: AssistantContext
+    ) async -> StructuredTutorFeedback {
+        let response = await generateResponse(for: decision, context: context)
+        let message = response?.text ?? ""
+        var targetCoordinates: [String] = []
+        if let contract = context.expectedState {
+            targetCoordinates = contract.requiredComponents.map(\.identifier)
+        }
+        return StructuredTutorFeedback(
+            spokenMessage: message,
+            targetHoleCoordinates: targetCoordinates,
+            isUrgentCorrection: response?.priority == .high || response?.priority == .immediate,
+            suggestedAction: message,
+            confidenceScore: 0.95
+        )
     }
     
     // MARK: - Internal Model Invocation & Prompts
@@ -351,6 +445,27 @@ final class HybridTutorResponseProvider: ConversationalTutorProviding, @unchecke
         }
         #endif
     }
+    
+    func generateStructuredFeedback(
+        for decision: InterventionDecision,
+        context: AssistantContext
+    ) async -> StructuredTutorFeedback {
+        #if canImport(FoundationModels)
+        if #available(iOS 26.0, *) {
+            let provider = FoundationModelTutorResponseProvider()
+            return await provider.generateStructuredFeedback(for: decision, context: context)
+        }
+        #endif
+        
+        let text = await generateResponse(for: decision, context: context)?.text ?? ""
+        return StructuredTutorFeedback(
+            spokenMessage: text,
+            targetHoleCoordinates: [],
+            isUrgentCorrection: decision.priority == .high || decision.priority == .immediate,
+            suggestedAction: text,
+            confidenceScore: 1.0
+        )
+    }
 }
 
 // MARK: - Mock Conversational Tutor Provider
@@ -443,5 +558,18 @@ final class MockConversationalTutorProvider: ConversationalTutorProviding, @unch
         defer { lock.unlock() }
         scriptedResponses.removeAll()
         _lastReceivedContext = nil
+    }
+    
+    func generateStructuredFeedback(
+        for decision: InterventionDecision,
+        context: AssistantContext
+    ) async -> StructuredTutorFeedback {
+        StructuredTutorFeedback(
+            spokenMessage: "Mock Structured Feedback",
+            targetHoleCoordinates: ["15E", "17E"],
+            isUrgentCorrection: false,
+            suggestedAction: "Proceed to next step",
+            confidenceScore: 1.0
+        )
     }
 }

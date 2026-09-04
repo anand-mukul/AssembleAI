@@ -104,4 +104,24 @@ final class FoundationModelsGuidanceTests: XCTestCase {
         XCTAssertTrue(conciseContext.contains("Concise"))
         XCTAssertTrue(detailedContext.contains("Detailed"))
     }
+    
+    // MARK: - Test 5: Structured Tutor Feedback & Tool Calling
+    func testStructuredFeedbackAndToolCalling() async {
+        let toolService = FoundationModelsToolCallingService()
+        let outcome = toolService.queryPinPlacement(
+            step: sampleStep,
+            contract: nil,
+            observedState: sampleObserved
+        )
+        XCTAssertNotNil(outcome)
+        
+        let feedback = StructuredTutorFeedback(
+            spokenMessage: "Step verified successfully",
+            targetHoleCoordinates: ["C2"],
+            isUrgentCorrection: false,
+            suggestedAction: "Proceed to next component"
+        )
+        XCTAssertEqual(feedback.targetHoleCoordinates, ["C2"])
+        XCTAssertFalse(feedback.isUrgentCorrection)
+    }
 }

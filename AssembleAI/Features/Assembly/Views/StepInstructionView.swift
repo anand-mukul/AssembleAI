@@ -21,10 +21,15 @@ struct StepInstructionView: View {
                 HStack {
                     AssemblyProgressHeader(currentStep: stepOrder, totalSteps: totalSteps)
                     
-                    Button(action: onClose) {
+                    Button(action: {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        onClose()
+                    }) {
                         Image(systemName: "xmark.circle.fill")
                             .font(.title3)
                             .foregroundColor(AppColors.tertiaryText)
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
                     }
                     .accessibilityLabel("Cancel assembly session")
                 }

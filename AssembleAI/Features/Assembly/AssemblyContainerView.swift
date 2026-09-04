@@ -50,6 +50,16 @@ struct AssemblyContainerView: View {
                 case .camera:
                     AssemblyCameraView(
                         currentStep: viewModel.currentStep,
+                        allSteps: viewModel.project.steps.map { summary in
+                            AssemblyStep(
+                                id: summary.id,
+                                projectId: viewModel.project.id,
+                                stepOrder: summary.stepOrder,
+                                title: summary.title,
+                                instruction: summary.instruction,
+                                visualContract: summary.visualContract
+                            )
+                        },
                         activeGuidance: viewModel.activeGuidance,
                         liveTutorEnabled: viewModel.liveTutorEnabled,
                         liveStatus: viewModel.liveStatus,

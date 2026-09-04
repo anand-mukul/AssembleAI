@@ -122,7 +122,7 @@ final class VoiceInputService: NSObject, ObservableObject, VoiceInputServiceProt
     }
     
     func stopListening() async {
-        guard state != .idle else { return }
+        guard state == .listening else { return }
         
         state = .processing
         
@@ -140,7 +140,7 @@ final class VoiceInputService: NSObject, ObservableObject, VoiceInputServiceProt
     }
     
     func cancelListening() async {
-        guard state != .idle else { return }
+        guard state == .listening || state == .processing else { return }
         
         audioEngine?.stop()
         audioEngine?.inputNode.removeTap(onBus: 0)

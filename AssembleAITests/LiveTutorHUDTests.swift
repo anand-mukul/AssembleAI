@@ -157,5 +157,28 @@ final class LiveTutorHUDTests: XCTestCase {
         XCTAssertEqual(viewModel.currentTutorMessage?.category, "correction")
         XCTAssertEqual(viewModel.currentTutorMessage?.priority, .high)
     }
+    
+    // MARK: - Test 7: Dual-Card Wireframe Step Guide & Live Instruction
+    func testDualCardStepGuideAndLiveInstructionInitialization() {
+        let step = AssemblyStep(
+            projectId: UUID(),
+            stepOrder: 3,
+            title: "Place 220Ω Resistor",
+            instruction: "Insert between 10A and 15A"
+        )
+        let hud = LiveTutorHUDView(
+            status: .live,
+            currentStep: step,
+            currentMessage: TutorResponse(text: "Watching setup"),
+            userTranscript: "How do I place this?",
+            isListening: false,
+            isPaused: false,
+            onToggleVoice: {},
+            onTogglePause: {}
+        )
+        XCTAssertEqual(hud.currentStep.stepOrder, 3)
+        XCTAssertEqual(hud.status, .live)
+        XCTAssertFalse(hud.isListening)
+    }
 }
 

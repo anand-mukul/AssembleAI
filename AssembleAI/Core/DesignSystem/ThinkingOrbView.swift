@@ -59,17 +59,39 @@ struct ThinkingOrbView: View {
     }
     
     var body: some View {
-        Group {
-            if reduceMotion || state == .paused {
-                staticReducedMotionOrb
-            } else {
+        ZStack {
+            if diameter >= 36 && !reduceMotion && state != .paused {
                 TimelineView(.animation) { timeline in
                     let time = timeline.date.timeIntervalSinceReferenceDate
-                    Canvas { context, size in
-                        drawOrb(context: context, size: size, time: time)
+                    let rotation = Angle.degrees(time * 45.0.truncatingRemainder(dividingBy: 360))
+                    let pulse = 1.0 + sin(time * 2.5) * 0.08
+                    
+                    AngularGradient(
+                        gradient: Gradient(colors: Color.appleIntelligenceGradient),
+                        center: .center
+                    )
+                    .clipShape(Circle())
+                    .rotationEffect(rotation)
+                    .scaleEffect(pulse)
+                    .frame(width: diameter * 1.20, height: diameter * 1.20)
+                    .blur(radius: diameter * 0.20)
+                    .opacity(state == .listening || state == .speaking ? 0.45 : 0.28)
+                }
+            }
+            
+            Group {
+                if reduceMotion || state == .paused {
+                    staticReducedMotionOrb
+                } else {
+                    TimelineView(.animation) { timeline in
+                        let time = timeline.date.timeIntervalSinceReferenceDate
+                        Canvas { context, size in
+                            drawOrb(context: context, size: size, time: time)
+                        }
                     }
                 }
             }
+            .frame(width: diameter, height: diameter)
         }
         .frame(width: diameter, height: diameter)
         .accessibilityElement(children: .ignore)

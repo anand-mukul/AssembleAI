@@ -52,10 +52,39 @@ struct BundledProjectRepository: ProjectRepository {
         }
     }
     
+    /// Synchronous access to bundled projects for AppIntents, Spotlight, and Siri queries.
+    public static var bundledProjects: [AssemblyProject] {
+        let loaded = ProjectPackageLoader.loadAllFromBundle(directory: "Projects")
+        if loaded.isEmpty {
+            return MockProjectData.sampleProjects
+        }
+        return loaded
+    }
+    
+    @MainActor
     func fetchRecentActivity() async throws -> [ActivityItemModel] {
-        // In production, this will be driven by SwiftData session records.
-        // For now, return empty; the HomeView gracefully handles an empty state.
-        return []
+        let repo = LocalFirstSessionRepository(modelContext: PersistenceController.shared.container.mainContext)
+        guard let sessions = try? await repo.fetchAllSessions(), !sessions.isEmpty else {
+            return []
+        }
+        
+        let projects = (try? await fetchProjects()) ?? []
+        let projectMap = Dictionary(uniqueKeysWithValues: projects.map { ($0.id, $0.title) })
+        let relativeFormatter = RelativeDateTimeFormatter()
+        relativeFormatter.unitsStyle = .short
+        
+        return sessions.prefix(5).map { session in
+            let title = projectMap[session.projectId] ?? "Assembly Task"
+            let timeStr = relativeFormatter.localizedString(for: session.updatedAt, relativeTo: Date())
+            let isComplete = session.status == .completed
+            return ActivityItemModel(
+                id: session.id,
+                stepOrder: session.currentStepOrder,
+                projectTitle: title,
+                timestampDescription: "\(isComplete ? "Completed" : "Step \(session.currentStepOrder)") • \(timeStr)",
+                iconName: isComplete ? "checkmark.circle.fill" : "wrench.fill"
+            )
+        }
     }
     
     /// Fetches a single project by ID from all available sources.

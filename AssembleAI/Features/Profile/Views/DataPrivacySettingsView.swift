@@ -164,7 +164,10 @@ struct DataPrivacySettingsView: View {
             Spacer()
             
             if let actionTitle = actionTitle, let action = action {
-                Button(action: action) {
+                Button(action: {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    action()
+                }) {
                     Text(actionTitle)
                         .font(.caption)
                         .fontWeight(.semibold)
@@ -175,7 +178,10 @@ struct DataPrivacySettingsView: View {
                             Capsule()
                                 .fill(Color.assembleBrandPrimary.opacity(0.12))
                         )
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                 }
+                .buttonStyle(ScaleButtonStyle())
             }
         }
         .padding(AppSpacing.md)

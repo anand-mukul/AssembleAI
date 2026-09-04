@@ -67,4 +67,17 @@ final class DesignSystemTests: XCTestCase {
         XCTAssertEqual(tile.value, "2")
         XCTAssertEqual(tile.icon, "viewfinder")
     }
+    
+    // MARK: - Test 6: Apple Intelligence Spectrum & Glass Tokens
+    func testAppleIntelligenceDesignTokens() {
+        XCTAssertEqual(Color.appleIntelligenceGradient.count, 6, "Must define 6 spectrum stops for fluid halo rotation")
+        XCTAssertNotNil(AppColors.aiCyan)
+        XCTAssertNotNil(AppColors.aiBlue)
+        XCTAssertNotNil(AppColors.aiPurple)
+        XCTAssertNotNil(AppColors.aiPink)
+        XCTAssertNotNil(AppColors.aiAmber)
+        XCTAssertNotNil(AppColors.glassSurface)
+        XCTAssertNotNil(AppColors.glassBorder)
+        XCTAssertNotNil(AppColors.glassShadow)
+    }
 }

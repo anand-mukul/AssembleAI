@@ -70,6 +70,7 @@ final class AssemblyViewModel: ObservableObject {
     private let voiceInput: VoiceInputServiceProtocol
     private let intentParser: VoiceIntentParser
     private let researchLogger: ResearchLogging
+    private let sessionRepository: SessionRepository?
     
     private var liveObservationTask: Task<Void, Never>?
     private var voiceInputTask: Task<Void, Never>?
@@ -86,7 +87,8 @@ final class AssemblyViewModel: ObservableObject {
         conversationalTutor: ConversationalTutorProviding? = nil,
         voiceOutput: VoiceOutputServiceProtocol? = nil,
         voiceInput: VoiceInputServiceProtocol? = nil,
-        researchLogger: ResearchLogging? = nil
+        researchLogger: ResearchLogging? = nil,
+        sessionRepository: SessionRepository? = nil
     ) {
         self.project = project
         self.verificationService = verificationService ?? StateAwareVerificationService()
@@ -100,6 +102,7 @@ final class AssemblyViewModel: ObservableObject {
         self.voiceInput = voiceInput ?? VoiceInputService()
         self.intentParser = VoiceIntentParser()
         self.researchLogger = researchLogger ?? ResearchLogger.shared
+        self.sessionRepository = sessionRepository ?? LocalFirstSessionRepository(modelContext: PersistenceController.shared.container.mainContext)
         self.session = AssemblySession(projectId: project.id, currentStepIndex: project.completedSteps)
         self.currentStepIndex = max(0, min(project.completedSteps, max(0, project.steps.count - 1)))
     }
@@ -154,6 +157,15 @@ final class AssemblyViewModel: ObservableObject {
         }
     }
     
+    // MARK: - Session Persistence Helper
+    
+    private func persistSessionState() {
+        let currentSession = self.session
+        Task { [weak self] in
+            try? await self?.sessionRepository?.saveSession(currentSession)
+        }
+    }
+    
     // MARK: - Live Tutor Pipeline Orchestration
     
     /// Connects camera frame stream to the end-to-end Live Tutor observation, verification, speech, auto-progression, and research logging loop.
@@ -177,7 +189,7 @@ final class AssemblyViewModel: ObservableObject {
                 
                 // 1. Vision Analysis
                 let frameTime = CMTime(seconds: CFAbsoluteTimeGetCurrent(), preferredTimescale: 600)
-                guard let observation = try? await self.visionAnalyzer.analyze(frame: frame, orientation: .right, timestamp: frameTime) else {
+                guard let observation = try? await self.visionAnalyzer.analyze(frame: frame, orientation: .up, timestamp: frameTime) else {
                     continue
                 }
                 
@@ -251,6 +263,8 @@ final class AssemblyViewModel: ObservableObject {
         
         transitioningStepID = completedStep.id
         session.completedSteps.insert(currentStepIndex)
+        session.currentStepOrder = currentStepIndex + 1
+        persistSessionState()
         logResearchEvent(.stepCompleted, metadata: ["stepOrder": "\(completedStep.stepOrder)"])
         
         autoProgressTask?.cancel()
@@ -284,7 +298,9 @@ final class AssemblyViewModel: ObservableObject {
                     }
                 }
             } else {
+                self.session.status = .completed
                 self.session.endedAt = Date()
+                self.persistSessionState()
                 self.transitioningStepID = nil
                 self.stopLiveTutor()
                 self.logResearchEvent(.sessionCompleted)
@@ -517,6 +533,8 @@ final class AssemblyViewModel: ObservableObject {
         withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
             if result.isCorrect {
                 session.completedSteps.insert(currentStepIndex)
+                session.currentStepOrder = currentStepIndex + 1
+                persistSessionState()
                 activeGuidance = nil
                 logResearchEvent(.stepCompleted, metadata: ["stepOrder": "\(currentStep.stepOrder)"])
                 phase = .verification(result)
@@ -558,7 +576,9 @@ final class AssemblyViewModel: ObservableObject {
                 phase = .instruction
             }
         } else {
+            session.status = .completed
             session.endedAt = Date()
+            persistSessionState()
             logResearchEvent(.sessionCompleted)
             withAnimation(.easeInOut(duration: 0.4)) {
                 phase = .completed

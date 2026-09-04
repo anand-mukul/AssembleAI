@@ -153,12 +153,16 @@ struct AssemblyGuidanceOverlayView: View {
         .padding(AppSpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(.ultraThinMaterial)
+            ZStack {
+                RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                    .fill(Color.black.opacity(0.35))
+                RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                    .fill(.ultraThinMaterial)
+            }
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(color.opacity(0.4), lineWidth: 1)
+            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                .strokeBorder(color.opacity(0.35), lineWidth: 0.5)
         )
         .padding(.horizontal, AppSpacing.screenEdge)
         .padding(.top, 100)
@@ -185,12 +189,16 @@ struct AssemblyGuidanceOverlayView: View {
         }
         .padding(AppSpacing.lg)
         .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(.ultraThinMaterial)
+            ZStack {
+                RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                    .fill(Color.black.opacity(0.35))
+                RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                    .fill(.ultraThinMaterial)
+            }
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .strokeBorder(AppColors.success.opacity(0.4), lineWidth: 1)
+            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                .strokeBorder(AppColors.success.opacity(0.35), lineWidth: 0.5)
         )
         .padding(.horizontal, AppSpacing.screenEdge)
     }

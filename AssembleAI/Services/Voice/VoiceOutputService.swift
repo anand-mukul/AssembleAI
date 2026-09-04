@@ -35,7 +35,11 @@ final class VoiceOutputService: NSObject, ObservableObject, VoiceOutputServicePr
         #if os(iOS)
         do {
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
+            try session.setCategory(
+                .playAndRecord,
+                mode: .spokenAudio,
+                options: [.defaultToSpeaker, .allowBluetoothHFP, .duckOthers]
+            )
             try session.setActive(true, options: .notifyOthersOnDeactivation)
         } catch {
             // Audio session setup failure handled gracefully
@@ -79,7 +83,11 @@ final class VoiceOutputService: NSObject, ObservableObject, VoiceOutputServicePr
         #if os(iOS)
         do {
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
+            try session.setCategory(
+                .playAndRecord,
+                mode: .spokenAudio,
+                options: [.defaultToSpeaker, .allowBluetoothHFP, .duckOthers]
+            )
             try session.setActive(true, options: .notifyOthersOnDeactivation)
         } catch {
             // Graceful fallback

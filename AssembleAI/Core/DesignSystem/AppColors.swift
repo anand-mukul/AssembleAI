@@ -66,6 +66,19 @@ enum AppColors {
     static let motifAccent = Color("BrandPrimary", bundle: nil)
     static let motifSecondary = Color(uiColor: .tertiaryLabel)
     static let opticalGrid = Color(uiColor: .tertiaryLabel).opacity(0.3)
+    
+    // Apple Intelligence Fluid Spectrum Palette
+    static let aiCyan = Color(red: 0.18, green: 0.80, blue: 0.98)
+    static let aiBlue = Color(red: 0.20, green: 0.45, blue: 0.98)
+    static let aiPurple = Color(red: 0.65, green: 0.32, blue: 0.98)
+    static let aiPink = Color(red: 0.98, green: 0.28, blue: 0.65)
+    static let aiAmber = Color(red: 1.00, green: 0.62, blue: 0.22)
+    
+    // Glassmorphism & Apple Materials
+    static let glassSurface = Color.white.opacity(0.12)
+    static let glassBorder = Color.white.opacity(0.22)
+    static let glassBorderSubtle = Color.white.opacity(0.12)
+    static let glassShadow = Color.black.opacity(0.28)
 }
 
 extension Color {
@@ -77,6 +90,11 @@ extension Color {
     /// Precision action accent alias
     static var assembleActionAccent: Color {
         AppColors.brandPrimary
+    }
+    
+    /// Apple Intelligence signature gradient colors
+    static var appleIntelligenceGradient: [Color] {
+        [AppColors.aiCyan, AppColors.aiBlue, AppColors.aiPurple, AppColors.aiPink, AppColors.aiAmber, AppColors.aiCyan]
     }
 }
 

@@ -23,6 +23,7 @@ final class CameraService: NSObject, ObservableObject {
     #if DEBUG
     @Published private(set) var debugFramesReceived: Int = 0
     @Published private(set) var debugLastFrameTimestamp: Date? = nil
+    nonisolated private let debugCounter = DebugFrameCounter()
     #endif
     
     nonisolated let captureSession = AVCaptureSession()
@@ -337,11 +338,12 @@ extension CameraService: AVCaptureVideoDataOutputSampleBufferDelegate {
         broadcaster.broadcast(pixelBuffer)
         
         #if DEBUG
-        let now = Date()
-        Task { @MainActor [weak self] in
-            guard let self = self else { return }
-            self.debugFramesReceived += 1
-            self.debugLastFrameTimestamp = now
+        debugCounter.tick { count, now in
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
+                self.debugFramesReceived = count
+                self.debugLastFrameTimestamp = now
+            }
         }
         #endif
     }
@@ -388,5 +390,28 @@ private final class FrameStreamBroadcaster: @unchecked Sendable {
         }
     }
 }
+
+#if DEBUG
+private final class DebugFrameCounter: @unchecked Sendable {
+    private let lock = NSLock()
+    private var count: Int = 0
+    private var lastReport = Date()
+    
+    func tick(onReport: (Int, Date) -> Void) {
+        lock.lock()
+        count += 1
+        let now = Date()
+        let shouldReport = count % 30 == 0 || now.timeIntervalSince(lastReport) >= 1.0
+        if shouldReport {
+            lastReport = now
+            let c = count
+            lock.unlock()
+            onReport(c, now)
+        } else {
+            lock.unlock()
+        }
+    }
+}
+#endif
 
 
