@@ -22,7 +22,7 @@ import SwiftUI
 // MARK: - Thinking Orb State
 
 /// The nine hand-tuned animated states from Libraries.dev (thinking-orbs).
-public enum ThinkingOrbState: String, CaseIterable, Sendable, Equatable {
+enum ThinkingOrbState: String, CaseIterable, Sendable, Equatable {
     case working     // particles on tilted orbits
     case searching   // scan meridian sweeps a dotted globe
     case solving     // bands scramble in quarter turns, then click back
@@ -34,14 +34,14 @@ public enum ThinkingOrbState: String, CaseIterable, Sendable, Equatable {
     case shaping     // dotted outline morphs circle → triangle → square
     
     // Semantic backward-compatibility aliases
-    public static var live: ThinkingOrbState { .breathing }
-    public static var speaking: ThinkingOrbState { .composing }
-    public static var verifying: ThinkingOrbState { .solving }
-    public static var paused: ThinkingOrbState { .breathing }
+    static var live: ThinkingOrbState { .breathing }
+    static var speaking: ThinkingOrbState { .composing }
+    static var verifying: ThinkingOrbState { .solving }
+    static var paused: ThinkingOrbState { .breathing }
 }
 
 extension ThinkingOrbState: ExpressibleByStringLiteral {
-    public init(stringLiteral value: String) {
+    init(stringLiteral value: String) {
         let lower = value.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
         if let direct = ThinkingOrbState(rawValue: lower) {
             self = direct
@@ -63,12 +63,12 @@ extension ThinkingOrbState: ExpressibleByStringLiteral {
 /// - 64 (chat-avatar scale)
 /// - 20 (inline-text scale)
 /// Each carries its own hand-tuned dot count, dot radius, and speed tuning.
-public enum ThinkingOrbSize: Sendable, Equatable {
+enum ThinkingOrbSize: Sendable, Equatable {
     case px64
     case px20
     case custom(CGFloat)
     
-    public var points: CGFloat {
+    var points: CGFloat {
         switch self {
         case .px64: return 64.0
         case .px20: return 20.0
@@ -104,44 +104,44 @@ private struct OrbFrame: Sendable {
 }
 
 private struct PresetOptions: Sendable {
-    var latRings: Int?
-    var lonDensity: Int?
-    var rings: Int?
-    var lanes: Int?
-    var segs: Int?
-    var orbitN: Int?
-    var ghostN: Int?
-    var nodeN: Int?
-    var strandN: Int?
-    var signals: Int?
-    var iconD: Double?
-    var rBase: Double?
-    var rDepth: Double?
-    var rActive: Double?
-    var rDot: Double?
-    var ghostR: Double?
-    var ghostA: Double?
-    var partR: Double?
-    var partRDepth: Double?
-    var nodeR: Double?
-    var nodeRDepth: Double?
-    var rBoost: Double?
-    var inkFar: Double?
-    var inkSpan: Double?
-    var rsPow: Double?
-    var rMin: Double?
-    var scanMul: Double?
-    var dimBase: Double?
-    var moveCount: Int?
-    var thr: Double?
-    var lineW: Double?
-    var turns: Double?
-    var spin: Double?
-    var faceOn: Double?
-    var wobMul: Double?
-    var bandMul: Double?
-    var spread: Double?
-    var particles: Int?
+    var latRings: Int? = nil
+    var lonDensity: Int? = nil
+    var rings: Int? = nil
+    var lanes: Int? = nil
+    var segs: Int? = nil
+    var orbitN: Int? = nil
+    var ghostN: Int? = nil
+    var nodeN: Int? = nil
+    var strandN: Int? = nil
+    var signals: Int? = nil
+    var iconD: Double? = nil
+    var rBase: Double? = nil
+    var rDepth: Double? = nil
+    var rActive: Double? = nil
+    var rDot: Double? = nil
+    var ghostR: Double? = nil
+    var ghostA: Double? = nil
+    var partR: Double? = nil
+    var partRDepth: Double? = nil
+    var nodeR: Double? = nil
+    var nodeRDepth: Double? = nil
+    var rBoost: Double? = nil
+    var inkFar: Double? = nil
+    var inkSpan: Double? = nil
+    var rsPow: Double? = nil
+    var rMin: Double? = nil
+    var scanMul: Double? = nil
+    var dimBase: Double? = nil
+    var moveCount: Int? = nil
+    var thr: Double? = nil
+    var lineW: Double? = nil
+    var turns: Double? = nil
+    var spin: Double? = nil
+    var faceOn: Double? = nil
+    var wobMul: Double? = nil
+    var bandMul: Double? = nil
+    var spread: Double? = nil
+    var particles: Int? = nil
 }
 
 // MARK: - Math Primitives (1:1 Port of engine.es.js)
@@ -707,14 +707,32 @@ private func resolveModeAndPreset(state: ThinkingOrbState, size: CGFloat) -> (mo
     let isSmall = size <= 32.0
     switch state {
     case .working:
-        var opts = PresetOptions(orbitN: 12, ghostN: 40, ghostR: 0.9, ghostA: 0.5, particles: 3, partR: 1.2, partRDepth: 1.6, rsPow: 0.6, rMin: 0.3)
+        var opts = PresetOptions()
+        opts.orbitN = 12
+        opts.ghostN = 40
+        opts.ghostR = 0.9
+        opts.ghostA = 0.5
+        opts.particles = 3
+        opts.partR = 1.2
+        opts.partRDepth = 1.6
+        opts.rsPow = 0.6
+        opts.rMin = 0.3
         let speed = isSmall ? 3.9 : 1.885
         scaleCount(&opts, factor: isSmall ? 0.238 : 1.0)
         scaleSize(&opts, factor: isSmall ? 2.4 : 1.0)
         return ("orbits", speed, opts)
         
     case .searching:
-        var opts = PresetOptions(latRings: 17, lonDensity: 44, rBase: 0.6, rDepth: 1.7, rBoost: 1.0, inkFar: 0.62, inkSpan: 0.54, rsPow: 0.6, rMin: 0.3)
+        var opts = PresetOptions()
+        opts.latRings = 17
+        opts.lonDensity = 44
+        opts.rBase = 0.6
+        opts.rDepth = 1.7
+        opts.rBoost = 1.0
+        opts.inkFar = 0.62
+        opts.inkSpan = 0.54
+        opts.rsPow = 0.6
+        opts.rMin = 0.3
         let speed = isSmall ? 2.665 : 2.015
         scaleCount(&opts, factor: isSmall ? 0.105 : 0.42)
         scaleSize(&opts, factor: isSmall ? 1.75 : 1.15)
@@ -723,35 +741,73 @@ private func resolveModeAndPreset(state: ThinkingOrbState, size: CGFloat) -> (mo
         return ("globe", speed, opts)
         
     case .solving:
-        var opts = PresetOptions(latRings: 15, lonDensity: 40, moveCount: 14, rBase: 0.6, rDepth: 1.7, rActive: 0.3, inkFar: 0.62, inkSpan: 0.54, rsPow: 0.6, rMin: 0.3)
+        var opts = PresetOptions()
+        opts.latRings = 15
+        opts.lonDensity = 40
+        opts.moveCount = 14
+        opts.rBase = 0.6
+        opts.rDepth = 1.7
+        opts.rActive = 0.3
+        opts.inkFar = 0.62
+        opts.inkSpan = 0.54
+        opts.rsPow = 0.6
+        opts.rMin = 0.3
         let speed = isSmall ? 1.95 : 1.82
         scaleCount(&opts, factor: isSmall ? 0.088 : 0.35)
         scaleSize(&opts, factor: isSmall ? 1.9 : 1.05)
         return ("rubik", speed, opts)
         
     case .listening:
-        var opts = PresetOptions(rings: 15, lonDensity: 40, rBase: 0.6, rDepth: 1.7, rsPow: 0.6, rMin: 0.3)
+        var opts = PresetOptions()
+        opts.rings = 15
+        opts.lonDensity = 40
+        opts.rBase = 0.6
+        opts.rDepth = 1.7
+        opts.rsPow = 0.6
+        opts.rMin = 0.3
         let speed = isSmall ? 3.998 : 4.388
         scaleCount(&opts, factor: isSmall ? 0.105 : 0.341)
         scaleSize(&opts, factor: isSmall ? 1.6 : 1.0)
         return ("wave", speed, opts)
         
     case .connecting:
-        var opts = PresetOptions(nodeN: 30, thr: 0.72, signals: 5, nodeR: 1.4, nodeRDepth: 1.8, lineW: 0.8, rsPow: 0.6, rMin: 0.3)
+        var opts = PresetOptions()
+        opts.nodeN = 30
+        opts.thr = 0.72
+        opts.signals = 5
+        opts.nodeR = 1.4
+        opts.nodeRDepth = 1.8
+        opts.lineW = 0.8
+        opts.rsPow = 0.6
+        opts.rMin = 0.3
         let speed = isSmall ? 6.63 : 3.315
         scaleCount(&opts, factor: isSmall ? 0.25 : 1.35)
         scaleSize(&opts, factor: isSmall ? 1.52 : 0.95)
         return ("web", speed, opts)
         
     case .weaving:
-        var opts = PresetOptions(strandN: 52, turns: 3.0, ghostN: 150, rBase: 1.2, rDepth: 1.8, rsPow: 0.6, rMin: 0.3)
+        var opts = PresetOptions()
+        opts.strandN = 52
+        opts.turns = 3.0
+        opts.ghostN = 150
+        opts.rBase = 1.2
+        opts.rDepth = 1.8
+        opts.rsPow = 0.6
+        opts.rMin = 0.3
         let speed = isSmall ? 2.75 : 1.625
         scaleCount(&opts, factor: isSmall ? 0.1125 : 0.5)
         scaleSize(&opts, factor: isSmall ? 1.36 : 1.0)
         return ("braid", speed, opts)
         
     case .composing:
-        var opts = PresetOptions(lanes: 5, segs: 88, ghostN: 150, rBase: 1.1, rDepth: 1.7, rsPow: 0.6, rMin: 0.3)
+        var opts = PresetOptions()
+        opts.lanes = 5
+        opts.segs = 88
+        opts.ghostN = 150
+        opts.rBase = 1.1
+        opts.rDepth = 1.7
+        opts.rsPow = 0.6
+        opts.rMin = 0.3
         let speed = isSmall ? 3.12 : 2.34
         scaleCount(&opts, factor: isSmall ? 0.051 : 0.25)
         scaleSize(&opts, factor: isSmall ? 1.073 : 0.85)
@@ -761,7 +817,15 @@ private func resolveModeAndPreset(state: ThinkingOrbState, size: CGFloat) -> (mo
         return ("ribbon", speed, opts)
         
     case .breathing:
-        var opts = PresetOptions(lanes: 5, segs: 88, ghostN: 0, faceOn: 1.0, rBase: 1.1, rDepth: 1.7, rsPow: 0.6, rMin: 0.3)
+        var opts = PresetOptions()
+        opts.lanes = 5
+        opts.segs = 88
+        opts.ghostN = 0
+        opts.faceOn = 1.0
+        opts.rBase = 1.1
+        opts.rDepth = 1.7
+        opts.rsPow = 0.6
+        opts.rMin = 0.3
         let speed = isSmall ? 3.78 : 3.24
         scaleCount(&opts, factor: isSmall ? 0.028 : 0.25)
         scaleSize(&opts, factor: isSmall ? 1.622 : 0.956)
@@ -771,7 +835,10 @@ private func resolveModeAndPreset(state: ThinkingOrbState, size: CGFloat) -> (mo
         return ("ring", speed, opts)
         
     case .shaping:
-        var opts = PresetOptions(rDot: 0.021, iconD: 1.0, rMin: 0.25)
+        var opts = PresetOptions()
+        opts.rDot = 0.021
+        opts.iconD = 1.0
+        opts.rMin = 0.25
         let speed = isSmall ? 2.08 : 2.405
         scaleCount(&opts, factor: isSmall ? 0.53 : 0.702)
         scaleSize(&opts, factor: isSmall ? 1.011 : 0.395)
@@ -805,18 +872,18 @@ private func computeFrame(state: ThinkingOrbState, size: Double, time: Double) -
 /// ThinkingOrb(state: .searching, size: 64)
 /// ThinkingOrb(state: "listening", size: 20)
 /// ```
-public struct ThinkingOrb: View {
-    public let state: ThinkingOrbState
-    public var size: CGFloat
-    public var speed: Double
-    public var dark: Bool?
-    public var paused: Bool
-    public var customColor: Color?
+struct ThinkingOrb: View {
+    let state: ThinkingOrbState
+    var size: CGFloat
+    var speed: Double
+    var dark: Bool?
+    var paused: Bool
+    var customColor: Color?
     
     @Environment(\.colorScheme) private var systemColorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
-    public init(
+    init(
         state: ThinkingOrbState = .working,
         size: CGFloat = 64.0,
         speed: Double = 1.0,
@@ -832,7 +899,7 @@ public struct ThinkingOrb: View {
         self.customColor = customColor
     }
     
-    public init(
+    init(
         state: ThinkingOrbState = .working,
         size: ThinkingOrbSize,
         speed: Double = 1.0,
@@ -844,7 +911,7 @@ public struct ThinkingOrb: View {
     }
     
     /// Convenience initializer mapping from LiveTutorStatus for AssembleAI backwards compatibility
-    public init(
+    init(
         status: LiveTutorStatus,
         diameter: CGFloat = 24.0,
         speed: Double = 1.0,
@@ -871,7 +938,7 @@ public struct ThinkingOrb: View {
     }
     
     /// Convenience initializer accepting diameter parameter
-    public init(
+    init(
         state: ThinkingOrbState,
         diameter: CGFloat,
         speed: Double = 1.0,
@@ -882,7 +949,7 @@ public struct ThinkingOrb: View {
         self.init(state: state, size: diameter, speed: speed, dark: dark, paused: paused, customColor: customColor)
     }
     
-    public var body: some View {
+    var body: some View {
         let isEffectPaused = paused || reduceMotion
         
         ZStack {
@@ -961,7 +1028,7 @@ public struct ThinkingOrb: View {
 // MARK: - Backwards Compatibility Alias
 
 /// Alias for seamless integration across existing views.
-public typealias ThinkingOrbView = ThinkingOrb
+typealias ThinkingOrbView = ThinkingOrb
 
 // MARK: - Preview Playground (All 9 States)
 
