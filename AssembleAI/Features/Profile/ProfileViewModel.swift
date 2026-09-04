@@ -2,6 +2,9 @@
 //  ProfileViewModel.swift
 //  AssembleAI
 //
+//  Central ViewModel managing user profile metadata, application configuration settings,
+//  research telemetry data export, and on-device data governance.
+//
 
 import SwiftUI
 import SwiftData
@@ -10,12 +13,27 @@ import Combine
 /// Central ViewModel managing user profile metadata, application configuration settings, and data governance.
 @MainActor
 final class ProfileViewModel: ObservableObject {
+    // MARK: - Dependencies
+    private var authService: SupabaseAuthService?
+    
     // MARK: - User State
     @Published var displayName: String = "Hardware Assembler"
     @Published var email: String = "guest@assemble.ai"
     @Published var avatarSymbol: String = "person.crop.circle.fill"
     @Published var avatarColorHex: String = "#0A84FF"
     @Published var isGuest: Bool = true
+    
+    var user: User? {
+        if let current = authService?.currentUser {
+            return current
+        }
+        return User(
+            id: "local_user",
+            name: displayName,
+            email: email,
+            provider: isGuest ? .guest : .email
+        )
+    }
     
     // MARK: - Stats State
     @Published var completedSessionsCount: Int = 0
@@ -29,13 +47,27 @@ final class ProfileViewModel: ObservableObject {
     @Published var showClearCacheToast: Bool = false
     @Published var isExportingTelemetry: Bool = false
     @Published var exportedCSVContent: String = ""
+    @Published var exportedShareURL: URL? = nil
+    @Published var isGeneratingExport: Bool = false
     @Published var showResetDataAlert: Bool = false
     @Published var showResetSuccessToast: Bool = false
     @Published var showDeleteAccountDialog: Bool = false
+    @Published var showDeleteAccountConfirmation: Bool = false
+    @Published var isDeletingAccount: Bool = false
+    @Published var isLoading: Bool = false
+    @Published var deletionError: String? = nil
+    
+    // MARK: - Research Telemetry State
+    @Published var researchSessionCount: Int = 0
+    @Published var researchEventsCount: Int = 0
+    @Published var showClearResearchAlert: Bool = false
+    @Published var showClearResearchToast: Bool = false
     
     // MARK: - App Preferences (Persisted via @AppStorage)
     @AppStorage("app_guidance_level") var guidanceLevelRaw: String = GuidanceLevel.concise.rawValue
     @AppStorage("app_verification_mode") var verificationMode: String = "hybrid"
+    @AppStorage("app_visual_history_strategy") var visualHistoryStrategyRaw: String = VisualHistoryStrategy.currentFrame.rawValue
+    @AppStorage("app_last_n_frames") var lastNFramesValue: Int = 5
     @AppStorage("app_camera_grid") var showCameraGrid: Bool = true
     @AppStorage("app_reticle_pulsing") var reticlePulsing: Bool = true
     @AppStorage("app_auto_torch") var autoTorch: Bool = false
@@ -69,8 +101,12 @@ final class ProfileViewModel: ObservableObject {
         ("Slate Teal", "#30B0C7", Color.teal)
     ]
     
-    init() {
+    init(authService: SupabaseAuthService? = nil) {
+        self.authService = authService
         loadPersistedProfile()
+        if let user = authService?.currentUser {
+            updateUser(user: user)
+        }
     }
     
     // MARK: - Profile Persistence
@@ -146,6 +182,100 @@ final class ProfileViewModel: ObservableObject {
         }
     }
     
+    // MARK: - Research Telemetry & Export Engine
+    
+    /// Refreshes live research telemetry counters from local disk storage.
+    func loadResearchStats() async {
+        let stats = await ResearchLogger.shared.getTelemetryStats()
+        self.researchSessionCount = stats.sessionCount
+        self.researchEventsCount = stats.eventCount
+    }
+    
+    /// Exports research summary CSV (one row per session) to Documents/ResearchExports and presents share sheet.
+    func exportSummaryCSV() {
+        Task {
+            self.isGeneratingExport = true
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            do {
+                let fileURL = try await ResearchLogger.shared.exportSummaryCSVFile()
+                self.exportedShareURL = fileURL
+                self.exportedCSVContent = ""
+                self.isExportingTelemetry = true
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+            } catch {
+                let csv = await ResearchLogger.shared.exportSummaryCSV()
+                self.exportedCSVContent = csv
+                self.exportedShareURL = nil
+                self.isExportingTelemetry = true
+            }
+            self.isGeneratingExport = false
+        }
+    }
+    
+    /// Exports all raw chronological events as RFC 4180 CSV and presents share sheet.
+    func exportDetailedEventsCSV() {
+        Task {
+            self.isGeneratingExport = true
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            do {
+                let fileURL = try await ResearchLogger.shared.exportCSVFile()
+                self.exportedShareURL = fileURL
+                self.exportedCSVContent = ""
+                self.isExportingTelemetry = true
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+            } catch {
+                let csv = await ResearchLogger.shared.exportCSV()
+                self.exportedCSVContent = csv
+                self.exportedShareURL = nil
+                self.isExportingTelemetry = true
+            }
+            self.isGeneratingExport = false
+        }
+    }
+    
+    /// Exports complete telemetry data as pretty-printed JSON file.
+    func exportJSONTelemetry() {
+        Task {
+            self.isGeneratingExport = true
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            do {
+                let fileURL = try await ResearchLogger.shared.exportJSONFile()
+                self.exportedShareURL = fileURL
+                self.exportedCSVContent = ""
+                self.isExportingTelemetry = true
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+            } catch {
+                let json = (try? await ResearchLogger.shared.exportJSON()) ?? "[]"
+                self.exportedCSVContent = json
+                self.exportedShareURL = nil
+                self.isExportingTelemetry = true
+            }
+            self.isGeneratingExport = false
+        }
+    }
+    
+    /// Legacy export method preserving backward compatibility.
+    func exportTelemetry() {
+        exportSummaryCSV()
+    }
+    
+    /// Clears only the research telemetry events and sessions without touching user progress.
+    func clearResearchData() {
+        Task {
+            await ResearchLogger.shared.clearLogs()
+            await loadResearchStats()
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            withAnimation {
+                self.showClearResearchToast = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                withAnimation {
+                    self.showClearResearchToast = false
+                }
+            }
+        }
+    }
+    
     // MARK: - Cache & Governance
     
     func clearModelCache() {
@@ -163,15 +293,6 @@ final class ProfileViewModel: ObservableObject {
         }
     }
     
-    func exportTelemetry() {
-        Task {
-            let csv = await ResearchLogger.shared.exportCSV()
-            self.exportedCSVContent = csv
-            self.isExportingTelemetry = true
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        }
-    }
-    
     func resetAllLocalData(modelContext: ModelContext) {
         do {
             try modelContext.delete(model: LocalAssemblySession.self)
@@ -181,6 +302,7 @@ final class ProfileViewModel: ObservableObject {
             Task {
                 await ResearchLogger.shared.clearLogs()
                 await GuidanceCache.shared.clear()
+                await loadResearchStats()
             }
             
             self.completedSessionsCount = 0
@@ -214,5 +336,25 @@ final class ProfileViewModel: ObservableObject {
             try? await authService.deleteAccount()
             completion()
         }
+    }
+    
+    func deleteAccount() async {
+        isDeletingAccount = true
+        deletionError = nil
+        if let auth = authService {
+            do {
+                try await auth.deleteAccount()
+                showDeleteAccountConfirmation = false
+            } catch {
+                deletionError = error.localizedDescription
+            }
+        } else {
+            showDeleteAccountConfirmation = false
+        }
+        isDeletingAccount = false
+    }
+    
+    func signOut() async {
+        await authService?.signOut()
     }
 }

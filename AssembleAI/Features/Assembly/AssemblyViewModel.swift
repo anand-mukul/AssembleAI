@@ -142,6 +142,11 @@ final class AssemblyViewModel: ObservableObject {
     // MARK: - Telemetry Logging Helper
     
     private func logResearchEvent(_ type: ResearchEventType, durationMs: Int? = nil, status: String? = nil, metadata: [String: String] = [:]) {
+        var enrichedMetadata = metadata
+        if enrichedMetadata["strategy"] == nil {
+            let strategy = UserDefaults.standard.string(forKey: "app_visual_history_strategy") ?? VisualHistoryStrategy.currentFrame.rawValue
+            enrichedMetadata["strategy"] = strategy
+        }
         let event = ResearchEvent(
             sessionID: session.id,
             projectID: project.id,
@@ -150,7 +155,7 @@ final class AssemblyViewModel: ObservableObject {
             eventType: type,
             durationMilliseconds: durationMs,
             verificationStatus: status,
-            metadata: metadata
+            metadata: enrichedMetadata
         )
         Task { [weak self] in
             await self?.researchLogger.logEvent(event)

@@ -139,6 +139,12 @@ final class BundledProjectRepositoryTests: XCTestCase {
         XCTAssertTrue(repo is MockProjectRepository)
     }
     
+    @MainActor
+    func testProjectRepositoryFactoryLocalFirstReturnsRepository() {
+        let repo = ProjectRepositoryFactory.localFirst()
+        XCTAssertNotNil(repo)
+    }
+    
     // MARK: - VisualContract to ExpectedAssemblyState Conversion
     
     func testExpectedAssemblyStateFromVisualContract() {

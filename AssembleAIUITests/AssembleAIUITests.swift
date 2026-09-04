@@ -65,6 +65,48 @@ final class AssembleAIUITests: XCTestCase {
                 projectsTab.tap()
                 XCTAssertTrue(projectsTab.isSelected)
             }
+            
+            // Verify Scan Tab navigation
+            let scanTab = app.tabBars.buttons["Scan"]
+            if scanTab.exists {
+                scanTab.tap()
+                XCTAssertTrue(scanTab.isSelected)
+                let startInspectionBtn = app.buttons["Start Visual Inspection"]
+                XCTAssertTrue(startInspectionBtn.waitForExistence(timeout: 3.0))
+            }
+            
+            // Verify History Tab navigation
+            let historyTab = app.tabBars.buttons["History"]
+            if historyTab.exists {
+                historyTab.tap()
+                XCTAssertTrue(historyTab.isSelected)
+            }
+            
+            // Verify Profile Tab navigation
+            let profileTab = app.tabBars.buttons["Profile"]
+            if profileTab.exists {
+                profileTab.tap()
+                XCTAssertTrue(profileTab.isSelected)
+            }
+        }
+    }
+
+    @MainActor
+    func testWelcomeScreenPrivacySheet() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        let privacyRow = app.staticTexts["Private & On-Device"]
+        if privacyRow.waitForExistence(timeout: 4.0) {
+            privacyRow.tap()
+            
+            let privacyTitle = app.staticTexts["Your Camera, Your Data"]
+            XCTAssertTrue(privacyTitle.waitForExistence(timeout: 3.0))
+            
+            let continueButton = app.buttons["Continue"]
+            if continueButton.exists {
+                continueButton.tap()
+            }
         }
     }
 

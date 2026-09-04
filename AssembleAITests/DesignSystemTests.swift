@@ -80,4 +80,27 @@ final class DesignSystemTests: XCTestCase {
         XCTAssertNotNil(AppColors.glassBorder)
         XCTAssertNotNil(AppColors.glassShadow)
     }
+    
+    // MARK: - Test 7: AppTypography & Section Header Style
+    func testAppTypographyTokens() {
+        let large = AppTypography.largeTitle("Hero")
+        XCTAssertNotNil(large)
+        let title = AppTypography.title("Title")
+        XCTAssertNotNil(title)
+        let title2 = AppTypography.title2("Sub")
+        XCTAssertNotNil(title2)
+        let headline = AppTypography.headline("Head")
+        XCTAssertNotNil(headline)
+        let body = AppTypography.body("Text")
+        XCTAssertNotNil(body)
+        let subheadline = AppTypography.subheadline("Secondary")
+        XCTAssertNotNil(subheadline)
+        let caption = AppTypography.caption("Caption")
+        XCTAssertNotNil(caption)
+        let mono = AppTypography.monospacedTag("TAG")
+        XCTAssertNotNil(mono)
+        
+        let styledView = Text("HEADER").sectionHeaderStyle()
+        XCTAssertNotNil(styledView)
+    }
 }

@@ -164,4 +164,32 @@ final class VoiceInputTests: XCTestCase {
         let firstSpoken = await mockVoiceOutput.spokenResponses.first?.text
         XCTAssertTrue(firstSpoken?.contains("where does this go?") == true)
     }
+    
+    // MARK: - Test 6: StreamingSpeechService Protocol Conformance & Factory
+    func testStreamingSpeechServiceProtocolConformance() async {
+        let streamingService = StreamingSpeechService()
+        let protocolService: VoiceInputServiceProtocol = streamingService
+        let state = await protocolService.state
+        XCTAssertEqual(state, .idle)
+        
+        let continuousService = VoiceInputService.continuousStreaming()
+        XCTAssertNotNil(continuousService)
+        XCTAssertFalse(continuousService.isListening)
+    }
+    
+    // MARK: - Test 7: Centralized AudioSessionCoordinator Lifecycle
+    func testAudioSessionCoordinatorLifecycle() {
+        let coordinator = AudioSessionCoordinator.shared
+        XCTAssertNotNil(coordinator)
+        
+        do {
+            try coordinator.activateWorkbenchAudioSession()
+            XCTAssertTrue(coordinator.isSessionActive)
+        } catch {
+            XCTAssertNotNil(coordinator.lastErrorMessage)
+        }
+        
+        coordinator.deactivateSession()
+        XCTAssertFalse(coordinator.isSessionActive)
+    }
 }
