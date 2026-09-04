@@ -14,6 +14,7 @@ struct MainTabView: View {
     @State private var scanPath = NavigationPath()
     @State private var historyPath = NavigationPath()
     @State private var profilePath = NavigationPath()
+    @StateObject private var profileViewModel = ProfileViewModel()
     
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -70,7 +71,7 @@ struct MainTabView: View {
             
             // Tab 2: Scan
             NavigationStack(path: $scanPath) {
-                ScanPlaceholderView(
+                QuickScanView(
                     onLaunchInspection: { project in
                         scanPath.append(AppRouteAssembly(project: project))
                     }
@@ -86,7 +87,15 @@ struct MainTabView: View {
             
             // Tab 3: History
             NavigationStack(path: $historyPath) {
-                HistoryPlaceholderView()
+                HistoryView(
+                    onSelectProject: { project in
+                        projectsPath.append(AppRouteDetail(project: project))
+                        selectedTab = 1
+                    },
+                    onBrowseProjects: {
+                        selectedTab = 1
+                    }
+                )
             }
             .tabItem {
                 Label("History", systemImage: "clock.arrow.circlepath")
@@ -99,11 +108,11 @@ struct MainTabView: View {
                     .navigationDestination(for: ProfileNavigationDestination.self) { dest in
                         switch dest {
                         case .appSettings:
-                            AppSettingsView(viewModel: ProfileViewModel())
+                            AppSettingsView(viewModel: profileViewModel)
                         case .dataPrivacy:
-                            DataPrivacySettingsView(viewModel: ProfileViewModel())
+                            DataPrivacySettingsView(viewModel: profileViewModel)
                         case .notifications:
-                            NotificationsSettingsView(viewModel: ProfileViewModel())
+                            NotificationsSettingsView(viewModel: profileViewModel)
                         case .help:
                             HelpAndSupportView()
                         }

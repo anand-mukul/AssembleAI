@@ -75,23 +75,6 @@ struct SignInWithAppleView: View {
                     .accessibilityLabel("Sign in with Apple")
                 }
                 
-                #if targetEnvironment(simulator) || DEBUG
-                // Simulator / Test Environment Bypass Button
-                Button(action: {
-                    triggerSimulatedAppleSignIn()
-                }) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "apple.logo")
-                            .font(.caption)
-                        Text("Simulate Apple Sign In (Dev/Test)")
-                            .font(.caption)
-                            .fontWeight(.medium)
-                    }
-                    .foregroundColor(AppColors.secondaryText)
-                    .padding(.vertical, 8)
-                }
-                #endif
-                
                 Button(action: {
                     router.pop()
                 }) {
@@ -111,11 +94,6 @@ struct SignInWithAppleView: View {
         .navigationBarTitleDisplayMode(.inline)
         .alert("Sign in with Apple", isPresented: $showErrorAlert) {
             Button("OK", role: .cancel) {}
-            #if targetEnvironment(simulator) || DEBUG
-            Button("Continue in Simulator Mode") {
-                triggerSimulatedAppleSignIn()
-            }
-            #endif
         } message: {
             Text(errorMessage)
         }
@@ -152,35 +130,16 @@ struct SignInWithAppleView: View {
                         errorMessage = error.localizedDescription
                         showErrorAlert = true
                     }
-                } else {
-                    do {
-                        try await authService.signInWithApple()
-                        isProcessing = false
-                        router.transitionToHome()
-                    } catch {
-                        isProcessing = false
-                        errorMessage = error.localizedDescription
-                        showErrorAlert = true
-                    }
                 }
             case .failure(let error):
                 isProcessing = false
                 let nsError = error as NSError
-                // Don't show alert if user simply pressed cancel (error code 1001)
+                // User cancelled error code is 1001 in ASAuthorizationError
                 if nsError.code != 1001 {
-                    errorMessage = "Apple authentication failed: \(error.localizedDescription)\n\nNote: If running on Simulator or without a registered Apple Developer Team, ensure 'Sign in with Apple' capability is configured."
+                    errorMessage = "Sign in with Apple could not be completed: \(error.localizedDescription)"
                     showErrorAlert = true
                 }
             }
-        }
-    }
-    
-    private func triggerSimulatedAppleSignIn() {
-        isProcessing = true
-        Task {
-            try? await authService.signInWithApple()
-            isProcessing = false
-            router.transitionToHome()
         }
     }
 }

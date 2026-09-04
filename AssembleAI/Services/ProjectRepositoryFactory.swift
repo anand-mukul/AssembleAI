@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import SwiftData
 
 /// Resolves the appropriate `ProjectRepository` implementation based on the current environment.
 ///
@@ -42,5 +43,14 @@ enum ProjectRepositoryFactory {
     /// Returns a bundled repository with a custom directory.
     static func bundled(directory: String = "Projects") -> ProjectRepository {
         BundledProjectRepository(bundleDirectory: directory)
+    }
+    
+    /// Returns a local SwiftData-first repository with optional Supabase backend sync.
+    @MainActor
+    static func localFirst(
+        modelContext: ModelContext = PersistenceController.shared.container.mainContext,
+        supabaseService: SupabaseProjectService? = nil
+    ) -> LocalFirstProjectRepository {
+        LocalFirstProjectRepository(modelContext: modelContext, supabaseService: supabaseService)
     }
 }

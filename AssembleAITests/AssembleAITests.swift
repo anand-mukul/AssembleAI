@@ -45,4 +45,14 @@ struct AssembleAITests {
         #expect(project.estimatedMinutes == 45)
         #expect(project.syncState == .pendingUpload)
     }
+
+    @Test func testSupabaseAuthServiceDeleteAccountFlow() async throws {
+        let authService = await SupabaseAuthService()
+        await authService.continueAsGuest()
+        #expect(await authService.isAuthenticated == true)
+        
+        try await authService.deleteAccount()
+        #expect(await authService.isAuthenticated == false)
+        #expect(await authService.currentUser == nil)
+    }
 }

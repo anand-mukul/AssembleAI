@@ -37,10 +37,15 @@ struct AssemblyCameraView: View {
     var onClose: (() -> Void)? = nil
     var onSelectStep: ((AssemblyStep) -> Void)? = nil
     
+    @AppStorage("app_camera_grid") private var showCameraGrid: Bool = true
+    @AppStorage("app_reticle_pulsing") private var reticlePulsing: Bool = true
+    @AppStorage("app_haptics_enabled") private var hapticsEnabled: Bool = true
+    
     @State private var reticleVisible = false
     @State private var overlayVisible = false
     @State private var showStepsSheet = false
     @State private var showWhySheet = false
+    @State private var pulseScale: CGFloat = 1.0
     
     var body: some View {
         ZStack {
@@ -53,8 +58,14 @@ struct AssemblyCameraView: View {
                     .ignoresSafeArea()
             }
             
+            // Alignment Grid Overlay (Configurable via Settings)
+            if showCameraGrid {
+                cameraGridOverlay
+            }
+            
             // Visual Guidance Overlay Layer (Target / Move / Warning / Success)
             if let guidance = activeGuidance {
+                SpatialAROverlayView(guidance: guidance)
                 AssemblyGuidanceOverlayView(guidance: guidance)
             }
             
@@ -62,7 +73,7 @@ struct AssemblyCameraView: View {
             if activeGuidance == nil || activeGuidance?.hasCoordinates == false {
                 cameraReticleOverlay
                     .opacity(reticleVisible ? 1 : 0)
-                    .scaleEffect(reticleVisible ? 1 : 0.9)
+                    .scaleEffect(reticleVisible ? (reticlePulsing ? pulseScale : 1.0) : 0.9)
             }
             
             // Foreground UI Layout matching the Wireframe
@@ -277,6 +288,29 @@ struct AssemblyCameraView: View {
         .accessibilityHidden(true)
     }
     
+    // MARK: - Viewfinder Alignment Grid Overlay
+    
+    private var cameraGridOverlay: some View {
+        GeometryReader { proxy in
+            let w = proxy.size.width
+            let h = proxy.size.height
+            Path { path in
+                path.move(to: CGPoint(x: w / 3, y: 0))
+                path.addLine(to: CGPoint(x: w / 3, y: h))
+                path.move(to: CGPoint(x: 2 * w / 3, y: 0))
+                path.addLine(to: CGPoint(x: 2 * w / 3, y: h))
+                path.move(to: CGPoint(x: 0, y: h / 3))
+                path.addLine(to: CGPoint(x: w, y: h / 3))
+                path.move(to: CGPoint(x: 0, y: 2 * h / 3))
+                path.addLine(to: CGPoint(x: w, y: 2 * h / 3))
+            }
+            .stroke(Color.white.opacity(0.15), lineWidth: 0.5)
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+    
     // MARK: - Legacy Bottom Action Bar
     
     private var bottomActionBar: some View {
@@ -289,6 +323,9 @@ struct AssemblyCameraView: View {
     }
     
     private func triggerManualSnapshot() {
+        if hapticsEnabled {
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        }
         Task {
             let photo = try? await cameraService.capturePhoto()
             if liveTutorEnabled {

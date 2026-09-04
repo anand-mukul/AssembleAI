@@ -21,7 +21,7 @@ nonisolated struct RecognizedSpeechUtterance: Sendable, Equatable {
 /// Automatically opens audio buffers when speech is detected and closes when silence returns,
 /// without requiring the user to tap or hold any buttons on screen.
 @MainActor
-final class StreamingSpeechService: NSObject, ObservableObject, SFSpeechRecognizerDelegate {
+final class StreamingSpeechService: NSObject, ObservableObject, SFSpeechRecognizerDelegate, VoiceInputServiceProtocol {
     
     @Published private(set) var isListening: Bool = false
     @Published private(set) var isSpeechDetected: Bool = false
@@ -46,6 +46,52 @@ final class StreamingSpeechService: NSObject, ObservableObject, SFSpeechRecogniz
     
     deinit {
         utteranceContinuation?.finish()
+    }
+    
+    // MARK: - VoiceInputServiceProtocol Conformance
+    
+    nonisolated var state: VoiceInputState {
+        get async {
+            await MainActor.run {
+                self.isListening ? .listening : .idle
+            }
+        }
+    }
+    
+    nonisolated var transcriptStream: AsyncStream<UserVoiceMessage> {
+        AsyncStream(UserVoiceMessage.self) { continuation in
+            let task = Task { [weak self] in
+                guard let stream = self?.utteranceStream else {
+                    continuation.finish()
+                    return
+                }
+                for await utterance in stream {
+                    continuation.yield(
+                        UserVoiceMessage(
+                            transcript: utterance.transcript,
+                            isFinal: utterance.isFinal,
+                            timestamp: utterance.timestamp
+                        )
+                    )
+                }
+                continuation.finish()
+            }
+            continuation.onTermination = { _ in
+                task.cancel()
+            }
+        }
+    }
+    
+    func startListening() async throws {
+        try await startContinuousListening()
+    }
+    
+    func stopListening() async {
+        stopContinuousListening()
+    }
+    
+    func cancelListening() async {
+        stopContinuousListening()
     }
     
     /// Stream of finalized and partial speech utterances with parsed intents.

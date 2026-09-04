@@ -15,10 +15,8 @@ struct AppSettingsView: View {
                 // Section 1: Guidance & Verification Engine
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
                     Text("PHYSICAL GUIDANCE & VERIFICATION")
-                        .font(.system(size: 10, weight: .bold, design: .monospaced))
-                        .foregroundColor(AppColors.secondaryText)
+                        .sectionHeaderStyle()
                         .padding(.horizontal, 4)
-                        .tracking(1.0)
                     
                     VStack(spacing: 0) {
                         // Guidance Level Selector
@@ -74,10 +72,8 @@ struct AppSettingsView: View {
                 // Section 2: Camera & Viewfinder Experience
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
                     Text("CAMERA & VIEWFINDER")
-                        .font(.system(size: 10, weight: .bold, design: .monospaced))
-                        .foregroundColor(AppColors.secondaryText)
+                        .sectionHeaderStyle()
                         .padding(.horizontal, 4)
-                        .tracking(1.0)
                     
                     VStack(spacing: 0) {
                         Toggle(isOn: $viewModel.showCameraGrid) {
@@ -111,10 +107,8 @@ struct AppSettingsView: View {
                 // Section 3: Tactile & Audio Feedback
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
                     Text("TACTILE & SENSORY")
-                        .font(.system(size: 10, weight: .bold, design: .monospaced))
-                        .foregroundColor(AppColors.secondaryText)
+                        .sectionHeaderStyle()
                         .padding(.horizontal, 4)
-                        .tracking(1.0)
                     
                     VStack(spacing: 0) {
                         Toggle(isOn: $viewModel.hapticsEnabled) {

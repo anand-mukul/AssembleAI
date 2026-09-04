@@ -262,3 +262,10 @@ actor MockVoiceInputService: VoiceInputServiceProtocol {
         broadcaster.broadcast(message)
     }
 }
+
+extension VoiceInputService {
+    /// Returns a hands-free continuous streaming speech service backed by Voice Activity Detection (VAD).
+    static func continuousStreaming() -> StreamingSpeechService {
+        StreamingSpeechService()
+    }
+}

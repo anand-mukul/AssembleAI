@@ -112,6 +112,43 @@ struct NotificationsSettingsView: View {
         .onAppear {
             checkPermissionStatus()
         }
+        .onChange(of: viewModel.remindersEnabled) { _, isEnabled in
+            handleNotificationToggleChange(enabled: isEnabled)
+        }
+        .onChange(of: viewModel.streakRemindersEnabled) { _, isEnabled in
+            handleNotificationToggleChange(enabled: isEnabled)
+        }
+    }
+    
+    private func handleNotificationToggleChange(enabled: Bool) {
+        if enabled {
+            UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
+                DispatchQueue.main.async {
+                    self.checkPermissionStatus()
+                    if granted {
+                        self.scheduleDailyStreakReminder()
+                    }
+                }
+            }
+        } else if !viewModel.remindersEnabled && !viewModel.streakRemindersEnabled {
+            UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+        }
+    }
+    
+    private func scheduleDailyStreakReminder() {
+        let content = UNMutableNotificationContent()
+        content.title = "Time to Build with AssembleAI"
+        content.body = "Keep your electronics assembly streak alive. Pick up your next project step!"
+        content.sound = .default
+        
+        var dateComponents = DateComponents()
+        dateComponents.hour = 19
+        dateComponents.minute = 0
+        
+        let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: true)
+        let request = UNNotificationRequest(identifier: "com.mukul.assembleai.daily_streak", content: content, trigger: trigger)
+        
+        UNUserNotificationCenter.current().add(request)
     }
     
     private func checkPermissionStatus() {

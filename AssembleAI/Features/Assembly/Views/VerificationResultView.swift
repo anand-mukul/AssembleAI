@@ -16,6 +16,7 @@ struct VerificationResultView: View {
     
     @State private var iconScale: CGFloat = 0.8
     @State private var showWhySheet: Bool = false
+    @State private var showDetailsSheet: Bool = false
     
     var body: some View {
         ScrollView {
@@ -52,10 +53,20 @@ struct VerificationResultView: View {
                             text: badgeText,
                             color: heroColor
                         )
-                        BadgeView(
-                            text: "\(Int(result.confidence * 100))% CONFIDENCE",
-                            color: .assembleBrandPrimary
-                        )
+                        Button {
+                            showDetailsSheet = true
+                        } label: {
+                            HStack(spacing: 3) {
+                                BadgeView(
+                                    text: "\(Int(result.confidence * 100))% CONFIDENCE",
+                                    color: .assembleBrandPrimary
+                                )
+                                Image(systemName: "info.circle")
+                                    .font(.caption2)
+                                    .foregroundColor(.assembleBrandPrimary)
+                            }
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
                 
@@ -158,6 +169,12 @@ struct VerificationResultView: View {
             WhyExplanationSheet(
                 step: currentStep ?? AssemblyStep(projectId: UUID(), stepOrder: 2, title: "Attach Component", instruction: "Follow instructions"),
                 issue: StateIssue(type: result.detectedDescription.contains("5V") ? .wrongConnection : .wrongPosition, title: heroTitle, explanation: result.explanation)
+            )
+        }
+        .sheet(isPresented: $showDetailsSheet) {
+            VerificationDetailsSheet(
+                result: result,
+                stepTitle: currentStep?.title ?? "Assembly Step"
             )
         }
         .onAppear {

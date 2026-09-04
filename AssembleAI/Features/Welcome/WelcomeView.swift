@@ -11,6 +11,7 @@ struct WelcomeView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
     @State private var rowsAppeared = false
+    @State private var showPrivacySheet = false
     
     var body: some View {
         ScrollView {
@@ -23,15 +24,12 @@ struct WelcomeView: View {
                         .foregroundColor(.assembleBrandPrimary)
                         .padding(.bottom, AppSpacing.xxs)
                     
-                    Text("Build with\nprecision.")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
+                    AppTypography.largeTitle("Build with\nprecision.")
                         .foregroundColor(AppColors.primaryText)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityAddTraits(.isHeader)
                     
-                    Text("Real-time camera verification for physical hardware assembly. Point your iPhone at your workspace and verify each step as you build.")
-                        .font(.body)
+                    AppTypography.body("Real-time camera verification for physical hardware assembly. Point your iPhone at your workspace and verify each step as you build.")
                         .foregroundColor(AppColors.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.top, 2)
@@ -48,8 +46,15 @@ struct WelcomeView: View {
                         CapabilityRow(
                             iconName: cap.icon,
                             title: cap.title,
-                            subtitle: cap.subtitle
+                            subtitle: cap.subtitle,
+                            showDisclosure: cap.icon == "lock.shield"
                         )
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            if cap.icon == "lock.shield" {
+                                showPrivacySheet = true
+                            }
+                        }
                         .opacity(rowsAppeared ? 1 : 0)
                         .offset(y: rowsAppeared ? 0 : 8)
                         .animation(
@@ -65,6 +70,11 @@ struct WelcomeView: View {
         .background(AppColors.appBackground.ignoresSafeArea())
         .safeAreaInset(edge: .bottom) {
             bottomActions
+        }
+        .sheet(isPresented: $showPrivacySheet) {
+            PrivacySheet(onContinue: {
+                showPrivacySheet = false
+            })
         }
         .onAppear {
             rowsAppeared = true
@@ -112,6 +122,7 @@ private struct CapabilityRow: View {
     let iconName: String
     let title: String
     let subtitle: String
+    var showDisclosure: Bool = false
     
     var body: some View {
         HStack(alignment: .top, spacing: AppSpacing.md) {
@@ -122,9 +133,16 @@ private struct CapabilityRow: View {
                 .accessibilityHidden(true)
             
             VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.headline)
-                    .foregroundColor(AppColors.primaryText)
+                HStack(spacing: 4) {
+                    Text(title)
+                        .font(.headline)
+                        .foregroundColor(AppColors.primaryText)
+                    if showDisclosure {
+                        Image(systemName: "info.circle")
+                            .font(.caption)
+                            .foregroundColor(.assembleBrandPrimary)
+                    }
+                }
                 Text(subtitle)
                     .font(.subheadline)
                     .foregroundColor(AppColors.secondaryText)
@@ -132,6 +150,13 @@ private struct CapabilityRow: View {
             }
             
             Spacer(minLength: 0)
+            
+            if showDisclosure {
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(AppColors.tertiaryText)
+                    .padding(.top, 4)
+            }
         }
         .accessibilityElement(children: .combine)
     }

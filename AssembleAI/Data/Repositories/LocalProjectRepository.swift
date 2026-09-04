@@ -64,11 +64,15 @@ final class LocalFirstProjectRepository: LocalProjectRepository, @unchecked Send
     
     @MainActor
     func fetchProject(id: UUID) async throws -> Project? {
-        let fetchLocal = FetchDescriptor<LocalProject>(predicate: #Predicate<LocalProject> { $0.id == id })
-        if let local = try modelContext.fetch(fetchLocal).first {
-            return local.toDomainModel()
+        do {
+            let fetchLocal = FetchDescriptor<LocalProject>(predicate: #Predicate<LocalProject> { $0.id == id })
+            if let local = try modelContext.fetch(fetchLocal).first {
+                return local.toDomainModel()
+            }
+            return nil
+        } catch {
+            throw AppError.database(error.localizedDescription)
         }
-        return nil
     }
     
     @MainActor
@@ -76,21 +80,25 @@ final class LocalFirstProjectRepository: LocalProjectRepository, @unchecked Send
         let targetId = project.id
         let fetchLocal = FetchDescriptor<LocalProject>(predicate: #Predicate<LocalProject> { $0.id == targetId })
         
-        if let existing = try modelContext.fetch(fetchLocal).first {
-            existing.title = project.title
-            existing.projectDescription = project.description
-            existing.difficulty = project.difficulty
-            existing.estimatedMinutes = project.estimatedMinutes
-            existing.thumbnailPath = project.thumbnailPath
-            existing.updatedAt = Date()
-            existing.syncStateRaw = SyncState.pendingUpload.rawValue
-        } else {
-            let localProject = LocalProject.fromDomainModel(project)
-            localProject.syncStateRaw = SyncState.pendingUpload.rawValue
-            modelContext.insert(localProject)
+        do {
+            if let existing = try modelContext.fetch(fetchLocal).first {
+                existing.title = project.title
+                existing.projectDescription = project.description
+                existing.difficulty = project.difficulty
+                existing.estimatedMinutes = project.estimatedMinutes
+                existing.thumbnailPath = project.thumbnailPath
+                existing.updatedAt = Date()
+                existing.syncStateRaw = SyncState.pendingUpload.rawValue
+            } else {
+                let localProject = LocalProject.fromDomainModel(project)
+                localProject.syncStateRaw = SyncState.pendingUpload.rawValue
+                modelContext.insert(localProject)
+            }
+            
+            try modelContext.save()
+        } catch {
+            throw AppError.database(error.localizedDescription)
         }
-        
-        try modelContext.save()
         
         // Background push to Supabase if available
         if let supabaseService = supabaseService {
@@ -110,10 +118,14 @@ final class LocalFirstProjectRepository: LocalProjectRepository, @unchecked Send
     
     @MainActor
     func deleteProject(id: UUID) async throws {
-        let fetchLocal = FetchDescriptor<LocalProject>(predicate: #Predicate<LocalProject> { $0.id == id })
-        if let existing = try modelContext.fetch(fetchLocal).first {
-            modelContext.delete(existing)
-            try modelContext.save()
+        do {
+            let fetchLocal = FetchDescriptor<LocalProject>(predicate: #Predicate<LocalProject> { $0.id == id })
+            if let existing = try modelContext.fetch(fetchLocal).first {
+                modelContext.delete(existing)
+                try modelContext.save()
+            }
+        } catch {
+            throw AppError.database(error.localizedDescription)
         }
         
         if let supabaseService = supabaseService {

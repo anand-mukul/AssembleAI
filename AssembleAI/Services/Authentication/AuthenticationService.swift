@@ -22,5 +22,6 @@ protocol AuthenticationService: ObservableObject {
     func resetPassword(email: String) async throws
     func continueAsGuest() async
     func signOut() async
+    func deleteAccount() async throws
     func clearError()
 }

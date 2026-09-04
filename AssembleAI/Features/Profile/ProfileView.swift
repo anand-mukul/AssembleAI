@@ -60,6 +60,16 @@ struct ProfileView: View {
         } message: {
             Text("Your local progress will be saved on this device.")
         }
+        .alert("Delete Account & All Data?", isPresented: $viewModel.showDeleteAccountDialog) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete Permanently", role: .destructive) {
+                viewModel.deleteAccount(authService: authService, modelContext: modelContext) {
+                    router.transitionToWelcome()
+                }
+            }
+        } message: {
+            Text("This will permanently delete your account, session records, and authentication tokens. This action cannot be undone.")
+        }
         .task {
             viewModel.updateUser(user: authService.currentUser)
             let sessionRepo = LocalFirstSessionRepository(modelContext: modelContext)
@@ -165,26 +175,53 @@ struct ProfileView: View {
     }
     
     private var accountActionsSection: some View {
-        Button(role: .destructive) {
-            viewModel.showSignOutDialog = true
-        } label: {
-            HStack {
-                Spacer()
-                Text("Sign Out")
-                    .font(.body)
-                    .fontWeight(.semibold)
-                    .foregroundColor(AppColors.error)
-                Spacer()
+        VStack(spacing: AppSpacing.sm) {
+            Button(role: .destructive) {
+                viewModel.showSignOutDialog = true
+            } label: {
+                HStack {
+                    Spacer()
+                    Text("Sign Out")
+                        .font(.body)
+                        .fontWeight(.semibold)
+                        .foregroundColor(AppColors.error)
+                    Spacer()
+                }
+                .frame(minHeight: 48)
+                .background(AppColors.secondaryGroupedBackground)
+                .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                        .strokeBorder(AppColors.borderSubtle, lineWidth: 0.5)
+                )
             }
-            .frame(minHeight: 48)
-            .background(AppColors.secondaryGroupedBackground)
-            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                    .strokeBorder(AppColors.borderSubtle, lineWidth: 0.5)
-            )
+            .buttonStyle(ScaleButtonStyle())
+            
+            Button(role: .destructive) {
+                viewModel.showDeleteAccountDialog = true
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "trash")
+                        .font(.caption)
+                    Text("Delete Account & Data")
+                        .font(.footnote)
+                        .fontWeight(.medium)
+                }
+                .foregroundColor(AppColors.error.opacity(0.85))
+                .padding(.vertical, 8)
+            }
+            
+            // Legal & Privacy Compliance Links (App Store Guideline 5.1.1)
+            HStack(spacing: AppSpacing.md) {
+                Link("Privacy Policy", destination: URL(string: "https://assembleai.app/privacy")!)
+                Text("•")
+                    .foregroundColor(AppColors.tertiaryText)
+                Link("Terms of Service", destination: URL(string: "https://assembleai.app/terms")!)
+            }
+            .font(.caption2)
+            .foregroundColor(AppColors.secondaryText)
+            .padding(.top, AppSpacing.xs)
         }
-        .buttonStyle(ScaleButtonStyle())
         .padding(.top, AppSpacing.xs)
     }
     

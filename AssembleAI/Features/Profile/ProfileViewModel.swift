@@ -31,6 +31,7 @@ final class ProfileViewModel: ObservableObject {
     @Published var exportedCSVContent: String = ""
     @Published var showResetDataAlert: Bool = false
     @Published var showResetSuccessToast: Bool = false
+    @Published var showDeleteAccountDialog: Bool = false
     
     // MARK: - App Preferences (Persisted via @AppStorage)
     @AppStorage("app_guidance_level") var guidanceLevelRaw: String = GuidanceLevel.concise.rawValue
@@ -197,6 +198,21 @@ final class ProfileViewModel: ObservableObject {
             }
         } catch {
             // Error handling
+        }
+    }
+    
+    func deleteAccount(authService: SupabaseAuthService, modelContext: ModelContext, completion: @escaping () -> Void) {
+        resetAllLocalData(modelContext: modelContext)
+        UserDefaults.standard.removeObject(forKey: "user_display_name")
+        UserDefaults.standard.removeObject(forKey: "user_avatar_symbol")
+        UserDefaults.standard.removeObject(forKey: "user_avatar_color_hex")
+        self.displayName = "Hardware Assembler"
+        self.avatarSymbol = "person.crop.circle.fill"
+        self.avatarColorHex = "#0A84FF"
+        
+        Task {
+            try? await authService.deleteAccount()
+            completion()
         }
     }
 }
