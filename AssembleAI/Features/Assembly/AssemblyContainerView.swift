@@ -91,6 +91,7 @@ struct AssemblyContainerView: View {
                             router.pop()
                         }
                     )
+                    .ignoresSafeArea()
                     .transition(.opacity)
                     
                 case .analyzing:
@@ -159,7 +160,6 @@ struct AssemblyContainerView: View {
         }
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .tabBar)
-        .ignoresSafeArea()
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
     }
 }

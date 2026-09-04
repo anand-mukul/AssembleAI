@@ -59,18 +59,30 @@ struct LiveTutorHUDView: View {
     
     private var unifiedIslandHUD: some View {
         VStack(alignment: .leading, spacing: 10) {
-            // Header Row: Step Badge + Component Title + Secondary Controls
-            HStack(alignment: .center, spacing: 8) {
-                // Step Badge Pill
+            // Header Row: Status Badge + Step Badge + Component Title + Secondary Controls
+            HStack(alignment: .center, spacing: 7) {
+                // Live Status Pill
                 HStack(spacing: 5) {
+                    ThinkingOrbView(status: status, diameter: 10)
+                    Text(status.rawValue)
+                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                        .foregroundColor(.white)
+                }
+                .padding(.horizontal, 7)
+                .padding(.vertical, 4)
+                .background(Capsule().fill(Color.white.opacity(0.12)))
+                .overlay(Capsule().strokeBorder(Color.white.opacity(0.18), lineWidth: 0.5))
+                
+                // Step Badge Pill
+                HStack(spacing: 4) {
                     Image(systemName: componentIcon(for: currentStep.title))
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.system(size: 10, weight: .bold))
                         .foregroundColor(Color.assembleBrandPrimary)
                     Text("STEP \(currentStep.stepOrder)")
                         .font(.system(size: 10, weight: .bold, design: .monospaced))
                         .foregroundColor(.white)
                 }
-                .padding(.horizontal, 8)
+                .padding(.horizontal, 7)
                 .padding(.vertical, 4)
                 .background(Capsule().fill(Color.white.opacity(0.10)))
                 .overlay(Capsule().strokeBorder(Color.white.opacity(0.18), lineWidth: 0.5))

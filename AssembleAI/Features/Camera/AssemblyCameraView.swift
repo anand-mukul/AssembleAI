@@ -48,91 +48,96 @@ struct AssemblyCameraView: View {
     @State private var pulseScale: CGFloat = 1.0
     
     var body: some View {
-        ZStack {
-            // Full-Screen Live Camera Preview / Spatial Hardware Studio Canvas
-            if cameraService.authorizationStatus == .authorized && cameraService.isCameraAvailable {
-                CameraPreviewView(session: cameraService.captureSession)
-                    .ignoresSafeArea()
-            } else {
-                simulatorOrPermissionViewfinder
-                    .ignoresSafeArea()
-            }
+        GeometryReader { proxy in
+            let topInset = max(proxy.safeAreaInsets.top + 6, 56.0)
+            let bottomInset = max(proxy.safeAreaInsets.bottom + 8, 28.0)
             
-            // Alignment Grid Overlay (Configurable via Settings)
-            if showCameraGrid {
-                cameraGridOverlay
-            }
-            
-            // Visual Guidance Overlay Layer (Target / Move / Warning / Success)
-            if let guidance = activeGuidance {
-                SpatialAROverlayView(guidance: guidance)
-                AssemblyGuidanceOverlayView(guidance: guidance)
-            }
-            
-            // Spatial Inspection Centerpiece Reticle (only if no custom coordinate guidance)
-            if activeGuidance == nil || activeGuidance?.hasCoordinates == false {
-                cameraReticleOverlay
-                    .opacity(reticleVisible ? 1 : 0)
-                    .scaleEffect(reticleVisible ? (reticlePulsing ? pulseScale : 1.0) : 0.9)
-            }
-            
-            // Foreground UI Layout: Apple Vision Pro & iOS 18 HIG
-            VStack(spacing: 0) {
-                // Top Header Overlay: Back (Left) + Status Pill (Center) + Steps (Right)
-                topNavigationBar
-                    .safeAreaPadding(.top)
-                    .opacity(overlayVisible ? 1 : 0)
-                    .offset(y: overlayVisible ? 0 : -20)
-                
-                Spacer()
-                
-                // Floating Apple Intelligence Thinking Orb
-                if liveTutorEnabled {
-                    ThinkingOrbView(status: liveStatus, diameter: 52)
-                        .shadow(color: AppColors.glassShadow, radius: 16, x: 0, y: 6)
-                        .padding(.bottom, 12)
-                        .opacity(overlayVisible ? 1 : 0)
-                        .scaleEffect(overlayVisible ? 1 : 0.85)
-                }
-                
-                // Bottom Area: Unified Dynamic Island Glass HUD
-                if liveTutorEnabled {
-                    LiveTutorHUDView(
-                        status: liveStatus,
-                        currentStep: currentStep,
-                        currentMessage: currentTutorMessage,
-                        userTranscript: userTranscript,
-                        isListening: isListening,
-                        isPaused: isPaused,
-                        onToggleVoice: {
-                            onToggleVoice?()
-                        },
-                        onTogglePause: {
-                            onTogglePause?()
-                        },
-                        onManualFallback: {
-                            triggerManualSnapshot()
-                        },
-                        onExplainWhy: {
-                            showWhySheet = true
-                        }
-                    )
-                    .safeAreaPadding(.bottom)
-                    .padding(.bottom, AppSpacing.xs)
-                    .opacity(overlayVisible ? 1 : 0)
-                    .offset(y: overlayVisible ? 0 : 20)
+            ZStack {
+                // Full-Screen Live Camera Preview / Spatial Hardware Studio Canvas
+                if cameraService.authorizationStatus == .authorized && cameraService.isCameraAvailable {
+                    CameraPreviewView(session: cameraService.captureSession)
+                        .ignoresSafeArea()
                 } else {
-                    bottomActionBar
-                        .safeAreaPadding(.bottom)
-                        .padding(.bottom, AppSpacing.md)
+                    simulatorOrPermissionViewfinder
+                        .ignoresSafeArea()
+                }
+                
+                // Alignment Grid Overlay (Configurable via Settings)
+                if showCameraGrid {
+                    cameraGridOverlay
+                }
+                
+                // Visual Guidance Overlay Layer (Target / Move / Warning / Success)
+                if let guidance = activeGuidance {
+                    SpatialAROverlayView(guidance: guidance)
+                    AssemblyGuidanceOverlayView(guidance: guidance)
+                }
+                
+                // Spatial Inspection Centerpiece Reticle (only if no custom coordinate guidance)
+                if activeGuidance == nil || activeGuidance?.hasCoordinates == false {
+                    cameraReticleOverlay
+                        .opacity(reticleVisible ? 1 : 0)
+                        .scaleEffect(reticleVisible ? (reticlePulsing ? pulseScale : 1.0) : 0.9)
+                }
+                
+                // Foreground UI Layout: Apple Vision Pro & iOS 18 HIG
+                VStack(spacing: 0) {
+                    // Top Header Overlay: Back (Left) + Steps (Right) with zero center occlusion
+                    topNavigationBar
+                        .padding(.top, topInset)
+                        .padding(.horizontal, 16)
                         .opacity(overlayVisible ? 1 : 0)
-                        .offset(y: overlayVisible ? 0 : 20)
+                        .offset(y: overlayVisible ? 0 : -16)
+                    
+                    Spacer()
+                    
+                    // Floating Apple Intelligence Thinking Orb
+                    if liveTutorEnabled {
+                        ThinkingOrbView(status: liveStatus, diameter: 52)
+                            .shadow(color: AppColors.glassShadow, radius: 16, x: 0, y: 6)
+                            .padding(.bottom, 12)
+                            .opacity(overlayVisible ? 1 : 0)
+                            .scaleEffect(overlayVisible ? 1 : 0.85)
+                    }
+                    
+                    // Bottom Area: Unified Dynamic Island Glass HUD
+                    if liveTutorEnabled {
+                        LiveTutorHUDView(
+                            status: liveStatus,
+                            currentStep: currentStep,
+                            currentMessage: currentTutorMessage,
+                            userTranscript: userTranscript,
+                            isListening: isListening,
+                            isPaused: isPaused,
+                            onToggleVoice: {
+                                onToggleVoice?()
+                            },
+                            onTogglePause: {
+                                onTogglePause?()
+                            },
+                            onManualFallback: {
+                                triggerManualSnapshot()
+                            },
+                            onExplainWhy: {
+                                showWhySheet = true
+                            }
+                        )
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, bottomInset)
+                        .opacity(overlayVisible ? 1 : 0)
+                        .offset(y: overlayVisible ? 0 : 16)
+                    } else {
+                        bottomActionBar
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, bottomInset)
+                            .opacity(overlayVisible ? 1 : 0)
+                            .offset(y: overlayVisible ? 0 : 16)
+                    }
                 }
             }
-            .padding(.horizontal, 16)
         }
+        .ignoresSafeArea()
         .navigationBarHidden(true)
-        .statusBarHidden()
         .sheet(isPresented: $showStepsSheet) {
             StepsOverviewSheet(
                 currentStep: currentStep,
@@ -212,33 +217,6 @@ struct AssemblyCameraView: View {
             }
             .buttonStyle(ScaleButtonStyle())
             .accessibilityLabel("Back")
-            
-            Spacer()
-            
-            // Center Apple Intelligence Live Status Indicator
-            if liveTutorEnabled {
-                HStack(spacing: 6) {
-                    ThinkingOrbView(status: liveStatus, diameter: 14)
-                    
-                    Text(liveStatus.rawValue)
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(
-                    ZStack {
-                        Capsule().fill(Color.black.opacity(0.35))
-                        Capsule().fill(.ultraThinMaterial)
-                    }
-                )
-                .overlay(
-                    Capsule().strokeBorder(Color.white.opacity(0.18), lineWidth: 0.5)
-                )
-                .shadow(color: Color.black.opacity(0.25), radius: 6, x: 0, y: 2)
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("Tutor Status: \(liveStatus.rawValue)")
-            }
             
             Spacer()
             
