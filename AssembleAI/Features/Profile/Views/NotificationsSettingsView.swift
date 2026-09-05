@@ -58,11 +58,9 @@ struct NotificationsSettingsView: View {
                 
                 // Notification Preferences
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Text("NOTIFICATION PREFERENCES")
-                        .font(.system(size: 10, weight: .bold, design: .monospaced))
-                        .foregroundColor(AppColors.secondaryText)
+                    Text("Notification Preferences")
+                        .sectionHeaderStyle()
                         .padding(.horizontal, 4)
-                        .tracking(1.0)
                     
                     VStack(spacing: 0) {
                         Toggle(isOn: $viewModel.remindersEnabled) {
@@ -105,6 +103,7 @@ struct NotificationsSettingsView: View {
             }
             .padding(.horizontal, AppSpacing.screenEdge)
             .padding(.top, AppSpacing.md)
+            .padding(.bottom, 120)
         }
         .background(AppColors.appBackground.ignoresSafeArea())
         .navigationTitle("Notifications")

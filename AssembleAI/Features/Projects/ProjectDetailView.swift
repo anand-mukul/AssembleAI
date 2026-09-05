@@ -47,6 +47,7 @@ struct ProjectDetailView: View {
                     Text(project.subtitle)
                         .font(.subheadline)
                         .foregroundColor(AppColors.secondaryText)
+                        .adaptiveMultiline()
                 }
                 .padding(.horizontal, AppSpacing.screenEdge)
                 
@@ -60,7 +61,7 @@ struct ProjectDetailView: View {
                         Text(project.description)
                             .font(.body)
                             .foregroundColor(AppColors.secondaryText)
-                            .fixedSize(horizontal: false, vertical: true)
+                            .adaptiveMultiline()
                     }
                     .padding(.horizontal, AppSpacing.screenEdge)
                 }
@@ -117,6 +118,7 @@ struct ProjectDetailView: View {
                     title: ctaButtonTitle,
                     iconName: ctaButtonIcon
                 ) {
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                     if let onStartAssembly = onStartAssembly {
                         onStartAssembly(project)
                     }

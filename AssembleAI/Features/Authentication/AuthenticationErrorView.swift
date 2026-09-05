@@ -10,6 +10,7 @@ import UIKit
 struct AuthenticationErrorView: View {
     let errorMessage: String
     let onRetry: () -> Void
+    var onCreateAccount: (() -> Void)? = nil
     let onDismiss: () -> Void
     
     @State private var iconAppeared = false
@@ -31,13 +32,13 @@ struct AuthenticationErrorView: View {
                 }
                 .padding(.bottom, AppSpacing.xxs)
                 
-                Text("Something went wrong")
+                Text("Unable to Sign In")
                     .font(.title3)
                     .fontWeight(.bold)
                     .foregroundColor(AppColors.primaryText)
                     .lineLimit(1)
                 
-                Text(errorMessage.isEmpty ? "We couldn't complete sign in. Please try again." : errorMessage)
+                Text(errorMessage.isEmpty ? "Incorrect email or password. Please verify your credentials and try again." : errorMessage)
                     .font(.subheadline)
                     .foregroundColor(AppColors.secondaryText)
                     .multilineTextAlignment(.center)
@@ -46,11 +47,17 @@ struct AuthenticationErrorView: View {
                     .padding(.horizontal, AppSpacing.sm)
             }
             
-            Spacer(minLength: 12)
+            Spacer(minLength: 10)
             
             VStack(spacing: AppSpacing.xs) {
                 PrimaryButton(title: "Try Again", iconName: "arrow.clockwise") {
                     onRetry()
+                }
+                
+                if let onCreateAccount = onCreateAccount {
+                    SecondaryButton(title: "Create an Account", iconName: "person.badge.plus") {
+                        onCreateAccount()
+                    }
                 }
                 
                 Button(action: onDismiss) {

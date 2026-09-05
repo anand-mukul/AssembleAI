@@ -54,6 +54,7 @@ struct WelcomeView: View {
                         .contentShape(Rectangle())
                         .onTapGesture {
                             if cap.icon == "lock.shield" {
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
                                 showPrivacySheet = true
                             }
                         }
@@ -94,10 +95,12 @@ struct WelcomeView: View {
     private var bottomActions: some View {
         VStack(spacing: AppSpacing.mdSm) {
             PrimaryButton(title: "Get Started") {
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 router.navigateToAuthChoice()
             }
             
             Button(action: {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 router.navigateToSignIn()
             }) {
                 HStack(spacing: 4) {
@@ -128,11 +131,16 @@ private struct CapabilityRow: View {
     
     var body: some View {
         HStack(alignment: .top, spacing: AppSpacing.md) {
-            Image(systemName: iconName)
-                .font(.system(size: 20, weight: .medium))
-                .foregroundColor(.assembleBrandPrimary)
-                .frame(width: 32, height: 32)
-                .accessibilityHidden(true)
+            ZStack {
+                RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
+                    .fill(Color.assembleBrandPrimary.opacity(0.12))
+                    .frame(width: 36, height: 36)
+                
+                Image(systemName: iconName)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(.assembleBrandPrimary)
+            }
+            .accessibilityHidden(true)
             
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 4) {
@@ -148,7 +156,7 @@ private struct CapabilityRow: View {
                 Text(subtitle)
                     .font(.subheadline)
                     .foregroundColor(AppColors.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .adaptiveMultiline()
             }
             
             Spacer(minLength: 0)

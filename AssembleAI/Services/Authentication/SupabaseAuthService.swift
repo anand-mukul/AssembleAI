@@ -14,6 +14,7 @@ import Combine
 final class SupabaseAuthService: AuthenticationService {
     @Published private(set) var currentUser: User? = nil
     @Published private(set) var isAuthenticated: Bool = false
+    @Published private(set) var isSessionRestored: Bool = false
     @Published private(set) var isLoading: Bool = false
     @Published var authError: String? = nil
     
@@ -40,6 +41,10 @@ final class SupabaseAuthService: AuthenticationService {
     // MARK: - Session Restoration
     
     func checkExistingSession() async {
+        defer {
+            self.isSessionRestored = true
+        }
+        
         // 1. Restore cached auth token into network manager
         if let token = keychain.get(key: "supabase_auth_token") {
             supabaseManager.updateAuthToken(token)
@@ -259,7 +264,7 @@ final class SupabaseAuthService: AuthenticationService {
                     }
                 } else {
                     // Extract detailed Supabase error message (e.g. Email not confirmed, Invalid login credentials)
-                    let errorMsg = extractErrorMessage(from: data) ?? "Invalid credentials. Please verify your email and password."
+                    let errorMsg = extractErrorMessage(from: data) ?? "Incorrect email or password. Please check your credentials and try again."
                     let err = AuthError.serviceError(errorMsg)
                     self.authError = err.localizedDescription
                     throw err
@@ -283,7 +288,7 @@ final class SupabaseAuthService: AuthenticationService {
             return
         }
         
-        let notFoundErr = AuthError.serviceError("No account found for \(trimmedEmail). Please create an account first or continue without account.")
+        let notFoundErr = AuthError.invalidCredentials
         self.authError = notFoundErr.localizedDescription
         throw notFoundErr
     }
@@ -526,12 +531,18 @@ final class SupabaseAuthService: AuthenticationService {
         if lower.contains("email not confirmed") {
             return "Please verify your email address before signing in. Check your inbox for the confirmation link."
         }
-        if lower.contains("invalid login credentials") {
-            return "Invalid email or password. Please check your credentials and try again."
+        if lower.contains("invalid login credentials") || lower.contains("invalid_grant") || lower.contains("user not found") {
+            return "Incorrect email or password. Please check your credentials and try again, or create a new account."
         }
-        if lower.contains("user already registered") {
+        if lower.contains("user already registered") || lower.contains("already registered") {
             return "An account with this email address already exists. Please sign in instead."
         }
-        return raw
+        if lower.contains("rate limit") || lower.contains("too many requests") {
+            return "Too many attempts. Please wait a moment and try again."
+        }
+        if lower.contains("password should be at least") {
+            return "Password must be at least 6 characters long."
+        }
+        return "Incorrect email or password. Please check your credentials and try again."
     }
 }

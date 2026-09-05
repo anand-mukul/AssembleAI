@@ -60,13 +60,34 @@ enum AppTypography {
 }
 
 extension View {
-    /// Standard section header text style
+    /// Standard section header text style adhering to Apple HIG native title-case guidelines.
     func sectionHeaderStyle() -> some View {
         self
-            .font(.system(size: 11, weight: .bold, design: .monospaced))
+            .font(.subheadline)
+            .fontWeight(.semibold)
             .foregroundColor(AppColors.secondaryText)
-            .textCase(.uppercase)
-            .tracking(0.8)
+    }
+
+    /// Guarantees that body/caption text wraps across all lines without truncation under Dynamic Type.
+    func adaptiveMultiline(alignment: TextAlignment = .leading) -> some View {
+        self
+            .lineLimit(nil)
+            .fixedSize(horizontal: false, vertical: true)
+            .multilineTextAlignment(alignment)
+    }
+
+    /// Single line text that smoothly adapts and scales down instead of truncating abruptly.
+    func singleLineAdaptive(minScale: CGFloat = 0.8) -> some View {
+        self
+            .lineLimit(1)
+            .minimumScaleFactor(minScale)
+    }
+
+    /// Guarantees Apple HIG minimum interactive touch area (44pt x 44pt).
+    func touchTarget(minSize: CGFloat = 44) -> some View {
+        self
+            .frame(minWidth: minSize, minHeight: minSize)
+            .contentShape(Rectangle())
     }
 }
 

@@ -57,13 +57,18 @@ struct ProjectsView: View {
             placement: .navigationBarDrawer(displayMode: .always),
             prompt: "Search projects or categories"
         )
+        .onChange(of: viewModel.selectedFilter) { _ in
+            UISelectionFeedbackGenerator().selectionChanged()
+        }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     viewModel.showAddProjectSheet = true
                 }) {
                     Image(systemName: "plus")
                         .font(.body.weight(.semibold))
+                        .touchTarget()
                 }
                 .accessibilityLabel("Add Project")
             }

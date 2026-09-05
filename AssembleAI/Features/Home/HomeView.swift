@@ -59,12 +59,19 @@ struct HomeView: View {
                         
                         Spacer()
                         
-                        Button("See All") {
+                        Button(action: {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
                             onSelectProjectsTab?()
+                        }) {
+                            Text("See All")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.assembleBrandPrimary)
+                                .padding(.vertical, AppSpacing.xs)
+                                .padding(.horizontal, AppSpacing.xs)
+                                .contentShape(Rectangle())
                         }
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.assembleBrandPrimary)
+                        .touchTarget()
                         .accessibilityLabel("See all projects")
                     }
                     .padding(.horizontal, AppSpacing.screenEdge)
@@ -144,6 +151,7 @@ struct HomeView: View {
             Text("Select a hardware task to begin guided step-by-step assembly.")
                 .font(.subheadline)
                 .foregroundColor(AppColors.secondaryText)
+                .adaptiveMultiline()
             
             SecondaryButton(title: "Explore Projects", iconName: "folder") {
                 onSelectProjectsTab?()

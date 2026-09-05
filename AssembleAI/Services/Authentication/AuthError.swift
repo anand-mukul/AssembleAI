@@ -19,17 +19,17 @@ enum AuthError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .invalidCredentials:
-            return "Invalid email or password. Please verify your credentials."
+            return "Incorrect email or password. Please verify your credentials and try again, or create a new account."
         case .invalidEmail:
             return "Please enter a valid email address."
         case .weakPassword:
             return "Password must be at least 6 characters long."
         case .accountAlreadyExists:
-            return "An account with this email already exists. Please sign in."
+            return "An account with this email already exists. Please sign in instead."
         case .userNotFound:
-            return "No account found with this email address."
-        case .networkError(let message):
-            return "Unable to connect: \(message)"
+            return "Incorrect email or password. Please verify your credentials and try again, or create a new account."
+        case .networkError:
+            return "Unable to reach the authentication server. Please check your internet connection and try again."
         case .serviceError(let message):
             return message
         case .unauthenticated:

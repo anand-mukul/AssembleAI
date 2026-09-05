@@ -35,7 +35,7 @@ struct HistoryView: View {
                 // Header Summary Bar
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("COMPLETED WORKFLOWS")
+                        Text("Completed Workflows")
                             .sectionHeaderStyle()
                         Text("\(sessions.count) Recorded Session\(sessions.count == 1 ? "" : "s")")
                             .font(.headline)
@@ -54,6 +54,7 @@ struct HistoryView: View {
                 Spacer(minLength: 32)
             }
             .padding(.top, AppSpacing.xs)
+            .padding(.bottom, 120)
         }
     }
     

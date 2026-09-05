@@ -13,6 +13,8 @@ struct LaunchView: View {
     
     @State private var opacity: Double = 0.0
     @State private var scale: CGFloat = 0.94
+    @State private var hasMinimumSplashElapsed: Bool = false
+    @State private var hasCompletedLaunch: Bool = false
     
     var body: some View {
         ZStack {
@@ -29,20 +31,39 @@ struct LaunchView: View {
             if reduceMotion {
                 opacity = 1.0
                 scale = 1.0
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                    router.completeLaunch(isAuthenticated: authService.isAuthenticated)
-                }
             } else {
                 withAnimation(.easeOut(duration: 0.5)) {
                     opacity = 1.0
                     scale = 1.0
                 }
-                
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
+            }
+            
+            Task {
+                // Minimum splash duration for brand recognition
+                let duration: UInt64 = reduceMotion ? 350_000_000 : 650_000_000
+                try? await Task.sleep(nanoseconds: duration)
+                hasMinimumSplashElapsed = true
+                evaluateTransition()
+            }
+            
+            // Failsafe timeout: never stall indefinitely even if remote check hits edge network timeout
+            Task {
+                try? await Task.sleep(nanoseconds: 2_500_000_000)
+                if !hasCompletedLaunch {
+                    hasCompletedLaunch = true
                     router.completeLaunch(isAuthenticated: authService.isAuthenticated)
                 }
             }
         }
+        .onChange(of: authService.isSessionRestored) { _ in
+            evaluateTransition()
+        }
+    }
+    
+    private func evaluateTransition() {
+        guard !hasCompletedLaunch, hasMinimumSplashElapsed, authService.isSessionRestored else { return }
+        hasCompletedLaunch = true
+        router.completeLaunch(isAuthenticated: authService.isAuthenticated)
     }
 }
 

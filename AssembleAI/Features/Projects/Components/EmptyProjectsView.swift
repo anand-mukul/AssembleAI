@@ -36,23 +36,28 @@ struct EmptyProjectsView: View {
                 Text(subtitle)
                     .font(.subheadline)
                     .foregroundColor(AppColors.secondaryText)
-                    .multilineTextAlignment(.center)
+                    .adaptiveMultiline(alignment: .center)
                     .padding(.horizontal, AppSpacing.xl)
             }
             
             if let buttonTitle = buttonTitle, let onAction = onAction {
-                Button(action: onAction) {
+                Button(action: {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    onAction()
+                }) {
                     Text(buttonTitle)
                         .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundColor(.white)
                         .padding(.horizontal, AppSpacing.lg)
                         .padding(.vertical, AppSpacing.sm)
+                        .frame(minHeight: 44)
                         .background(
                             Capsule()
                                 .fill(Color.assembleBrandPrimary)
                         )
                 }
+                .touchTarget()
                 .buttonStyle(ScaleButtonStyle())
                 .padding(.top, AppSpacing.xs)
             }

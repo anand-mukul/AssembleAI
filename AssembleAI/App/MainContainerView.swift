@@ -70,11 +70,15 @@ struct MainContainerView: View {
                     onRetry: {
                         authService.clearError()
                     },
+                    onCreateAccount: {
+                        authService.clearError()
+                        router.navigateToCreateAccount()
+                    },
                     onDismiss: {
                         authService.clearError()
                     }
                 )
-                .presentationDetents([.height(390), .medium])
+                .presentationDetents([.height(440), .medium])
                 .presentationDragIndicator(.visible)
                 .presentationCornerRadius(28)
             }

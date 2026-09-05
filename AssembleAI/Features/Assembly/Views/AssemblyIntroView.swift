@@ -34,7 +34,6 @@ struct AssemblyIntroView: View {
                         .font(.caption)
                         .fontWeight(.bold)
                         .foregroundColor(.assembleBrandPrimary)
-                        .textCase(.uppercase)
                     
                     Text("Ready to build?")
                         .font(.largeTitle)

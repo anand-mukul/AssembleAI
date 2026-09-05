@@ -12,6 +12,7 @@ import Combine
 protocol AuthenticationService: ObservableObject {
     var currentUser: User? { get }
     var isAuthenticated: Bool { get }
+    var isSessionRestored: Bool { get }
     var isLoading: Bool { get }
     var authError: String? { get set }
     

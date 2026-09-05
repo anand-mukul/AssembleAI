@@ -38,7 +38,7 @@ struct HelpAndSupportView: View {
                 
                 // Section 1: Breadboard Mechanics
                 referenceCard(
-                    title: "BREADBOARD ARCHITECTURE",
+                    title: "Breadboard Mechanics",
                     icon: "square.grid.3x3.topleft.filled",
                     color: .assembleBrandPrimary
                 ) {
@@ -55,7 +55,7 @@ struct HelpAndSupportView: View {
                 
                 // Section 2: Component Polarity
                 referenceCard(
-                    title: "COMPONENT POLARITY RULES",
+                    title: "Component Polarity",
                     icon: "bolt.horizontal.fill",
                     color: AppColors.warning
                 ) {
@@ -69,7 +69,7 @@ struct HelpAndSupportView: View {
                 
                 // Section 3: Vision Scanning Tips
                 referenceCard(
-                    title: "CAMERA SCANNING TIPS",
+                    title: "Camera Scanning Tips",
                     icon: "viewfinder",
                     color: AppColors.success
                 ) {
@@ -88,11 +88,9 @@ struct HelpAndSupportView: View {
                 
                 // Section 4: FAQ
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Text("FREQUENTLY ASKED QUESTIONS")
-                        .font(.system(size: 10, weight: .bold, design: .monospaced))
-                        .foregroundColor(AppColors.secondaryText)
+                    Text("Frequently Asked Questions")
+                        .sectionHeaderStyle()
                         .padding(.horizontal, 4)
-                        .tracking(1.0)
                     
                     VStack(spacing: AppSpacing.sm) {
                         faqItem(
@@ -128,6 +126,7 @@ struct HelpAndSupportView: View {
             }
             .padding(.horizontal, AppSpacing.screenEdge)
             .padding(.top, AppSpacing.md)
+            .padding(.bottom, 120)
         }
         .background(AppColors.appBackground.ignoresSafeArea())
         .navigationTitle("Assembly Guide")
@@ -143,12 +142,12 @@ struct HelpAndSupportView: View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             HStack(spacing: 6) {
                 Image(systemName: icon)
-                    .font(.caption)
+                    .font(.subheadline)
                     .foregroundColor(color)
                 Text(title)
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
-                    .foregroundColor(AppColors.secondaryText)
-                    .tracking(1.0)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(AppColors.primaryText)
             }
             
             content()

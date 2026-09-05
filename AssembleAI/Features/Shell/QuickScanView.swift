@@ -10,6 +10,7 @@ import SwiftUI
 @MainActor
 struct QuickScanView: View {
     @EnvironmentObject private var router: AppRouter
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var onLaunchInspection: ((AssemblyProject) -> Void)? = nil
     
     @State private var availableProjects: [AssemblyProject] = []
@@ -37,7 +38,7 @@ struct QuickScanView: View {
                     Text("Point your camera at the circuit board to track pin connections, orientation, and placement in real time.")
                         .font(.subheadline)
                         .foregroundColor(AppColors.secondaryText)
-                        .multilineTextAlignment(.center)
+                        .adaptiveMultiline(alignment: .center)
                         .padding(.horizontal, AppSpacing.md)
                 }
                 
@@ -52,7 +53,7 @@ struct QuickScanView: View {
                     launchInspection()
                 }
                 .padding(.top, AppSpacing.sm)
-                .padding(.bottom, AppSpacing.xl)
+                .padding(.bottom, 120)
             }
             .padding(.horizontal, AppSpacing.screenEdge)
         }
@@ -90,6 +91,7 @@ struct QuickScanView: View {
         }
         .frame(height: 150)
         .onAppear {
+            guard !reduceMotion else { return }
             withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) {
                 pulseScale = 1.05
             }
@@ -100,7 +102,7 @@ struct QuickScanView: View {
     
     private var projectSelectorCard: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Text("TARGET WORKSPACE PROJECT")
+            Text("Target Project")
                 .sectionHeaderStyle()
             
             if availableProjects.isEmpty {
@@ -157,7 +159,7 @@ struct QuickScanView: View {
     
     private var readinessCard: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text("PRE-SCAN SETUP")
+            Text("Pre-Scan Setup")
                 .sectionHeaderStyle()
             
             VStack(alignment: .leading, spacing: AppSpacing.mdSm) {
@@ -176,10 +178,15 @@ struct QuickScanView: View {
     
     private func checklistRow(icon: String, title: String, subtitle: String) -> some View {
         HStack(alignment: .top, spacing: AppSpacing.mdSm) {
-            Image(systemName: icon)
-                .font(.subheadline)
-                .foregroundColor(.assembleBrandPrimary)
-                .frame(width: 24, height: 24)
+            ZStack {
+                RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
+                    .fill(Color.assembleBrandPrimary.opacity(0.12))
+                    .frame(width: 36, height: 36)
+                
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.assembleBrandPrimary)
+            }
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
@@ -190,7 +197,7 @@ struct QuickScanView: View {
                 Text(subtitle)
                     .font(.caption)
                     .foregroundColor(AppColors.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .adaptiveMultiline()
             }
         }
     }
@@ -219,6 +226,7 @@ struct QuickScanView: View {
     }
     
     private func launchInspection() {
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         guard let project = selectedProject ?? availableProjects.first else { return }
         
         if let onLaunch = onLaunchInspection {

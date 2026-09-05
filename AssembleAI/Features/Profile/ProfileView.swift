@@ -13,6 +13,8 @@ struct ProfileView: View {
     @Environment(\.modelContext) private var modelContext
     
     @StateObject private var viewModel = ProfileViewModel()
+    @State private var showPrivacySheet = false
+    @State private var showTermsSheet = false
     
     var body: some View {
         ScrollView {
@@ -48,6 +50,16 @@ struct ProfileView: View {
         }
         .sheet(isPresented: $viewModel.showEditProfileSheet) {
             EditProfileSheet(viewModel: viewModel)
+        }
+        .sheet(isPresented: $showPrivacySheet) {
+            PrivacySheet(onContinue: {
+                showPrivacySheet = false
+            })
+        }
+        .sheet(isPresented: $showTermsSheet) {
+            TermsOfServiceSheet(onContinue: {
+                showTermsSheet = false
+            })
         }
         .alert("Sign Out of AssembleAI?", isPresented: $viewModel.showSignOutDialog) {
             Button("Cancel", role: .cancel) {}
@@ -200,6 +212,7 @@ struct ProfileView: View {
             .buttonStyle(ScaleButtonStyle())
             
             Button(role: .destructive) {
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 viewModel.showDeleteAccountDialog = true
             } label: {
                 HStack(spacing: 6) {
@@ -210,17 +223,37 @@ struct ProfileView: View {
                         .fontWeight(.medium)
                 }
                 .foregroundColor(AppColors.error.opacity(0.85))
-                .padding(.vertical, 8)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
             }
+            .touchTarget()
             
-            // Legal & Privacy Compliance Links (App Store Guideline 5.1.1)
+            // Legal & Privacy Compliance (App Store Guideline 5.1.1 & 2.1 - In-App Self-Contained)
             HStack(spacing: AppSpacing.md) {
-                Link("Privacy Policy", destination: URL(string: "https://assembleai.app/privacy")!)
+                Button(action: {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    showPrivacySheet = true
+                }) {
+                    Text("Privacy Policy")
+                        .underline()
+                        .padding(.vertical, AppSpacing.xs)
+                }
+                .touchTarget()
+                
                 Text("•")
                     .foregroundColor(AppColors.tertiaryText)
-                Link("Terms of Service", destination: URL(string: "https://assembleai.app/terms")!)
+                
+                Button(action: {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    showTermsSheet = true
+                }) {
+                    Text("Terms of Service")
+                        .underline()
+                        .padding(.vertical, AppSpacing.xs)
+                }
+                .touchTarget()
             }
-            .font(.caption2)
+            .font(.caption)
             .foregroundColor(AppColors.secondaryText)
             .padding(.top, AppSpacing.xs)
         }

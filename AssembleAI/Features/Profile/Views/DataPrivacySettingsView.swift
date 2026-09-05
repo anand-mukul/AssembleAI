@@ -33,6 +33,7 @@ struct DataPrivacySettingsView: View {
             }
             .padding(.horizontal, AppSpacing.screenEdge)
             .padding(.top, AppSpacing.md)
+            .padding(.bottom, 120)
         }
         .background(AppColors.appBackground.ignoresSafeArea())
         .navigationTitle("Data & Privacy")
@@ -96,11 +97,9 @@ struct DataPrivacySettingsView: View {
     
     private var storageBreakdownSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Text("ON-DEVICE STORAGE & CACHE")
-                .font(.system(size: 10, weight: .bold, design: .monospaced))
-                .foregroundColor(AppColors.secondaryText)
+            Text("Storage & Cache")
+                .sectionHeaderStyle()
                 .padding(.horizontal, 4)
-                .tracking(1.0)
             
             VStack(spacing: 0) {
                 storageRow(
@@ -130,19 +129,9 @@ struct DataPrivacySettingsView: View {
     private var researchTelemetrySection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
             HStack {
-                Text("RESEARCH EXPERIMENT DATA")
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
-                    .foregroundColor(AppColors.secondaryText)
-                    .tracking(1.0)
+                Text("Assembly Telemetry & Logs")
+                    .sectionHeaderStyle()
                 Spacer()
-                Text("Schema v\(ResearchLogger.researchSchemaVersion)")
-                    .font(.system(size: 9, weight: .semibold, design: .monospaced))
-                    .foregroundColor(AppColors.tertiaryText)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(
-                        Capsule().fill(Color.gray.opacity(0.12))
-                    )
             }
             .padding(.horizontal, 4)
             
@@ -219,11 +208,9 @@ struct DataPrivacySettingsView: View {
     
     private var managementSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Text("MANAGEMENT & RESET")
-                .font(.system(size: 10, weight: .bold, design: .monospaced))
-                .foregroundColor(AppColors.secondaryText)
+            Text("Reset Local Data")
+                .sectionHeaderStyle()
                 .padding(.horizontal, 4)
-                .tracking(1.0)
             
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 Button(action: {
