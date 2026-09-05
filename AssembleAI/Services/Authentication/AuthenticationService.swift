@@ -17,6 +17,7 @@ protocol AuthenticationService: ObservableObject {
     
     func signInWithApple() async throws
     func signInWithAppleCredential(userId: String, name: String?, email: String?) async throws
+    func signInWithAppleCredential(userId: String, name: String?, email: String?, idToken: String?) async throws
     func signIn(email: String, password: String) async throws
     func createAccount(name: String, email: String, password: String) async throws
     func resetPassword(email: String) async throws
@@ -24,4 +25,10 @@ protocol AuthenticationService: ObservableObject {
     func signOut() async
     func deleteAccount() async throws
     func clearError()
+}
+
+extension AuthenticationService {
+    func signInWithAppleCredential(userId: String, name: String?, email: String?) async throws {
+        try await signInWithAppleCredential(userId: userId, name: name, email: email, idToken: nil)
+    }
 }

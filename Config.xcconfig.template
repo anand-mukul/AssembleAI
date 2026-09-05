@@ -1,0 +1,10 @@
+//
+// Config.xcconfig.template
+// AssembleAI
+//
+// Copy this file to "Config.xcconfig" and fill in your Supabase project credentials.
+// "Config.xcconfig" is ignored by git and will never be committed to your repository.
+//
+
+SUPABASE_URL = https://your-project-id.supabase.co
+SUPABASE_PUBLISHABLE_KEY = your-anon-publishable-key-here

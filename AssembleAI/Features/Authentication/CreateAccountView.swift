@@ -20,6 +20,7 @@ struct CreateAccountView: View {
     @State private var passwordError: String? = nil
     @State private var confirmPasswordError: String? = nil
     @State private var hasSubmitted: Bool = false
+    @State private var showEmailConfirmationAlert: Bool = false
     
     var body: some View {
         ScrollView {
@@ -128,6 +129,13 @@ struct CreateAccountView: View {
         }
         .background(AppColors.appBackground.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
+        .alert("Check Your Email", isPresented: $showEmailConfirmationAlert) {
+            Button("Go to Sign In") {
+                router.pop()
+            }
+        } message: {
+            Text("We've sent a verification link to \(email). Please confirm your email address, then sign in.")
+        }
     }
     
     private var isFormIncomplete: Bool {
@@ -196,9 +204,13 @@ struct CreateAccountView: View {
         Task {
             do {
                 try await authService.createAccount(name: name, email: email, password: password)
-                router.transitionToHome()
+                if authService.isAuthenticated {
+                    router.transitionToHome()
+                } else {
+                    showEmailConfirmationAlert = true
+                }
             } catch {
-                // Auth error captured by authService
+                // Auth error captured by authService.authError sheet
             }
         }
     }

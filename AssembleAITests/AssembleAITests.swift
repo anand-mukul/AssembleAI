@@ -90,4 +90,12 @@ struct AssembleAITests {
         let netErr = AppError.network("Timeout")
         #expect(netErr.errorDescription == "Unable to connect to server. Please check your network connection.")
     }
+    
+    @Test func testAppConfigPlaceholderSafety() {
+        // AppConfig placeholder strings must never be considered configured
+        #expect(AppConfig.supabaseUrl.contains("https://") || AppConfig.supabaseUrl == "SUPABASE_URL_NOT_FOUND")
+        if AppConfig.supabaseUrl == "SUPABASE_URL_NOT_FOUND" {
+            #expect(AppConfig.isSupabaseConfigured == false)
+        }
+    }
 }

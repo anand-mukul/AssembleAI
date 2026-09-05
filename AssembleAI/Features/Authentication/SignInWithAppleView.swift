@@ -116,12 +116,14 @@ struct SignInWithAppleView: View {
                         appleIDCredential.fullName?.familyName
                     ].compactMap { $0 }.joined(separator: " ")
                     let email = appleIDCredential.email
+                    let idTokenString = appleIDCredential.identityToken.flatMap { String(data: $0, encoding: .utf8) }
                     
                     do {
                         try await authService.signInWithAppleCredential(
                             userId: userIdentifier,
                             name: fullName.isEmpty ? nil : fullName,
-                            email: email
+                            email: email,
+                            idToken: idTokenString
                         )
                         isProcessing = false
                         router.transitionToHome()
