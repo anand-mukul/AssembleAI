@@ -220,6 +220,7 @@ final class SupabaseAuthService: AuthenticationService {
                 request.httpMethod = "POST"
                 request.setValue("application/json", forHTTPHeaderField: "Content-Type")
                 request.setValue(AppConfig.supabaseAnonKey, forHTTPHeaderField: "apikey")
+                request.setValue("Bearer \(AppConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
                 
                 let body: [String: Any] = ["email": trimmedEmail, "password": password]
                 request.httpBody = try JSONSerialization.data(withJSONObject: body)
@@ -327,6 +328,7 @@ final class SupabaseAuthService: AuthenticationService {
                 request.httpMethod = "POST"
                 request.setValue("application/json", forHTTPHeaderField: "Content-Type")
                 request.setValue(AppConfig.supabaseAnonKey, forHTTPHeaderField: "apikey")
+                request.setValue("Bearer \(AppConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
                 
                 let body: [String: Any] = [
                     "email": trimmedEmail,
@@ -354,8 +356,9 @@ final class SupabaseAuthService: AuthenticationService {
                             keychain.save(key: "supabase_refresh_token", value: refreshToken)
                         }
                         
-                        let userObj = json["user"] as? [String: Any]
-                        let userId = (userObj?["id"] as? String) ?? UUID().uuidString
+                        // Parse user object whether nested under "user" (when token present) or root (when confirmation required)
+                        let userObj = (json["user"] as? [String: Any]) ?? json
+                        let userId = (userObj["id"] as? String) ?? UUID().uuidString
                         
                         let user = User(
                             id: userId,
@@ -529,7 +532,7 @@ final class SupabaseAuthService: AuthenticationService {
         guard let raw = rawMsg else { return nil }
         let lower = raw.lowercased()
         if lower.contains("email not confirmed") {
-            return "Please verify your email address before signing in. Check your inbox for the confirmation link."
+            return "Please verify your email address before signing in. Check your inbox and spam folder for the confirmation link."
         }
         if lower.contains("invalid login credentials") || lower.contains("invalid_grant") || lower.contains("user not found") {
             return "Incorrect email or password. Please check your credentials and try again, or create a new account."
@@ -537,8 +540,11 @@ final class SupabaseAuthService: AuthenticationService {
         if lower.contains("user already registered") || lower.contains("already registered") {
             return "An account with this email address already exists. Please sign in instead."
         }
-        if lower.contains("rate limit") || lower.contains("too many requests") {
-            return "Too many attempts. Please wait a moment and try again."
+        if lower.contains("rate limit") || lower.contains("too many requests") || lower.contains("over_email_send_rate_limit") {
+            return "Email rate limit reached. Supabase default email service is limited to 3 emails per hour. Please wait a few minutes, or disable 'Confirm email' in your Supabase Auth dashboard."
+        }
+        if lower.contains("email_address_invalid") || (lower.contains("email address") && lower.contains("invalid")) {
+            return "This email address cannot receive verification emails. Please use a real email address (e.g. @gmail.com) or disable 'Confirm email' in your Supabase dashboard."
         }
         if lower.contains("password should be at least") {
             return "Password must be at least 6 characters long."
