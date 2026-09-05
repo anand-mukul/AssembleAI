@@ -15,42 +15,40 @@ struct AuthenticationErrorView: View {
     @State private var iconAppeared = false
     
     var body: some View {
-        VStack(spacing: AppSpacing.lg) {
-            // Drag indicator
-            Capsule()
-                .fill(AppColors.border)
-                .frame(width: 36, height: 5)
-                .padding(.top, AppSpacing.sm)
+        VStack(spacing: AppSpacing.md) {
+            Spacer(minLength: 8)
             
-            Spacer()
-            
-            VStack(spacing: AppSpacing.mdSm) {
+            VStack(spacing: AppSpacing.sm) {
                 ZStack {
                     Circle()
                         .fill(AppColors.error.opacity(0.1))
-                        .frame(width: 72, height: 72)
+                        .frame(width: 68, height: 68)
                     
                     Image(systemName: "exclamationmark.circle.fill")
-                        .font(.system(size: 36, weight: .light))
+                        .font(.system(size: 34, weight: .light))
                         .foregroundColor(AppColors.error)
                         .scaleEffect(iconAppeared ? 1 : 0.7)
                 }
+                .padding(.bottom, AppSpacing.xxs)
                 
                 Text("Something went wrong")
                     .font(.title3)
                     .fontWeight(.bold)
                     .foregroundColor(AppColors.primaryText)
+                    .lineLimit(1)
                 
                 Text(errorMessage.isEmpty ? "We couldn't complete sign in. Please try again." : errorMessage)
                     .font(.subheadline)
                     .foregroundColor(AppColors.secondaryText)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, AppSpacing.md)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, AppSpacing.sm)
             }
             
-            Spacer()
+            Spacer(minLength: 12)
             
-            VStack(spacing: AppSpacing.mdSm) {
+            VStack(spacing: AppSpacing.xs) {
                 PrimaryButton(title: "Try Again", iconName: "arrow.clockwise") {
                     onRetry()
                 }
@@ -60,10 +58,11 @@ struct AuthenticationErrorView: View {
                         .font(.subheadline)
                         .fontWeight(.medium)
                         .foregroundColor(AppColors.secondaryText)
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                 }
-                .padding(.vertical, AppSpacing.xs)
             }
-            .padding(.bottom, AppSpacing.lg)
+            .padding(.bottom, AppSpacing.md)
         }
         .padding(.horizontal, AppSpacing.screenEdge)
         .background(AppColors.secondaryGroupedBackground.ignoresSafeArea())

@@ -569,6 +569,8 @@ struct CustomTextField: View {
                     Text(errorMessage)
                         .font(.caption)
                         .foregroundColor(AppColors.error)
+                        .lineLimit(nil)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.leading, 4)
                 .transition(.move(edge: .top).combined(with: .opacity))

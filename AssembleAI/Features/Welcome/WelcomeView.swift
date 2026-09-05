@@ -24,9 +24,11 @@ struct WelcomeView: View {
                         .foregroundColor(.assembleBrandPrimary)
                         .padding(.bottom, AppSpacing.xxs)
                     
-                    AppTypography.largeTitle("Build with\nprecision.")
+                    Text("Build with precision.")
+                        .font(.system(size: 30, weight: .bold))
                         .foregroundColor(AppColors.primaryText)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                         .accessibilityAddTraits(.isHeader)
                     
                     AppTypography.body("Real-time camera verification for physical hardware assembly. Point your iPhone at your workspace and verify each step as you build.")

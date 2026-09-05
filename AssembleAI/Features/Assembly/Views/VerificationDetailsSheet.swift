@@ -59,6 +59,8 @@ struct VerificationDetailsSheet: View {
                 .font(.subheadline)
                 .fontWeight(.semibold)
                 .foregroundColor(color)
+                .lineLimit(nil)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(AppSpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)

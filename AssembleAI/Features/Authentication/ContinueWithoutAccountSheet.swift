@@ -12,12 +12,8 @@ struct ContinueWithoutAccountSheet: View {
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        VStack(spacing: AppSpacing.lg) {
-            // Drag indicator visual spacer
-            Capsule()
-                .fill(AppColors.border)
-                .frame(width: 36, height: 5)
-                .padding(.top, AppSpacing.sm)
+        VStack(spacing: AppSpacing.md) {
+            Spacer(minLength: 8)
             
             VStack(spacing: AppSpacing.sm) {
                 ZStack {
@@ -29,7 +25,7 @@ struct ContinueWithoutAccountSheet: View {
                         .font(.system(size: 34, weight: .light))
                         .foregroundColor(.assembleBrandPrimary)
                 }
-                .padding(.bottom, AppSpacing.xs)
+                .padding(.bottom, AppSpacing.xxs)
                 
                 Text("Continue on iPhone")
                     .font(.title2)
@@ -41,13 +37,14 @@ struct ContinueWithoutAccountSheet: View {
                     .font(.subheadline)
                     .foregroundColor(AppColors.secondaryText)
                     .multilineTextAlignment(.center)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, AppSpacing.sm)
             }
-            .padding(.top, AppSpacing.xs)
             
-            Spacer()
+            Spacer(minLength: 12)
             
-            VStack(spacing: AppSpacing.mdSm) {
+            VStack(spacing: AppSpacing.xs) {
                 PrimaryButton(title: "Continue", iconName: "arrow.right") {
                     dismiss()
                     Task {
@@ -63,14 +60,16 @@ struct ContinueWithoutAccountSheet: View {
                         .font(.subheadline)
                         .fontWeight(.medium)
                         .foregroundColor(AppColors.secondaryText)
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                 }
-                .padding(.vertical, AppSpacing.xs)
             }
-            .padding(.bottom, AppSpacing.lg)
+            .padding(.bottom, AppSpacing.md)
         }
         .padding(.horizontal, AppSpacing.screenEdge)
         .background(AppColors.secondaryGroupedBackground.ignoresSafeArea())
-        .presentationDetents([.height(390), .medium])
+        .presentationDetents([.height(400), .medium])
+        .presentationDragIndicator(.visible)
         .presentationCornerRadius(28)
         .accessibilityElement(children: .contain)
     }

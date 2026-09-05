@@ -74,7 +74,8 @@ struct MainContainerView: View {
                         authService.clearError()
                     }
                 )
-                .presentationDetents([.height(360), .medium])
+                .presentationDetents([.height(390), .medium])
+                .presentationDragIndicator(.visible)
                 .presentationCornerRadius(28)
             }
         }

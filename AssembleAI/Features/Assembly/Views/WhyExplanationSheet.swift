@@ -18,13 +18,7 @@ struct WhyExplanationSheet: View {
     private let generator: GuidanceGenerating = HybridGuidanceGenerator()
     
     var body: some View {
-        VStack(spacing: AppSpacing.lg) {
-            // Drag indicator
-            Capsule()
-                .fill(AppColors.border)
-                .frame(width: 36, height: 5)
-                .padding(.top, AppSpacing.sm)
-            
+        VStack(spacing: AppSpacing.md) {
             // Header
             VStack(spacing: AppSpacing.xs) {
                 HStack(spacing: 6) {
@@ -49,8 +43,10 @@ struct WhyExplanationSheet: View {
                     .font(.title3)
                     .fontWeight(.bold)
                     .foregroundColor(AppColors.primaryText)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(.top, AppSpacing.xs)
+            .padding(.top, AppSpacing.sm)
             
             // Model Explanation Card
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
@@ -67,6 +63,7 @@ struct WhyExplanationSheet: View {
                     Text(explanationText)
                         .font(.body)
                         .foregroundColor(AppColors.primaryText)
+                        .lineLimit(nil)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -74,7 +71,7 @@ struct WhyExplanationSheet: View {
             .appCard()
             .padding(.horizontal, AppSpacing.screenEdge)
             
-            Spacer()
+            Spacer(minLength: 12)
             
             PrimaryButton(title: "Done") {
                 dismiss()
@@ -83,7 +80,8 @@ struct WhyExplanationSheet: View {
             .padding(.bottom, AppSpacing.lg)
         }
         .background(AppColors.appBackground.ignoresSafeArea())
-        .presentationDetents([.height(340), .medium])
+        .presentationDetents([.height(380), .medium])
+        .presentationDragIndicator(.visible)
         .presentationCornerRadius(28)
         .sheet(isPresented: $showModelDebug) {
             FoundationModelDebugView(
