@@ -15,7 +15,7 @@ struct ScaleButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
-            .opacity(configuration.isPressed ? 0.9 : 1.0)
+            .opacity(configuration.isPressed ? 0.88 : 1.0)
             .animation(.spring(response: 0.25, dampingFraction: 0.7), value: configuration.isPressed)
             .onChange(of: configuration.isPressed) { _, isPressed in
                 if enableHaptic && isPressed {
@@ -42,7 +42,7 @@ struct BrandHeaderView: View {
             // App Brand Mark (Precision Viewfinder + CPU Core)
             ZStack {
                 Circle()
-                    .fill(Color.assembleBrandPrimary.opacity(0.1))
+                    .fill(Color.assembleBrandPrimary.opacity(0.12))
                     .frame(width: markDiameter, height: markDiameter)
                 
                 Image(systemName: "viewfinder")
@@ -97,7 +97,7 @@ struct BrandHeaderView: View {
 
 // MARK: - Assembly Camera Visual Centerpiece Motif
 
-/// Apple / Uber / Airbnb-grade hardware inspection preview card representing physical assembly verification.
+/// Apple-grade hardware inspection preview card representing physical assembly verification.
 struct AssemblyCameraMotifView: View {
     var body: some View {
         VStack(spacing: 0) {
@@ -253,14 +253,14 @@ struct CameraCornersView: View {
                 path.addLine(to: CGPoint(x: w, y: h))
                 path.addLine(to: CGPoint(x: w, y: h - len))
             }
-            .stroke(style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+            .stroke(style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
         }
     }
 }
 
-// MARK: - Native Primary Action Button
+// MARK: - Native Primary Action Button (Apple HIG Standard)
 
-/// Clean, minimal, full-width primary button styled strictly to Apple HIG standards with Dynamic Type support.
+/// High-contrast, tactile primary button styled to Apple HIG standards with Dynamic Type support.
 struct PrimaryButton: View {
     let title: String
     var iconName: String? = nil
@@ -280,40 +280,27 @@ struct PrimaryButton: View {
                 } else {
                     if let iconName = iconName {
                         Image(systemName: iconName)
-                            .font(.body.weight(.medium))
+                            .font(.body.weight(.semibold))
                     }
                     Text(title)
                         .font(.body)
                         .fontWeight(.semibold)
-                        .lineLimit(2)
+                        .lineLimit(1)
                         .minimumScaleFactor(0.85)
                 }
             }
             .foregroundColor(AppColors.premiumButtonForeground)
             .frame(maxWidth: .infinity)
-            .frame(minHeight: 54)
-            .padding(.vertical, AppSpacing.xs)
-            .padding(.horizontal, AppSpacing.md)
+            .frame(height: 50)
             .background(
                 Capsule(style: .continuous)
                     .fill(isDisabled ? AppColors.tertiaryText.opacity(0.3) : AppColors.premiumButtonBackground)
-            )
-            .overlay(
-                Capsule(style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [Color.white.opacity(0.08), Color.clear],
-                            startPoint: .top,
-                            endPoint: .center
-                        )
-                    )
-                    .allowsHitTesting(false)
             )
             .contentShape(Capsule(style: .continuous))
         }
         .buttonStyle(ScaleButtonStyle())
         .disabled(isDisabled || isLoading)
-        .opacity(isDisabled ? 0.75 : 1.0)
+        .opacity(isDisabled ? 0.6 : 1.0)
         .accessibilityLabel(title)
         .accessibilityHint(isLoading ? "Loading" : "")
     }
@@ -341,38 +328,36 @@ struct SecondaryButton: View {
                 Text(title)
                     .font(.body)
                     .fontWeight(.medium)
-                    .lineLimit(2)
+                    .lineLimit(1)
                     .minimumScaleFactor(0.85)
             }
             .foregroundColor(AppColors.primaryText)
             .frame(maxWidth: .infinity)
-            .frame(minHeight: 54)
-            .padding(.vertical, AppSpacing.xs)
-            .padding(.horizontal, AppSpacing.md)
+            .frame(height: 50)
             .background(
                 Capsule(style: .continuous)
-                    .fill(.ultraThinMaterial)
+                    .fill(AppColors.secondaryGroupedBackground)
             )
             .overlay(
                 Capsule(style: .continuous)
-                    .strokeBorder(AppColors.glassBorderUnified, lineWidth: 0.5)
+                    .strokeBorder(AppColors.borderSubtle, lineWidth: 0.5)
             )
             .contentShape(Capsule(style: .continuous))
         }
         .buttonStyle(ScaleButtonStyle())
         .disabled(isDisabled)
-        .opacity(isDisabled ? 0.55 : 1.0)
+        .opacity(isDisabled ? 0.5 : 1.0)
         .accessibilityLabel(title)
     }
 }
 
-// MARK: - Unified Card Modifier & Container
+// MARK: - Unified Card Modifier & Container (Apple HIG Standard)
 
 /// Standard Apple-quality card modifier unifying corner radius, background, and crisp subtle borders.
 struct AppCardModifier: ViewModifier {
     var cornerRadius: CGFloat = AppRadius.card
     var backgroundColor: Color = AppColors.secondaryGroupedBackground
-    var borderColor: Color = AppColors.glassBorderUnified
+    var borderColor: Color = AppColors.borderSubtle
     var padding: CGFloat = AppSpacing.md
 
     func body(content: Content) -> some View {
@@ -380,13 +365,13 @@ struct AppCardModifier: ViewModifier {
             .padding(padding)
             .background(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(.ultraThinMaterial)
+                    .fill(backgroundColor)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .strokeBorder(borderColor, lineWidth: 0.5)
             )
-            .shadow(color: AppShadow.subtleColor, radius: 8, x: 0, y: 2)
+            .shadow(color: AppShadow.subtleColor, radius: 4, x: 0, y: 1)
     }
 }
 
@@ -402,7 +387,7 @@ extension View {
     }
 }
 
-// MARK: - Reusable Stat Tile
+// MARK: - Reusable Stat Tile (Apple Health/Fitness Pattern)
 
 /// Standardized statistic metric tile used across summary, completion, and profile screens.
 struct StatTile: View {
@@ -415,40 +400,36 @@ struct StatTile: View {
         VStack(spacing: 4) {
             if let icon = icon {
                 Image(systemName: icon)
-                    .font(.subheadline)
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [AppColors.iconBadgeGradientStart, AppColors.iconBadgeGradientEnd],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundColor(iconColor)
             }
             
             Text(value)
                 .font(.title3)
-                .fontWeight(.semibold)
+                .fontWeight(.bold)
+                .monospacedDigit()
                 .foregroundColor(AppColors.primaryText)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
 
             Text(title)
                 .font(.caption)
+                .fontWeight(.medium)
                 .foregroundColor(AppColors.secondaryText)
                 .lineLimit(1)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, AppSpacing.sm)
-        .padding(.horizontal, AppSpacing.xs)
+        .padding(.vertical, AppSpacing.mdSm)
+        .padding(.horizontal, AppSpacing.sm)
         .background(
-            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                .fill(.ultraThinMaterial)
+            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                .fill(AppColors.secondaryGroupedBackground)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                .strokeBorder(AppColors.glassBorderUnified, lineWidth: 0.5)
+            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                .strokeBorder(AppColors.borderSubtle, lineWidth: 0.5)
         )
-        .shadow(color: AppShadow.subtleColor, radius: 6, x: 0, y: 2)
+        .shadow(color: AppShadow.subtleColor, radius: 4, x: 0, y: 1)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(title): \(value)")
     }
@@ -475,32 +456,22 @@ struct StatusPill: View {
             Text(text)
                 .font(.caption2)
                 .fontWeight(.semibold)
-                .foregroundColor(.white)
+                .foregroundColor(AppColors.primaryText)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 5)
-        .background(Capsule().fill(.ultraThinMaterial))
+        .background(
+            Capsule()
+                .fill(AppColors.tertiaryBackground)
+        )
+        .overlay(
+            Capsule()
+                .strokeBorder(AppColors.borderSubtle, lineWidth: 0.5)
+        )
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Status: \(text)")
+        .accessibilityLabel(text)
     }
 }
-
-// MARK: - Status Badge
-
-/// Minimal semantic label for difficulty level, sync state, and verification outcomes without capsule clutter.
-struct BadgeView: View {
-    let text: String
-    var color: Color = .assembleBrandPrimary
-    
-    var body: some View {
-        Text(text)
-            .font(.caption)
-            .fontWeight(.medium)
-            .foregroundColor(color)
-            .accessibilityLabel(text)
-    }
-}
-
 
 // MARK: - Custom Input Text Field
 
@@ -568,14 +539,14 @@ struct CustomTextField: View {
             .padding(.horizontal, AppSpacing.md)
             .frame(height: 48)
             .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                     .fill(AppColors.secondaryBackground)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                     .strokeBorder(
-                        errorMessage != nil ? AppColors.error : (isFocused ? Color.assembleBrandPrimary : AppColors.border.opacity(0.4)),
-                        lineWidth: isFocused || errorMessage != nil ? 1.5 : 1
+                        errorMessage != nil ? AppColors.error : (isFocused ? Color.assembleBrandPrimary : AppColors.borderSubtle),
+                        lineWidth: isFocused || errorMessage != nil ? 1.5 : 0.5
                     )
             )
             .animation(.spring(response: 0.25, dampingFraction: 0.8), value: isFocused)
@@ -601,7 +572,7 @@ struct CustomTextField: View {
 
 // MARK: - Gradient Atmosphere Background
 
-/// Reusable atmospheric gradient background with optional ambient glow orbs.
+/// Reusable atmospheric gradient background. On content screens, cleanly resolves to native system grouped background.
 enum AtmosphereIntensity {
     case hero
     case subtle
@@ -609,12 +580,9 @@ enum AtmosphereIntensity {
 
 struct GradientAtmosphereBackground: View {
     var intensity: AtmosphereIntensity = .hero
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var glowPhase: CGFloat = 0
     
     var body: some View {
-        ZStack {
-            // Multi-stop gradient
+        if intensity == .hero {
             LinearGradient(
                 colors: [
                     AppColors.atmosphereGradientTop,
@@ -626,54 +594,58 @@ struct GradientAtmosphereBackground: View {
                 endPoint: .bottom
             )
             .ignoresSafeArea()
-            
-            if intensity == .hero {
-                // Ambient glow orbs
-                Circle()
-                    .fill(AppColors.glowPrimary)
-                    .frame(width: 200, height: 200)
-                    .blur(radius: 80)
-                    .offset(x: -60, y: -100)
-                    .scaleEffect(1.0 + glowPhase * 0.1)
-                
-                Circle()
-                    .fill(AppColors.glowSecondary)
-                    .frame(width: 160, height: 160)
-                    .blur(radius: 70)
-                    .offset(x: 80, y: -40)
-                    .scaleEffect(1.0 + glowPhase * 0.08)
-            }
-        }
-        .onAppear {
-            guard !reduceMotion, intensity == .hero else { return }
-            withAnimation(.easeInOut(duration: 4.0).repeatForever(autoreverses: true)) {
-                glowPhase = 1.0
-            }
+        } else {
+            AppColors.groupedBackground
+                .ignoresSafeArea()
         }
     }
 }
 
-// MARK: - Gradient Icon Badge
+// MARK: - Apple Settings-Style Semantic Icon Badge
 
-/// Unified gradient-filled rounded square icon badge replacing flat brand-tinted containers.
-struct GradientIconBadge: View {
+/// Authentic Apple Settings squircle icon badge (30x30pt, 7pt continuous corner radius).
+/// Replaces generic oversaturated gradient squares with purposeful semantic color coding.
+struct SemanticIconBadge: View {
     let iconName: String
-    var size: CGFloat = 36
-    var iconSize: CGFloat = 17
-    var colors: [Color]? = nil
+    var size: CGFloat = 30
+    var iconSize: CGFloat = 15
+    var color: Color = AppColors.badgeBlue
     
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: size * 0.28, style: .continuous)
+            RoundedRectangle(cornerRadius: AppRadius.iconBadge, style: .continuous)
+                .fill(color)
+                .frame(width: size, height: size)
+            
+            Image(systemName: iconName)
+                .font(.system(size: iconSize, weight: .semibold))
+                .foregroundColor(.white)
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+// MARK: - Unified Icon Badge (Backward Compatible)
+
+/// Standard Apple-style rounded squircle icon badge.
+struct GradientIconBadge: View {
+    let iconName: String
+    var size: CGFloat = 30
+    var iconSize: CGFloat = 15
+    var colors: [Color]? = nil
+    var color: Color? = nil
+    
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: AppRadius.iconBadge, style: .continuous)
                 .fill(
-                    LinearGradient(
-                        colors: colors ?? [AppColors.iconBadgeGradientStart, AppColors.iconBadgeGradientEnd],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
+                    color != nil
+                    ? AnyShapeStyle(color!)
+                    : (colors != nil && colors!.count > 1
+                       ? AnyShapeStyle(LinearGradient(colors: colors!, startPoint: .topLeading, endPoint: .bottomTrailing))
+                       : AnyShapeStyle(colors?.first ?? AppColors.brandPrimary))
                 )
                 .frame(width: size, height: size)
-                .shadow(color: (colors?.first ?? AppColors.iconBadgeGradientStart).opacity(0.3), radius: 4, x: 0, y: 2)
             
             Image(systemName: iconName)
                 .font(.system(size: iconSize, weight: .semibold))
@@ -688,9 +660,9 @@ struct GradientIconBadge: View {
 /// Reusable centered icon-in-circle with entrance scale + opacity animation for hero sections.
 struct AnimatedHeaderIcon: View {
     let iconName: String
-    var iconSize: CGFloat = 34
-    var circleDiameter: CGFloat = 72
-    var useGradient: Bool = true
+    var iconSize: CGFloat = 30
+    var circleDiameter: CGFloat = 64
+    var useGradient: Bool = false
     var staticColor: Color = .assembleBrandPrimary
     
     @State private var appeared = false
@@ -699,36 +671,33 @@ struct AnimatedHeaderIcon: View {
     var body: some View {
         ZStack {
             Circle()
-                .fill(
-                    useGradient
-                    ? AnyShapeStyle(LinearGradient(
-                        colors: [AppColors.iconBadgeGradientStart.opacity(0.15), AppColors.iconBadgeGradientEnd.opacity(0.08)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ))
-                    : AnyShapeStyle(staticColor.opacity(0.12))
-                )
+                .fill(staticColor.opacity(0.12))
                 .frame(width: circleDiameter, height: circleDiameter)
             
             Image(systemName: iconName)
-                .font(.system(size: iconSize, weight: .light))
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(
-                    useGradient
-                    ? AnyShapeStyle(LinearGradient(
-                        colors: [AppColors.iconBadgeGradientStart, AppColors.iconBadgeGradientEnd],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ))
-                    : AnyShapeStyle(staticColor)
-                )
+                .font(.system(size: iconSize, weight: .medium))
+                .foregroundColor(staticColor)
         }
-        .scaleEffect(appeared ? 1.0 : 0.8)
+        .scaleEffect(appeared ? 1.0 : 0.85)
         .opacity(appeared ? 1.0 : 0)
         .onAppear {
             withAnimation(reduceMotion ? .none : AppAnimation.heroReveal) {
                 appeared = true
             }
         }
+    }
+}
+
+// MARK: - Section Header Extension Helper
+
+extension View {
+    /// Apple HIG standard section header typography and alignment.
+    func standardSectionHeader() -> some View {
+        self
+            .font(.footnote)
+            .fontWeight(.semibold)
+            .foregroundColor(AppColors.secondaryText)
+            .textCase(.uppercase)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

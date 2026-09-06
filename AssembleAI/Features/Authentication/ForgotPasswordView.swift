@@ -20,7 +20,7 @@ struct ForgotPasswordView: View {
     
     var body: some View {
         ZStack {
-            GradientAtmosphereBackground(intensity: .subtle)
+            AppColors.groupedBackground.ignoresSafeArea()
             
             VStack(spacing: AppSpacing.lg) {
                 if isSuccessState {
@@ -99,6 +99,8 @@ struct ForgotPasswordView: View {
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .foregroundColor(AppColors.secondaryText)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
             }
             
             Spacer()

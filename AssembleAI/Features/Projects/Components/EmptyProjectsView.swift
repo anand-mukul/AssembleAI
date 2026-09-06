@@ -14,13 +14,13 @@ struct EmptyProjectsView: View {
     var onAction: (() -> Void)? = nil
     
     var body: some View {
-        VStack(spacing: AppSpacing.lg) {
+        VStack(spacing: AppSpacing.md) {
             Spacer(minLength: 40)
             
             AnimatedHeaderIcon(
                 iconName: iconName,
-                iconSize: 34,
-                circleDiameter: 76
+                iconSize: 32,
+                circleDiameter: 68
             )
             
             VStack(spacing: AppSpacing.xs) {
@@ -32,15 +32,16 @@ struct EmptyProjectsView: View {
                 Text(subtitle)
                     .font(.subheadline)
                     .foregroundColor(AppColors.secondaryText)
+                    .multilineTextAlignment(.center)
                     .adaptiveMultiline(alignment: .center)
-                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.horizontal, AppSpacing.lg)
             }
             
             if let buttonTitle = buttonTitle, let onAction = onAction {
                 PrimaryButton(title: buttonTitle, iconName: "plus") {
                     onAction()
                 }
-                .frame(maxWidth: 240)
+                .frame(maxWidth: 220)
                 .padding(.top, AppSpacing.xs)
             }
             

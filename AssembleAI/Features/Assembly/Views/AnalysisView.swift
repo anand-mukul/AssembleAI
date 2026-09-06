@@ -49,21 +49,14 @@ struct AnalysisView: View {
             // Vision Analysis Progress Checklist
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 analysisCheckRow(title: "Image captured", isChecked: scanPhaseIndex >= 0)
+                Divider().padding(.leading, 32)
                 analysisCheckRow(title: "Orientation checked", isChecked: scanPhaseIndex >= 1)
+                Divider().padding(.leading, 32)
                 analysisCheckRow(title: "Detecting visual features", isChecked: scanPhaseIndex >= 2)
+                Divider().padding(.leading, 32)
                 analysisCheckRow(title: "Reading visible labels", isChecked: scanPhaseIndex >= 3)
             }
-            .padding(AppSpacing.md)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(AppColors.secondaryGroupedBackground)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(AppColors.border.opacity(0.3), lineWidth: 1)
-            )
-            .padding(.horizontal, AppSpacing.lg)
+            .appCard()
             
             Spacer()
             
@@ -73,7 +66,7 @@ struct AnalysisView: View {
                 .padding(.bottom, AppSpacing.xl)
         }
         .padding(.horizontal, AppSpacing.screenEdge)
-        .background(AppColors.appBackground.ignoresSafeArea())
+        .background(AppColors.groupedBackground.ignoresSafeArea())
         .onAppear {
             if !reduceMotion {
                 withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {

@@ -17,30 +17,25 @@ struct ProfileView: View {
     @State private var showTermsSheet = false
     
     var body: some View {
-        ZStack {
-            GradientAtmosphereBackground(intensity: .subtle)
-            
-            ScrollView {
-                VStack(spacing: AppSpacing.lg) {
-                    // Profile Hero Card
-                    profileHeroCard
-                    
-                    // Aggregate Metrics Grid
-                    metricsGrid
-                    
-                    // Settings & Preferences Navigation Section
-                    settingsSection
-                    
-                    // Account Actions
-                    accountActionsSection
-                    
-                    Spacer(minLength: 32)
-                }
-                .padding(.horizontal, AppSpacing.screenEdge)
-                .padding(.top, AppSpacing.sm)
-                .padding(.bottom, 100)
+        ScrollView {
+            VStack(spacing: AppSpacing.lg) {
+                // Profile Hero Card
+                profileHeroCard
+                
+                // Aggregate Metrics Grid
+                metricsGrid
+                
+                // Settings & Preferences Navigation Section
+                settingsSection
+                
+                // Account Actions
+                accountActionsSection
             }
+            .padding(.horizontal, AppSpacing.screenEdge)
+            .padding(.top, AppSpacing.sm)
+            .padding(.bottom, AppSpacing.xl)
         }
+        .background(AppColors.groupedBackground.ignoresSafeArea())
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -94,18 +89,6 @@ struct ProfileView: View {
         .onChange(of: authService.currentUser) { _, newUser in
             viewModel.updateUser(user: newUser)
         }
-        .navigationDestination(for: ProfileNavigationDestination.self) { dest in
-            switch dest {
-            case .appSettings:
-                AppSettingsView(viewModel: viewModel)
-            case .dataPrivacy:
-                DataPrivacySettingsView(viewModel: viewModel)
-            case .notifications:
-                NotificationsSettingsView(viewModel: viewModel)
-            case .help:
-                HelpAndSupportView()
-            }
-        }
     }
     
     // MARK: - Subviews
@@ -116,18 +99,18 @@ struct ProfileView: View {
     
     private var profileHeroCard: some View {
         HStack(spacing: AppSpacing.md) {
-            // Avatar with ambient aura
+            // Avatar
             ZStack {
                 Circle()
-                    .fill(activeColor.opacity(0.15))
-                    .frame(width: 64, height: 64)
+                    .fill(activeColor.opacity(0.12))
+                    .frame(width: 60, height: 60)
                     .overlay(
                         Circle()
-                            .strokeBorder(activeColor.opacity(0.3), lineWidth: 1)
+                            .strokeBorder(activeColor.opacity(0.25), lineWidth: 1)
                     )
                 
                 Image(systemName: viewModel.avatarSymbol)
-                    .font(.system(size: 28, weight: .medium))
+                    .font(.system(size: 26, weight: .medium))
                     .foregroundColor(activeColor)
             }
             
@@ -179,10 +162,7 @@ struct ProfileView: View {
     private var settingsSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
             Text("Preferences & Tools")
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .foregroundColor(AppColors.secondaryText)
-                .padding(.horizontal, 4)
+                .standardSectionHeader()
             
             VStack(spacing: 0) {
                 NavigationLink(value: ProfileNavigationDestination.appSettings) {
@@ -190,40 +170,40 @@ struct ProfileView: View {
                         icon: "slider.horizontal.3",
                         title: "App Settings",
                         subtitle: "Guidance level, camera HUD, haptics",
-                        colors: [Color.assembleBrandPrimary, Color.assembleBrandPrimary.opacity(0.8)]
+                        color: AppColors.badgeBlue
                     )
                 }
                 
-                Divider().opacity(0.3).padding(.horizontal, AppSpacing.md)
+                Divider().padding(.leading, AppSpacing.dividerLeadingInset)
                 
                 NavigationLink(value: ProfileNavigationDestination.dataPrivacy) {
                     settingLinkRow(
                         icon: "lock.shield.fill",
                         title: "Data & Privacy",
                         subtitle: "On-device cache, research CSV export",
-                        colors: [AppColors.statusSuccess, AppColors.statusSuccess.opacity(0.8)]
+                        color: AppColors.badgeGreen
                     )
                 }
                 
-                Divider().opacity(0.3).padding(.horizontal, AppSpacing.md)
+                Divider().padding(.leading, AppSpacing.dividerLeadingInset)
                 
                 NavigationLink(value: ProfileNavigationDestination.notifications) {
                     settingLinkRow(
                         icon: "bell.fill",
                         title: "Notifications",
                         subtitle: "Reminders & daily building streak",
-                        colors: [AppColors.statusWarning, AppColors.statusWarning.opacity(0.8)]
+                        color: AppColors.badgeOrange
                     )
                 }
                 
-                Divider().opacity(0.3).padding(.horizontal, AppSpacing.md)
+                Divider().padding(.leading, AppSpacing.dividerLeadingInset)
                 
                 NavigationLink(value: ProfileNavigationDestination.help) {
                     settingLinkRow(
                         icon: "book.pages.fill",
                         title: "Assembly Guide & FAQ",
                         subtitle: "Hardware pinouts, conventions, tips",
-                        colors: [Color(white: 0.5), Color(white: 0.4)]
+                        color: AppColors.badgeIndigo
                     )
                 }
             }
@@ -246,16 +226,13 @@ struct ProfileView: View {
                     Spacer()
                 }
                 .foregroundColor(AppColors.error)
-                .frame(minHeight: 52)
-                .background(
-                    Capsule(style: .continuous)
-                        .fill(.ultraThinMaterial)
-                )
+                .frame(height: 50)
+                .background(AppColors.secondaryGroupedBackground)
+                .clipShape(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous))
                 .overlay(
-                    Capsule(style: .continuous)
-                        .strokeBorder(AppColors.error.opacity(0.3), lineWidth: 0.5)
+                    RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                        .strokeBorder(AppColors.borderSubtle, lineWidth: 0.5)
                 )
-                .contentShape(Capsule(style: .continuous))
             }
             .buttonStyle(ScaleButtonStyle())
             
@@ -276,7 +253,7 @@ struct ProfileView: View {
             }
             .touchTarget()
             
-            // Legal & Privacy Compliance (App Store Guideline 5.1.1 & 2.1 - In-App Self-Contained)
+            // Legal & Privacy Compliance
             HStack(spacing: AppSpacing.md) {
                 Button(action: {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -308,9 +285,9 @@ struct ProfileView: View {
         .padding(.top, AppSpacing.xs)
     }
     
-    private func settingLinkRow(icon: String, title: String, subtitle: String, colors: [Color]) -> some View {
+    private func settingLinkRow(icon: String, title: String, subtitle: String, color: Color) -> some View {
         HStack(spacing: AppSpacing.mdSm) {
-            GradientIconBadge(iconName: icon, size: 34, iconSize: 15, colors: colors)
+            SemanticIconBadge(iconName: icon, size: 30, iconSize: 15, color: color)
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)

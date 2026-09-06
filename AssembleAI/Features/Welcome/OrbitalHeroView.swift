@@ -5,8 +5,8 @@
 
 import SwiftUI
 
-/// Luma-inspired orbital animation component featuring floating hardware SF Symbols
-/// orbiting a central AI spark mark on concentric rings with ambient glow.
+/// Precision orbital animation component featuring floating hardware SF Symbols
+/// orbiting a central optical inspection mark with subtle studio illumination.
 struct OrbitalHeroView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var rotationAngle: Double = 0
@@ -18,32 +18,31 @@ struct OrbitalHeroView: View {
     
     var body: some View {
         ZStack {
-            // Ambient glow behind orbital system
+            // Subtle ambient studio illumination
             Circle()
                 .fill(
                     RadialGradient(
                         colors: [
                             AppColors.glowPrimary,
-                            AppColors.glowSecondary.opacity(0.3),
                             Color.clear
                         ],
                         center: .center,
                         startRadius: 20,
-                        endRadius: 160
+                        endRadius: 140
                     )
                 )
-                .frame(width: 320, height: 320)
+                .frame(width: 280, height: 280)
                 .scaleEffect(pulseScale)
             
             // Outer orbit ring
             Circle()
-                .strokeBorder(AppColors.glassBorderUnified.opacity(0.4), lineWidth: 0.5)
-                .frame(width: 260, height: 260)
+                .strokeBorder(AppColors.borderSubtle, lineWidth: 0.5)
+                .frame(width: 240, height: 240)
             
             // Inner orbit ring
             Circle()
-                .strokeBorder(AppColors.glassBorderUnified.opacity(0.3), lineWidth: 0.5)
-                .frame(width: 160, height: 160)
+                .strokeBorder(AppColors.borderSubtle.opacity(0.6), lineWidth: 0.5)
+                .frame(width: 150, height: 150)
             
             // Outer orbit icons (3 icons evenly spaced)
             ForEach(0..<outerIcons.count, id: \.self) { index in
@@ -51,68 +50,48 @@ struct OrbitalHeroView: View {
                 orbitalIcon(
                     systemName: outerIcons[index],
                     angle: angle,
-                    radius: 130,
-                    size: 40,
-                    iconSize: 17
+                    radius: 120,
+                    size: 38,
+                    iconSize: 16
                 )
             }
             
             // Inner orbit icons (3 icons evenly spaced, counter-rotating)
             ForEach(0..<innerIcons.count, id: \.self) { index in
-                let angle = (360.0 / Double(innerIcons.count)) * Double(index) - rotationAngle * 0.7
+                let angle = (360.0 / Double(innerIcons.count)) * Double(index) - rotationAngle * 0.75
                 orbitalIcon(
                     systemName: innerIcons[index],
                     angle: angle,
-                    radius: 80,
-                    size: 34,
-                    iconSize: 14
+                    radius: 75,
+                    size: 32,
+                    iconSize: 13
                 )
             }
             
-            // Central AI spark mark
+            // Central AI / Camera Mark
             ZStack {
                 Circle()
-                    .fill(
-                        RadialGradient(
-                            colors: [
-                                AppColors.iconBadgeGradientStart.opacity(0.3),
-                                AppColors.iconBadgeGradientEnd.opacity(0.1),
-                                Color.clear
-                            ],
-                            center: .center,
-                            startRadius: 10,
-                            endRadius: 40
-                        )
+                    .fill(AppColors.secondaryGroupedBackground)
+                    .frame(width: 64, height: 64)
+                    .overlay(
+                        Circle()
+                            .strokeBorder(AppColors.borderSubtle, lineWidth: 0.5)
                     )
-                    .frame(width: 80, height: 80)
+                    .shadow(color: AppShadow.subtleColor, radius: 8, x: 0, y: 2)
                 
-                ZStack {
-                    Image(systemName: "viewfinder")
-                        .font(.system(size: 34, weight: .ultraLight))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [AppColors.iconBadgeGradientStart, AppColors.iconBadgeGradientEnd],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                    
-                    Image(systemName: "cpu")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [AppColors.iconBadgeGradientStart, AppColors.iconBadgeGradientEnd],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                }
+                Image(systemName: "viewfinder")
+                    .font(.system(size: 28, weight: .light))
+                    .foregroundColor(.assembleBrandPrimary)
+                
+                Image(systemName: "cpu")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.assembleBrandPrimary)
             }
             .scaleEffect(pulseScale)
         }
-        .frame(height: 300)
+        .frame(height: 270)
         .opacity(appeared ? 1 : 0)
-        .scaleEffect(appeared ? 1 : 0.85)
+        .scaleEffect(appeared ? 1 : 0.9)
         .onAppear {
             withAnimation(AppAnimation.heroReveal) {
                 appeared = true
@@ -120,12 +99,12 @@ struct OrbitalHeroView: View {
             
             guard !reduceMotion else { return }
             
-            withAnimation(.linear(duration: 30).repeatForever(autoreverses: false)) {
+            withAnimation(.linear(duration: 36).repeatForever(autoreverses: false)) {
                 rotationAngle = 360
             }
             
-            withAnimation(.easeInOut(duration: 3.0).repeatForever(autoreverses: true)) {
-                pulseScale = 1.04
+            withAnimation(.easeInOut(duration: 3.5).repeatForever(autoreverses: true)) {
+                pulseScale = 1.03
             }
         }
         .accessibilityHidden(true)
@@ -138,23 +117,17 @@ struct OrbitalHeroView: View {
         
         return ZStack {
             Circle()
-                .fill(.ultraThinMaterial)
+                .fill(AppColors.secondaryGroupedBackground)
                 .frame(width: size, height: size)
                 .overlay(
                     Circle()
-                        .strokeBorder(AppColors.glassBorderUnified, lineWidth: 0.5)
+                        .strokeBorder(AppColors.borderSubtle, lineWidth: 0.5)
                 )
-                .shadow(color: AppShadow.subtleColor, radius: 6, x: 0, y: 2)
+                .shadow(color: AppShadow.subtleColor, radius: 4, x: 0, y: 1)
             
             Image(systemName: systemName)
                 .font(.system(size: iconSize, weight: .medium))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [AppColors.iconBadgeGradientStart, AppColors.iconBadgeGradientEnd],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
+                .foregroundColor(AppColors.primaryText)
         }
         .offset(x: CGFloat(x), y: CGFloat(y))
     }

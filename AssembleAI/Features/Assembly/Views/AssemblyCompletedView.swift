@@ -56,12 +56,11 @@ struct AssemblyCompletedView: View {
                 }
                 
                 // Stats Card Grid
-                HStack(spacing: AppSpacing.md) {
-                    statTile(title: "Time", value: session.timeElapsedText, icon: "clock")
-                    statTile(title: "Attempts", value: "\(session.attempts)", icon: "viewfinder")
-                    statTile(title: "Corrections", value: "\(session.errors)", icon: "wrench.and.screwdriver")
+                HStack(spacing: AppSpacing.sm) {
+                    StatTile(title: "Time", value: session.timeElapsedText, icon: "clock.fill", iconColor: AppColors.badgeOrange)
+                    StatTile(title: "Attempts", value: "\(session.attempts)", icon: "viewfinder", iconColor: AppColors.badgeBlue)
+                    StatTile(title: "Corrections", value: "\(session.errors)", icon: "wrench.and.screwdriver.fill", iconColor: AppColors.badgePurple)
                 }
-                .appCard()
                 
                 // Great Work Callout
                 VStack(spacing: 4) {
@@ -92,7 +91,7 @@ struct AssemblyCompletedView: View {
             }
             .padding(.horizontal, AppSpacing.screenEdge)
         }
-        .background(AppColors.appBackground.ignoresSafeArea())
+        .background(AppColors.groupedBackground.ignoresSafeArea())
         .sheet(isPresented: $showSummarySheet) {
             AssemblySummaryView(project: project, session: session, onDone: {
                 showSummarySheet = false
@@ -106,24 +105,6 @@ struct AssemblyCompletedView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Assembly complete for \(project.title). \(project.totalSteps) steps verified. Time \(session.timeElapsedText).")
-    }
-    
-    private func statTile(title: String, value: String, icon: String) -> some View {
-        VStack(spacing: 4) {
-            Image(systemName: icon)
-                .font(.caption)
-                .foregroundColor(.assembleBrandPrimary)
-            
-            Text(value)
-                .font(.headline)
-                .fontWeight(.bold)
-                .foregroundColor(AppColors.primaryText)
-            
-            Text(title)
-                .font(.system(size: 9, weight: .bold, design: .monospaced))
-                .foregroundColor(AppColors.tertiaryText)
-        }
-        .frame(maxWidth: .infinity)
     }
 }
 

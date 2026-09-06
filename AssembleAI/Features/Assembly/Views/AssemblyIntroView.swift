@@ -23,6 +23,8 @@ struct AssemblyIntroView: View {
                         }
                         .font(.subheadline)
                         .foregroundColor(AppColors.secondaryText)
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                     }
                     Spacer()
                 }
@@ -47,31 +49,31 @@ struct AssemblyIntroView: View {
                 }
                 
                 // Preparation Checklist
-                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
                     Text("Preparation Check")
-                        .font(.headline)
-                        .foregroundColor(AppColors.primaryText)
+                        .standardSectionHeader()
                     
-                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        checklistRow(title: "Components ready", subtitle: "All required hardware is on hand", icon: "checkmark.circle.fill")
-                        checklistRow(title: "Camera available", subtitle: "Camera access is operational", icon: "checkmark.circle.fill")
-                        checklistRow(title: "Workspace visible", subtitle: "Assembly area is clean and well-lit", icon: "checkmark.circle.fill")
+                    VStack(alignment: .leading, spacing: 0) {
+                        checklistRow(title: "Components ready", subtitle: "All required hardware is on hand", icon: "checkmark")
+                        Divider().padding(.leading, 56)
+                        checklistRow(title: "Camera available", subtitle: "Camera access is operational", icon: "camera")
+                        Divider().padding(.leading, 56)
+                        checklistRow(title: "Workspace visible", subtitle: "Assembly area is clean and well-lit", icon: "lightbulb")
                     }
                     .appCard()
                 }
                 
                 // Before we begin notice
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Text("Before we begin")
-                        .font(.headline)
-                        .foregroundColor(AppColors.primaryText)
+                    Text("Before We Begin")
+                        .standardSectionHeader()
                     
                     Text("Make sure your components are visible and your workspace has enough light. The visual assistant will guide you step by step.")
                         .font(.subheadline)
                         .foregroundColor(AppColors.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
+                        .appCard()
                 }
-                .appCard(backgroundColor: AppColors.secondaryBackground)
                 
                 Spacer(minLength: AppSpacing.lg)
                 
@@ -82,25 +84,25 @@ struct AssemblyIntroView: View {
             }
             .padding(.horizontal, AppSpacing.screenEdge)
         }
-        .background(AppColors.appBackground.ignoresSafeArea())
+        .background(AppColors.groupedBackground.ignoresSafeArea())
     }
     
     private func checklistRow(title: String, subtitle: String, icon: String) -> some View {
-        HStack(spacing: AppSpacing.mdSm) {
-            Image(systemName: icon)
-                .font(.body)
-                .foregroundColor(AppColors.success)
+        HStack(spacing: AppSpacing.sm) {
+            SemanticIconBadge(systemName: icon, tintColor: AppColors.badgeGreen)
             
-            VStack(alignment: .leading, spacing: 1) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.body)
-                    .fontWeight(.semibold)
+                    .fontWeight(.medium)
                     .foregroundColor(AppColors.primaryText)
                 Text(subtitle)
                     .font(.caption)
                     .foregroundColor(AppColors.secondaryText)
             }
+            Spacer()
         }
+        .padding(.vertical, AppSpacing.sm)
         .accessibilityElement(children: .combine)
     }
 }

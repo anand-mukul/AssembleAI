@@ -16,7 +16,13 @@ struct ContinueWithoutAccountSheet: View {
             Spacer(minLength: 8)
             
             VStack(spacing: AppSpacing.sm) {
-                AnimatedHeaderIcon(iconName: "iphone.circle.fill", iconSize: 34, circleDiameter: 68)
+                AnimatedHeaderIcon(
+                    iconName: "iphone.circle.fill",
+                    iconSize: 34,
+                    circleDiameter: 68,
+                    useGradient: false,
+                    staticColor: AppColors.badgeBlue
+                )
                     .padding(.bottom, AppSpacing.xxs)
                 
                 Text("Continue on iPhone")
@@ -59,7 +65,7 @@ struct ContinueWithoutAccountSheet: View {
             .padding(.bottom, AppSpacing.md)
         }
         .padding(.horizontal, AppSpacing.screenEdge)
-        .background(AppColors.appBackground.ignoresSafeArea())
+        .background(AppColors.secondaryGroupedBackground.ignoresSafeArea())
         .presentationDetents([.height(400), .medium])
         .presentationDragIndicator(.visible)
         .presentationCornerRadius(28)

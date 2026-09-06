@@ -28,41 +28,46 @@ enum AppSpacing {
     /// 64pt top hero margin spacing
     static let xxxl: CGFloat = 64
     
-    /// Standard horizontal inset for screen-edge content (matches Apple native 20pt inset)
-    static let screenEdge: CGFloat = 20
+    /// Standard horizontal inset for screen-edge content (matches Apple native 16pt grouped list margin)
+    static let screenEdge: CGFloat = 16
+    
+    /// Standard divider leading inset for grouped list cards with icon badges (16pt padding + 30pt badge + 10pt gap = 56pt)
+    static let dividerLeadingInset: CGFloat = 56
 }
 
 /// Unified corner radius tokens adhering to Apple iOS continuous curvature standards.
 enum AppRadius {
+    /// 7pt standard for 30x30 Apple Settings squircle icon badges
+    static let iconBadge: CGFloat = 7
     /// 8pt tight chips / small indicators
     static let xs: CGFloat = 8
-    /// 10pt for buttons, badges, and smaller inputs
+    /// 10pt for badges and small inputs
     static let sm: CGFloat = 10
     /// 14pt for interactive control fields and secondary buttons
     static let md: CGFloat = 14
-    /// 18pt standard for cards, tiles, and containers
-    static let card: CGFloat = 18
+    /// 16pt standard Apple HIG grouped card radius
+    static let card: CGFloat = 16
     /// 22pt for hero visual centerpieces and prominent modules
     static let lg: CGFloat = 22
     /// 28pt for bottom sheets and large presentation detents
     static let sheet: CGFloat = 28
 }
 
-/// Standardized elevation shadows.
+/// Standardized elevation shadows adhering to Apple HIG subtlety.
 enum AppShadow {
-    static let subtleColor = Color.black.opacity(0.04)
-    static let mediumColor = Color.black.opacity(0.08)
-    static let elevatedColor = Color.black.opacity(0.18)
+    static let subtleColor = Color.black.opacity(0.03)
+    static let mediumColor = Color.black.opacity(0.06)
+    static let elevatedColor = Color.black.opacity(0.12)
 }
 
 /// Unified animation timing tokens for consistent motion across all screens.
 enum AppAnimation {
-    /// Standard cascading delay per item in staggered lists (0.06s)
-    static let staggerDelay: Double = 0.06
+    /// Standard cascading delay per item in staggered lists (0.05s)
+    static let staggerDelay: Double = 0.05
     /// Shared spring response for screen entrance animations
-    static let entranceSpring: Animation = .spring(response: 0.5, dampingFraction: 0.82)
+    static let entranceSpring: Animation = .spring(response: 0.45, dampingFraction: 0.84)
     /// Slower spring for hero section reveals
-    static let heroReveal: Animation = .spring(response: 0.65, dampingFraction: 0.78)
+    static let heroReveal: Animation = .spring(response: 0.6, dampingFraction: 0.8)
     /// Quick spring for micro-interactions and state changes
-    static let microInteraction: Animation = .spring(response: 0.3, dampingFraction: 0.75)
+    static let microInteraction: Animation = .spring(response: 0.25, dampingFraction: 0.78)
 }

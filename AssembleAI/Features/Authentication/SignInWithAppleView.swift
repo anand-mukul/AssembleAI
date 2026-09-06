@@ -21,7 +21,7 @@ struct SignInWithAppleView: View {
     
     var body: some View {
         ZStack {
-            GradientAtmosphereBackground(intensity: .hero)
+            AppColors.groupedBackground.ignoresSafeArea()
             
             VStack(spacing: 0) {
                 Spacer()
@@ -61,7 +61,7 @@ struct SignInWithAppleView: View {
                         ProgressView("Authenticating...")
                             .font(.subheadline)
                             .foregroundColor(AppColors.secondaryText)
-                            .frame(height: 54)
+                            .frame(height: AppSpacing.buttonHeight)
                     } else {
                         SignInWithAppleButton(.signIn) { request in
                             request.requestedScopes = [.fullName, .email]
@@ -69,7 +69,7 @@ struct SignInWithAppleView: View {
                             handleAppleSignInCompletion(result)
                         }
                         .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
-                        .frame(height: 54)
+                        .frame(height: AppSpacing.buttonHeight)
                         .clipShape(Capsule(style: .continuous))
                         .accessibilityLabel("Sign in with Apple")
                     }
@@ -81,6 +81,8 @@ struct SignInWithAppleView: View {
                             .font(.subheadline)
                             .fontWeight(.medium)
                             .foregroundColor(AppColors.secondaryText)
+                            .frame(minHeight: 44)
+                            .contentShape(Rectangle())
                     }
                     .padding(.vertical, AppSpacing.xs)
                 }

@@ -54,6 +54,7 @@ struct StepCompletedView: View {
                 Text("\(stepOrder) of \(totalSteps) steps completed")
                     .font(.subheadline)
                     .fontWeight(.semibold)
+                    .monospacedDigit()
                     .foregroundColor(.assembleBrandPrimary)
             }
             .padding(.horizontal, 14)
@@ -74,7 +75,7 @@ struct StepCompletedView: View {
             .padding(.bottom, AppSpacing.xl)
         }
         .padding(.horizontal, AppSpacing.screenEdge)
-        .background(AppColors.appBackground.ignoresSafeArea())
+        .background(AppColors.groupedBackground.ignoresSafeArea())
         .onAppear {
             UINotificationFeedbackGenerator().notificationOccurred(.success)
             withAnimation(.spring(response: 0.42, dampingFraction: 0.58)) {

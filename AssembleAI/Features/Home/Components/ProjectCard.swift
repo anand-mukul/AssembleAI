@@ -5,7 +5,7 @@
 
 import SwiftUI
 
-/// Clean, modular project card component for Home and Projects screens with glassmorphic finish.
+/// Clean, modular project card component for Home and Projects screens adhering to Apple HIG.
 struct ProjectCard: View {
     let project: AssemblyProject
     let onTap: () -> Void
@@ -17,10 +17,11 @@ struct ProjectCard: View {
         }) {
             HStack(spacing: AppSpacing.md) {
                 // Category Symbol Icon Badge
-                GradientIconBadge(
+                SemanticIconBadge(
                     iconName: project.imageName ?? "cpu",
-                    size: 46,
-                    iconSize: 20
+                    size: 44,
+                    iconSize: 20,
+                    color: categoryColor
                 )
                 
                 // Details
@@ -51,17 +52,15 @@ struct ProjectCard: View {
                         Text(project.progressText)
                             .font(.caption)
                             .fontWeight(.semibold)
+                            .monospacedDigit()
                             .foregroundColor(project.isCompleted ? AppColors.success : AppColors.secondaryText)
                     }
                     .padding(.top, 2)
                     
                     ProgressBar(
                         value: project.progress,
-                        height: 3,
-                        fillColor: project.isCompleted ? AppColors.success : .assembleBrandPrimary,
-                        gradientColors: project.isCompleted
-                            ? [AppColors.success, AppColors.success.opacity(0.8)]
-                            : [AppColors.iconBadgeGradientStart, AppColors.iconBadgeGradientEnd]
+                        height: 4,
+                        fillColor: project.isCompleted ? AppColors.success : .assembleBrandPrimary
                     )
                     .padding(.top, 2)
                 }
@@ -73,6 +72,21 @@ struct ProjectCard: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel(project.accessibilityLabelSummary)
         .accessibilityHint("Double tap to open project details.")
+    }
+    
+    private var categoryColor: Color {
+        switch project.category.lowercased() {
+        case "robotics":
+            return AppColors.badgeOrange
+        case "iot", "smart home":
+            return AppColors.badgePurple
+        case "audio":
+            return AppColors.badgeIndigo
+        case "wearables":
+            return AppColors.badgeTeal
+        default:
+            return AppColors.badgeBlue
+        }
     }
 }
 

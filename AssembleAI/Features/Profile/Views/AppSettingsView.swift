@@ -8,35 +8,30 @@
 
 import SwiftUI
 
-/// Clean, human-centered Application Settings screen following Apple Human Interface Guidelines and glassmorphic styling.
+/// Clean, human-centered Application Settings screen following Apple Human Interface Guidelines.
 struct AppSettingsView: View {
     @ObservedObject var viewModel: ProfileViewModel
     
     var body: some View {
-        ZStack {
-            GradientAtmosphereBackground(intensity: .subtle)
-            
-            ScrollView {
-                VStack(spacing: AppSpacing.lg) {
-                    // Section 1: Guidance & Verification
-                    guidanceAndVerificationSection
-                    
-                    // Section 2: Camera & Viewfinder Experience
-                    cameraViewfinderSection
-                    
-                    // Section 3: Haptics & Sensory Feedback
-                    tactileSection
-                    
-                    // Section 4: Data & Diagnostics Link
-                    diagnosticsSection
-                    
-                    Spacer(minLength: 40)
-                }
-                .padding(.horizontal, AppSpacing.screenEdge)
-                .padding(.top, AppSpacing.md)
-                .padding(.bottom, 120) // Full clearance above floating tab bar
+        ScrollView {
+            VStack(spacing: AppSpacing.lg) {
+                // Section 1: Guidance & Verification
+                guidanceAndVerificationSection
+                
+                // Section 2: Camera & Viewfinder Experience
+                cameraViewfinderSection
+                
+                // Section 3: Haptics & Sensory Feedback
+                tactileSection
+                
+                // Section 4: Data & Diagnostics Link
+                diagnosticsSection
             }
+            .padding(.horizontal, AppSpacing.screenEdge)
+            .padding(.top, AppSpacing.sm)
+            .padding(.bottom, AppSpacing.xl)
         }
+        .background(AppColors.groupedBackground.ignoresSafeArea())
         .navigationTitle("App Settings")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -46,14 +41,13 @@ struct AppSettingsView: View {
     private var guidanceAndVerificationSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
             Text("Guidance & Inspection")
-                .sectionHeaderStyle()
-                .padding(.horizontal, 4)
+                .standardSectionHeader()
             
             VStack(spacing: 0) {
                 // Guidance Level Selector
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
                     HStack(spacing: AppSpacing.sm) {
-                        GradientIconBadge(iconName: "slider.horizontal.3", size: 28, iconSize: 13)
+                        SemanticIconBadge(iconName: "slider.horizontal.3", size: 30, iconSize: 15, color: AppColors.badgeBlue)
                         
                         Text("Guidance Detail")
                             .font(.body)
@@ -81,12 +75,12 @@ struct AppSettingsView: View {
                 }
                 .padding(AppSpacing.md)
                 
-                Divider().opacity(0.3).padding(.horizontal, AppSpacing.md)
+                Divider().padding(.leading, AppSpacing.dividerLeadingInset)
                 
                 // Verification Engine Mode
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
                     HStack(spacing: AppSpacing.sm) {
-                        GradientIconBadge(iconName: "camera.badge.ellipsis", size: 28, iconSize: 13)
+                        SemanticIconBadge(iconName: "camera.badge.ellipsis", size: 30, iconSize: 15, color: AppColors.badgePurple)
                         
                         Text("Verification Mode")
                             .font(.body)
@@ -121,13 +115,12 @@ struct AppSettingsView: View {
     private var cameraViewfinderSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
             Text("Camera & Viewfinder")
-                .sectionHeaderStyle()
-                .padding(.horizontal, 4)
+                .standardSectionHeader()
             
             VStack(spacing: 0) {
                 Toggle(isOn: $viewModel.showCameraGrid) {
                     HStack(spacing: AppSpacing.sm) {
-                        GradientIconBadge(iconName: "grid", size: 28, iconSize: 13)
+                        SemanticIconBadge(iconName: "grid", size: 30, iconSize: 15, color: AppColors.badgeBlue)
                         Text("Alignment Grid Overlay")
                             .font(.body)
                             .foregroundColor(AppColors.primaryText)
@@ -135,11 +128,11 @@ struct AppSettingsView: View {
                 }
                 .padding(AppSpacing.md)
                 
-                Divider().opacity(0.3).padding(.horizontal, AppSpacing.md)
+                Divider().padding(.leading, AppSpacing.dividerLeadingInset)
                 
                 Toggle(isOn: $viewModel.reticlePulsing) {
                     HStack(spacing: AppSpacing.sm) {
-                        GradientIconBadge(iconName: "circle.circle", size: 28, iconSize: 13)
+                        SemanticIconBadge(iconName: "circle.circle", size: 30, iconSize: 15, color: AppColors.badgeIndigo)
                         Text("Target Reticle Pulse")
                             .font(.body)
                             .foregroundColor(AppColors.primaryText)
@@ -147,11 +140,11 @@ struct AppSettingsView: View {
                 }
                 .padding(AppSpacing.md)
                 
-                Divider().opacity(0.3).padding(.horizontal, AppSpacing.md)
+                Divider().padding(.leading, AppSpacing.dividerLeadingInset)
                 
                 Toggle(isOn: $viewModel.autoTorch) {
                     HStack(spacing: AppSpacing.sm) {
-                        GradientIconBadge(iconName: "flashlight.on.fill", size: 28, iconSize: 13)
+                        SemanticIconBadge(iconName: "flashlight.on.fill", size: 30, iconSize: 15, color: AppColors.badgeOrange)
                         Text("Auto-Torch in Low Light")
                             .font(.body)
                             .foregroundColor(AppColors.primaryText)
@@ -166,13 +159,12 @@ struct AppSettingsView: View {
     private var tactileSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
             Text("Haptics & Sensory")
-                .sectionHeaderStyle()
-                .padding(.horizontal, 4)
+                .standardSectionHeader()
             
             VStack(spacing: 0) {
                 Toggle(isOn: $viewModel.hapticsEnabled) {
                     HStack(spacing: AppSpacing.sm) {
-                        GradientIconBadge(iconName: "waveform", size: 28, iconSize: 13)
+                        SemanticIconBadge(iconName: "waveform", size: 30, iconSize: 15, color: AppColors.badgeTeal)
                         Text("Haptic Guidance Feedback")
                             .font(.body)
                             .foregroundColor(AppColors.primaryText)
@@ -187,18 +179,12 @@ struct AppSettingsView: View {
     private var diagnosticsSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
             Text("Data & Diagnostics")
-                .sectionHeaderStyle()
-                .padding(.horizontal, 4)
+                .standardSectionHeader()
             
             VStack(spacing: 0) {
                 NavigationLink(value: ProfileNavigationDestination.dataPrivacy) {
                     HStack(spacing: AppSpacing.sm) {
-                        GradientIconBadge(
-                            iconName: "chart.bar.doc.horizontal.fill",
-                            size: 28,
-                            iconSize: 13,
-                            colors: [AppColors.iconBadgeGradientStart, AppColors.iconBadgeGradientEnd]
-                        )
+                        SemanticIconBadge(iconName: "chart.bar.doc.horizontal.fill", size: 30, iconSize: 15, color: AppColors.badgeGreen)
                         
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Data, Cache & Telemetry")

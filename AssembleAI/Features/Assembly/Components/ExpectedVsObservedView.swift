@@ -14,10 +14,10 @@ struct ExpectedVsObservedView: View {
         HStack(spacing: AppSpacing.md) {
             // Expected Column
             VStack(spacing: AppSpacing.xs) {
-                Text("EXPECTED")
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                Text("Expected")
+                    .font(.caption)
+                    .fontWeight(.semibold)
                     .foregroundColor(AppColors.success)
-                    .tracking(1.0)
                 
                 ZStack {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -51,10 +51,10 @@ struct ExpectedVsObservedView: View {
             
             // Observed Column
             VStack(spacing: AppSpacing.xs) {
-                Text("OBSERVED")
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                Text("Observed")
+                    .font(.caption)
+                    .fontWeight(.semibold)
                     .foregroundColor(AppColors.error)
-                    .tracking(1.0)
                 
                 ZStack {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)

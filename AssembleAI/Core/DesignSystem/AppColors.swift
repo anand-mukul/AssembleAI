@@ -6,7 +6,7 @@
 import SwiftUI
 
 /// Centralized design system colors following Apple Human Interface Guidelines and precision industrial hardware aesthetics.
-/// Uses semantic system colors, deep obsidian dark mode, crisp titanium contrasts, and high-visibility International Orange accents.
+/// Uses dynamic semantic system colors, crisp titanium contrasts, and high-visibility International Orange accents.
 enum AppColors {
     // Brand Palette: High-precision studio orange / action copper (Apple Watch Ultra & Industrial Hardware aesthetic)
     static let brandPrimary = Color("BrandPrimary", bundle: nil)
@@ -16,7 +16,7 @@ enum AppColors {
         brandPrimary
     }
     
-    // Semantic System Surfaces
+    // Semantic System Surfaces (Pure Apple HIG Dynamic Surfaces)
     static let appBackground = Color(uiColor: .systemBackground)
     static let secondaryBackground = Color(uiColor: .secondarySystemBackground)
     static let tertiaryBackground = Color(uiColor: .tertiarySystemBackground)
@@ -27,7 +27,7 @@ enum AppColors {
     static let titaniumSurface = Color(uiColor: .tertiarySystemGroupedBackground)
     static let obsidianCard = Color(uiColor: .secondarySystemGroupedBackground)
     
-    // Typography Colors
+    // Typography Colors (Strict Apple Dynamic Type Contrast)
     static let primaryText = Color(uiColor: .label)
     static let secondaryText = Color(uiColor: .secondaryLabel)
     static let tertiaryText = Color(uiColor: .tertiaryLabel)
@@ -54,12 +54,12 @@ enum AppColors {
     static let cameraCardBorder = Color.white.opacity(0.16)
     static let cameraOverlayScrim = Color.black.opacity(0.3)
     
-    // Surface & Border Colors (Crisp, razor-thin Apple boundaries)
+    // Surface & Border Colors (Crisp, razor-thin 0.5pt Apple boundaries)
     static let separator = Color(uiColor: .separator)
     static let opaqueSeparator = Color(uiColor: .opaqueSeparator)
-    static let border = Color(uiColor: .separator).opacity(0.3)
+    static let border = Color(uiColor: .separator).opacity(0.35)
     static let borderSubtle = Color(uiColor: .separator).opacity(0.2)
-    static let borderStrong = Color(uiColor: .separator).opacity(0.5)
+    static let borderStrong = Color(uiColor: .separator).opacity(0.55)
     static let precisionBorder = Color(uiColor: .separator).opacity(0.5)
     
     // Viewfinder & Optical Measurement Reticles
@@ -80,37 +80,45 @@ enum AppColors {
     static let glassBorderSubtle = Color.white.opacity(0.12)
     static let glassShadow = Color.black.opacity(0.28)
     
-    // MARK: - Premium Atmosphere Design System
+    // MARK: - Apple Settings Semantic Icon Badge Colors (HIG Standard)
+    static let badgeBlue = Color(uiColor: .systemBlue)
+    static let badgeGreen = Color(uiColor: .systemGreen)
+    static let badgeOrange = Color(uiColor: .systemOrange)
+    static let badgePurple = Color(uiColor: .systemPurple)
+    static let badgeIndigo = Color(uiColor: .systemIndigo)
+    static let badgeRed = Color(uiColor: .systemRed)
+    static let badgeTeal = Color(uiColor: .systemTeal)
+    static let badgeGray = Color(uiColor: .systemGray)
     
-    // Gradient Atmosphere Backgrounds (Warm cream → peach light / Obsidian → midnight dark)
-    static let atmosphereGradientTop = Color(light: Color(red: 1.0, green: 0.973, blue: 0.941),
-                                              dark: Color(red: 0.039, green: 0.039, blue: 0.059))
-    static let atmosphereGradientMid = Color(light: Color(red: 1.0, green: 0.953, blue: 0.922),
-                                              dark: Color(red: 0.047, green: 0.055, blue: 0.078))
-    static let atmosphereGradientBottom = Color(light: Color(red: 1.0, green: 0.941, blue: 0.910),
-                                                 dark: Color(red: 0.055, green: 0.078, blue: 0.125))
+    // MARK: - Subtle Hero Studio Atmosphere (Restrained for Onboarding/Hero Only)
+    static let atmosphereGradientTop = Color(light: Color(white: 0.98),
+                                              dark: Color(white: 0.05))
+    static let atmosphereGradientMid = Color(light: Color(white: 0.96),
+                                              dark: Color(white: 0.04))
+    static let atmosphereGradientBottom = Color(light: Color(white: 0.94),
+                                                 dark: Color(white: 0.03))
     
-    // Ambient Glow Orb Colors
-    static let glowPrimary = Color(light: Color(red: 1.0, green: 0.62, blue: 0.22).opacity(0.25),
-                                    dark: Color(red: 1.0, green: 0.62, blue: 0.22).opacity(0.12))
-    static let glowSecondary = Color(light: Color(red: 0.18, green: 0.80, blue: 0.98).opacity(0.20),
-                                      dark: Color(red: 0.18, green: 0.80, blue: 0.98).opacity(0.10))
+    // Ambient studio illumination
+    static let glowPrimary = Color(light: Color.assembleBrandPrimary.opacity(0.12),
+                                    dark: Color.assembleBrandPrimary.opacity(0.08))
+    static let glowSecondary = Color(light: Color.blue.opacity(0.08),
+                                      dark: Color.blue.opacity(0.05))
     
-    // Premium Dark CTA Button (Near-black in light / Near-white in dark)
-    static let premiumButtonBackground = Color(light: Color(white: 0.11),
-                                                dark: Color(white: 0.93))
+    // Primary Action CTA Button (High-contrast Apple style)
+    static let premiumButtonBackground = Color(light: Color(white: 0.10),
+                                                dark: Color(white: 0.94))
     static let premiumButtonForeground = Color(light: .white,
-                                                dark: Color(white: 0.08))
+                                                dark: Color(white: 0.06))
     
-    // Gradient Icon Badge
+    // Subtle Icon Badge Gradient (Restrained)
     static let iconBadgeGradientStart = Color(light: Color(red: 1.0, green: 0.42, blue: 0.12),
                                                dark: Color(red: 1.0, green: 0.52, blue: 0.22))
-    static let iconBadgeGradientEnd = Color(light: Color(red: 1.0, green: 0.62, blue: 0.30),
-                                              dark: Color(red: 1.0, green: 0.70, blue: 0.38))
+    static let iconBadgeGradientEnd = Color(light: Color(red: 1.0, green: 0.55, blue: 0.22),
+                                              dark: Color(red: 1.0, green: 0.62, blue: 0.30))
     
-    // Glassmorphic Card Border (Unified thin white stroke for all glass surfaces)
+    // Card Border (Crisp 0.5pt subtle boundary for grouped surfaces)
     static let glassBorderUnified = Color(light: Color.black.opacity(0.06),
-                                           dark: Color.white.opacity(0.12))
+                                           dark: Color.white.opacity(0.10))
 }
 
 extension Color {

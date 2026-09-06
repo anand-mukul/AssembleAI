@@ -5,7 +5,7 @@
 
 import SwiftUI
 
-/// Email Sign In screen with validation, keyboard management, and error handling.
+/// Email Sign In screen with validation, keyboard management, and error handling adhering to Apple HIG.
 struct EmailSignInView: View {
     @EnvironmentObject private var router: AppRouter
     @EnvironmentObject private var authService: SupabaseAuthService
@@ -21,7 +21,7 @@ struct EmailSignInView: View {
     
     var body: some View {
         ZStack {
-            GradientAtmosphereBackground(intensity: .subtle)
+            AppColors.groupedBackground.ignoresSafeArea()
             
             ScrollView {
                 VStack(spacing: AppSpacing.lg) {
@@ -45,9 +45,9 @@ struct EmailSignInView: View {
                     .padding(.top, AppSpacing.xl)
                     .padding(.bottom, AppSpacing.sm)
                     .opacity(contentAppeared ? 1 : 0)
-                    .offset(y: contentAppeared ? 0 : 10)
+                    .offset(y: contentAppeared ? 0 : 8)
                     
-                    // Form Fields in glassmorphic card
+                    // Form Fields Card
                     VStack(spacing: AppSpacing.md) {
                         CustomTextField(
                             title: "Email",
@@ -83,13 +83,7 @@ struct EmailSignInView: View {
                                 Text("Forgot password?")
                                     .font(.caption)
                                     .fontWeight(.semibold)
-                                    .foregroundStyle(
-                                        LinearGradient(
-                                            colors: [AppColors.iconBadgeGradientStart, AppColors.iconBadgeGradientEnd],
-                                            startPoint: .leading,
-                                            endPoint: .trailing
-                                        )
-                                    )
+                                    .foregroundColor(.assembleBrandPrimary)
                                     .frame(minHeight: 44)
                                     .contentShape(Rectangle())
                             }
@@ -99,7 +93,7 @@ struct EmailSignInView: View {
                     }
                     .appCard()
                     .opacity(contentAppeared ? 1 : 0)
-                    .offset(y: contentAppeared ? 0 : 12)
+                    .offset(y: contentAppeared ? 0 : 10)
                     .animation(reduceMotion ? .none : AppAnimation.entranceSpring.delay(0.1), value: contentAppeared)
                     
                     // Primary Action Button
@@ -111,9 +105,9 @@ struct EmailSignInView: View {
                     ) {
                         handleSignIn()
                     }
-                    .padding(.top, AppSpacing.sm)
+                    .padding(.top, AppSpacing.xs)
                     .opacity(contentAppeared ? 1 : 0)
-                    .animation(reduceMotion ? .none : AppAnimation.entranceSpring.delay(0.2), value: contentAppeared)
+                    .animation(reduceMotion ? .none : AppAnimation.entranceSpring.delay(0.18), value: contentAppeared)
                     
                     // Create Account Secondary CTA
                     Button(action: {
@@ -124,17 +118,13 @@ struct EmailSignInView: View {
                                 .foregroundColor(AppColors.secondaryText)
                             Text("Create account")
                                 .fontWeight(.semibold)
-                                .foregroundStyle(
-                                    LinearGradient(
-                                        colors: [AppColors.iconBadgeGradientStart, AppColors.iconBadgeGradientEnd],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                )
+                                .foregroundColor(.assembleBrandPrimary)
                         }
                         .font(.subheadline)
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                     }
-                    .padding(.top, AppSpacing.md)
+                    .padding(.top, AppSpacing.xs)
                     .accessibilityLabel("Don't have an account? Create account")
                 }
                 .padding(.horizontal, AppSpacing.screenEdge)
@@ -147,29 +137,48 @@ struct EmailSignInView: View {
                 contentAppeared = true
             }
         }
+        .sheet(isPresented: $authService.showErrorSheet) {
+            AuthenticationErrorView(
+                errorMessage: authService.authErrorMessage,
+                onRetry: {
+                    authService.showErrorSheet = false
+                    handleSignIn()
+                },
+                onCreateAccount: {
+                    authService.showErrorSheet = false
+                    router.navigateToCreateAccount()
+                },
+                onDismiss: {
+                    authService.showErrorSheet = false
+                }
+            )
+        }
     }
     
     private var isFormInvalid: Bool {
-        return email.trimmingCharacters(in: .whitespaces).isEmpty || password.isEmpty
+        email.trimmingCharacters(in: .whitespaces).isEmpty ||
+        password.isEmpty
     }
     
-    @discardableResult
     private func validateForm() -> Bool {
         var isValid = true
-        
         let trimmedEmail = email.trimmingCharacters(in: .whitespaces)
+        
         if trimmedEmail.isEmpty {
-            emailError = "Enter your email address."
+            emailError = "Email is required"
             isValid = false
         } else if !isValidEmail(trimmedEmail) {
-            emailError = "Enter a valid email address."
+            emailError = "Please enter a valid email address"
             isValid = false
         } else {
             emailError = nil
         }
         
         if password.isEmpty {
-            passwordError = "Enter your password."
+            passwordError = "Password is required"
+            isValid = false
+        } else if password.count < 6 {
+            passwordError = "Password must be at least 6 characters"
             isValid = false
         } else {
             passwordError = nil
@@ -179,9 +188,9 @@ struct EmailSignInView: View {
     }
     
     private func isValidEmail(_ email: String) -> Bool {
-        let emailRegEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
-        let emailPred = NSPredicate(format: "SELF MATCHES %@", emailRegEx)
-        return emailPred.evaluate(with: email)
+        let pattern = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+        let predicate = NSPredicate(format: "SELF MATCHES %@", pattern)
+        return predicate.evaluate(with: email)
     }
     
     private func handleSignIn() {
@@ -189,11 +198,9 @@ struct EmailSignInView: View {
         guard validateForm() else { return }
         
         Task {
-            do {
-                try await authService.signIn(email: email, password: password)
+            let success = await authService.signIn(email: email, password: password)
+            if success {
                 router.transitionToHome()
-            } catch {
-                // Auth error captured by authService.authError
             }
         }
     }

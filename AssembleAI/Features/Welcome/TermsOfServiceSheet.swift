@@ -11,71 +11,78 @@ struct TermsOfServiceSheet: View {
     var onContinue: (() -> Void)? = nil
     
     var body: some View {
-        VStack(spacing: AppSpacing.md) {
+        VStack(spacing: AppSpacing.lg) {
             // Header Graphic & Titles
             VStack(spacing: AppSpacing.sm) {
-                AnimatedHeaderIcon(iconName: "doc.text.fill", iconSize: 30, circleDiameter: 64)
-                    .padding(.top, AppSpacing.sm)
+                AnimatedHeaderIcon(
+                    iconName: "doc.text.fill",
+                    iconSize: 32,
+                    circleDiameter: 64,
+                    staticColor: AppColors.badgeBlue
+                )
+                .padding(.top, AppSpacing.sm)
                 
-                VStack(spacing: 6) {
+                VStack(spacing: 4) {
                     Text("Terms & Safety Guidelines")
-                        .font(.title2)
+                        .font(.title3)
                         .fontWeight(.bold)
                         .foregroundColor(AppColors.primaryText)
                         .multilineTextAlignment(.center)
-                        .singleLineAdaptive(minScale: 0.85)
                     
                     Text("Important terms and physical safety advisory for AssembleAI.")
                         .font(.subheadline)
                         .foregroundColor(AppColors.secondaryText)
-                        .adaptiveMultiline(alignment: .center)
+                        .multilineTextAlignment(.center)
+                        .adaptiveMultiline()
                         .padding(.horizontal, AppSpacing.sm)
                 }
             }
             .padding(.horizontal, AppSpacing.screenEdge)
             
             // Terms Bullet Points Card
-            VStack(spacing: AppSpacing.md) {
+            VStack(spacing: 0) {
                 termsTile(
                     icon: "bolt.shield.fill",
                     title: "Physical Hardware Safety",
-                    description: "Always disconnect power supplies, wear ESD protection, and confirm circuit polarity before energizing."
+                    description: "Always disconnect power supplies, wear ESD protection, and confirm circuit polarity before energizing.",
+                    color: AppColors.badgeOrange
                 )
                 
                 Divider()
-                    .background(AppColors.glassBorderUnified)
+                    .padding(.leading, AppSpacing.dividerLeadingInset)
                 
                 termsTile(
                     icon: "eye.fill",
                     title: "AI Guidance Advisory",
-                    description: "Vision models assist placement checks, but final circuit safety verification remains the builder's responsibility."
+                    description: "Vision models assist placement checks, but final circuit safety verification remains the builder's responsibility.",
+                    color: AppColors.badgeBlue
                 )
                 
                 Divider()
-                    .background(AppColors.glassBorderUnified)
+                    .padding(.leading, AppSpacing.dividerLeadingInset)
                 
                 termsTile(
                     icon: "lock.shield.fill",
                     title: "Data Ownership",
-                    description: "All telemetry and assembly logs belong to you, preserved on-device with zero unsolicited data broker sharing."
+                    description: "All telemetry and assembly logs belong to you, preserved on-device with zero unsolicited data broker sharing.",
+                    color: AppColors.badgeGreen
                 )
             }
-            .padding(AppSpacing.md)
             .background(
                 RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                    .fill(.ultraThinMaterial)
+                    .fill(AppColors.secondaryGroupedBackground)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                    .strokeBorder(AppColors.glassBorderUnified, lineWidth: 0.5)
+                    .strokeBorder(AppColors.borderSubtle, lineWidth: 0.5)
             )
-            .shadow(color: AppShadow.subtleColor, radius: 8, x: 0, y: 2)
+            .shadow(color: AppShadow.subtleColor, radius: 4, x: 0, y: 1)
             .padding(.horizontal, AppSpacing.screenEdge)
             
-            Spacer(minLength: AppSpacing.xs)
+            Spacer(minLength: 16)
             
             // Dismiss Action
-            PrimaryButton(title: "I Understand", iconName: "checkmark") {
+            PrimaryButton(title: "I Understand") {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 if let onContinue = onContinue {
                     onContinue()
@@ -86,32 +93,41 @@ struct TermsOfServiceSheet: View {
             .padding(.horizontal, AppSpacing.screenEdge)
             .padding(.bottom, AppSpacing.md)
         }
-        .padding(.top, AppSpacing.md)
-        .background(AppColors.appBackground.ignoresSafeArea())
-        .presentationDetents([.height(540)])
+        .padding(.top, AppSpacing.xs)
+        .background(AppColors.groupedBackground.ignoresSafeArea())
+        .presentationDetents([.height(520)])
         .presentationDragIndicator(.visible)
+        .presentationCornerRadius(AppRadius.sheet)
     }
     
-    private func termsTile(icon: String, title: String, description: String) -> some View {
+    private func termsTile(icon: String, title: String, description: String, color: Color) -> some View {
         HStack(alignment: .top, spacing: AppSpacing.mdSm) {
-            GradientIconBadge(iconName: icon)
+            SemanticIconBadge(iconName: icon, size: 30, iconSize: 15, color: color)
+                .padding(.top, 2)
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.subheadline)
                     .fontWeight(.semibold)
                     .foregroundColor(AppColors.primaryText)
+                    .lineLimit(1)
                 
                 Text(description)
                     .font(.caption)
                     .foregroundColor(AppColors.secondaryText)
+                    .lineSpacing(2)
                     .adaptiveMultiline()
             }
+            
+            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(AppSpacing.md)
     }
 }
 
 #Preview("Terms Sheet") {
-    TermsOfServiceSheet()
+    Text("Host View")
+        .sheet(isPresented: .constant(true)) {
+            TermsOfServiceSheet()
+        }
 }

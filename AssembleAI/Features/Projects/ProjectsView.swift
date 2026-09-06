@@ -13,78 +13,47 @@ struct ProjectsView: View {
     
     var onSelectProject: ((AssemblyProject) -> Void)? = nil
     
-    @State private var hasAppeared = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    
     var body: some View {
-        ZStack {
-            GradientAtmosphereBackground(intensity: .subtle)
-            
-            VStack(spacing: 0) {
-                // Segment Filter Picker
-                Picker("Filter", selection: $viewModel.selectedFilter) {
-                    ForEach(ProjectFilterTab.allCases) { filter in
-                        Text(filter.rawValue).tag(filter)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal, AppSpacing.screenEdge)
-                .padding(.vertical, AppSpacing.sm)
-                
-                if let error = viewModel.errorMessage {
-                    HStack(spacing: AppSpacing.xs) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .foregroundColor(AppColors.warning)
-                        Text(error)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .lineLimit(2)
-                        Spacer()
-                        Button("Retry") {
-                            Task {
-                                await viewModel.loadProjects()
-                            }
-                        }
-                        .font(.caption.weight(.semibold))
-                        .foregroundColor(.assembleBrandPrimary)
-                    }
-                    .padding(.horizontal, AppSpacing.md)
-                    .padding(.vertical, AppSpacing.sm)
-                    .background(AppColors.secondaryBackground)
-                    .cornerRadius(8)
-                    .padding(.horizontal, AppSpacing.screenEdge)
-                    .padding(.bottom, AppSpacing.xs)
-                }
-                
-                // Projects Content
-                ScrollView {
-                    VStack(spacing: AppSpacing.sm) {
-                        if viewModel.filteredProjects.isEmpty {
-                            emptyResultsOrProjectsState
-                        } else {
-                            ForEach(viewModel.filteredProjects, id: \.id) { project in
-                                ProjectCard(
-                                    project: project,
-                                    onTap: {
-                                        if let onSelectProject = onSelectProject {
-                                            onSelectProject(project)
-                                        }
-                                    }
-                                )
-                            }
-                        }
-                    }
-                    .padding(.horizontal, AppSpacing.screenEdge)
-                    .padding(.top, AppSpacing.xs)
-                    .padding(.bottom, AppSpacing.xxl)
+        VStack(spacing: 0) {
+            // Segment Filter Picker
+            Picker("Filter", selection: $viewModel.selectedFilter) {
+                ForEach(ProjectFilterTab.allCases) { filter in
+                    Text(filter.rawValue).tag(filter)
                 }
             }
+            .pickerStyle(.segmented)
+            .padding(.horizontal, AppSpacing.screenEdge)
+            .padding(.vertical, AppSpacing.sm)
+            
+            // Projects Content
+            ScrollView {
+                VStack(spacing: AppSpacing.sm) {
+                    if viewModel.filteredProjects.isEmpty {
+                        emptyResultsOrProjectsState
+                    } else {
+                        ForEach(viewModel.filteredProjects, id: \.id) { project in
+                            ProjectCard(
+                                project: project,
+                                onTap: {
+                                    if let onSelectProject = onSelectProject {
+                                        onSelectProject(project)
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+                .padding(.horizontal, AppSpacing.screenEdge)
+                .padding(.top, AppSpacing.xs)
+                .padding(.bottom, AppSpacing.xl)
+            }
         }
+        .background(AppColors.groupedBackground.ignoresSafeArea())
         .navigationTitle("Projects")
         .navigationBarTitleDisplayMode(.large)
         .searchable(
             text: $viewModel.searchText,
-            placement: .navigationBarDrawer(displayMode: .always),
+            placement: .navigationBarDrawer(displayMode: .automatic),
             prompt: "Search projects or categories"
         )
         .onChange(of: viewModel.selectedFilter) { _ in

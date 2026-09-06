@@ -40,19 +40,17 @@ struct AssemblySummaryView: View {
                 }
                 
                 // User-Facing Metrics Grid
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: AppSpacing.md) {
-                    metricCard(title: "COMPLETED", value: "\(session.completedSteps.count) / \(project.totalSteps) steps")
-                    metricCard(title: "TOTAL TIME", value: session.durationFormatted)
-                    metricCard(title: "TOTAL ATTEMPTS", value: "\(session.attempts)")
-                    metricCard(title: "CORRECTIONS", value: "\(session.errors)", color: session.errors > 0 ? AppColors.warning : AppColors.success)
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: AppSpacing.mdSm) {
+                    metricCard(title: "Completed", value: "\(session.completedSteps.count) / \(project.totalSteps) steps")
+                    metricCard(title: "Total Time", value: session.durationFormatted)
+                    metricCard(title: "Attempts", value: "\(session.attempts)")
+                    metricCard(title: "Corrections", value: "\(session.errors)", color: session.errors > 0 ? AppColors.warning : AppColors.success)
                 }
                 .padding(.top, AppSpacing.sm)
                 
-                // Accuracy Pill Card
-                HStack(spacing: AppSpacing.md) {
-                    Image(systemName: "checkmark.shield.fill")
-                        .font(.title2)
-                        .foregroundColor(AppColors.success)
+                // Accuracy Card
+                HStack(spacing: AppSpacing.sm) {
+                    SemanticIconBadge(systemName: "checkmark.shield.fill", tintColor: AppColors.badgeGreen)
                     
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Accuracy Score: \(accuracyScore)%")
@@ -62,13 +60,9 @@ struct AssemblySummaryView: View {
                             .font(.caption)
                             .foregroundColor(AppColors.secondaryText)
                     }
+                    Spacer()
                 }
-                .padding(AppSpacing.md)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(AppColors.secondaryGroupedBackground)
-                )
+                .appCard()
                 
                 Spacer(minLength: 40)
                 
@@ -83,7 +77,7 @@ struct AssemblySummaryView: View {
             }
             .padding(.horizontal, AppSpacing.screenEdge)
         }
-        .background(AppColors.appBackground.ignoresSafeArea())
+        .background(AppColors.groupedBackground.ignoresSafeArea())
     }
     
     private var accuracyScore: Int {
@@ -95,18 +89,24 @@ struct AssemblySummaryView: View {
     private func metricCard(title: String, value: String, color: Color = AppColors.primaryText) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
-                .font(.system(size: 9, weight: .bold, design: .monospaced))
-                .foregroundColor(AppColors.tertiaryText)
+                .font(.caption)
+                .fontWeight(.medium)
+                .foregroundColor(AppColors.secondaryText)
             Text(value)
                 .font(.headline)
                 .fontWeight(.bold)
+                .monospacedDigit()
                 .foregroundColor(color)
         }
         .padding(AppSpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
                 .fill(AppColors.secondaryGroupedBackground)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                .strokeBorder(AppColors.cardBorder, lineWidth: 0.5)
         )
     }
 }

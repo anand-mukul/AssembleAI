@@ -15,17 +15,14 @@ struct HistoryView: View {
     var onBrowseProjects: (() -> Void)? = nil
     
     var body: some View {
-        ZStack {
-            GradientAtmosphereBackground(intensity: .subtle)
-            
-            Group {
-                if sessions.isEmpty {
-                    emptyHistoryView
-                } else {
-                    sessionListView
-                }
+        Group {
+            if sessions.isEmpty {
+                emptyHistoryView
+            } else {
+                sessionListView
             }
         }
+        .background(AppColors.groupedBackground.ignoresSafeArea())
         .navigationTitle("History")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -34,12 +31,12 @@ struct HistoryView: View {
     
     private var sessionListView: some View {
         ScrollView {
-            LazyVStack(spacing: AppSpacing.md) {
+            LazyVStack(spacing: AppSpacing.sm) {
                 // Header Summary Bar
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Completed Workflows")
-                            .sectionHeaderStyle()
+                            .standardSectionHeader()
                         Text("\(sessions.count) Recorded Session\(sessions.count == 1 ? "" : "s")")
                             .font(.headline)
                             .foregroundColor(AppColors.primaryText)
@@ -53,11 +50,9 @@ struct HistoryView: View {
                     sessionCard(session: session)
                         .padding(.horizontal, AppSpacing.screenEdge)
                 }
-                
-                Spacer(minLength: 32)
             }
             .padding(.top, AppSpacing.xs)
-            .padding(.bottom, 120)
+            .padding(.bottom, AppSpacing.xl)
         }
     }
     
@@ -95,19 +90,15 @@ struct HistoryView: View {
                         .fontWeight(.semibold)
                 }
                 .foregroundColor(isCompleted ? AppColors.statusSuccess : AppColors.statusWarning)
-                .padding(.horizontal, 10)
+                .padding(.horizontal, 9)
                 .padding(.vertical, 4)
                 .background(
                     Capsule()
                         .fill((isCompleted ? AppColors.statusSuccess : AppColors.statusWarning).opacity(0.12))
-                        .overlay(
-                            Capsule()
-                                .strokeBorder((isCompleted ? AppColors.statusSuccess : AppColors.statusWarning).opacity(0.25), lineWidth: 0.5)
-                        )
                 )
             }
             
-            Divider().opacity(0.3)
+            Divider()
             
             HStack(spacing: AppSpacing.lg) {
                 HStack(spacing: 4) {
@@ -117,6 +108,7 @@ struct HistoryView: View {
                     Text("\(durationMinutes)m")
                         .font(.caption)
                         .fontWeight(.medium)
+                        .monospacedDigit()
                         .foregroundColor(AppColors.primaryText)
                 }
                 
@@ -150,18 +142,18 @@ struct HistoryView: View {
     // MARK: - Empty State
     
     private var emptyHistoryView: some View {
-        VStack(spacing: AppSpacing.lg) {
+        VStack(spacing: AppSpacing.md) {
             Spacer()
             
             AnimatedHeaderIcon(
                 iconName: "clock.arrow.circlepath",
-                iconSize: 36,
-                circleDiameter: 76
+                iconSize: 32,
+                circleDiameter: 68
             )
             
             VStack(spacing: AppSpacing.xs) {
                 Text("No Assembly History Yet")
-                    .font(.title2)
+                    .font(.title3)
                     .fontWeight(.bold)
                     .foregroundColor(AppColors.primaryText)
                     .accessibilityAddTraits(.isHeader)
@@ -170,14 +162,15 @@ struct HistoryView: View {
                     .font(.subheadline)
                     .foregroundColor(AppColors.secondaryText)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, AppSpacing.xl)
+                    .adaptiveMultiline(alignment: .center)
+                    .padding(.horizontal, AppSpacing.lg)
             }
             
             if let onBrowseProjects = onBrowseProjects {
                 PrimaryButton(title: "Explore Projects", iconName: "folder.fill") {
                     onBrowseProjects()
                 }
-                .frame(maxWidth: 240)
+                .frame(maxWidth: 220)
                 .padding(.top, AppSpacing.xs)
             }
             

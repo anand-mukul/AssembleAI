@@ -15,30 +15,25 @@ struct DataPrivacySettingsView: View {
     @ObservedObject var viewModel: ProfileViewModel
     
     var body: some View {
-        ZStack {
-            GradientAtmosphereBackground(intensity: .subtle)
-            
-            ScrollView {
-                VStack(spacing: AppSpacing.lg) {
-                    // Privacy Principle Card
-                    privacyPrincipleCard
-                    
-                    // On-Device Storage Breakdown
-                    storageBreakdownSection
-                    
-                    // Research Telemetry & Experiment Data Export
-                    researchTelemetrySection
-                    
-                    // Danger Zone: Reset Local Data
-                    managementSection
-                    
-                    Spacer(minLength: 32)
-                }
-                .padding(.horizontal, AppSpacing.screenEdge)
-                .padding(.top, AppSpacing.md)
-                .padding(.bottom, 120)
+        ScrollView {
+            VStack(spacing: AppSpacing.lg) {
+                // Privacy Principle Card
+                privacyPrincipleCard
+                
+                // On-Device Storage Breakdown
+                storageBreakdownSection
+                
+                // Research Telemetry & Experiment Data Export
+                researchTelemetrySection
+                
+                // Danger Zone: Reset Local Data
+                managementSection
             }
+            .padding(.horizontal, AppSpacing.screenEdge)
+            .padding(.top, AppSpacing.sm)
+            .padding(.bottom, AppSpacing.xl)
         }
+        .background(AppColors.groupedBackground.ignoresSafeArea())
         .navigationTitle("Data & Privacy")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $viewModel.isExportingTelemetry) {
@@ -82,35 +77,35 @@ struct DataPrivacySettingsView: View {
     
     private var privacyPrincipleCard: some View {
         HStack(spacing: AppSpacing.md) {
-            GradientIconBadge(
+            SemanticIconBadge(
                 iconName: "lock.shield.fill",
-                size: 38,
-                iconSize: 18,
-                colors: [AppColors.success, AppColors.success.opacity(0.8)]
+                size: 34,
+                iconSize: 17,
+                color: AppColors.badgeGreen
             )
             
             VStack(alignment: .leading, spacing: 3) {
                 Text("On-Device Privacy Guaranteed")
                     .font(.headline)
-                    .fontWeight(.semibold)
                     .foregroundColor(AppColors.primaryText)
                 Text("Camera frames and Vision OCR extractions are processed entirely on your device and never uploaded to external servers.")
                     .font(.caption)
                     .foregroundColor(AppColors.secondaryText)
+                    .lineSpacing(2)
             }
         }
-        .appCard(borderColor: AppColors.success.opacity(0.25))
+        .appCard()
     }
     
     private var storageBreakdownSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
             Text("Storage & Cache")
-                .sectionHeaderStyle()
-                .padding(.horizontal, 4)
+                .standardSectionHeader()
             
             VStack(spacing: 0) {
                 storageRow(
                     icon: "cpu.fill",
+                    color: AppColors.badgeBlue,
                     label: "Optical Guidance Cache",
                     detail: "In-Memory LRU Cache",
                     actionTitle: "Clear",
@@ -119,10 +114,11 @@ struct DataPrivacySettingsView: View {
                     }
                 )
                 
-                Divider().opacity(0.3).padding(.horizontal, AppSpacing.md)
+                Divider().padding(.leading, AppSpacing.dividerLeadingInset)
                 
                 storageRow(
                     icon: "internaldrive",
+                    color: AppColors.badgeGray,
                     label: "Assembly Sessions",
                     detail: "\(viewModel.completedSessionsCount) local records",
                     actionTitle: nil,
@@ -135,12 +131,8 @@ struct DataPrivacySettingsView: View {
     
     private var researchTelemetrySection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            HStack {
-                Text("Assembly Telemetry & Logs")
-                    .sectionHeaderStyle()
-                Spacer()
-            }
-            .padding(.horizontal, 4)
+            Text("Assembly Telemetry & Logs")
+                .standardSectionHeader()
             
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 // Live Counter Pills
@@ -153,13 +145,13 @@ struct DataPrivacySettingsView: View {
                 Text("Export anonymized evaluation benchmarks comparing visual-history architectures. Outputs RFC 4180 CSVs structured for Excel, Python (pandas), R, or SPSS.")
                     .font(.caption)
                     .foregroundColor(AppColors.secondaryText)
+                    .lineSpacing(2)
                 
                 // Export Buttons Grid
                 VStack(spacing: AppSpacing.sm) {
-                    // Option 1: Session Summary CSV (Primary recommended for analysis)
                     exportOptionCard(
                         icon: "chart.bar.doc.horizontal.fill",
-                        iconColors: [AppColors.iconBadgeGradientStart, AppColors.iconBadgeGradientEnd],
+                        color: AppColors.badgeBlue,
                         title: "Research Summary CSV",
                         subtitle: "1 row per session with 40 statistical columns",
                         badge: "Recommended",
@@ -168,10 +160,9 @@ struct DataPrivacySettingsView: View {
                         viewModel.exportSummaryCSV()
                     }
                     
-                    // Option 2: Event Timeline CSV
                     exportOptionCard(
                         icon: "list.bullet.rectangle.fill",
-                        iconColors: [AppColors.success, AppColors.success.opacity(0.8)],
+                        color: AppColors.badgeGreen,
                         title: "Detailed Event Timeline CSV",
                         subtitle: "All raw chronological events with millisecond latencies",
                         badge: nil,
@@ -180,10 +171,9 @@ struct DataPrivacySettingsView: View {
                         viewModel.exportDetailedEventsCSV()
                     }
                     
-                    // Option 3: Raw JSON Dataset
                     exportOptionCard(
                         icon: "curlybraces",
-                        iconColors: [Color.indigo, Color.indigo.opacity(0.8)],
+                        color: AppColors.badgeIndigo,
                         title: "Structured Dataset JSON",
                         subtitle: "Machine-readable records for programmatic pipelines",
                         badge: nil,
@@ -207,7 +197,7 @@ struct DataPrivacySettingsView: View {
                     }
                     Spacer()
                 }
-                .padding(.top, 4)
+                .padding(.top, 2)
             }
             .appCard()
         }
@@ -216,8 +206,7 @@ struct DataPrivacySettingsView: View {
     private var managementSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
             Text("Reset Local Data")
-                .sectionHeaderStyle()
-                .padding(.horizontal, 4)
+                .standardSectionHeader()
             
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 Button(action: {
@@ -250,24 +239,21 @@ struct DataPrivacySettingsView: View {
                 .font(.system(size: 11, weight: .regular))
                 .foregroundColor(AppColors.secondaryText)
             Text(count)
-                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .font(.system(size: 11, weight: .bold))
+                .monospacedDigit()
                 .foregroundColor(AppColors.primaryText)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color.assembleBrandPrimary.opacity(0.08))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .strokeBorder(AppColors.glassBorderUnified, lineWidth: 0.5)
-                )
+                .fill(AppColors.tertiaryBackground)
         )
     }
     
     private func exportOptionCard(
         icon: String,
-        iconColors: [Color],
+        color: Color,
         title: String,
         subtitle: String,
         badge: String?,
@@ -279,11 +265,11 @@ struct DataPrivacySettingsView: View {
             action()
         }) {
             HStack(spacing: AppSpacing.mdSm) {
-                GradientIconBadge(
+                SemanticIconBadge(
                     iconName: icon,
-                    size: 38,
-                    iconSize: 16,
-                    colors: iconColors
+                    size: 32,
+                    iconSize: 15,
+                    color: color
                 )
                 
                 VStack(alignment: .leading, spacing: 2) {
@@ -317,12 +303,12 @@ struct DataPrivacySettingsView: View {
             }
             .padding(AppSpacing.sm)
             .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(.ultraThinMaterial)
+                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                    .fill(AppColors.secondaryBackground)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(AppColors.glassBorderUnified, lineWidth: 0.5)
+                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                    .strokeBorder(AppColors.borderSubtle, lineWidth: 0.5)
             )
         }
         .buttonStyle(ScaleButtonStyle())
@@ -333,13 +319,14 @@ struct DataPrivacySettingsView: View {
     
     private func storageRow(
         icon: String,
+        color: Color,
         label: String,
         detail: String,
         actionTitle: String?,
         action: (() -> Void)?
     ) -> some View {
         HStack(spacing: AppSpacing.mdSm) {
-            GradientIconBadge(iconName: icon, size: 30, iconSize: 14)
+            SemanticIconBadge(iconName: icon, size: 30, iconSize: 15, color: color)
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(label)
@@ -376,11 +363,6 @@ struct DataPrivacySettingsView: View {
         .padding(AppSpacing.md)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(label), \(detail)")
-        .accessibilityAction(named: actionTitle ?? "") {
-            if let action = action {
-                action()
-            }
-        }
     }
     
     private func toastView(title: String, icon: String, color: Color) -> some View {
@@ -396,12 +378,12 @@ struct DataPrivacySettingsView: View {
         .padding(.vertical, AppSpacing.sm)
         .background(
             Capsule()
-                .fill(.ultraThinMaterial)
-                .shadow(color: AppShadow.mediumColor, radius: 12, x: 0, y: 4)
+                .fill(AppColors.secondaryGroupedBackground)
+                .shadow(color: AppShadow.mediumColor, radius: 10, x: 0, y: 4)
         )
         .overlay(
             Capsule()
-                .strokeBorder(color.opacity(0.35), lineWidth: 0.5)
+                .strokeBorder(AppColors.borderSubtle, lineWidth: 0.5)
         )
         .padding(.top, AppSpacing.sm)
         .transition(.move(edge: .top).combined(with: .opacity))

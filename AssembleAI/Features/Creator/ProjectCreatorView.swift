@@ -624,8 +624,8 @@ struct ProjectCreatorView: View {
         .padding(.horizontal, AppSpacing.screenEdge)
         .padding(.vertical, AppSpacing.md)
         .background(
-            AppColors.appBackground
-                .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: -2)
+            AppColors.secondaryGroupedBackground
+                .shadow(color: .black.opacity(0.04), radius: 6, x: 0, y: -2)
                 .ignoresSafeArea(edges: .bottom)
         )
     }

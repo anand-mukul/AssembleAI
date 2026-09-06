@@ -5,7 +5,7 @@
 
 import SwiftUI
 
-/// Create Account screen with full field validation and accessibility labels.
+/// Create Account screen with full field validation and accessibility labels adhering to Apple HIG.
 struct CreateAccountView: View {
     @EnvironmentObject private var router: AppRouter
     @EnvironmentObject private var authService: SupabaseAuthService
@@ -26,7 +26,7 @@ struct CreateAccountView: View {
     
     var body: some View {
         ZStack {
-            GradientAtmosphereBackground(intensity: .subtle)
+            AppColors.groupedBackground.ignoresSafeArea()
             
             ScrollView {
                 VStack(spacing: AppSpacing.lg) {
@@ -41,26 +41,26 @@ struct CreateAccountView: View {
                                 .foregroundColor(AppColors.primaryText)
                                 .accessibilityAddTraits(.isHeader)
                             
-                            Text("Sync your assembly projects and history safely.")
+                            Text("Create an account to track your hardware assembly progress.")
                                 .font(.subheadline)
                                 .foregroundColor(AppColors.secondaryText)
                                 .multilineTextAlignment(.center)
                         }
                     }
-                    .padding(.top, AppSpacing.xl)
-                    .padding(.bottom, AppSpacing.sm)
+                    .padding(.top, AppSpacing.lg)
+                    .padding(.bottom, AppSpacing.xs)
                     .opacity(contentAppeared ? 1 : 0)
-                    .offset(y: contentAppeared ? 0 : 10)
+                    .offset(y: contentAppeared ? 0 : 8)
                     
-                    // Form Fields in glassmorphic card
+                    // Form Fields Card
                     VStack(spacing: AppSpacing.md) {
                         CustomTextField(
                             title: "Full Name",
-                            placeholder: "Alex Morgan",
+                            placeholder: "Jane Doe",
                             text: $name,
                             iconName: "person",
                             errorMessage: nameError,
-                            keyboardType: .namePhonePad,
+                            keyboardType: .default,
                             submitLabel: .next
                         )
                         .onChange(of: name) {
@@ -68,7 +68,7 @@ struct CreateAccountView: View {
                         }
                         
                         CustomTextField(
-                            title: "Email Address",
+                            title: "Email",
                             placeholder: "name@example.com",
                             text: $email,
                             iconName: "envelope",
@@ -82,7 +82,7 @@ struct CreateAccountView: View {
                         
                         CustomTextField(
                             title: "Password",
-                            placeholder: "At least 8 characters",
+                            placeholder: "At least 6 characters",
                             text: $password,
                             iconName: "lock",
                             isSecure: true,
@@ -109,7 +109,7 @@ struct CreateAccountView: View {
                     }
                     .appCard()
                     .opacity(contentAppeared ? 1 : 0)
-                    .offset(y: contentAppeared ? 0 : 12)
+                    .offset(y: contentAppeared ? 0 : 10)
                     .animation(reduceMotion ? .none : AppAnimation.entranceSpring.delay(0.1), value: contentAppeared)
                     
                     // Primary Action Button
@@ -121,9 +121,9 @@ struct CreateAccountView: View {
                     ) {
                         handleCreateAccount()
                     }
-                    .padding(.top, AppSpacing.sm)
+                    .padding(.top, AppSpacing.xs)
                     .opacity(contentAppeared ? 1 : 0)
-                    .animation(reduceMotion ? .none : AppAnimation.entranceSpring.delay(0.2), value: contentAppeared)
+                    .animation(reduceMotion ? .none : AppAnimation.entranceSpring.delay(0.18), value: contentAppeared)
                     
                     // Navigation to Sign In
                     Button(action: {
@@ -134,17 +134,13 @@ struct CreateAccountView: View {
                                 .foregroundColor(AppColors.secondaryText)
                             Text("Sign In")
                                 .fontWeight(.semibold)
-                                .foregroundStyle(
-                                    LinearGradient(
-                                        colors: [AppColors.iconBadgeGradientStart, AppColors.iconBadgeGradientEnd],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                )
+                                .foregroundColor(.assembleBrandPrimary)
                         }
                         .font(.subheadline)
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                     }
-                    .padding(.top, AppSpacing.md)
+                    .padding(.top, AppSpacing.xs)
                     .accessibilityLabel("Already have an account? Sign In")
                 }
                 .padding(.horizontal, AppSpacing.screenEdge)
@@ -179,7 +175,7 @@ struct CreateAccountView: View {
         
         let trimmedName = name.trimmingCharacters(in: .whitespaces)
         if trimmedName.isEmpty {
-            nameError = "Enter your full name."
+            nameError = "Name is required"
             isValid = false
         } else {
             nameError = nil
@@ -187,30 +183,30 @@ struct CreateAccountView: View {
         
         let trimmedEmail = email.trimmingCharacters(in: .whitespaces)
         if trimmedEmail.isEmpty {
-            emailError = "Enter your email address."
+            emailError = "Email is required"
             isValid = false
         } else if !isValidEmail(trimmedEmail) {
-            emailError = "Enter a valid email address."
+            emailError = "Please enter a valid email address"
             isValid = false
         } else {
             emailError = nil
         }
         
         if password.isEmpty {
-            passwordError = "Enter a password."
+            passwordError = "Password is required"
             isValid = false
-        } else if password.count < 8 {
-            passwordError = "Password must be at least 8 characters."
+        } else if password.count < 6 {
+            passwordError = "Password must be at least 6 characters"
             isValid = false
         } else {
             passwordError = nil
         }
         
         if confirmPassword.isEmpty {
-            confirmPasswordError = "Confirm your password."
+            confirmPasswordError = "Please confirm your password"
             isValid = false
         } else if confirmPassword != password {
-            confirmPasswordError = "Passwords do not match."
+            confirmPasswordError = "Passwords do not match"
             isValid = false
         } else {
             confirmPasswordError = nil
@@ -220,9 +216,9 @@ struct CreateAccountView: View {
     }
     
     private func isValidEmail(_ email: String) -> Bool {
-        let emailRegEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
-        let emailPred = NSPredicate(format: "SELF MATCHES %@", emailRegEx)
-        return emailPred.evaluate(with: email)
+        let pattern = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+        let predicate = NSPredicate(format: "SELF MATCHES %@", pattern)
+        return predicate.evaluate(with: email)
     }
     
     private func handleCreateAccount() {
@@ -230,15 +226,9 @@ struct CreateAccountView: View {
         guard validateForm() else { return }
         
         Task {
-            do {
-                try await authService.createAccount(name: name, email: email, password: password)
-                if authService.isAuthenticated {
-                    router.transitionToHome()
-                } else {
-                    showEmailConfirmationAlert = true
-                }
-            } catch {
-                // Auth error captured by authService.authError sheet
+            let success = await authService.signUp(email: email, password: password, name: name)
+            if success {
+                showEmailConfirmationAlert = true
             }
         }
     }

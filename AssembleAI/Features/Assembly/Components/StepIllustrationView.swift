@@ -12,11 +12,11 @@ struct StepIllustrationView: View {
     
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
+            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
                 .fill(AppColors.secondaryGroupedBackground)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(AppColors.border.opacity(0.35), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                        .strokeBorder(AppColors.cardBorder, lineWidth: 0.5)
                 )
             
             VStack(spacing: AppSpacing.sm) {
@@ -49,10 +49,10 @@ struct StepIllustrationView: View {
                 }
                 
                 // Label
-                Text("TARGET EXPECTED STATE")
-                    .font(.system(size: 9, weight: .bold, design: .monospaced))
+                Text("Target Blueprint State")
+                    .font(.caption)
+                    .fontWeight(.medium)
                     .foregroundColor(AppColors.secondaryText)
-                    .tracking(1.0)
             }
             .padding(.vertical, AppSpacing.md)
         }

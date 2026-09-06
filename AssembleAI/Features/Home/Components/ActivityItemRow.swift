@@ -5,17 +5,17 @@
 
 import SwiftUI
 
-/// Compact recent activity row item featuring unified gradient icon badge and clear hierarchy.
+/// Compact recent activity row item featuring semantic icon badge and clear hierarchy.
 struct ActivityItemRow: View {
     let activity: ActivityItemModel
     
     var body: some View {
         HStack(spacing: AppSpacing.mdSm) {
-            GradientIconBadge(
+            SemanticIconBadge(
                 iconName: activity.iconName,
-                size: 34,
+                size: 30,
                 iconSize: 14,
-                colors: [AppColors.success, AppColors.success.opacity(0.75)]
+                color: AppColors.badgeGreen
             )
             
             VStack(alignment: .leading, spacing: 2) {
@@ -35,7 +35,6 @@ struct ActivityItemRow: View {
                 .font(.caption2)
                 .foregroundColor(AppColors.tertiaryText)
         }
-        .padding(.vertical, 4)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Completed step \(activity.stepOrder) of \(activity.projectTitle), \(activity.timestampDescription)")
     }

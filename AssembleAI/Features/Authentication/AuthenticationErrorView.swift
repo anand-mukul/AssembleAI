@@ -18,7 +18,7 @@ struct AuthenticationErrorView: View {
     
     var body: some View {
         ZStack {
-            GradientAtmosphereBackground(intensity: .subtle)
+            AppColors.groupedBackground.ignoresSafeArea()
             
             VStack(spacing: AppSpacing.lg) {
                 Spacer(minLength: 8)
@@ -32,7 +32,7 @@ struct AuthenticationErrorView: View {
                     staticColor: AppColors.error
                 )
                 
-                // Error Details Glassmorphic Card
+                // Error Details Card
                 VStack(spacing: AppSpacing.sm) {
                     Text("Unable to Sign In")
                         .font(.title3)
@@ -47,16 +47,7 @@ struct AuthenticationErrorView: View {
                         .lineLimit(nil)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                .padding(AppSpacing.lg)
-                .background(
-                    RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                        .fill(.ultraThinMaterial)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                        .strokeBorder(AppColors.glassBorderUnified, lineWidth: 0.5)
-                )
-                .shadow(color: AppShadow.subtleColor, radius: 10, x: 0, y: 3)
+                .appCard()
                 .padding(.horizontal, AppSpacing.screenEdge)
                 
                 Spacer(minLength: 10)

@@ -16,7 +16,7 @@ struct ErrorGuidanceView: View {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 // Header Badge
                 HStack {
-                    BadgeView(text: "STEP \(stepOrder) FIX", color: AppColors.error)
+                    BadgeView(text: "Step \(stepOrder) Correction", color: AppColors.badgeOrange)
                     Spacer()
                 }
                 .padding(.top, AppSpacing.sm)
@@ -42,9 +42,8 @@ struct ErrorGuidanceView: View {
                 
                 // Remediation Instructions Card
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "wrench.and.screwdriver.fill")
-                            .foregroundColor(AppColors.error)
+                    HStack(spacing: AppSpacing.xs) {
+                        SemanticIconBadge(systemName: "wrench.and.screwdriver.fill", tintColor: AppColors.badgeOrange)
                         Text("Action Required")
                             .font(.headline)
                             .foregroundColor(AppColors.primaryText)
@@ -55,7 +54,7 @@ struct ErrorGuidanceView: View {
                         .foregroundColor(AppColors.primaryText)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                .appCard(borderColor: AppColors.error.opacity(0.3))
+                .appCard()
                 
                 Spacer(minLength: AppSpacing.lg)
                 
@@ -66,7 +65,7 @@ struct ErrorGuidanceView: View {
             }
             .padding(.horizontal, AppSpacing.screenEdge)
         }
-        .background(AppColors.appBackground.ignoresSafeArea())
+        .background(AppColors.groupedBackground.ignoresSafeArea())
     }
     
     private func extractExpectedShort(_ full: String) -> String {

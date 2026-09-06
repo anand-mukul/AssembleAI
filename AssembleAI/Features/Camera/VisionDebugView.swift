@@ -110,7 +110,7 @@ struct VisionDebugView: View {
             }
             .padding(.horizontal, AppSpacing.screenEdge)
         }
-        .background(AppColors.appBackground.ignoresSafeArea())
+        .background(AppColors.groupedBackground.ignoresSafeArea())
     }
     
     private func metadataTile(title: String, value: String) -> some View {

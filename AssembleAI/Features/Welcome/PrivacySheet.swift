@@ -11,107 +11,111 @@ struct PrivacySheet: View {
     let onContinue: () -> Void
     
     var body: some View {
-        VStack(spacing: AppSpacing.md) {
+        VStack(spacing: AppSpacing.lg) {
             // Header Graphic & Titles
             VStack(spacing: AppSpacing.sm) {
-                AnimatedHeaderIcon(iconName: "lock.shield.fill", iconSize: 30, circleDiameter: 64)
-                    .padding(.top, AppSpacing.sm)
+                AnimatedHeaderIcon(
+                    iconName: "lock.shield.fill",
+                    iconSize: 32,
+                    circleDiameter: 64,
+                    staticColor: AppColors.badgeGreen
+                )
+                .padding(.top, AppSpacing.sm)
                 
-                VStack(spacing: 6) {
+                VStack(spacing: 4) {
                     Text("Your Camera, Your Data")
-                        .font(.title2)
+                        .font(.title3)
                         .fontWeight(.bold)
                         .foregroundColor(AppColors.primaryText)
                         .multilineTextAlignment(.center)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.85)
                     
                     Text("AssembleAI processes visual information locally on your device.")
                         .font(.subheadline)
                         .foregroundColor(AppColors.secondaryText)
                         .multilineTextAlignment(.center)
-                        .lineLimit(nil)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .adaptiveMultiline()
                         .padding(.horizontal, AppSpacing.sm)
                 }
             }
             .padding(.horizontal, AppSpacing.screenEdge)
             
             // Privacy Bullet Points Card
-            VStack(spacing: AppSpacing.md) {
+            VStack(spacing: 0) {
                 privacyTile(
                     icon: "cpu.fill",
                     title: "On-Device Visual Intelligence",
-                    description: "Apple Vision and local state estimators process captured frames on your device."
+                    description: "Apple Vision and local state estimators process captured frames on your device.",
+                    color: AppColors.badgeBlue
                 )
                 
                 Divider()
-                    .background(AppColors.glassBorderUnified)
+                    .padding(.leading, AppSpacing.dividerLeadingInset)
                 
                 privacyTile(
                     icon: "icloud.slash.fill",
                     title: "No Camera Image Uploads",
-                    description: "Camera frames are analyzed locally in memory and never transmitted to cloud servers."
+                    description: "Camera frames are analyzed locally in memory and never transmitted to cloud servers.",
+                    color: AppColors.badgeGreen
                 )
                 
                 Divider()
-                    .background(AppColors.glassBorderUnified)
+                    .padding(.leading, AppSpacing.dividerLeadingInset)
                 
                 privacyTile(
                     icon: "hand.raised.fill",
                     title: "Pseudonymous Research Data",
-                    description: "Session timing metrics use randomly generated IDs without personal identifiers."
+                    description: "Session timing metrics use randomly generated IDs without personal identifiers.",
+                    color: AppColors.badgeIndigo
                 )
             }
-            .padding(AppSpacing.md)
             .background(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(.ultraThinMaterial)
+                RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                    .fill(AppColors.secondaryGroupedBackground)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .strokeBorder(AppColors.glassBorderUnified, lineWidth: 0.5)
+                RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                    .strokeBorder(AppColors.borderSubtle, lineWidth: 0.5)
             )
-            .shadow(color: AppShadow.subtleColor, radius: 8, x: 0, y: 2)
+            .shadow(color: AppShadow.subtleColor, radius: 4, x: 0, y: 1)
             .padding(.horizontal, AppSpacing.screenEdge)
-            .padding(.top, AppSpacing.xs)
             
             Spacer(minLength: 16)
             
-            PrimaryButton(title: "Continue", iconName: "arrow.right") {
+            PrimaryButton(title: "Continue") {
                 dismiss()
                 onContinue()
             }
             .padding(.horizontal, AppSpacing.screenEdge)
             .padding(.bottom, AppSpacing.md)
         }
-        .background(AppColors.appBackground.ignoresSafeArea())
-        .presentationDetents([.height(540), .medium])
+        .background(AppColors.groupedBackground.ignoresSafeArea())
+        .presentationDetents([.height(520), .medium])
         .presentationDragIndicator(.visible)
-        .presentationCornerRadius(28)
+        .presentationCornerRadius(AppRadius.sheet)
     }
     
-    private func privacyTile(icon: String, title: String, description: String) -> some View {
+    private func privacyTile(icon: String, title: String, description: String, color: Color) -> some View {
         HStack(alignment: .top, spacing: AppSpacing.mdSm) {
-            GradientIconBadge(iconName: icon)
+            SemanticIconBadge(iconName: icon, size: 30, iconSize: 15, color: color)
+                .padding(.top, 2)
             
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.subheadline)
                     .fontWeight(.semibold)
                     .foregroundColor(AppColors.primaryText)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.9)
                 
                 Text(description)
                     .font(.caption)
                     .foregroundColor(AppColors.secondaryText)
-                    .lineLimit(nil)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .lineSpacing(2)
+                    .adaptiveMultiline()
             }
             
             Spacer(minLength: 0)
         }
+        .padding(AppSpacing.md)
     }
 }
 

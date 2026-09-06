@@ -17,10 +17,10 @@ struct StateComparisonCard: View {
             HStack(alignment: .top, spacing: AppSpacing.md) {
                 // Expected Column
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("EXPECTED STATE")
-                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                    Text("Expected State")
+                        .font(.caption)
+                        .fontWeight(.semibold)
                         .foregroundColor(AppColors.success)
-                        .tracking(1.0)
                     
                     Text(expectedText)
                         .font(.subheadline)
@@ -34,10 +34,10 @@ struct StateComparisonCard: View {
                 
                 // Observed Column
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("OBSERVED STATE")
-                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                    Text("Observed State")
+                        .font(.caption)
+                        .fontWeight(.semibold)
                         .foregroundColor(issueType != nil ? AppColors.error : AppColors.secondaryText)
-                        .tracking(1.0)
                     
                     Text(observedText)
                         .font(.subheadline)
@@ -55,9 +55,10 @@ struct StateComparisonCard: View {
                         .font(.caption2)
                         .foregroundColor(AppColors.error)
                     
-                    Text("ISSUE:")
-                        .font(.system(size: 9, weight: .bold, design: .monospaced))
-                        .foregroundColor(AppColors.tertiaryText)
+                    Text("Issue:")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(AppColors.secondaryText)
                     
                     Text(issueTitle)
                         .font(.caption)
@@ -66,19 +67,11 @@ struct StateComparisonCard: View {
                     
                     Spacer()
                     
-                    BadgeView(text: issueType.rawValue.uppercased(), color: AppColors.error)
+                    BadgeView(text: issueType.rawValue.capitalized, color: AppColors.badgeOrange)
                 }
             }
         }
-        .padding(AppSpacing.md)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(AppColors.secondaryGroupedBackground)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(AppColors.border.opacity(0.3), lineWidth: 1)
-        )
+        .appCard()
         .accessibilityElement(children: .combine)
     }
 }

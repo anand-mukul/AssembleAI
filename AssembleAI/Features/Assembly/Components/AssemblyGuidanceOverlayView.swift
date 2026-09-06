@@ -68,8 +68,9 @@ struct AssemblyGuidanceOverlayView: View {
                 .position(x: rect.midX, y: rect.midY)
             
             VStack(spacing: 2) {
-                Text("TARGET")
-                    .font(.system(size: 9, weight: .bold, design: .monospaced))
+                Text("Target")
+                    .font(.caption2)
+                    .fontWeight(.bold)
                     .foregroundColor(.white)
                 Text(guidance.message)
                     .font(.caption2)
@@ -94,8 +95,9 @@ struct AssemblyGuidanceOverlayView: View {
                 .frame(width: source.width, height: source.height)
                 .position(x: source.midX, y: source.midY)
             
-            Text("CURRENT")
-                .font(.system(size: 8, weight: .bold, design: .monospaced))
+            Text("Current")
+                .font(.caption2)
+                .fontWeight(.bold)
                 .foregroundColor(.white)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
@@ -109,13 +111,14 @@ struct AssemblyGuidanceOverlayView: View {
                 .scaleEffect(reduceMotion ? 1.0 : (isPulseAnimating ? 1.04 : 0.96))
                 .position(x: destination.midX, y: destination.midY)
             
-            Text("MOVE HERE")
-                .font(.system(size: 8, weight: .bold, design: .monospaced))
+            Text("Move Here")
+                .font(.caption2)
+                .fontWeight(.bold)
                 .foregroundColor(.white)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
                 .background(Capsule().fill(AppColors.success))
-                .position(x: destination.midX, y: destination.minY - 12)
+                .position(x: destination.midX, y: destination.midY - 12)
             
             // Connector Arrow Line (Source -> Destination)
             Path { path in

@@ -56,9 +56,8 @@ struct StepInstructionView: View {
                 
                 // Expected Result Callout
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "info.circle.fill")
-                            .foregroundColor(.assembleBrandPrimary)
+                    HStack(spacing: AppSpacing.xs) {
+                        SemanticIconBadge(systemName: "info", tintColor: AppColors.badgeBlue)
                         Text("Expected Result")
                             .font(.headline)
                             .foregroundColor(AppColors.primaryText)
@@ -80,7 +79,7 @@ struct StepInstructionView: View {
             }
             .padding(.horizontal, AppSpacing.screenEdge)
         }
-        .background(AppColors.appBackground.ignoresSafeArea())
+        .background(AppColors.groupedBackground.ignoresSafeArea())
     }
     
     private var expectedResultDescription: String {

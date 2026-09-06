@@ -50,15 +50,11 @@ struct FoundationModelDebugView: View {
                     debugRow(label: "Expected", value: expectedDesc)
                     debugRow(label: "Observed", value: observedDesc)
                 }
-                .padding(AppSpacing.md)
-                .background(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(AppColors.secondaryGroupedBackground)
-                )
+                .appCard()
             }
             .padding(.horizontal, AppSpacing.screenEdge)
         }
-        .background(AppColors.appBackground.ignoresSafeArea())
+        .background(AppColors.groupedBackground.ignoresSafeArea())
     }
     
     private var isFrameworkAvailable: Bool {
@@ -75,7 +71,8 @@ struct FoundationModelDebugView: View {
                 .fontWeight(.bold)
                 .foregroundColor(color)
             Text(title)
-                .font(.system(size: 8, weight: .bold, design: .monospaced))
+                .font(.caption2)
+                .fontWeight(.medium)
                 .foregroundColor(AppColors.tertiaryText)
         }
         .frame(maxWidth: .infinity)
@@ -83,6 +80,10 @@ struct FoundationModelDebugView: View {
         .background(
             RoundedRectangle(cornerRadius: 12)
                 .fill(AppColors.secondaryGroupedBackground)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(AppColors.cardBorder, lineWidth: 0.5)
         )
     }
     

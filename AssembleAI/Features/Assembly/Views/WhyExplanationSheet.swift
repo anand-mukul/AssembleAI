@@ -21,9 +21,8 @@ struct WhyExplanationSheet: View {
         VStack(spacing: AppSpacing.md) {
             // Header
             VStack(spacing: AppSpacing.xs) {
-                HStack(spacing: 6) {
-                    Image(systemName: "questionmark.circle.fill")
-                        .foregroundColor(.assembleBrandPrimary)
+                HStack(spacing: AppSpacing.xs) {
+                    SemanticIconBadge(systemName: "questionmark", tintColor: AppColors.badgeIndigo)
                     Text("Physical Rationale")
                         .font(.headline)
                         .foregroundColor(AppColors.primaryText)
@@ -79,7 +78,7 @@ struct WhyExplanationSheet: View {
             .padding(.horizontal, AppSpacing.screenEdge)
             .padding(.bottom, AppSpacing.lg)
         }
-        .background(AppColors.appBackground.ignoresSafeArea())
+        .background(AppColors.groupedBackground.ignoresSafeArea())
         .presentationDetents([.height(380), .medium])
         .presentationDragIndicator(.visible)
         .presentationCornerRadius(28)

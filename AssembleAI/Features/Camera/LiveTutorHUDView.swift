@@ -65,7 +65,8 @@ struct LiveTutorHUDView: View {
                 HStack(spacing: 5) {
                     ThinkingOrbView(status: status, diameter: 10)
                     Text(status.rawValue)
-                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                        .font(.caption2)
+                        .fontWeight(.bold)
                         .foregroundColor(.white)
                 }
                 .padding(.horizontal, 7)
@@ -79,7 +80,9 @@ struct LiveTutorHUDView: View {
                         .font(.system(size: 10, weight: .bold))
                         .foregroundColor(Color.assembleBrandPrimary)
                     Text("STEP \(currentStep.stepOrder)")
-                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .font(.caption2)
+                        .fontWeight(.bold)
+                        .monospacedDigit()
                         .foregroundColor(.white)
                 }
                 .padding(.horizontal, 7)

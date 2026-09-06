@@ -75,7 +75,7 @@ struct ResearchDebugView: View {
             }
             .padding(.horizontal, AppSpacing.screenEdge)
         }
-        .background(AppColors.appBackground.ignoresSafeArea())
+        .background(AppColors.groupedBackground.ignoresSafeArea())
         .sheet(isPresented: $isExporting) {
             ShareSheet(activityItems: [csvContent])
         }

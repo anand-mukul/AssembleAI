@@ -5,13 +5,10 @@
 
 import SwiftUI
 
-/// Prominent active assembly project card for the Home screen centerpiece with Silicon Valley glassmorphism.
+/// Prominent active assembly project card for the Home screen centerpiece adhering to Apple HIG standards.
 struct ActiveProjectCard: View {
     let project: AssemblyProject
     let onContinue: () -> Void
-    
-    @State private var livePulse = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
@@ -20,16 +17,14 @@ struct ActiveProjectCard: View {
                 HStack(spacing: 6) {
                     Circle()
                         .fill(AppColors.statusLive)
-                        .frame(width: 8, height: 8)
-                        .scaleEffect(livePulse ? 1.25 : 1.0)
-                        .opacity(livePulse ? 1.0 : 0.7)
+                        .frame(width: 7, height: 7)
                     
                     Text("In Progress")
-                        .font(.subheadline)
+                        .font(.caption)
                         .fontWeight(.semibold)
                         .foregroundColor(AppColors.primaryText)
                 }
-                .padding(.horizontal, 10)
+                .padding(.horizontal, 9)
                 .padding(.vertical, 4)
                 .background(
                     Capsule()
@@ -42,9 +37,9 @@ struct ActiveProjectCard: View {
             }
             
             // Project Title & Subtitle
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(project.title)
-                    .font(.title2)
+                    .font(.title3)
                     .fontWeight(.bold)
                     .foregroundColor(AppColors.primaryText)
                 
@@ -67,19 +62,14 @@ struct ActiveProjectCard: View {
                     Text(project.progressText)
                         .font(.subheadline)
                         .fontWeight(.semibold)
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [AppColors.iconBadgeGradientStart, AppColors.iconBadgeGradientEnd],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
+                        .monospacedDigit()
+                        .foregroundColor(AppColors.secondaryText)
                 }
                 
                 ProgressBar(
                     value: project.progress,
                     height: 6,
-                    gradientColors: [AppColors.iconBadgeGradientStart, AppColors.iconBadgeGradientEnd]
+                    fillColor: .assembleBrandPrimary
                 )
             }
             
@@ -90,7 +80,7 @@ struct ActiveProjectCard: View {
                         .font(.subheadline)
                         .foregroundColor(.assembleBrandPrimary)
                     
-                    HStack(spacing: 3) {
+                    HStack(spacing: 4) {
                         Text("Next:")
                             .font(.caption)
                             .fontWeight(.semibold)
@@ -104,8 +94,8 @@ struct ActiveProjectCard: View {
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
                 .background(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(AppColors.tertiaryBackground.opacity(0.6))
+                    RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
+                        .fill(AppColors.tertiaryBackground)
                 )
             }
             
@@ -116,12 +106,6 @@ struct ActiveProjectCard: View {
             .padding(.top, AppSpacing.xxs)
         }
         .appCard()
-        .onAppear {
-            guard !reduceMotion else { return }
-            withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
-                livePulse = true
-            }
-        }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(project.accessibilityLabelSummary)
         .accessibilityHint("Double tap to view project details and continue assembly.")

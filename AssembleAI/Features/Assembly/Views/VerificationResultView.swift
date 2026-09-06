@@ -58,7 +58,7 @@ struct VerificationResultView: View {
                         } label: {
                             HStack(spacing: 3) {
                                 BadgeView(
-                                    text: "\(Int(result.confidence * 100))% CONFIDENCE",
+                                    text: "\(Int(result.confidence * 100))% Confidence",
                                     color: .assembleBrandPrimary
                                 )
                                 Image(systemName: "info.circle")
@@ -72,10 +72,8 @@ struct VerificationResultView: View {
                 
                 // Assessment Card
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Text("ASSESSMENT")
-                        .font(.system(size: 10, weight: .bold, design: .monospaced))
-                        .foregroundColor(AppColors.tertiaryText)
-                        .tracking(1.0)
+                    Text("Assessment")
+                        .standardSectionHeader()
                     
                     Text(result.explanation)
                         .font(.body)
@@ -88,10 +86,11 @@ struct VerificationResultView: View {
                 // Uncertain State Suggestions Card
                 if result.status == .uncertain {
                     VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                        Text("TIPS FOR BETTER SCANNING")
-                            .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        Text("Tips for Better Scanning")
+                            .font(.footnote)
+                            .fontWeight(.semibold)
                             .foregroundColor(AppColors.warning)
-                            .tracking(1.0)
+                            .textCase(.uppercase)
                         
                         VStack(alignment: .leading, spacing: 4) {
                             Text("• Move closer to the component area")
@@ -108,10 +107,11 @@ struct VerificationResultView: View {
                 // If incorrect: show quick expected vs detected summary
                 if result.status == .incorrect {
                     VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                        Text("DETECTED STATE")
-                            .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        Text("Detected State")
+                            .font(.footnote)
+                            .fontWeight(.semibold)
                             .foregroundColor(AppColors.error)
-                            .tracking(1.0)
+                            .textCase(.uppercase)
                         
                         Text(result.detectedDescription)
                             .font(.subheadline)
@@ -164,7 +164,7 @@ struct VerificationResultView: View {
             }
             .padding(.horizontal, AppSpacing.screenEdge)
         }
-        .background(AppColors.appBackground.ignoresSafeArea())
+        .background(AppColors.groupedBackground.ignoresSafeArea())
         .sheet(isPresented: $showWhySheet) {
             WhyExplanationSheet(
                 step: currentStep ?? AssemblyStep(projectId: UUID(), stepOrder: 2, title: "Attach Component", instruction: "Follow instructions"),
@@ -221,9 +221,9 @@ struct VerificationResultView: View {
     
     private var badgeText: String {
         switch result.status {
-        case .correct: return "STEP VERIFIED"
-        case .incorrect: return "ATTENTION NEEDED"
-        case .uncertain: return "UNCERTAIN EVIDENCE"
+        case .correct: return "Step Verified"
+        case .incorrect: return "Attention Needed"
+        case .uncertain: return "Uncertain Evidence"
         }
     }
 }

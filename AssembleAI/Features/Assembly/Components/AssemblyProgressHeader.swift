@@ -13,16 +13,18 @@ struct AssemblyProgressHeader: View {
     var body: some View {
         VStack(spacing: AppSpacing.xs) {
             HStack {
-                Text("STEP \(currentStep) OF \(totalSteps)")
-                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                Text("Step \(currentStep) of \(totalSteps)")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .monospacedDigit()
                     .foregroundColor(.assembleBrandPrimary)
-                    .tracking(1.0)
                 
                 Spacer()
                 
                 Text("\(Int((Double(currentStep) / Double(max(1, totalSteps))) * 100))%")
-                    .font(.caption2)
-                    .fontWeight(.semibold)
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .monospacedDigit()
                     .foregroundColor(AppColors.secondaryText)
             }
             

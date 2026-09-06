@@ -19,156 +19,128 @@ struct HomeView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
     var body: some View {
-        ZStack {
-            GradientAtmosphereBackground(intensity: .subtle)
-            
-            ScrollView {
-                VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                    // Dynamic Greeting Header
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Text(viewModel.greetingText)
-                                .font(.title2)
-                                .fontWeight(.bold)
-                                .foregroundColor(AppColors.primaryText)
-                                .accessibilityAddTraits(.isHeader)
-                            
-                            Spacer()
-                            
-                            // Online / AI Ready Pill
-                            HStack(spacing: 5) {
-                                Circle()
-                                    .fill(AppColors.statusLive)
-                                    .frame(width: 6, height: 6)
-                                Text("Vision Ready")
-                                    .font(.system(size: 11, weight: .semibold))
-                                    .foregroundColor(AppColors.secondaryText)
-                            }
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(
-                                Capsule()
-                                    .fill(.ultraThinMaterial)
-                                    .overlay(
-                                        Capsule()
-                                            .strokeBorder(AppColors.glassBorderUnified, lineWidth: 0.5)
-                                    )
-                            )
-                        }
-                        
-                        Text("Ready for your next physical assembly task.")
-                            .font(.subheadline)
-                            .foregroundColor(AppColors.secondaryText)
-                    }
-                    .padding(.top, AppSpacing.sm)
-                    .padding(.horizontal, AppSpacing.screenEdge)
-                    .opacity(hasAppeared ? 1 : 0)
-                    .offset(y: hasAppeared ? 0 : 8)
+        ScrollView {
+            VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                // Dynamic Greeting Header
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(viewModel.greetingText)
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(AppColors.primaryText)
+                        .accessibilityAddTraits(.isHeader)
                     
-                    // Active Project Centerpiece OR Empty Active State
-                    Group {
-                        if let activeProject = viewModel.activeProject {
-                            ActiveProjectCard(
-                                project: activeProject,
-                                onContinue: {
-                                    if let onSelectProject = onSelectProject {
-                                        onSelectProject(activeProject)
-                                    }
-                                }
-                            )
-                        } else {
-                            noActiveProjectCard
-                        }
-                    }
-                    .padding(.horizontal, AppSpacing.screenEdge)
-                    .opacity(hasAppeared ? 1 : 0)
-                    .offset(y: hasAppeared ? 0 : 12)
-                    
-                    // Your Projects Section Header
-                    VStack(alignment: .leading, spacing: AppSpacing.mdSm) {
-                        HStack(alignment: .firstTextBaseline) {
-                            Text("Your Projects")
-                                .font(.title3)
-                                .fontWeight(.bold)
-                                .foregroundColor(AppColors.primaryText)
-                            
-                            Spacer()
-                            
-                            Button(action: {
-                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                                onSelectProjectsTab?()
-                            }) {
-                                HStack(spacing: 4) {
-                                    Text("See All")
-                                    Image(systemName: "chevron.right")
-                                        .font(.caption2.weight(.bold))
-                                }
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.assembleBrandPrimary)
-                                .padding(.vertical, AppSpacing.xs)
-                                .padding(.horizontal, AppSpacing.xs)
-                                .contentShape(Rectangle())
-                            }
-                            .touchTarget()
-                            .accessibilityLabel("See all projects")
-                        }
-                        .padding(.horizontal, AppSpacing.screenEdge)
-                        
-                        // Recent Project Cards
-                        if viewModel.recentProjects.isEmpty {
-                            Text("No other projects available.")
-                                .font(.subheadline)
-                                .foregroundColor(AppColors.tertiaryText)
-                                .padding(.horizontal, AppSpacing.screenEdge)
-                        } else {
-                            VStack(spacing: AppSpacing.sm) {
-                                ForEach(viewModel.recentProjects, id: \.id) { project in
-                                    ProjectCard(
-                                        project: project,
-                                        onTap: {
-                                            if let onSelectProject = onSelectProject {
-                                                onSelectProject(project)
-                                            }
-                                        }
-                                    )
+                    Text("Ready for your next physical assembly task.")
+                        .font(.subheadline)
+                        .foregroundColor(AppColors.secondaryText)
+                }
+                .padding(.top, AppSpacing.sm)
+                .padding(.horizontal, AppSpacing.screenEdge)
+                .opacity(hasAppeared ? 1 : 0)
+                .offset(y: hasAppeared ? 0 : 6)
+                
+                // Active Project Centerpiece OR Empty Active State
+                Group {
+                    if let activeProject = viewModel.activeProject {
+                        ActiveProjectCard(
+                            project: activeProject,
+                            onContinue: {
+                                if let onSelectProject = onSelectProject {
+                                    onSelectProject(activeProject)
                                 }
                             }
-                            .padding(.horizontal, AppSpacing.screenEdge)
-                        }
-                    }
-                    .opacity(hasAppeared ? 1 : 0)
-                    .offset(y: hasAppeared ? 0 : 16)
-                    
-                    // Recent Activity Section
-                    if !viewModel.recentActivity.isEmpty {
-                        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                            Text("Recent Activity")
-                                .font(.title3)
-                                .fontWeight(.bold)
-                                .foregroundColor(AppColors.primaryText)
-                                .padding(.horizontal, AppSpacing.screenEdge)
-                            
-                            VStack(spacing: AppSpacing.xs) {
-                                ForEach(viewModel.recentActivity, id: \.id) { activity in
-                                    ActivityItemRow(activity: activity)
-                                    if activity.id != viewModel.recentActivity.last?.id {
-                                        Divider()
-                                            .opacity(0.3)
-                                            .padding(.leading, 44)
-                                    }
-                                }
-                            }
-                            .appCard()
-                            .padding(.horizontal, AppSpacing.screenEdge)
-                        }
-                        .opacity(hasAppeared ? 1 : 0)
-                        .offset(y: hasAppeared ? 0 : 20)
+                        )
+                    } else {
+                        noActiveProjectCard
                     }
                 }
-                .padding(.bottom, AppSpacing.xxl)
+                .padding(.horizontal, AppSpacing.screenEdge)
+                .opacity(hasAppeared ? 1 : 0)
+                .offset(y: hasAppeared ? 0 : 8)
+                
+                // Your Projects Section Header & Cards
+                VStack(alignment: .leading, spacing: AppSpacing.mdSm) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("Your Projects")
+                            .font(.title3)
+                            .fontWeight(.bold)
+                            .foregroundColor(AppColors.primaryText)
+                        
+                        Spacer()
+                        
+                        Button(action: {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            onSelectProjectsTab?()
+                        }) {
+                            HStack(spacing: 4) {
+                                Text("See All")
+                                Image(systemName: "chevron.right")
+                                    .font(.caption2.weight(.bold))
+                            }
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.assembleBrandPrimary)
+                        }
+                        .touchTarget()
+                        .accessibilityLabel("See all projects")
+                    }
+                    .padding(.horizontal, AppSpacing.screenEdge)
+                    
+                    // Recent Project Cards
+                    if viewModel.recentProjects.isEmpty {
+                        Text("No other projects available.")
+                            .font(.subheadline)
+                            .foregroundColor(AppColors.tertiaryText)
+                            .padding(.horizontal, AppSpacing.screenEdge)
+                    } else {
+                        VStack(spacing: AppSpacing.sm) {
+                            ForEach(viewModel.recentProjects, id: \.id) { project in
+                                ProjectCard(
+                                    project: project,
+                                    onTap: {
+                                        if let onSelectProject = onSelectProject {
+                                            onSelectProject(project)
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                        .padding(.horizontal, AppSpacing.screenEdge)
+                    }
+                }
+                .opacity(hasAppeared ? 1 : 0)
+                .offset(y: hasAppeared ? 0 : 10)
+                
+                // Recent Activity Section
+                if !viewModel.recentActivity.isEmpty {
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        Text("Recent Activity")
+                            .font(.title3)
+                            .fontWeight(.bold)
+                            .foregroundColor(AppColors.primaryText)
+                            .padding(.horizontal, AppSpacing.screenEdge)
+                        
+                        VStack(spacing: 0) {
+                            ForEach(viewModel.recentActivity, id: \.id) { activity in
+                                ActivityItemRow(activity: activity)
+                                    .padding(.horizontal, AppSpacing.md)
+                                    .padding(.vertical, AppSpacing.sm)
+                                
+                                if activity.id != viewModel.recentActivity.last?.id {
+                                    Divider()
+                                        .padding(.leading, 52)
+                                }
+                            }
+                        }
+                        .appCard(padding: 0)
+                        .padding(.horizontal, AppSpacing.screenEdge)
+                    }
+                    .opacity(hasAppeared ? 1 : 0)
+                    .offset(y: hasAppeared ? 0 : 12)
+                }
             }
+            .padding(.bottom, AppSpacing.xl)
         }
+        .background(AppColors.groupedBackground.ignoresSafeArea())
         .navigationTitle("AssembleAI")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
@@ -188,8 +160,8 @@ struct HomeView: View {
     
     private var noActiveProjectCard: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            HStack(spacing: 8) {
-                GradientIconBadge(iconName: "wrench.and.screwdriver.fill", size: 36, iconSize: 16)
+            HStack(spacing: AppSpacing.sm) {
+                SemanticIconBadge(iconName: "wrench.and.screwdriver.fill", size: 30, iconSize: 15, color: AppColors.badgeOrange)
                 
                 Text("Ready to assemble?")
                     .font(.headline)

@@ -15,12 +15,6 @@ struct AddProjectSheet: View {
     
     var body: some View {
         VStack(spacing: AppSpacing.lg) {
-            // Drag indicator
-            Capsule()
-                .fill(AppColors.border)
-                .frame(width: 36, height: 5)
-                .padding(.top, AppSpacing.sm)
-            
             VStack(spacing: AppSpacing.xs) {
                 Text("Add Project")
                     .font(.title2)
@@ -32,7 +26,7 @@ struct AddProjectSheet: View {
                     .font(.subheadline)
                     .foregroundColor(AppColors.secondaryText)
             }
-            .padding(.top, AppSpacing.xs)
+            .padding(.top, AppSpacing.lg)
             
             VStack(spacing: AppSpacing.mdSm) {
                 PrimaryButton(title: "Choose a Project", iconName: "folder") {
@@ -60,11 +54,12 @@ struct AddProjectSheet: View {
                     .fontWeight(.medium)
                     .foregroundColor(AppColors.secondaryText)
                     .frame(minHeight: 44)
+                    .contentShape(Rectangle())
             }
             .padding(.bottom, AppSpacing.md)
         }
         .padding(.horizontal, AppSpacing.screenEdge)
-        .background(AppColors.appBackground.ignoresSafeArea())
+        .background(AppColors.secondaryGroupedBackground.ignoresSafeArea())
         .presentationDetents([.height(390)])
         .presentationDragIndicator(.visible)
         .presentationCornerRadius(28)

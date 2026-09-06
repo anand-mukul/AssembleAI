@@ -5,7 +5,7 @@
 
 import SwiftUI
 
-/// Clean requirement item row for Project Details screen with unified badges.
+/// Clean requirement item row for Project Details screen adhering to Apple HIG.
 struct ComponentRequirementRow: View {
     let component: ComponentRequirement
     
@@ -13,7 +13,7 @@ struct ComponentRequirementRow: View {
         HStack(spacing: AppSpacing.mdSm) {
             ZStack {
                 Circle()
-                    .fill(component.isRequired ? AppColors.iconBadgeGradientStart.opacity(0.15) : AppColors.tertiaryBackground)
+                    .fill(component.isRequired ? Color.assembleBrandPrimary.opacity(0.12) : AppColors.tertiaryBackground)
                     .frame(width: 24, height: 24)
                 
                 Image(systemName: component.isRequired ? "checkmark.circle.fill" : "circle")
@@ -40,18 +40,17 @@ struct ComponentRequirementRow: View {
                 .font(.caption2)
                 .fontWeight(.semibold)
                 .foregroundColor(component.isRequired ? AppColors.primaryText : AppColors.secondaryText)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 4)
+                .padding(.horizontal, 9)
+                .padding(.vertical, 3)
                 .background(
                     Capsule()
-                        .fill(component.isRequired ? AppColors.tertiaryBackground : AppColors.secondaryBackground)
-                        .overlay(
-                            Capsule()
-                                .strokeBorder(AppColors.glassBorderUnified, lineWidth: 0.5)
-                        )
+                        .fill(AppColors.tertiaryBackground)
+                )
+                .overlay(
+                    Capsule()
+                        .strokeBorder(AppColors.borderSubtle, lineWidth: 0.5)
                 )
         }
-        .padding(.vertical, AppSpacing.xs)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(component.name), \(component.detail), \(component.isRequired ? "Required" : "Optional")")
     }

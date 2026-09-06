@@ -13,12 +13,6 @@ struct VerificationDetailsSheet: View {
     
     var body: some View {
         VStack(spacing: AppSpacing.lg) {
-            // Drag handle
-            Capsule()
-                .fill(AppColors.border)
-                .frame(width: 36, height: 5)
-                .padding(.top, AppSpacing.sm)
-            
             // Header
             VStack(spacing: AppSpacing.xs) {
                 Text("Verification Details")
@@ -29,11 +23,11 @@ struct VerificationDetailsSheet: View {
                     .foregroundColor(AppColors.secondaryText)
             }
             
-            VStack(spacing: AppSpacing.md) {
-                detailTile(title: "EXPECTED STATE", value: result.expectedDescription, color: AppColors.success)
-                detailTile(title: "OBSERVED STATE", value: result.detectedDescription, color: result.isCorrect ? AppColors.success : AppColors.error)
-                detailTile(title: "EVIDENCE CONFIDENCE", value: "\(Int(result.confidence * 100))%", color: .assembleBrandPrimary)
-                detailTile(title: "RESULT OUTCOME", value: result.status.rawValue.uppercased(), color: result.isCorrect ? AppColors.success : AppColors.error)
+            VStack(spacing: AppSpacing.mdSm) {
+                detailTile(title: "Expected State", value: result.expectedDescription, color: AppColors.success)
+                detailTile(title: "Observed State", value: result.detectedDescription, color: result.isCorrect ? AppColors.success : AppColors.error)
+                detailTile(title: "Evidence Confidence", value: "\(Int(result.confidence * 100))%", color: .assembleBrandPrimary)
+                detailTile(title: "Result Outcome", value: result.status.rawValue.capitalized, color: result.isCorrect ? AppColors.success : AppColors.error)
             }
             .padding(.horizontal, AppSpacing.screenEdge)
             
@@ -45,16 +39,18 @@ struct VerificationDetailsSheet: View {
             .padding(.horizontal, AppSpacing.screenEdge)
             .padding(.bottom, AppSpacing.lg)
         }
-        .background(AppColors.appBackground.ignoresSafeArea())
+        .background(AppColors.groupedBackground.ignoresSafeArea())
         .presentationDetents([.height(420)])
+        .presentationDragIndicator(.visible)
         .presentationCornerRadius(28)
     }
     
     private func detailTile(title: String, value: String, color: Color) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
-                .font(.system(size: 9, weight: .bold, design: .monospaced))
-                .foregroundColor(AppColors.tertiaryText)
+                .font(.caption)
+                .fontWeight(.medium)
+                .foregroundColor(AppColors.secondaryText)
             Text(value)
                 .font(.subheadline)
                 .fontWeight(.semibold)
@@ -65,8 +61,12 @@ struct VerificationDetailsSheet: View {
         .padding(AppSpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
                 .fill(AppColors.secondaryGroupedBackground)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                .strokeBorder(AppColors.cardBorder, lineWidth: 0.5)
         )
     }
 }

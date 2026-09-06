@@ -15,50 +15,42 @@ struct WelcomeView: View {
     
     var body: some View {
         ZStack {
-            // Atmosphere background
+            // Subtle studio lighting backdrop
             GradientAtmosphereBackground(intensity: .hero)
             
             ScrollView(showsIndicators: false) {
                 VStack(spacing: AppSpacing.lg) {
                     // Orbital Hero Section
                     OrbitalHeroView()
-                        .padding(.top, AppSpacing.md)
+                        .padding(.top, AppSpacing.sm)
                     
                     // Hero Typography
-                    VStack(spacing: AppSpacing.sm) {
+                    VStack(spacing: AppSpacing.xs) {
                         Text("Build with precision.")
-                            .font(.system(size: 32, weight: .bold, design: .default))
+                            .font(.system(size: 32, weight: .bold))
                             .foregroundColor(AppColors.primaryText)
                             .multilineTextAlignment(.center)
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
                             .accessibilityAddTraits(.isHeader)
                         
-                        HStack(spacing: 6) {
-                            Text("AI-Powered")
-                                .foregroundStyle(
-                                    LinearGradient(
-                                        colors: [AppColors.iconBadgeGradientStart, AppColors.iconBadgeGradientEnd],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                )
-                            Text("Hardware Assembly")
-                                .foregroundColor(AppColors.secondaryText)
-                        }
-                        .font(.title3)
-                        .fontWeight(.medium)
+                        Text("AI-Powered Hardware Assembly")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(AppColors.secondaryText)
                     }
+                    .padding(.horizontal, AppSpacing.screenEdge)
                     .opacity(contentAppeared ? 1 : 0)
-                    .offset(y: contentAppeared ? 0 : 12)
+                    .offset(y: contentAppeared ? 0 : 8)
                     
-                    // Glassmorphic Feature Cards
+                    // Feature Cards
                     VStack(spacing: AppSpacing.sm) {
                         ForEach(Array(capabilities.enumerated()), id: \.offset) { index, cap in
                             GlassmorphicFeatureCard(
                                 iconName: cap.icon,
                                 title: cap.title,
                                 subtitle: cap.subtitle,
+                                iconColor: cap.color,
                                 showDisclosure: cap.icon == "lock.shield",
                                 onTap: cap.icon == "lock.shield" ? {
                                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -66,16 +58,16 @@ struct WelcomeView: View {
                                 } : nil
                             )
                             .opacity(contentAppeared ? 1 : 0)
-                            .offset(y: contentAppeared ? 0 : 8)
+                            .offset(y: contentAppeared ? 0 : 6)
                             .animation(
-                                reduceMotion ? .none : AppAnimation.entranceSpring.delay(Double(index) * AppAnimation.staggerDelay + 0.2),
+                                reduceMotion ? .none : AppAnimation.entranceSpring.delay(Double(index) * AppAnimation.staggerDelay + 0.15),
                                 value: contentAppeared
                             )
                         }
                     }
                     .padding(.horizontal, AppSpacing.screenEdge)
                 }
-                .padding(.bottom, 130)
+                .padding(.bottom, AppSpacing.xxl)
             }
         }
         .safeAreaInset(edge: .bottom) {
@@ -93,16 +85,16 @@ struct WelcomeView: View {
         }
     }
     
-    private var capabilities: [(icon: String, title: String, subtitle: String)] {
+    private var capabilities: [(icon: String, title: String, subtitle: String, color: Color)] {
         [
-            ("viewfinder", "Live Guidance", "Follows your hands as you build and highlights where each component connects."),
-            ("checkmark.seal", "Physical Verification", "Confirms pin positions, wire rows, and polarities before you power on."),
-            ("lock.shield", "Private & On-Device", "All camera processing stays strictly on your iPhone. Zero cloud uploads.")
+            ("viewfinder", "Live Guidance", "Follows your hands as you build and highlights where each component connects.", AppColors.badgeBlue),
+            ("checkmark.seal", "Physical Verification", "Confirms pin positions, wire rows, and polarities before you power on.", AppColors.badgeGreen),
+            ("lock.shield", "Private & On-Device", "All camera processing stays strictly on your iPhone. Zero cloud uploads.", AppColors.badgeIndigo)
         ]
     }
     
     private var bottomActions: some View {
-        VStack(spacing: AppSpacing.mdSm) {
+        VStack(spacing: AppSpacing.sm) {
             PrimaryButton(title: "Get Started") {
                 UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 router.navigateToAuthChoice()
@@ -128,7 +120,11 @@ struct WelcomeView: View {
         .padding(.horizontal, AppSpacing.screenEdge)
         .padding(.top, AppSpacing.md)
         .padding(.bottom, AppSpacing.sm)
-        .background(.ultraThinMaterial)
+        .background(
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .ignoresSafeArea(edges: .bottom)
+        )
     }
 }
 
