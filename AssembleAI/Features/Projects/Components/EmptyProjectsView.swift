@@ -14,18 +14,14 @@ struct EmptyProjectsView: View {
     var onAction: (() -> Void)? = nil
     
     var body: some View {
-        VStack(spacing: AppSpacing.mdLg) {
+        VStack(spacing: AppSpacing.lg) {
             Spacer(minLength: 40)
             
-            ZStack {
-                Circle()
-                    .fill(Color.assembleBrandPrimary.opacity(0.1))
-                    .frame(width: 80, height: 80)
-                
-                Image(systemName: iconName)
-                    .font(.system(size: 36, weight: .ultraLight))
-                    .foregroundColor(.assembleBrandPrimary)
-            }
+            AnimatedHeaderIcon(
+                iconName: iconName,
+                iconSize: 34,
+                circleDiameter: 76
+            )
             
             VStack(spacing: AppSpacing.xs) {
                 Text(title)
@@ -41,24 +37,10 @@ struct EmptyProjectsView: View {
             }
             
             if let buttonTitle = buttonTitle, let onAction = onAction {
-                Button(action: {
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                PrimaryButton(title: buttonTitle, iconName: "plus") {
                     onAction()
-                }) {
-                    Text(buttonTitle)
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, AppSpacing.lg)
-                        .padding(.vertical, AppSpacing.sm)
-                        .frame(minHeight: 44)
-                        .background(
-                            Capsule()
-                                .fill(Color.assembleBrandPrimary)
-                        )
                 }
-                .touchTarget()
-                .buttonStyle(ScaleButtonStyle())
+                .frame(maxWidth: 240)
                 .padding(.top, AppSpacing.xs)
             }
             

@@ -5,7 +5,7 @@
 
 import SwiftUI
 
-/// Clean, modular project card component for Home and Projects screens.
+/// Clean, modular project card component for Home and Projects screens with glassmorphic finish.
 struct ProjectCard: View {
     let project: AssemblyProject
     let onTap: () -> Void
@@ -16,16 +16,12 @@ struct ProjectCard: View {
             onTap()
         }) {
             HStack(spacing: AppSpacing.md) {
-                // Category Symbol Icon
-                ZStack {
-                    RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
-                        .fill(Color.assembleBrandPrimary.opacity(0.1))
-                        .frame(width: 44, height: 44)
-                    
-                    Image(systemName: project.imageName ?? "cpu")
-                        .font(.system(size: 20, weight: .regular))
-                        .foregroundColor(.assembleBrandPrimary)
-                }
+                // Category Symbol Icon Badge
+                GradientIconBadge(
+                    iconName: project.imageName ?? "cpu",
+                    size: 46,
+                    iconSize: 20
+                )
                 
                 // Details
                 VStack(alignment: .leading, spacing: 3) {
@@ -62,7 +58,10 @@ struct ProjectCard: View {
                     ProgressBar(
                         value: project.progress,
                         height: 3,
-                        fillColor: project.isCompleted ? AppColors.success : Color.assembleBrandPrimary
+                        fillColor: project.isCompleted ? AppColors.success : .assembleBrandPrimary,
+                        gradientColors: project.isCompleted
+                            ? [AppColors.success, AppColors.success.opacity(0.8)]
+                            : [AppColors.iconBadgeGradientStart, AppColors.iconBadgeGradientEnd]
                     )
                     .padding(.top, 2)
                 }

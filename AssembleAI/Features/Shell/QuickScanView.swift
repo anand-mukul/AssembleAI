@@ -15,49 +15,53 @@ struct QuickScanView: View {
     
     @State private var availableProjects: [AssemblyProject] = []
     @State private var selectedProjectID: UUID? = nil
-    @State private var pulseScale: CGFloat = 0.95
+    @State private var pulseScale: CGFloat = 0.96
+    @State private var glowPhase: CGFloat = 0
     @State private var isCameraReady: Bool = true
     
     private let repository = ProjectRepositoryFactory.resolve()
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: AppSpacing.lg) {
-                // Hero Viewfinder Centerpiece
-                viewfinderHero
-                    .padding(.top, AppSpacing.md)
-                
-                // Header & Value Proposition
-                VStack(spacing: AppSpacing.xs) {
-                    Text("Physical Inspection")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(AppColors.primaryText)
-                        .accessibilityAddTraits(.isHeader)
+        ZStack {
+            GradientAtmosphereBackground(intensity: .subtle)
+            
+            ScrollView {
+                VStack(spacing: AppSpacing.lg) {
+                    // Hero Viewfinder Centerpiece
+                    viewfinderHero
+                        .padding(.top, AppSpacing.md)
                     
-                    Text("Point your camera at the circuit board to track pin connections, orientation, and placement in real time.")
-                        .font(.subheadline)
-                        .foregroundColor(AppColors.secondaryText)
-                        .adaptiveMultiline(alignment: .center)
-                        .padding(.horizontal, AppSpacing.md)
+                    // Header & Value Proposition
+                    VStack(spacing: AppSpacing.xs) {
+                        Text("Physical Inspection")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(AppColors.primaryText)
+                            .accessibilityAddTraits(.isHeader)
+                        
+                        Text("Point your camera at the circuit board to track pin connections, orientation, and placement in real time.")
+                            .font(.subheadline)
+                            .foregroundColor(AppColors.secondaryText)
+                            .adaptiveMultiline(alignment: .center)
+                            .padding(.horizontal, AppSpacing.md)
+                    }
+                    
+                    // Target Project Selector Card
+                    projectSelectorCard
+                    
+                    // Pre-Scan Readiness Checklist
+                    readinessCard
+                    
+                    // Launch Action
+                    PrimaryButton(title: "Start Visual Inspection", iconName: "camera.viewfinder") {
+                        launchInspection()
+                    }
+                    .padding(.top, AppSpacing.sm)
+                    .padding(.bottom, 120)
                 }
-                
-                // Target Project Selector Card
-                projectSelectorCard
-                
-                // Pre-Scan Readiness Checklist
-                readinessCard
-                
-                // Launch Action
-                PrimaryButton(title: "Start Visual Inspection", iconName: "camera.viewfinder") {
-                    launchInspection()
-                }
-                .padding(.top, AppSpacing.sm)
-                .padding(.bottom, 120)
+                .padding(.horizontal, AppSpacing.screenEdge)
             }
-            .padding(.horizontal, AppSpacing.screenEdge)
         }
-        .background(AppColors.appBackground.ignoresSafeArea())
         .navigationTitle("Scan")
         .navigationBarTitleDisplayMode(.inline)
         .task {
@@ -69,31 +73,65 @@ struct QuickScanView: View {
     
     private var viewfinderHero: some View {
         ZStack {
-            // Outer Pulsing Glow
+            // Ambient Radial Glow
             Circle()
-                .fill(Color.assembleBrandPrimary.opacity(0.10))
-                .frame(width: 140, height: 140)
+                .fill(
+                    RadialGradient(
+                        colors: [AppColors.glowPrimary.opacity(0.4), Color.clear],
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 75
+                    )
+                )
+                .frame(width: 150, height: 150)
+                .scaleEffect(1.0 + glowPhase * 0.15)
+            
+            // Outer Pulsing Ring
+            Circle()
+                .stroke(
+                    LinearGradient(
+                        colors: [AppColors.iconBadgeGradientStart.opacity(0.4), AppColors.iconBadgeGradientEnd.opacity(0.2)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1.5
+                )
+                .frame(width: 130, height: 130)
                 .scaleEffect(pulseScale)
             
             Circle()
-                .stroke(Color.assembleBrandPrimary.opacity(0.35), lineWidth: 1.5)
-                .frame(width: 110, height: 110)
+                .stroke(Color.white.opacity(0.15), lineWidth: 0.5)
+                .frame(width: 104, height: 104)
             
             // Optical Frame Marks
             Image(systemName: "viewfinder")
                 .font(.system(size: 64, weight: .ultraLight))
-                .foregroundColor(.assembleBrandPrimary)
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [AppColors.iconBadgeGradientStart, AppColors.iconBadgeGradientEnd],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
             
             // Center Reticle
             Circle()
-                .fill(Color.assembleBrandPrimary)
+                .fill(
+                    LinearGradient(
+                        colors: [AppColors.iconBadgeGradientStart, AppColors.iconBadgeGradientEnd],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
                 .frame(width: 8, height: 8)
+                .shadow(color: AppColors.iconBadgeGradientStart.opacity(0.5), radius: 4)
         }
         .frame(height: 150)
         .onAppear {
             guard !reduceMotion else { return }
-            withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) {
-                pulseScale = 1.05
+            withAnimation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true)) {
+                pulseScale = 1.06
+                glowPhase = 1.0
             }
         }
     }
@@ -113,6 +151,7 @@ struct QuickScanView: View {
                         .foregroundColor(AppColors.secondaryText)
                 }
                 .padding(AppSpacing.md)
+                .appCard()
             } else {
                 Menu {
                     ForEach(availableProjects) { project in
@@ -128,7 +167,13 @@ struct QuickScanView: View {
                         }
                     }
                 } label: {
-                    HStack {
+                    HStack(spacing: AppSpacing.mdSm) {
+                        GradientIconBadge(
+                            iconName: selectedProject?.imageName ?? "cpu",
+                            size: 38,
+                            iconSize: 17
+                        )
+                        
                         VStack(alignment: .leading, spacing: 2) {
                             Text(selectedProject?.title ?? "Select Project")
                                 .font(.headline)
@@ -142,13 +187,9 @@ struct QuickScanView: View {
                         
                         Image(systemName: "chevron.up.chevron.down")
                             .font(.caption.weight(.semibold))
-                            .foregroundColor(.assembleBrandPrimary)
+                            .foregroundColor(AppColors.secondaryText)
                     }
-                    .padding(AppSpacing.md)
-                    .background(
-                        RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                            .fill(AppColors.secondaryGroupedBackground)
-                    )
+                    .appCard()
                 }
             }
         }
@@ -167,26 +208,14 @@ struct QuickScanView: View {
                 checklistRow(icon: "iphone.gen3", title: "Optimal Distance", subtitle: "Hold camera 20–35 cm directly above breadboard.")
                 checklistRow(icon: "shield.lefthalf.filled", title: "Strictly On-Device", subtitle: "Vision models run on Apple Neural Engine without server uploads.")
             }
-            .padding(AppSpacing.md)
-            .background(
-                RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                    .fill(AppColors.secondaryGroupedBackground)
-            )
+            .appCard()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
     
     private func checklistRow(icon: String, title: String, subtitle: String) -> some View {
         HStack(alignment: .top, spacing: AppSpacing.mdSm) {
-            ZStack {
-                RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
-                    .fill(Color.assembleBrandPrimary.opacity(0.12))
-                    .frame(width: 36, height: 36)
-                
-                Image(systemName: icon)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.assembleBrandPrimary)
-            }
+            GradientIconBadge(iconName: icon, size: 34, iconSize: 15)
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)

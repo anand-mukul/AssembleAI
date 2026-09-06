@@ -276,7 +276,7 @@ struct PrimaryButton: View {
             HStack(spacing: AppSpacing.sm) {
                 if isLoading {
                     ProgressView()
-                        .tint(.white)
+                        .tint(AppColors.premiumButtonForeground)
                 } else {
                     if let iconName = iconName {
                         Image(systemName: iconName)
@@ -289,16 +289,27 @@ struct PrimaryButton: View {
                         .minimumScaleFactor(0.85)
                 }
             }
-            .foregroundColor(.white)
+            .foregroundColor(AppColors.premiumButtonForeground)
             .frame(maxWidth: .infinity)
-            .frame(minHeight: 50)
+            .frame(minHeight: 54)
             .padding(.vertical, AppSpacing.xs)
             .padding(.horizontal, AppSpacing.md)
             .background(
-                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                    .fill(isDisabled ? AppColors.tertiaryText.opacity(0.3) : Color.assembleBrandPrimary)
+                Capsule(style: .continuous)
+                    .fill(isDisabled ? AppColors.tertiaryText.opacity(0.3) : AppColors.premiumButtonBackground)
             )
-            .contentShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+            .overlay(
+                Capsule(style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.08), Color.clear],
+                            startPoint: .top,
+                            endPoint: .center
+                        )
+                    )
+                    .allowsHitTesting(false)
+            )
+            .contentShape(Capsule(style: .continuous))
         }
         .buttonStyle(ScaleButtonStyle())
         .disabled(isDisabled || isLoading)
@@ -335,18 +346,18 @@ struct SecondaryButton: View {
             }
             .foregroundColor(AppColors.primaryText)
             .frame(maxWidth: .infinity)
-            .frame(minHeight: 50)
+            .frame(minHeight: 54)
             .padding(.vertical, AppSpacing.xs)
             .padding(.horizontal, AppSpacing.md)
             .background(
-                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                    .fill(AppColors.secondaryBackground)
+                Capsule(style: .continuous)
+                    .fill(.ultraThinMaterial)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                    .strokeBorder(AppColors.borderSubtle, lineWidth: 0.5)
+                Capsule(style: .continuous)
+                    .strokeBorder(AppColors.glassBorderUnified, lineWidth: 0.5)
             )
-            .contentShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+            .contentShape(Capsule(style: .continuous))
         }
         .buttonStyle(ScaleButtonStyle())
         .disabled(isDisabled)
@@ -361,7 +372,7 @@ struct SecondaryButton: View {
 struct AppCardModifier: ViewModifier {
     var cornerRadius: CGFloat = AppRadius.card
     var backgroundColor: Color = AppColors.secondaryGroupedBackground
-    var borderColor: Color = AppColors.borderSubtle
+    var borderColor: Color = AppColors.glassBorderUnified
     var padding: CGFloat = AppSpacing.md
 
     func body(content: Content) -> some View {
@@ -369,12 +380,13 @@ struct AppCardModifier: ViewModifier {
             .padding(padding)
             .background(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(backgroundColor)
+                    .fill(.ultraThinMaterial)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .strokeBorder(borderColor, lineWidth: 0.5)
             )
+            .shadow(color: AppShadow.subtleColor, radius: 8, x: 0, y: 2)
     }
 }
 
@@ -404,7 +416,13 @@ struct StatTile: View {
             if let icon = icon {
                 Image(systemName: icon)
                     .font(.subheadline)
-                    .foregroundColor(iconColor)
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [AppColors.iconBadgeGradientStart, AppColors.iconBadgeGradientEnd],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
             }
             
             Text(value)
@@ -424,12 +442,13 @@ struct StatTile: View {
         .padding(.horizontal, AppSpacing.xs)
         .background(
             RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                .fill(AppColors.secondaryGroupedBackground)
+                .fill(.ultraThinMaterial)
         )
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                .strokeBorder(AppColors.borderSubtle, lineWidth: 0.5)
+                .strokeBorder(AppColors.glassBorderUnified, lineWidth: 0.5)
         )
+        .shadow(color: AppShadow.subtleColor, radius: 6, x: 0, y: 2)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(title): \(value)")
     }
@@ -575,6 +594,140 @@ struct CustomTextField: View {
                 .padding(.leading, 4)
                 .transition(.move(edge: .top).combined(with: .opacity))
                 .accessibilityLabel("Error: \(errorMessage)")
+            }
+        }
+    }
+}
+
+// MARK: - Gradient Atmosphere Background
+
+/// Reusable atmospheric gradient background with optional ambient glow orbs.
+enum AtmosphereIntensity {
+    case hero
+    case subtle
+}
+
+struct GradientAtmosphereBackground: View {
+    var intensity: AtmosphereIntensity = .hero
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var glowPhase: CGFloat = 0
+    
+    var body: some View {
+        ZStack {
+            // Multi-stop gradient
+            LinearGradient(
+                colors: [
+                    AppColors.atmosphereGradientTop,
+                    AppColors.atmosphereGradientMid,
+                    AppColors.atmosphereGradientBottom,
+                    AppColors.appBackground
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+            
+            if intensity == .hero {
+                // Ambient glow orbs
+                Circle()
+                    .fill(AppColors.glowPrimary)
+                    .frame(width: 200, height: 200)
+                    .blur(radius: 80)
+                    .offset(x: -60, y: -100)
+                    .scaleEffect(1.0 + glowPhase * 0.1)
+                
+                Circle()
+                    .fill(AppColors.glowSecondary)
+                    .frame(width: 160, height: 160)
+                    .blur(radius: 70)
+                    .offset(x: 80, y: -40)
+                    .scaleEffect(1.0 + glowPhase * 0.08)
+            }
+        }
+        .onAppear {
+            guard !reduceMotion, intensity == .hero else { return }
+            withAnimation(.easeInOut(duration: 4.0).repeatForever(autoreverses: true)) {
+                glowPhase = 1.0
+            }
+        }
+    }
+}
+
+// MARK: - Gradient Icon Badge
+
+/// Unified gradient-filled rounded square icon badge replacing flat brand-tinted containers.
+struct GradientIconBadge: View {
+    let iconName: String
+    var size: CGFloat = 36
+    var iconSize: CGFloat = 17
+    var colors: [Color]? = nil
+    
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: size * 0.28, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: colors ?? [AppColors.iconBadgeGradientStart, AppColors.iconBadgeGradientEnd],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: size, height: size)
+                .shadow(color: (colors?.first ?? AppColors.iconBadgeGradientStart).opacity(0.3), radius: 4, x: 0, y: 2)
+            
+            Image(systemName: iconName)
+                .font(.system(size: iconSize, weight: .semibold))
+                .foregroundColor(.white)
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+// MARK: - Animated Header Icon
+
+/// Reusable centered icon-in-circle with entrance scale + opacity animation for hero sections.
+struct AnimatedHeaderIcon: View {
+    let iconName: String
+    var iconSize: CGFloat = 34
+    var circleDiameter: CGFloat = 72
+    var useGradient: Bool = true
+    var staticColor: Color = .assembleBrandPrimary
+    
+    @State private var appeared = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(
+                    useGradient
+                    ? AnyShapeStyle(LinearGradient(
+                        colors: [AppColors.iconBadgeGradientStart.opacity(0.15), AppColors.iconBadgeGradientEnd.opacity(0.08)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ))
+                    : AnyShapeStyle(staticColor.opacity(0.12))
+                )
+                .frame(width: circleDiameter, height: circleDiameter)
+            
+            Image(systemName: iconName)
+                .font(.system(size: iconSize, weight: .light))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(
+                    useGradient
+                    ? AnyShapeStyle(LinearGradient(
+                        colors: [AppColors.iconBadgeGradientStart, AppColors.iconBadgeGradientEnd],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ))
+                    : AnyShapeStyle(staticColor)
+                )
+        }
+        .scaleEffect(appeared ? 1.0 : 0.8)
+        .opacity(appeared ? 1.0 : 0)
+        .onAppear {
+            withAnimation(reduceMotion ? .none : AppAnimation.heroReveal) {
+                appeared = true
             }
         }
     }

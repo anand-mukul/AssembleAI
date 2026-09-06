@@ -20,77 +20,76 @@ struct SignInWithAppleView: View {
     @State private var isProcessing = false
     
     var body: some View {
-        VStack(spacing: 0) {
-            Spacer()
+        ZStack {
+            GradientAtmosphereBackground(intensity: .hero)
             
-            // Hero Illustration Header
-            VStack(spacing: AppSpacing.mdSm) {
-                ZStack {
-                    Circle()
-                        .fill(AppColors.secondaryBackground)
-                        .frame(width: 80, height: 80)
-                    
-                    Image(systemName: "apple.logo")
-                        .font(.system(size: 38, weight: .regular))
-                        .foregroundColor(AppColors.primaryText)
-                }
-                .opacity(contentAppeared ? 1 : 0)
-                .scaleEffect(contentAppeared ? 1 : 0.85)
+            VStack(spacing: 0) {
+                Spacer()
                 
-                VStack(spacing: AppSpacing.xs) {
-                    Text("Sign in with Apple")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(AppColors.primaryText)
-                        .accessibilityAddTraits(.isHeader)
+                // Hero Illustration Header
+                VStack(spacing: AppSpacing.mdSm) {
+                    AnimatedHeaderIcon(
+                        iconName: "apple.logo",
+                        iconSize: 38,
+                        circleDiameter: 80,
+                        useGradient: false,
+                        staticColor: AppColors.primaryText
+                    )
                     
-                    Text("Fast, secure, and private authentication. Synchronize your assembly workflows automatically.")
-                        .font(.subheadline)
-                        .foregroundColor(AppColors.secondaryText)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, AppSpacing.md)
-                }
-                .opacity(contentAppeared ? 1 : 0)
-                .offset(y: contentAppeared ? 0 : 10)
-            }
-            
-            Spacer()
-            
-            // Sign in with Apple Official SwiftUI Button
-            VStack(spacing: AppSpacing.mdSm) {
-                if isProcessing {
-                    ProgressView("Authenticating...")
-                        .font(.subheadline)
-                        .foregroundColor(AppColors.secondaryText)
-                        .frame(height: 50)
-                } else {
-                    SignInWithAppleButton(.signIn) { request in
-                        request.requestedScopes = [.fullName, .email]
-                    } onCompletion: { result in
-                        handleAppleSignInCompletion(result)
+                    VStack(spacing: AppSpacing.xs) {
+                        Text("Sign in with Apple")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(AppColors.primaryText)
+                            .accessibilityAddTraits(.isHeader)
+                        
+                        Text("Fast, secure, and private authentication. Synchronize your assembly workflows automatically.")
+                            .font(.subheadline)
+                            .foregroundColor(AppColors.secondaryText)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, AppSpacing.md)
                     }
-                    .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
-                    .frame(height: 50)
-                    .cornerRadius(14)
-                    .accessibilityLabel("Sign in with Apple")
+                    .opacity(contentAppeared ? 1 : 0)
+                    .offset(y: contentAppeared ? 0 : 10)
                 }
                 
-                Button(action: {
-                    router.pop()
-                }) {
-                    Text("Cancel")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundColor(AppColors.secondaryText)
+                Spacer()
+                
+                // Sign in with Apple Official SwiftUI Button
+                VStack(spacing: AppSpacing.mdSm) {
+                    if isProcessing {
+                        ProgressView("Authenticating...")
+                            .font(.subheadline)
+                            .foregroundColor(AppColors.secondaryText)
+                            .frame(height: 54)
+                    } else {
+                        SignInWithAppleButton(.signIn) { request in
+                            request.requestedScopes = [.fullName, .email]
+                        } onCompletion: { result in
+                            handleAppleSignInCompletion(result)
+                        }
+                        .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
+                        .frame(height: 54)
+                        .clipShape(Capsule(style: .continuous))
+                        .accessibilityLabel("Sign in with Apple")
+                    }
+                    
+                    Button(action: {
+                        router.pop()
+                    }) {
+                        Text("Cancel")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(AppColors.secondaryText)
+                    }
+                    .padding(.vertical, AppSpacing.xs)
                 }
-                .padding(.vertical, AppSpacing.xs)
+                .padding(.bottom, AppSpacing.xl)
+                .opacity(contentAppeared ? 1 : 0)
+                .offset(y: contentAppeared ? 0 : 16)
             }
-            .padding(.bottom, AppSpacing.xl)
-            .opacity(contentAppeared ? 1 : 0)
-            .offset(y: contentAppeared ? 0 : 16)
+            .padding(.horizontal, AppSpacing.screenEdge)
         }
-        .padding(.horizontal, AppSpacing.screenEdge)
-        .background(AppColors.appBackground.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .alert("Sign in with Apple", isPresented: $showErrorAlert) {
             Button("OK", role: .cancel) {}
@@ -98,7 +97,7 @@ struct SignInWithAppleView: View {
             Text(errorMessage)
         }
         .onAppear {
-            withAnimation(reduceMotion ? .none : .spring(response: 0.5, dampingFraction: 0.8)) {
+            withAnimation(reduceMotion ? .none : AppAnimation.entranceSpring) {
                 contentAppeared = true
             }
         }

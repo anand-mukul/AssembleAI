@@ -14,16 +14,8 @@ struct PrivacySheet: View {
         VStack(spacing: AppSpacing.md) {
             // Header Graphic & Titles
             VStack(spacing: AppSpacing.sm) {
-                ZStack {
-                    Circle()
-                        .fill(Color.assembleBrandPrimary.opacity(0.12))
-                        .frame(width: 64, height: 64)
-                    
-                    Image(systemName: "lock.shield.fill")
-                        .font(.system(size: 30, weight: .semibold))
-                        .foregroundColor(Color.assembleBrandPrimary)
-                }
-                .padding(.top, AppSpacing.sm)
+                AnimatedHeaderIcon(iconName: "lock.shield.fill", iconSize: 30, circleDiameter: 64)
+                    .padding(.top, AppSpacing.sm)
                 
                 VStack(spacing: 6) {
                     Text("Your Camera, Your Data")
@@ -54,7 +46,7 @@ struct PrivacySheet: View {
                 )
                 
                 Divider()
-                    .background(AppColors.borderSubtle.opacity(0.5))
+                    .background(AppColors.glassBorderUnified)
                 
                 privacyTile(
                     icon: "icloud.slash.fill",
@@ -63,7 +55,7 @@ struct PrivacySheet: View {
                 )
                 
                 Divider()
-                    .background(AppColors.borderSubtle.opacity(0.5))
+                    .background(AppColors.glassBorderUnified)
                 
                 privacyTile(
                     icon: "hand.raised.fill",
@@ -74,12 +66,13 @@ struct PrivacySheet: View {
             .padding(AppSpacing.md)
             .background(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(AppColors.secondaryGroupedBackground)
+                    .fill(.ultraThinMaterial)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .strokeBorder(AppColors.borderSubtle.opacity(0.4), lineWidth: 0.5)
+                    .strokeBorder(AppColors.glassBorderUnified, lineWidth: 0.5)
             )
+            .shadow(color: AppShadow.subtleColor, radius: 8, x: 0, y: 2)
             .padding(.horizontal, AppSpacing.screenEdge)
             .padding(.top, AppSpacing.xs)
             
@@ -100,16 +93,7 @@ struct PrivacySheet: View {
     
     private func privacyTile(icon: String, title: String, description: String) -> some View {
         HStack(alignment: .top, spacing: AppSpacing.mdSm) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color.assembleBrandPrimary.opacity(0.12))
-                    .frame(width: 36, height: 36)
-                
-                Image(systemName: icon)
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundColor(Color.assembleBrandPrimary)
-            }
-            .accessibilityHidden(true)
+            GradientIconBadge(iconName: icon)
             
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)

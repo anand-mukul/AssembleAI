@@ -17,26 +17,30 @@ struct ProfileView: View {
     @State private var showTermsSheet = false
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: AppSpacing.lg) {
-                // Profile Hero Card
-                profileHeroCard
-                
-                // Aggregate Metrics Grid
-                metricsGrid
-                
-                // Settings & Preferences Navigation Section
-                settingsSection
-                
-                // Account Actions
-                accountActionsSection
-                
-                Spacer(minLength: 32)
+        ZStack {
+            GradientAtmosphereBackground(intensity: .subtle)
+            
+            ScrollView {
+                VStack(spacing: AppSpacing.lg) {
+                    // Profile Hero Card
+                    profileHeroCard
+                    
+                    // Aggregate Metrics Grid
+                    metricsGrid
+                    
+                    // Settings & Preferences Navigation Section
+                    settingsSection
+                    
+                    // Account Actions
+                    accountActionsSection
+                    
+                    Spacer(minLength: 32)
+                }
+                .padding(.horizontal, AppSpacing.screenEdge)
+                .padding(.top, AppSpacing.sm)
+                .padding(.bottom, 100)
             }
-            .padding(.horizontal, AppSpacing.screenEdge)
-            .padding(.top, AppSpacing.sm)
         }
-        .background(AppColors.appBackground.ignoresSafeArea())
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -44,7 +48,7 @@ struct ProfileView: View {
                 Button("Edit") {
                     viewModel.showEditProfileSheet = true
                 }
-                .font(.body)
+                .font(.body.weight(.semibold))
                 .foregroundColor(.assembleBrandPrimary)
             }
         }
@@ -100,18 +104,18 @@ struct ProfileView: View {
     
     private var profileHeroCard: some View {
         HStack(spacing: AppSpacing.md) {
-            // Avatar
+            // Avatar with ambient aura
             ZStack {
                 Circle()
-                    .fill(activeColor.opacity(0.12))
-                    .frame(width: 60, height: 60)
+                    .fill(activeColor.opacity(0.15))
+                    .frame(width: 64, height: 64)
                     .overlay(
                         Circle()
-                            .strokeBorder(activeColor.opacity(0.25), lineWidth: 1)
+                            .strokeBorder(activeColor.opacity(0.3), lineWidth: 1)
                     )
                 
                 Image(systemName: viewModel.avatarSymbol)
-                    .font(.system(size: 26, weight: .medium))
+                    .font(.system(size: 28, weight: .medium))
                     .foregroundColor(activeColor)
             }
             
@@ -133,8 +137,15 @@ struct ProfileView: View {
                         .frame(width: 6, height: 6)
                     Text(viewModel.isGuest ? "Guest Mode (Local)" : "Synced to Supabase")
                         .font(.caption)
+                        .fontWeight(.medium)
                         .foregroundColor(AppColors.secondaryText)
                 }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(
+                    Capsule()
+                        .fill((viewModel.isGuest ? AppColors.warning : AppColors.success).opacity(0.1))
+                )
                 .padding(.top, 2)
             }
             
@@ -163,25 +174,45 @@ struct ProfileView: View {
             
             VStack(spacing: 0) {
                 NavigationLink(value: ProfileNavigationDestination.appSettings) {
-                    settingLinkRow(icon: "slider.horizontal.3", title: "App Settings", subtitle: "Guidance level, camera HUD, haptics", color: .assembleBrandPrimary)
+                    settingLinkRow(
+                        icon: "slider.horizontal.3",
+                        title: "App Settings",
+                        subtitle: "Guidance level, camera HUD, haptics",
+                        colors: [Color.assembleBrandPrimary, Color.assembleBrandPrimary.opacity(0.8)]
+                    )
                 }
                 
-                Divider().padding(.horizontal, AppSpacing.md)
+                Divider().opacity(0.3).padding(.horizontal, AppSpacing.md)
                 
                 NavigationLink(value: ProfileNavigationDestination.dataPrivacy) {
-                    settingLinkRow(icon: "lock.shield.fill", title: "Data & Privacy", subtitle: "On-device cache, research CSV export", color: AppColors.statusSuccess)
+                    settingLinkRow(
+                        icon: "lock.shield.fill",
+                        title: "Data & Privacy",
+                        subtitle: "On-device cache, research CSV export",
+                        colors: [AppColors.statusSuccess, AppColors.statusSuccess.opacity(0.8)]
+                    )
                 }
                 
-                Divider().padding(.horizontal, AppSpacing.md)
+                Divider().opacity(0.3).padding(.horizontal, AppSpacing.md)
                 
                 NavigationLink(value: ProfileNavigationDestination.notifications) {
-                    settingLinkRow(icon: "bell.fill", title: "Notifications", subtitle: "Reminders & daily building streak", color: AppColors.statusWarning)
+                    settingLinkRow(
+                        icon: "bell.fill",
+                        title: "Notifications",
+                        subtitle: "Reminders & daily building streak",
+                        colors: [AppColors.statusWarning, AppColors.statusWarning.opacity(0.8)]
+                    )
                 }
                 
-                Divider().padding(.horizontal, AppSpacing.md)
+                Divider().opacity(0.3).padding(.horizontal, AppSpacing.md)
                 
                 NavigationLink(value: ProfileNavigationDestination.help) {
-                    settingLinkRow(icon: "book.pages.fill", title: "Assembly Guide & FAQ", subtitle: "Hardware pinouts, conventions, tips", color: Color(uiColor: .secondaryLabel))
+                    settingLinkRow(
+                        icon: "book.pages.fill",
+                        title: "Assembly Guide & FAQ",
+                        subtitle: "Hardware pinouts, conventions, tips",
+                        colors: [Color(white: 0.5), Color(white: 0.4)]
+                    )
                 }
             }
             .appCard(padding: 0)
@@ -195,19 +226,24 @@ struct ProfileView: View {
             } label: {
                 HStack {
                     Spacer()
+                    Image(systemName: "rectangle.portrait.and.arrow.right")
+                        .font(.body.weight(.medium))
                     Text("Sign Out")
                         .font(.body)
                         .fontWeight(.semibold)
-                        .foregroundColor(AppColors.error)
                     Spacer()
                 }
-                .frame(minHeight: 48)
-                .background(AppColors.secondaryGroupedBackground)
-                .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                        .strokeBorder(AppColors.borderSubtle, lineWidth: 0.5)
+                .foregroundColor(AppColors.error)
+                .frame(minHeight: 52)
+                .background(
+                    Capsule(style: .continuous)
+                        .fill(.ultraThinMaterial)
                 )
+                .overlay(
+                    Capsule(style: .continuous)
+                        .strokeBorder(AppColors.error.opacity(0.3), lineWidth: 0.5)
+                )
+                .contentShape(Capsule(style: .continuous))
             }
             .buttonStyle(ScaleButtonStyle())
             
@@ -260,16 +296,9 @@ struct ProfileView: View {
         .padding(.top, AppSpacing.xs)
     }
     
-    private func settingLinkRow(icon: String, title: String, subtitle: String, color: Color) -> some View {
+    private func settingLinkRow(icon: String, title: String, subtitle: String, colors: [Color]) -> some View {
         HStack(spacing: AppSpacing.mdSm) {
-            ZStack {
-                RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
-                    .fill(color.opacity(0.12))
-                    .frame(width: 32, height: 32)
-                Image(systemName: icon)
-                    .font(.subheadline)
-                    .foregroundColor(color)
-            }
+            GradientIconBadge(iconName: icon, size: 34, iconSize: 15, colors: colors)
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)

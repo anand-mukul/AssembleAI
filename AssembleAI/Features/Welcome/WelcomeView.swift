@@ -10,67 +10,74 @@ struct WelcomeView: View {
     @EnvironmentObject private var router: AppRouter
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
-    @State private var rowsAppeared = false
+    @State private var contentAppeared = false
     @State private var showPrivacySheet = false
     
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                // Editorial Header Section
-                VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Text("AssembleAI")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.assembleBrandPrimary)
-                        .padding(.bottom, AppSpacing.xxs)
+        ZStack {
+            // Atmosphere background
+            GradientAtmosphereBackground(intensity: .hero)
+            
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: AppSpacing.lg) {
+                    // Orbital Hero Section
+                    OrbitalHeroView()
+                        .padding(.top, AppSpacing.md)
                     
-                    Text("Build with precision.")
-                        .font(.system(size: 30, weight: .bold))
-                        .foregroundColor(AppColors.primaryText)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-                        .accessibilityAddTraits(.isHeader)
-                    
-                    AppTypography.body("Real-time camera verification for physical hardware assembly. Point your iPhone at your workspace and verify each step as you build.")
-                        .foregroundColor(AppColors.secondaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.top, 2)
-                }
-                .padding(.top, AppSpacing.xl)
-                
-                // Hardware Inspection Preview Card
-                AssemblyCameraMotifView()
-                    .padding(.vertical, AppSpacing.xs)
-                
-                // Physical Capability Pillars (Monochrome, Architectural)
-                VStack(spacing: AppSpacing.md) {
-                    ForEach(Array(capabilities.enumerated()), id: \.offset) { index, cap in
-                        CapabilityRow(
-                            iconName: cap.icon,
-                            title: cap.title,
-                            subtitle: cap.subtitle,
-                            showDisclosure: cap.icon == "lock.shield"
-                        )
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            if cap.icon == "lock.shield" {
-                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                                showPrivacySheet = true
-                            }
+                    // Hero Typography
+                    VStack(spacing: AppSpacing.sm) {
+                        Text("Build with precision.")
+                            .font(.system(size: 32, weight: .bold, design: .default))
+                            .foregroundColor(AppColors.primaryText)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                            .accessibilityAddTraits(.isHeader)
+                        
+                        HStack(spacing: 6) {
+                            Text("AI-Powered")
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [AppColors.iconBadgeGradientStart, AppColors.iconBadgeGradientEnd],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                            Text("Hardware Assembly")
+                                .foregroundColor(AppColors.secondaryText)
                         }
-                        .opacity(rowsAppeared ? 1 : 0)
-                        .offset(y: rowsAppeared ? 0 : 8)
-                        .animation(
-                            reduceMotion ? .none : .spring(response: 0.4, dampingFraction: 0.82).delay(Double(index) * 0.06),
-                            value: rowsAppeared
-                        )
+                        .font(.title3)
+                        .fontWeight(.medium)
                     }
+                    .opacity(contentAppeared ? 1 : 0)
+                    .offset(y: contentAppeared ? 0 : 12)
+                    
+                    // Glassmorphic Feature Cards
+                    VStack(spacing: AppSpacing.sm) {
+                        ForEach(Array(capabilities.enumerated()), id: \.offset) { index, cap in
+                            GlassmorphicFeatureCard(
+                                iconName: cap.icon,
+                                title: cap.title,
+                                subtitle: cap.subtitle,
+                                showDisclosure: cap.icon == "lock.shield",
+                                onTap: cap.icon == "lock.shield" ? {
+                                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                    showPrivacySheet = true
+                                } : nil
+                            )
+                            .opacity(contentAppeared ? 1 : 0)
+                            .offset(y: contentAppeared ? 0 : 8)
+                            .animation(
+                                reduceMotion ? .none : AppAnimation.entranceSpring.delay(Double(index) * AppAnimation.staggerDelay + 0.2),
+                                value: contentAppeared
+                            )
+                        }
+                    }
+                    .padding(.horizontal, AppSpacing.screenEdge)
                 }
+                .padding(.bottom, 130)
             }
-            .padding(.horizontal, AppSpacing.screenEdge)
-            .padding(.bottom, 110)
         }
-        .background(AppColors.appBackground.ignoresSafeArea())
         .safeAreaInset(edge: .bottom) {
             bottomActions
         }
@@ -80,7 +87,9 @@ struct WelcomeView: View {
             })
         }
         .onAppear {
-            rowsAppeared = true
+            withAnimation(reduceMotion ? .none : AppAnimation.entranceSpring) {
+                contentAppeared = true
+            }
         }
     }
     
@@ -119,56 +128,7 @@ struct WelcomeView: View {
         .padding(.horizontal, AppSpacing.screenEdge)
         .padding(.top, AppSpacing.md)
         .padding(.bottom, AppSpacing.sm)
-        .background(.regularMaterial)
-    }
-}
-
-private struct CapabilityRow: View {
-    let iconName: String
-    let title: String
-    let subtitle: String
-    var showDisclosure: Bool = false
-    
-    var body: some View {
-        HStack(alignment: .top, spacing: AppSpacing.md) {
-            ZStack {
-                RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous)
-                    .fill(Color.assembleBrandPrimary.opacity(0.12))
-                    .frame(width: 36, height: 36)
-                
-                Image(systemName: iconName)
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundColor(.assembleBrandPrimary)
-            }
-            .accessibilityHidden(true)
-            
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 4) {
-                    Text(title)
-                        .font(.headline)
-                        .foregroundColor(AppColors.primaryText)
-                    if showDisclosure {
-                        Image(systemName: "info.circle")
-                            .font(.caption)
-                            .foregroundColor(.assembleBrandPrimary)
-                    }
-                }
-                Text(subtitle)
-                    .font(.subheadline)
-                    .foregroundColor(AppColors.secondaryText)
-                    .adaptiveMultiline()
-            }
-            
-            Spacer(minLength: 0)
-            
-            if showDisclosure {
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundColor(AppColors.tertiaryText)
-                    .padding(.top, 4)
-            }
-        }
-        .accessibilityElement(children: .combine)
+        .background(.ultraThinMaterial)
     }
 }
 

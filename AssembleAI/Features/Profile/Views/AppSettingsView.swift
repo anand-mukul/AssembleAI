@@ -8,32 +8,35 @@
 
 import SwiftUI
 
-/// Clean, human-centered Application Settings screen following Apple Human Interface Guidelines.
+/// Clean, human-centered Application Settings screen following Apple Human Interface Guidelines and glassmorphic styling.
 struct AppSettingsView: View {
     @ObservedObject var viewModel: ProfileViewModel
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: AppSpacing.lg) {
-                // Section 1: Guidance & Verification
-                guidanceAndVerificationSection
-                
-                // Section 2: Camera & Viewfinder Experience
-                cameraViewfinderSection
-                
-                // Section 3: Haptics & Sensory Feedback
-                tactileSection
-                
-                // Section 4: Data & Diagnostics Link
-                diagnosticsSection
-                
-                Spacer(minLength: 40)
+        ZStack {
+            GradientAtmosphereBackground(intensity: .subtle)
+            
+            ScrollView {
+                VStack(spacing: AppSpacing.lg) {
+                    // Section 1: Guidance & Verification
+                    guidanceAndVerificationSection
+                    
+                    // Section 2: Camera & Viewfinder Experience
+                    cameraViewfinderSection
+                    
+                    // Section 3: Haptics & Sensory Feedback
+                    tactileSection
+                    
+                    // Section 4: Data & Diagnostics Link
+                    diagnosticsSection
+                    
+                    Spacer(minLength: 40)
+                }
+                .padding(.horizontal, AppSpacing.screenEdge)
+                .padding(.top, AppSpacing.md)
+                .padding(.bottom, 120) // Full clearance above floating tab bar
             }
-            .padding(.horizontal, AppSpacing.screenEdge)
-            .padding(.top, AppSpacing.md)
-            .padding(.bottom, 120) // Full clearance above floating tab bar
         }
-        .background(AppColors.appBackground.ignoresSafeArea())
         .navigationTitle("App Settings")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -49,10 +52,14 @@ struct AppSettingsView: View {
             VStack(spacing: 0) {
                 // Guidance Level Selector
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    HStack {
-                        Label("Guidance Detail", systemImage: "slider.horizontal.3")
+                    HStack(spacing: AppSpacing.sm) {
+                        GradientIconBadge(iconName: "slider.horizontal.3", size: 28, iconSize: 13)
+                        
+                        Text("Guidance Detail")
                             .font(.body)
+                            .fontWeight(.medium)
                             .foregroundColor(AppColors.primaryText)
+                        
                         Spacer()
                     }
                     
@@ -74,14 +81,18 @@ struct AppSettingsView: View {
                 }
                 .padding(AppSpacing.md)
                 
-                Divider().padding(.horizontal, AppSpacing.md)
+                Divider().opacity(0.3).padding(.horizontal, AppSpacing.md)
                 
                 // Verification Engine Mode
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    HStack {
-                        Label("Verification Mode", systemImage: "camera.badge.ellipsis")
+                    HStack(spacing: AppSpacing.sm) {
+                        GradientIconBadge(iconName: "camera.badge.ellipsis", size: 28, iconSize: 13)
+                        
+                        Text("Verification Mode")
                             .font(.body)
+                            .fontWeight(.medium)
                             .foregroundColor(AppColors.primaryText)
+                        
                         Spacer()
                     }
                     
@@ -115,27 +126,36 @@ struct AppSettingsView: View {
             
             VStack(spacing: 0) {
                 Toggle(isOn: $viewModel.showCameraGrid) {
-                    Label("Alignment Grid Overlay", systemImage: "grid")
-                        .font(.body)
-                        .foregroundColor(AppColors.primaryText)
+                    HStack(spacing: AppSpacing.sm) {
+                        GradientIconBadge(iconName: "grid", size: 28, iconSize: 13)
+                        Text("Alignment Grid Overlay")
+                            .font(.body)
+                            .foregroundColor(AppColors.primaryText)
+                    }
                 }
                 .padding(AppSpacing.md)
                 
-                Divider().padding(.horizontal, AppSpacing.md)
+                Divider().opacity(0.3).padding(.horizontal, AppSpacing.md)
                 
                 Toggle(isOn: $viewModel.reticlePulsing) {
-                    Label("Target Reticle Pulse", systemImage: "circle.circle")
-                        .font(.body)
-                        .foregroundColor(AppColors.primaryText)
+                    HStack(spacing: AppSpacing.sm) {
+                        GradientIconBadge(iconName: "circle.circle", size: 28, iconSize: 13)
+                        Text("Target Reticle Pulse")
+                            .font(.body)
+                            .foregroundColor(AppColors.primaryText)
+                    }
                 }
                 .padding(AppSpacing.md)
                 
-                Divider().padding(.horizontal, AppSpacing.md)
+                Divider().opacity(0.3).padding(.horizontal, AppSpacing.md)
                 
                 Toggle(isOn: $viewModel.autoTorch) {
-                    Label("Auto-Torch in Low Light", systemImage: "flashlight.on.fill")
-                        .font(.body)
-                        .foregroundColor(AppColors.primaryText)
+                    HStack(spacing: AppSpacing.sm) {
+                        GradientIconBadge(iconName: "flashlight.on.fill", size: 28, iconSize: 13)
+                        Text("Auto-Torch in Low Light")
+                            .font(.body)
+                            .foregroundColor(AppColors.primaryText)
+                    }
                 }
                 .padding(AppSpacing.md)
             }
@@ -151,9 +171,12 @@ struct AppSettingsView: View {
             
             VStack(spacing: 0) {
                 Toggle(isOn: $viewModel.hapticsEnabled) {
-                    Label("Haptic Guidance Feedback", systemImage: "waveform")
-                        .font(.body)
-                        .foregroundColor(AppColors.primaryText)
+                    HStack(spacing: AppSpacing.sm) {
+                        GradientIconBadge(iconName: "waveform", size: 28, iconSize: 13)
+                        Text("Haptic Guidance Feedback")
+                            .font(.body)
+                            .foregroundColor(AppColors.primaryText)
+                    }
                 }
                 .padding(AppSpacing.md)
             }
@@ -170,8 +193,12 @@ struct AppSettingsView: View {
             VStack(spacing: 0) {
                 NavigationLink(value: ProfileNavigationDestination.dataPrivacy) {
                     HStack(spacing: AppSpacing.sm) {
-                        Image(systemName: "chart.bar.doc.horizontal.fill")
-                            .foregroundColor(.assembleBrandPrimary)
+                        GradientIconBadge(
+                            iconName: "chart.bar.doc.horizontal.fill",
+                            size: 28,
+                            iconSize: 13,
+                            colors: [AppColors.iconBadgeGradientStart, AppColors.iconBadgeGradientEnd]
+                        )
                         
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Data, Cache & Telemetry")

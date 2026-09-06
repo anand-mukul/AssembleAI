@@ -55,3 +55,14 @@ enum AppShadow {
     static let elevatedColor = Color.black.opacity(0.18)
 }
 
+/// Unified animation timing tokens for consistent motion across all screens.
+enum AppAnimation {
+    /// Standard cascading delay per item in staggered lists (0.06s)
+    static let staggerDelay: Double = 0.06
+    /// Shared spring response for screen entrance animations
+    static let entranceSpring: Animation = .spring(response: 0.5, dampingFraction: 0.82)
+    /// Slower spring for hero section reveals
+    static let heroReveal: Animation = .spring(response: 0.65, dampingFraction: 0.78)
+    /// Quick spring for micro-interactions and state changes
+    static let microInteraction: Animation = .spring(response: 0.3, dampingFraction: 0.75)
+}

@@ -15,11 +15,12 @@ struct LaunchView: View {
     @State private var scale: CGFloat = 0.94
     @State private var hasMinimumSplashElapsed: Bool = false
     @State private var hasCompletedLaunch: Bool = false
+    @State private var glowPhase: CGFloat = 0
     
     var body: some View {
         ZStack {
-            AppColors.appBackground
-                .ignoresSafeArea()
+            // Gradient atmosphere background
+            GradientAtmosphereBackground(intensity: .hero)
             
             VStack(spacing: AppSpacing.lg) {
                 BrandHeaderView(size: .large)

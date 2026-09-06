@@ -10,23 +10,33 @@ import UIKit
 struct ForgotPasswordView: View {
     @EnvironmentObject private var router: AppRouter
     @EnvironmentObject private var authService: SupabaseAuthService
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
     @State private var email: String = ""
     @State private var emailError: String? = nil
     @State private var hasSubmitted: Bool = false
     @State private var isSuccessState: Bool = false
+    @State private var contentAppeared = false
     
     var body: some View {
-        VStack(spacing: AppSpacing.lg) {
-            if isSuccessState {
-                successStateView
-            } else {
-                requestStateView
+        ZStack {
+            GradientAtmosphereBackground(intensity: .subtle)
+            
+            VStack(spacing: AppSpacing.lg) {
+                if isSuccessState {
+                    successStateView
+                } else {
+                    requestStateView
+                }
+            }
+            .padding(.horizontal, AppSpacing.screenEdge)
+        }
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            withAnimation(reduceMotion ? .none : AppAnimation.entranceSpring) {
+                contentAppeared = true
             }
         }
-        .padding(.horizontal, AppSpacing.screenEdge)
-        .background(AppColors.appBackground.ignoresSafeArea())
-        .navigationBarTitleDisplayMode(.inline)
     }
     
     @ViewBuilder
@@ -36,16 +46,8 @@ struct ForgotPasswordView: View {
             
             // Header
             VStack(spacing: AppSpacing.xs) {
-                ZStack {
-                    Circle()
-                        .fill(Color.assembleBrandPrimary.opacity(0.1))
-                        .frame(width: 68, height: 68)
-                    
-                    Image(systemName: "key.fill")
-                        .font(.system(size: 30, weight: .light))
-                        .foregroundColor(.assembleBrandPrimary)
-                }
-                .padding(.bottom, AppSpacing.xs)
+                AnimatedHeaderIcon(iconName: "key.fill", iconSize: 30, circleDiameter: 68)
+                    .padding(.bottom, AppSpacing.xs)
                 
                 Text("Reset Password")
                     .font(.title2)
@@ -58,8 +60,10 @@ struct ForgotPasswordView: View {
                     .foregroundColor(AppColors.secondaryText)
                     .multilineTextAlignment(.center)
             }
+            .opacity(contentAppeared ? 1 : 0)
+            .offset(y: contentAppeared ? 0 : 10)
             
-            // Email Input
+            // Email Input in glassmorphic card
             CustomTextField(
                 title: "Email",
                 placeholder: "name@example.com",
@@ -70,6 +74,9 @@ struct ForgotPasswordView: View {
                 submitLabel: .send,
                 onCommit: handleSendResetLink
             )
+            .appCard()
+            .opacity(contentAppeared ? 1 : 0)
+            .animation(reduceMotion ? .none : AppAnimation.entranceSpring.delay(0.1), value: contentAppeared)
             
             // Primary Button
             PrimaryButton(
@@ -81,6 +88,8 @@ struct ForgotPasswordView: View {
                 handleSendResetLink()
             }
             .padding(.top, AppSpacing.xs)
+            .opacity(contentAppeared ? 1 : 0)
+            .animation(reduceMotion ? .none : AppAnimation.entranceSpring.delay(0.15), value: contentAppeared)
             
             // Cancel Button
             Button(action: {
@@ -102,15 +111,13 @@ struct ForgotPasswordView: View {
             Spacer()
             
             VStack(spacing: AppSpacing.sm) {
-                ZStack {
-                    Circle()
-                        .fill(AppColors.success.opacity(0.12))
-                        .frame(width: 72, height: 72)
-                    
-                    Image(systemName: "envelope.badge.shield.halffilled")
-                        .font(.system(size: 34, weight: .light))
-                        .foregroundColor(AppColors.success)
-                }
+                AnimatedHeaderIcon(
+                    iconName: "envelope.badge.shield.halffilled",
+                    iconSize: 34,
+                    circleDiameter: 72,
+                    useGradient: false,
+                    staticColor: AppColors.success
+                )
                 .padding(.bottom, AppSpacing.xs)
                 
                 Text("Check Your Inbox")

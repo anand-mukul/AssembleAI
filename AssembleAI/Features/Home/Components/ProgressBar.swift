@@ -10,7 +10,8 @@ struct ProgressBar: View {
     let value: Double // [0.0 ... 1.0]
     var height: CGFloat = 8
     var fillColor: Color = .assembleBrandPrimary
-    var backgroundColor: Color = AppColors.tertiaryBackground
+    var gradientColors: [Color]? = nil
+    var backgroundColor: Color = AppColors.tertiaryBackground.opacity(0.5)
     
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
@@ -27,12 +28,12 @@ struct ProgressBar: View {
                 Capsule()
                     .fill(
                         LinearGradient(
-                            colors: [fillColor, fillColor.opacity(0.85)],
+                            colors: gradientColors ?? [fillColor, fillColor.opacity(0.85)],
                             startPoint: .leading,
                             endPoint: .trailing
                         )
                     )
-                    .frame(width: width, height: height)
+                    .frame(width: max(width, clampedValue > 0 ? height : 0), height: height)
                     .animation(reduceMotion ? .none : .spring(response: 0.45, dampingFraction: 0.82), value: value)
             }
         }

@@ -15,14 +15,17 @@ struct HistoryView: View {
     var onBrowseProjects: (() -> Void)? = nil
     
     var body: some View {
-        Group {
-            if sessions.isEmpty {
-                emptyHistoryView
-            } else {
-                sessionListView
+        ZStack {
+            GradientAtmosphereBackground(intensity: .subtle)
+            
+            Group {
+                if sessions.isEmpty {
+                    emptyHistoryView
+                } else {
+                    sessionListView
+                }
             }
         }
-        .background(AppColors.appBackground.ignoresSafeArea())
         .navigationTitle("History")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -84,7 +87,7 @@ struct HistoryView: View {
                 
                 Spacer()
                 
-                HStack(spacing: 4) {
+                HStack(spacing: 5) {
                     Image(systemName: isCompleted ? "checkmark.circle.fill" : "clock.fill")
                         .font(.caption2)
                     Text(isCompleted ? "Completed" : "In Progress")
@@ -92,10 +95,16 @@ struct HistoryView: View {
                         .fontWeight(.semibold)
                 }
                 .foregroundColor(isCompleted ? AppColors.statusSuccess : AppColors.statusWarning)
-                .padding(.horizontal, 8)
+                .padding(.horizontal, 10)
                 .padding(.vertical, 4)
-                .background((isCompleted ? AppColors.statusSuccess : AppColors.statusWarning).opacity(0.12))
-                .clipShape(Capsule())
+                .background(
+                    Capsule()
+                        .fill((isCompleted ? AppColors.statusSuccess : AppColors.statusWarning).opacity(0.12))
+                        .overlay(
+                            Capsule()
+                                .strokeBorder((isCompleted ? AppColors.statusSuccess : AppColors.statusWarning).opacity(0.25), lineWidth: 0.5)
+                        )
+                )
             }
             
             Divider().opacity(0.3)
@@ -144,15 +153,11 @@ struct HistoryView: View {
         VStack(spacing: AppSpacing.lg) {
             Spacer()
             
-            ZStack {
-                Circle()
-                    .fill(Color.assembleBrandPrimary.opacity(0.1))
-                    .frame(width: 80, height: 80)
-                
-                Image(systemName: "clock.arrow.circlepath")
-                    .font(.system(size: 38, weight: .light))
-                    .foregroundColor(.assembleBrandPrimary)
-            }
+            AnimatedHeaderIcon(
+                iconName: "clock.arrow.circlepath",
+                iconSize: 36,
+                circleDiameter: 76
+            )
             
             VStack(spacing: AppSpacing.xs) {
                 Text("No Assembly History Yet")
@@ -172,8 +177,8 @@ struct HistoryView: View {
                 PrimaryButton(title: "Explore Projects", iconName: "folder.fill") {
                     onBrowseProjects()
                 }
-                .padding(.horizontal, AppSpacing.xxl)
-                .padding(.top, AppSpacing.sm)
+                .frame(maxWidth: 240)
+                .padding(.top, AppSpacing.xs)
             }
             
             Spacer()

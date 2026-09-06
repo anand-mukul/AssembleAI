@@ -16,16 +16,8 @@ struct ContinueWithoutAccountSheet: View {
             Spacer(minLength: 8)
             
             VStack(spacing: AppSpacing.sm) {
-                ZStack {
-                    Circle()
-                        .fill(Color.assembleBrandPrimary.opacity(0.1))
-                        .frame(width: 68, height: 68)
-                    
-                    Image(systemName: "iphone.circle.fill")
-                        .font(.system(size: 34, weight: .light))
-                        .foregroundColor(.assembleBrandPrimary)
-                }
-                .padding(.bottom, AppSpacing.xxs)
+                AnimatedHeaderIcon(iconName: "iphone.circle.fill", iconSize: 34, circleDiameter: 68)
+                    .padding(.bottom, AppSpacing.xxs)
                 
                 Text("Continue on iPhone")
                     .font(.title2)
@@ -67,7 +59,7 @@ struct ContinueWithoutAccountSheet: View {
             .padding(.bottom, AppSpacing.md)
         }
         .padding(.horizontal, AppSpacing.screenEdge)
-        .background(AppColors.secondaryGroupedBackground.ignoresSafeArea())
+        .background(AppColors.appBackground.ignoresSafeArea())
         .presentationDetents([.height(400), .medium])
         .presentationDragIndicator(.visible)
         .presentationCornerRadius(28)

@@ -12,123 +12,139 @@ struct ProjectDetailView: View {
     
     var onStartAssembly: ((AssemblyProject) -> Void)? = nil
     
+    @State private var hasAppeared = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                // Technical Vector Visual Card
-                ProjectVisualCard(
-                    category: project.category,
-                    iconName: project.imageName,
-                    height: 160
-                )
-                .padding(.horizontal, AppSpacing.screenEdge)
-                
-                // Metadata Header
-                VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    HStack {
-                        DifficultyBadge(difficulty: project.difficulty)
-                        
-                        Spacer()
-                        
-                        HStack(spacing: AppSpacing.md) {
-                            Label("\(project.totalSteps) steps", systemImage: "list.bullet")
-                            Label("~\(project.estimatedMinutes) min", systemImage: "clock")
-                        }
-                        .font(.caption)
-                        .foregroundColor(AppColors.secondaryText)
-                    }
+        ZStack {
+            GradientAtmosphereBackground(intensity: .subtle)
+            
+            ScrollView {
+                VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                    // Technical Vector Visual Card
+                    ProjectVisualCard(
+                        category: project.category,
+                        iconName: project.imageName,
+                        height: 160
+                    )
+                    .padding(.horizontal, AppSpacing.screenEdge)
                     
-                    Text(project.title)
-                        .font(.title)
-                        .fontWeight(.bold)
-                        .foregroundColor(AppColors.primaryText)
-                        .accessibilityAddTraits(.isHeader)
-                    
-                    Text(project.subtitle)
-                        .font(.subheadline)
-                        .foregroundColor(AppColors.secondaryText)
-                        .adaptiveMultiline()
-                }
-                .padding(.horizontal, AppSpacing.screenEdge)
-                
-                // About Description
-                if !project.description.isEmpty {
+                    // Metadata Header
                     VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                        Text("About")
-                            .font(.headline)
-                            .foregroundColor(AppColors.primaryText)
+                        HStack {
+                            DifficultyBadge(difficulty: project.difficulty)
+                            
+                            Spacer()
+                            
+                            HStack(spacing: AppSpacing.md) {
+                                Label("\(project.totalSteps) steps", systemImage: "list.bullet")
+                                Label("~\(project.estimatedMinutes) min", systemImage: "clock")
+                            }
+                            .font(.caption)
+                            .foregroundColor(AppColors.secondaryText)
+                        }
                         
-                        Text(project.description)
-                            .font(.body)
+                        Text(project.title)
+                            .font(.title)
+                            .fontWeight(.bold)
+                            .foregroundColor(AppColors.primaryText)
+                            .accessibilityAddTraits(.isHeader)
+                        
+                        Text(project.subtitle)
+                            .font(.subheadline)
                             .foregroundColor(AppColors.secondaryText)
                             .adaptiveMultiline()
                     }
                     .padding(.horizontal, AppSpacing.screenEdge)
-                }
-                
-                // You'll Need (Components List)
-                if !project.components.isEmpty {
-                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        Text("You'll need")
-                            .font(.headline)
-                            .foregroundColor(AppColors.primaryText)
-                            .padding(.horizontal, AppSpacing.screenEdge)
-                        
-                        VStack(spacing: 0) {
-                            ForEach(Array(project.components.enumerated()), id: \.element.id) { index, comp in
-                                ComponentRequirementRow(component: comp)
-                                    .padding(.horizontal, AppSpacing.md)
-                                
-                                if index < project.components.count - 1 {
-                                    Divider()
-                                        .padding(.leading, 32)
-                                }
-                            }
+                    
+                    // About Description
+                    if !project.description.isEmpty {
+                        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                            Text("About")
+                                .font(.headline)
+                                .fontWeight(.bold)
+                                .foregroundColor(AppColors.primaryText)
+                            
+                            Text(project.description)
+                                .font(.subheadline)
+                                .foregroundColor(AppColors.secondaryText)
+                                .lineSpacing(3)
+                                .adaptiveMultiline()
                         }
-                        .appCard(padding: AppSpacing.xs)
+                        .appCard()
                         .padding(.horizontal, AppSpacing.screenEdge)
                     }
-                }
-                
-                // Progress Section
-                VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    HStack {
-                        Text("Progress")
-                            .font(.headline)
-                            .foregroundColor(AppColors.primaryText)
-                        
-                        Spacer()
-                        
-                        Text("\(project.completedSteps) of \(project.totalSteps) steps")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .foregroundColor(AppColors.secondaryText)
+                    
+                    // You'll Need (Components List)
+                    if !project.components.isEmpty {
+                        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                            Text("You'll need")
+                                .font(.headline)
+                                .fontWeight(.bold)
+                                .foregroundColor(AppColors.primaryText)
+                                .padding(.horizontal, AppSpacing.screenEdge)
+                            
+                            VStack(spacing: 0) {
+                                ForEach(Array(project.components.enumerated()), id: \.element.id) { index, comp in
+                                    ComponentRequirementRow(component: comp)
+                                        .padding(.horizontal, AppSpacing.md)
+                                    
+                                    if index < project.components.count - 1 {
+                                        Divider()
+                                            .opacity(0.3)
+                                            .padding(.leading, 36)
+                                    }
+                                }
+                            }
+                            .appCard(padding: AppSpacing.xs)
+                            .padding(.horizontal, AppSpacing.screenEdge)
+                        }
                     }
                     
-                    ProgressBar(
-                        value: project.progress,
-                        height: 8,
-                        fillColor: project.isCompleted ? AppColors.success : Color.assembleBrandPrimary
-                    )
-                }
-                .padding(.horizontal, AppSpacing.screenEdge)
-                
-                // Primary Action Button
-                PrimaryButton(
-                    title: ctaButtonTitle,
-                    iconName: ctaButtonIcon
-                ) {
-                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                    if let onStartAssembly = onStartAssembly {
-                        onStartAssembly(project)
+                    // Progress Section
+                    VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                        HStack {
+                            Text("Progress")
+                                .font(.headline)
+                                .fontWeight(.bold)
+                                .foregroundColor(AppColors.primaryText)
+                            
+                            Spacer()
+                            
+                            Text("\(project.completedSteps) of \(project.totalSteps) steps")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .foregroundColor(AppColors.secondaryText)
+                        }
+                        
+                        ProgressBar(
+                            value: project.progress,
+                            height: 8,
+                            fillColor: project.isCompleted ? AppColors.success : .assembleBrandPrimary,
+                            gradientColors: project.isCompleted
+                                ? [AppColors.success, AppColors.success.opacity(0.8)]
+                                : [AppColors.iconBadgeGradientStart, AppColors.iconBadgeGradientEnd]
+                        )
                     }
+                    .appCard()
+                    .padding(.horizontal, AppSpacing.screenEdge)
+                    
+                    // Primary Action Button
+                    PrimaryButton(
+                        title: ctaButtonTitle,
+                        iconName: ctaButtonIcon
+                    ) {
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                        if let onStartAssembly = onStartAssembly {
+                            onStartAssembly(project)
+                        }
+                    }
+                    .padding(.horizontal, AppSpacing.screenEdge)
+                    .padding(.bottom, AppSpacing.xxl)
                 }
-                .padding(.horizontal, AppSpacing.screenEdge)
-                .padding(.bottom, AppSpacing.xxl)
+                .padding(.top, AppSpacing.md)
             }
-            .padding(.top, AppSpacing.md)
         }
-        .background(AppColors.appBackground.ignoresSafeArea())
         .navigationTitle(project.title)
         .navigationBarTitleDisplayMode(.inline)
     }

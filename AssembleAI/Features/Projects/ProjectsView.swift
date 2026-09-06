@@ -13,43 +13,48 @@ struct ProjectsView: View {
     
     var onSelectProject: ((AssemblyProject) -> Void)? = nil
     
+    @State private var hasAppeared = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    
     var body: some View {
-        VStack(spacing: 0) {
-            // Segment Filter Picker
-            Picker("Filter", selection: $viewModel.selectedFilter) {
-                ForEach(ProjectFilterTab.allCases) { filter in
-                    Text(filter.rawValue).tag(filter)
-                }
-            }
-            .pickerStyle(.segmented)
-            .padding(.horizontal, AppSpacing.screenEdge)
-            .padding(.vertical, AppSpacing.sm)
-            .background(AppColors.appBackground)
+        ZStack {
+            GradientAtmosphereBackground(intensity: .subtle)
             
-            // Projects Content
-            ScrollView {
-                VStack(spacing: AppSpacing.sm) {
-                    if viewModel.filteredProjects.isEmpty {
-                        emptyResultsOrProjectsState
-                    } else {
-                        ForEach(viewModel.filteredProjects, id: \.id) { project in
-                            ProjectCard(
-                                project: project,
-                                onTap: {
-                                    if let onSelectProject = onSelectProject {
-                                        onSelectProject(project)
-                                    }
-                                }
-                            )
-                        }
+            VStack(spacing: 0) {
+                // Segment Filter Picker
+                Picker("Filter", selection: $viewModel.selectedFilter) {
+                    ForEach(ProjectFilterTab.allCases) { filter in
+                        Text(filter.rawValue).tag(filter)
                     }
                 }
+                .pickerStyle(.segmented)
                 .padding(.horizontal, AppSpacing.screenEdge)
-                .padding(.top, AppSpacing.xs)
-                .padding(.bottom, AppSpacing.xxl)
+                .padding(.vertical, AppSpacing.sm)
+                
+                // Projects Content
+                ScrollView {
+                    VStack(spacing: AppSpacing.sm) {
+                        if viewModel.filteredProjects.isEmpty {
+                            emptyResultsOrProjectsState
+                        } else {
+                            ForEach(viewModel.filteredProjects, id: \.id) { project in
+                                ProjectCard(
+                                    project: project,
+                                    onTap: {
+                                        if let onSelectProject = onSelectProject {
+                                            onSelectProject(project)
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    .padding(.horizontal, AppSpacing.screenEdge)
+                    .padding(.top, AppSpacing.xs)
+                    .padding(.bottom, AppSpacing.xxl)
+                }
             }
         }
-        .background(AppColors.appBackground.ignoresSafeArea())
         .navigationTitle("Projects")
         .navigationBarTitleDisplayMode(.large)
         .searchable(
@@ -68,6 +73,7 @@ struct ProjectsView: View {
                 }) {
                     Image(systemName: "plus")
                         .font(.body.weight(.semibold))
+                        .foregroundColor(.assembleBrandPrimary)
                         .touchTarget()
                 }
                 .accessibilityLabel("Add Project")

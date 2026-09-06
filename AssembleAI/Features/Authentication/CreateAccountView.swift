@@ -9,6 +9,7 @@ import SwiftUI
 struct CreateAccountView: View {
     @EnvironmentObject private var router: AppRouter
     @EnvironmentObject private var authService: SupabaseAuthService
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
     @State private var name: String = ""
     @State private var email: String = ""
@@ -21,113 +22,135 @@ struct CreateAccountView: View {
     @State private var confirmPasswordError: String? = nil
     @State private var hasSubmitted: Bool = false
     @State private var showEmailConfirmationAlert: Bool = false
+    @State private var contentAppeared = false
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: AppSpacing.lg) {
-                // Header
-                VStack(spacing: AppSpacing.xs) {
-                    Text("Create Account")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(AppColors.primaryText)
-                        .accessibilityAddTraits(.isHeader)
+        ZStack {
+            GradientAtmosphereBackground(intensity: .subtle)
+            
+            ScrollView {
+                VStack(spacing: AppSpacing.lg) {
+                    // Header
+                    VStack(spacing: AppSpacing.sm) {
+                        AnimatedHeaderIcon(iconName: "person.badge.plus", iconSize: 28, circleDiameter: 64)
+                        
+                        VStack(spacing: AppSpacing.xs) {
+                            Text("Create Account")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(AppColors.primaryText)
+                                .accessibilityAddTraits(.isHeader)
+                            
+                            Text("Sync your assembly projects and history safely.")
+                                .font(.subheadline)
+                                .foregroundColor(AppColors.secondaryText)
+                                .multilineTextAlignment(.center)
+                        }
+                    }
+                    .padding(.top, AppSpacing.xl)
+                    .padding(.bottom, AppSpacing.sm)
+                    .opacity(contentAppeared ? 1 : 0)
+                    .offset(y: contentAppeared ? 0 : 10)
                     
-                    Text("Sync your assembly projects and history safely.")
+                    // Form Fields in glassmorphic card
+                    VStack(spacing: AppSpacing.md) {
+                        CustomTextField(
+                            title: "Full Name",
+                            placeholder: "Alex Morgan",
+                            text: $name,
+                            iconName: "person",
+                            errorMessage: nameError,
+                            keyboardType: .namePhonePad,
+                            submitLabel: .next
+                        )
+                        .onChange(of: name) {
+                            if hasSubmitted { validateForm() }
+                        }
+                        
+                        CustomTextField(
+                            title: "Email Address",
+                            placeholder: "name@example.com",
+                            text: $email,
+                            iconName: "envelope",
+                            errorMessage: emailError,
+                            keyboardType: .emailAddress,
+                            submitLabel: .next
+                        )
+                        .onChange(of: email) {
+                            if hasSubmitted { validateForm() }
+                        }
+                        
+                        CustomTextField(
+                            title: "Password",
+                            placeholder: "At least 8 characters",
+                            text: $password,
+                            iconName: "lock",
+                            isSecure: true,
+                            errorMessage: passwordError,
+                            submitLabel: .next
+                        )
+                        .onChange(of: password) {
+                            if hasSubmitted { validateForm() }
+                        }
+                        
+                        CustomTextField(
+                            title: "Confirm Password",
+                            placeholder: "Re-enter password",
+                            text: $confirmPassword,
+                            iconName: "lock.shield",
+                            isSecure: true,
+                            errorMessage: confirmPasswordError,
+                            submitLabel: .done,
+                            onCommit: handleCreateAccount
+                        )
+                        .onChange(of: confirmPassword) {
+                            if hasSubmitted { validateForm() }
+                        }
+                    }
+                    .appCard()
+                    .opacity(contentAppeared ? 1 : 0)
+                    .offset(y: contentAppeared ? 0 : 12)
+                    .animation(reduceMotion ? .none : AppAnimation.entranceSpring.delay(0.1), value: contentAppeared)
+                    
+                    // Primary Action Button
+                    PrimaryButton(
+                        title: "Create Account",
+                        iconName: "checkmark",
+                        isLoading: authService.isLoading,
+                        isDisabled: isFormIncomplete
+                    ) {
+                        handleCreateAccount()
+                    }
+                    .padding(.top, AppSpacing.sm)
+                    .opacity(contentAppeared ? 1 : 0)
+                    .animation(reduceMotion ? .none : AppAnimation.entranceSpring.delay(0.2), value: contentAppeared)
+                    
+                    // Navigation to Sign In
+                    Button(action: {
+                        router.pop()
+                    }) {
+                        HStack(spacing: 4) {
+                            Text("Already have an account?")
+                                .foregroundColor(AppColors.secondaryText)
+                            Text("Sign In")
+                                .fontWeight(.semibold)
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [AppColors.iconBadgeGradientStart, AppColors.iconBadgeGradientEnd],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                        }
                         .font(.subheadline)
-                        .foregroundColor(AppColors.secondaryText)
-                        .multilineTextAlignment(.center)
+                    }
+                    .padding(.top, AppSpacing.md)
+                    .accessibilityLabel("Already have an account? Sign In")
                 }
-                .padding(.top, AppSpacing.xl)
-                .padding(.bottom, AppSpacing.sm)
-                
-                // Form Fields
-                VStack(spacing: AppSpacing.md) {
-                    CustomTextField(
-                        title: "Full Name",
-                        placeholder: "Alex Morgan",
-                        text: $name,
-                        iconName: "person",
-                        errorMessage: nameError,
-                        keyboardType: .namePhonePad,
-                        submitLabel: .next
-                    )
-                    .onChange(of: name) {
-                        if hasSubmitted { validateForm() }
-                    }
-                    
-                    CustomTextField(
-                        title: "Email Address",
-                        placeholder: "name@example.com",
-                        text: $email,
-                        iconName: "envelope",
-                        errorMessage: emailError,
-                        keyboardType: .emailAddress,
-                        submitLabel: .next
-                    )
-                    .onChange(of: email) {
-                        if hasSubmitted { validateForm() }
-                    }
-                    
-                    CustomTextField(
-                        title: "Password",
-                        placeholder: "At least 8 characters",
-                        text: $password,
-                        iconName: "lock",
-                        isSecure: true,
-                        errorMessage: passwordError,
-                        submitLabel: .next
-                    )
-                    .onChange(of: password) {
-                        if hasSubmitted { validateForm() }
-                    }
-                    
-                    CustomTextField(
-                        title: "Confirm Password",
-                        placeholder: "Re-enter password",
-                        text: $confirmPassword,
-                        iconName: "lock.shield",
-                        isSecure: true,
-                        errorMessage: confirmPasswordError,
-                        submitLabel: .done,
-                        onCommit: handleCreateAccount
-                    )
-                    .onChange(of: confirmPassword) {
-                        if hasSubmitted { validateForm() }
-                    }
-                }
-                
-                // Primary Action Button
-                PrimaryButton(
-                    title: "Create Account",
-                    iconName: "checkmark",
-                    isLoading: authService.isLoading,
-                    isDisabled: isFormIncomplete
-                ) {
-                    handleCreateAccount()
-                }
-                .padding(.top, AppSpacing.sm)
-                
-                // Navigation to Sign In
-                Button(action: {
-                    router.pop()
-                }) {
-                    HStack(spacing: 4) {
-                        Text("Already have an account?")
-                            .foregroundColor(AppColors.secondaryText)
-                        Text("Sign In")
-                            .fontWeight(.semibold)
-                            .foregroundColor(.assembleBrandPrimary)
-                    }
-                    .font(.subheadline)
-                }
-                .padding(.top, AppSpacing.md)
-                .accessibilityLabel("Already have an account? Sign In")
+                .padding(.horizontal, AppSpacing.screenEdge)
+                .padding(.bottom, AppSpacing.xl)
             }
-            .padding(.horizontal, AppSpacing.screenEdge)
-            .padding(.bottom, AppSpacing.xl)
         }
-        .background(AppColors.appBackground.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .alert("Check Your Email", isPresented: $showEmailConfirmationAlert) {
             Button("Go to Sign In") {
@@ -135,6 +158,11 @@ struct CreateAccountView: View {
             }
         } message: {
             Text("We've sent a verification link to \(email). Please confirm your email address, then sign in.")
+        }
+        .onAppear {
+            withAnimation(reduceMotion ? .none : AppAnimation.entranceSpring) {
+                contentAppeared = true
+            }
         }
     }
     

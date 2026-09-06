@@ -5,15 +5,21 @@
 
 import SwiftUI
 
-/// Clean requirement item row for Project Details screen.
+/// Clean requirement item row for Project Details screen with unified badges.
 struct ComponentRequirementRow: View {
     let component: ComponentRequirement
     
     var body: some View {
         HStack(spacing: AppSpacing.mdSm) {
-            Image(systemName: component.isRequired ? "circle.fill" : "circle")
-                .font(.caption2)
-                .foregroundColor(component.isRequired ? .assembleBrandPrimary : AppColors.tertiaryText)
+            ZStack {
+                Circle()
+                    .fill(component.isRequired ? AppColors.iconBadgeGradientStart.opacity(0.15) : AppColors.tertiaryBackground)
+                    .frame(width: 24, height: 24)
+                
+                Image(systemName: component.isRequired ? "checkmark.circle.fill" : "circle")
+                    .font(.caption)
+                    .foregroundColor(component.isRequired ? .assembleBrandPrimary : AppColors.secondaryText)
+            }
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(component.name)
@@ -32,13 +38,17 @@ struct ComponentRequirementRow: View {
             
             Text(component.isRequired ? "Required" : "Optional")
                 .font(.caption2)
-                .fontWeight(.medium)
-                .foregroundColor(component.isRequired ? AppColors.secondaryText : AppColors.tertiaryText)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
+                .fontWeight(.semibold)
+                .foregroundColor(component.isRequired ? AppColors.primaryText : AppColors.secondaryText)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
                 .background(
                     Capsule()
-                        .fill(AppColors.tertiaryBackground)
+                        .fill(component.isRequired ? AppColors.tertiaryBackground : AppColors.secondaryBackground)
+                        .overlay(
+                            Capsule()
+                                .strokeBorder(AppColors.glassBorderUnified, lineWidth: 0.5)
+                        )
                 )
         }
         .padding(.vertical, AppSpacing.xs)

@@ -5,21 +5,18 @@
 
 import SwiftUI
 
-/// Compact recent activity row item.
+/// Compact recent activity row item featuring unified gradient icon badge and clear hierarchy.
 struct ActivityItemRow: View {
     let activity: ActivityItemModel
     
     var body: some View {
         HStack(spacing: AppSpacing.mdSm) {
-            ZStack {
-                Circle()
-                    .fill(AppColors.success.opacity(0.12))
-                    .frame(width: 32, height: 32)
-                
-                Image(systemName: activity.iconName)
-                    .font(.caption.weight(.bold))
-                    .foregroundColor(AppColors.success)
-            }
+            GradientIconBadge(
+                iconName: activity.iconName,
+                size: 34,
+                iconSize: 14,
+                colors: [AppColors.success, AppColors.success.opacity(0.75)]
+            )
             
             VStack(alignment: .leading, spacing: 2) {
                 Text("Completed Step \(activity.stepOrder)")

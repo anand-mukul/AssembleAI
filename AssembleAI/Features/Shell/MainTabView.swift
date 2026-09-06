@@ -4,8 +4,9 @@
 //
 
 import SwiftUI
+import UIKit
 
-/// Main application shell tab bar container featuring 5 native iOS tab destinations.
+/// Main application shell tab bar container featuring 5 native iOS tab destinations with glassmorphic chrome.
 struct MainTabView: View {
     @EnvironmentObject private var router: AppRouter
     @State private var selectedTab: Int = 0
@@ -130,6 +131,8 @@ struct MainTabView: View {
         .onAppear {
             let appearance = UITabBarAppearance()
             appearance.configureWithDefaultBackground()
+            appearance.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterial)
+            appearance.shadowColor = UIColor.separator.withAlphaComponent(0.2)
             UITabBar.appearance().standardAppearance = appearance
             UITabBar.appearance().scrollEdgeAppearance = appearance
         }

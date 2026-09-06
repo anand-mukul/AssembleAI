@@ -59,12 +59,14 @@ struct AddProjectSheet: View {
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .foregroundColor(AppColors.secondaryText)
+                    .frame(minHeight: 44)
             }
-            .padding(.bottom, AppSpacing.lg)
+            .padding(.bottom, AppSpacing.md)
         }
         .padding(.horizontal, AppSpacing.screenEdge)
-        .background(AppColors.secondaryGroupedBackground.ignoresSafeArea())
-        .presentationDetents([.height(380)])
+        .background(AppColors.appBackground.ignoresSafeArea())
+        .presentationDetents([.height(390)])
+        .presentationDragIndicator(.visible)
         .presentationCornerRadius(28)
         .fullScreenCover(isPresented: $showCreator) {
             ProjectCreatorView()
