@@ -27,7 +27,6 @@ final class StateAwareVerificationService: VerificationServiceProtocol {
     private let estimator: AssemblyStateEstimating
     private let comparator: AssemblyStateComparator
     private let guidanceGenerator: GuidanceGenerating
-    private let mockFallbackService: VerificationServiceProtocol
     private let spatialEngine: StateAwareVerificationEngine
     
     var mode: VerificationMode = .hybrid
@@ -37,23 +36,16 @@ final class StateAwareVerificationService: VerificationServiceProtocol {
         estimator: AssemblyStateEstimating? = nil,
         comparator: AssemblyStateComparator? = nil,
         guidanceGenerator: GuidanceGenerating? = nil,
-        mockFallbackService: VerificationServiceProtocol? = nil,
         spatialEngine: StateAwareVerificationEngine = StateAwareVerificationEngine()
     ) {
         self.visionService = visionService ?? VisionService()
         self.estimator = estimator ?? SpatialAssemblyStateEstimator()
         self.comparator = comparator ?? AssemblyStateComparator()
         self.guidanceGenerator = guidanceGenerator ?? HybridGuidanceGenerator()
-        self.mockFallbackService = mockFallbackService ?? MockVerificationService()
         self.spatialEngine = spatialEngine
     }
     
     func verifyStep(_ step: AssemblyStep, image: UIImage?) async throws -> VerificationResult {
-        // Mode 1: Mock Mode (deterministic demo flow)
-        if mode == .mock {
-            return try await mockFallbackService.verifyStep(step, image: image)
-        }
-        
         // Build explicit expected state for this step
         let expectedState = buildExpectedState(for: step)
         

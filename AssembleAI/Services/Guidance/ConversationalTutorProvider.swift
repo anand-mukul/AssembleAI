@@ -178,7 +178,7 @@ extension ConversationalTutorProviding {
 /// HARD ARCHITECTURAL RULE:
 /// The language model is used ONLY for generating natural-language explanations and spoken dialogue.
 /// It NEVER decides correctness — correctness is determined deterministically by `AssemblyStateComparator`.
-@available(iOS 26.0, *)
+@available(iOS 18.0, *)
 actor FoundationModelTutorResponseProvider: ConversationalTutorProviding {
     private let fallbackProvider = DeterministicTutorResponseProvider()
     private var sessionMemory: [UUID: [ConversationMessage]] = [:]
@@ -408,7 +408,7 @@ final class HybridTutorResponseProvider: ConversationalTutorProviding, @unchecke
         guard decision.shouldIntervene else { return nil }
         
         #if canImport(FoundationModels)
-        if #available(iOS 26.0, *) {
+        if #available(iOS 18.0, *) {
             let provider = FoundationModelTutorResponseProvider()
             if let response = await provider.generateResponse(for: decision, context: context) {
                 return response
@@ -425,7 +425,7 @@ final class HybridTutorResponseProvider: ConversationalTutorProviding, @unchecke
         context: AssistantContext
     ) async -> TutorResponse {
         #if canImport(FoundationModels)
-        if #available(iOS 26.0, *) {
+        if #available(iOS 18.0, *) {
             let provider = FoundationModelTutorResponseProvider()
             return await provider.answerUserQuestion(query: query, intent: intent, context: context)
         }
@@ -440,7 +440,7 @@ final class HybridTutorResponseProvider: ConversationalTutorProviding, @unchecke
     
     func clearSessionContext() async {
         #if canImport(FoundationModels)
-        if #available(iOS 26.0, *) {
+        if #available(iOS 18.0, *) {
             let provider = FoundationModelTutorResponseProvider()
             await provider.clearSessionContext()
         }
@@ -452,7 +452,7 @@ final class HybridTutorResponseProvider: ConversationalTutorProviding, @unchecke
         context: AssistantContext
     ) async -> StructuredTutorFeedback {
         #if canImport(FoundationModels)
-        if #available(iOS 26.0, *) {
+        if #available(iOS 18.0, *) {
             let provider = FoundationModelTutorResponseProvider()
             return await provider.generateStructuredFeedback(for: decision, context: context)
         }

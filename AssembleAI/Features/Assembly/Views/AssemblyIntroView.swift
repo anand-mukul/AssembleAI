@@ -109,7 +109,7 @@ struct AssemblyIntroView: View {
 
 #Preview("Assembly Intro View") {
     AssemblyIntroView(
-        project: MockProjectData.sampleProjects[0],
+        project: MockProjectData.previewProject,
         onBegin: {},
         onBack: {}
     )

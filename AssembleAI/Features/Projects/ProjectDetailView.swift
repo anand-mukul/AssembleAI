@@ -166,7 +166,7 @@ struct ProjectDetailView: View {
 
 #Preview("Project Detail View - In Progress") {
     NavigationStack {
-        ProjectDetailView(project: MockProjectData.sampleProjects[0])
+        ProjectDetailView(project: MockProjectData.previewProject)
             .environmentObject(AppRouter())
     }
 }

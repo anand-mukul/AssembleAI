@@ -55,11 +55,7 @@ struct BundledProjectRepository: ProjectRepository {
     
     /// Synchronous access to bundled projects for AppIntents, Spotlight, and Siri queries.
     public static var bundledProjects: [AssemblyProject] {
-        let loaded = ProjectPackageLoader.loadAllFromBundle(directory: "Projects")
-        if loaded.isEmpty {
-            return SampleProjectData.sampleProjects
-        }
-        return loaded
+        ProjectPackageLoader.loadAllFromBundle(directory: "Projects")
     }
     
     @MainActor

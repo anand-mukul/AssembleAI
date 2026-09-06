@@ -132,3 +132,124 @@ final class LocalFirstProjectRepository: LocalProjectRepository {
         }
     }
 }
+
+// MARK: - ProjectRepository Conformance
+
+extension LocalFirstProjectRepository: ProjectRepository {
+    
+    /// Fetches all assembly projects from Supabase database with SwiftData local caching.
+    func fetchProjects() async throws -> [AssemblyProject] {
+        // Sync with Supabase if available
+        if let supabaseService = supabaseService {
+            do {
+                let remoteProjects = try await supabaseService.fetchFullAssemblyProjects()
+                if !remoteProjects.isEmpty {
+                    // Update SwiftData cache with the remote projects
+                    for remote in remoteProjects {
+                        let targetId = remote.id
+                        let fetchLocal = FetchDescriptor<LocalProject>(predicate: #Predicate<LocalProject> { $0.id == targetId })
+                        if let existing = try? modelContext.fetch(fetchLocal).first {
+                            existing.title = remote.title
+                            existing.projectDescription = remote.description
+                            existing.difficulty = remote.difficulty.rawValue
+                            existing.estimatedMinutes = remote.estimatedMinutes
+                            existing.thumbnailPath = remote.imageName
+                            existing.updatedAt = Date()
+                            existing.syncStateRaw = SyncState.synced.rawValue
+                        } else {
+                            let newLocal = LocalProject(
+                                id: remote.id,
+                                ownerId: remote.id,
+                                title: remote.title,
+                                projectDescription: remote.description,
+                                difficulty: remote.difficulty.rawValue,
+                                estimatedMinutes: remote.estimatedMinutes,
+                                thumbnailPath: remote.imageName,
+                                syncStateRaw: SyncState.synced.rawValue
+                            )
+                            modelContext.insert(newLocal)
+                        }
+                    }
+                    try? modelContext.save()
+                    return remoteProjects
+                }
+            } catch {
+                // Offline fallback: fall through to local SwiftData cache
+            }
+        }
+        
+        // Query local SwiftData cache
+        let descriptor = FetchDescriptor<LocalProject>(sortBy: [SortDescriptor(\.updatedAt, order: .reverse)])
+        let localProjects = (try? modelContext.fetch(descriptor)) ?? []
+        
+        return localProjects.map { local in
+            let pid = local.id
+            let stepDesc = FetchDescriptor<LocalAssemblyStep>(
+                predicate: #Predicate<LocalAssemblyStep> { $0.projectId == pid },
+                sortBy: [SortDescriptor(\.stepOrder, order: .asc)]
+            )
+            let steps = (try? modelContext.fetch(stepDesc)) ?? []
+            let domainSteps = steps.map { step in
+                ProjectStepSummary(
+                    id: step.id,
+                    stepOrder: step.stepOrder,
+                    title: step.title,
+                    instruction: step.instruction,
+                    expectedDurationMinutes: 0,
+                    visualContract: step.toDomainModel().visualContract,
+                    commonMistakes: []
+                )
+            }
+            
+            return AssemblyProject(
+                id: local.id,
+                title: local.title,
+                subtitle: local.projectDescription,
+                category: "Electronics",
+                difficulty: Difficulty(rawValue: local.difficulty) ?? .beginner,
+                estimatedMinutes: local.estimatedMinutes,
+                totalSteps: domainSteps.count,
+                completedSteps: 0,
+                imageName: local.thumbnailPath,
+                isActive: false,
+                nextAction: nil,
+                description: local.projectDescription,
+                components: [],
+                steps: domainSteps
+            )
+        }
+    }
+    
+    /// Fetches recent user assembly activity from real recorded sessions.
+    func fetchRecentActivity() async throws -> [ActivityItemModel] {
+        let descriptor = FetchDescriptor<LocalAssemblySession>(
+            sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
+        )
+        let sessions = (try? modelContext.fetch(descriptor)) ?? []
+        guard !sessions.isEmpty else { return [] }
+        
+        let allProjects = (try? await (self as ProjectRepository).fetchProjects()) ?? []
+        let projectMap = Dictionary(uniqueKeysWithValues: allProjects.map { ($0.id, $0.title) })
+        let relativeFormatter = RelativeDateTimeFormatter()
+        relativeFormatter.unitsStyle = .short
+        
+        return sessions.prefix(5).map { session in
+            let title = projectMap[session.projectId] ?? "Assembly Task"
+            let timeStr = relativeFormatter.localizedString(for: session.updatedAt, relativeTo: Date())
+            let isComplete = session.statusRaw == SessionStatus.completed.rawValue
+            return ActivityItemModel(
+                id: session.id,
+                stepOrder: session.currentStepOrder,
+                projectTitle: title,
+                timestampDescription: "\(isComplete ? "Completed" : "Step \(session.currentStepOrder)") • \(timeStr)",
+                iconName: isComplete ? "checkmark.circle.fill" : "wrench.fill"
+            )
+        }
+    }
+    
+    /// Fetches a single project by ID.
+    func fetchProject(byId id: UUID) async throws -> AssemblyProject? {
+        let projects: [AssemblyProject] = try await (self as ProjectRepository).fetchProjects()
+        return projects.first { $0.id == id }
+    }
+}

@@ -46,8 +46,12 @@ final class HomeViewModel: ObservableObject {
             let allProjects = try await projectsTask
             let activities = try await activityTask
             
-            self.activeProject = allProjects.first(where: { $0.isActive })
-            self.recentProjects = Array(allProjects.filter { !$0.isActive }.prefix(3))
+            let active = allProjects.first(where: { $0.isActive })
+                ?? allProjects.first(where: { !$0.isCompleted && $0.completedSteps > 0 })
+                ?? allProjects.first
+            
+            self.activeProject = active
+            self.recentProjects = Array(allProjects.filter { $0.id != active?.id }.prefix(3))
             self.recentActivity = activities
             self.isLoading = false
         } catch {

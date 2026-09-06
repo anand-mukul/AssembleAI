@@ -21,20 +21,45 @@ actor SupabaseProjectService {
         case serverError(Int)
     }
     
+    // MARK: - Admin Status
+    
+    /// Checks whether the currently authenticated user has administrator / app owner privileges.
+    func checkIsAdmin() async -> Bool {
+        guard let userId = await supabaseManager.currentUserId else { return false }
+        guard var components = URLComponents(string: "\(AppConfig.supabaseUrl)/rest/v1/profiles") else { return false }
+        components.queryItems = [
+            URLQueryItem(name: "select", value: "is_admin"),
+            URLQueryItem(name: "id", value: "eq.\(userId)"),
+            URLQueryItem(name: "limit", value: "1")
+        ]
+        guard let url = components.url else { return false }
+        let request = await supabaseManager.prepareRequest(url: url)
+        
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else { return false }
+            struct AdminCheck: Decodable {
+                let isAdmin: Bool?
+                enum CodingKeys: String, CodingKey { case isAdmin = "is_admin" }
+            }
+            let records = try JSONDecoder().decode([AdminCheck].self, from: data)
+            return records.first?.isAdmin ?? false
+        } catch {
+            return false
+        }
+    }
+    
     // MARK: - Projects
     
-    /// Fetches all projects for the authenticated user from Supabase.
+    /// Fetches all public and user-accessible projects from Supabase.
     func fetchProjects() async throws -> [Project] {
-        guard let ownerId = await supabaseManager.currentUserId else {
-            return [] // Not authenticated
-        }
         guard var components = URLComponents(string: "\(AppConfig.supabaseUrl)/rest/v1/projects") else {
             throw ServiceError.invalidURL
         }
         
+        // Supabase RLS automatically filters: is_public = true OR owner_id = auth.uid()
         components.queryItems = [
             URLQueryItem(name: "select", value: "*"),
-            URLQueryItem(name: "owner_id", value: "eq.\(ownerId)"),
             URLQueryItem(name: "order", value: "updated_at.desc")
         ]
         
@@ -128,6 +153,146 @@ actor SupabaseProjectService {
         let (_, response) = try await URLSession.shared.data(for: request)
         if let httpResponse = response as? HTTPURLResponse, !(200...299).contains(httpResponse.statusCode) {
             throw ServiceError.serverError(httpResponse.statusCode)
+        }
+    }
+    
+    // MARK: - Components
+    
+    /// Fetches all components for a project from Supabase.
+    func fetchComponents(projectId: UUID) async throws -> [Component] {
+        guard var components = URLComponents(string: "\(AppConfig.supabaseUrl)/rest/v1/components") else { throw ServiceError.invalidURL }
+        components.queryItems = [
+            URLQueryItem(name: "project_id", value: "eq.\(projectId.uuidString)"),
+            URLQueryItem(name: "order", value: "created_at.asc")
+        ]
+        guard let url = components.url else { throw ServiceError.invalidURL }
+        
+        let request = await supabaseManager.prepareRequest(url: url)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else { throw ServiceError.networkFailure("Invalid response") }
+        guard httpResponse.statusCode == 200 else { throw ServiceError.serverError(httpResponse.statusCode) }
+        
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        return try decoder.decode([Component].self, from: data)
+    }
+    
+    /// Upserts a Component record into Supabase PostgreSQL.
+    func saveComponent(_ component: Component) async throws {
+        guard let url = URL(string: "\(AppConfig.supabaseUrl)/rest/v1/components") else { throw ServiceError.invalidURL }
+        
+        var request = await supabaseManager.prepareRequest(url: url, method: "POST")
+        request.setValue("resolution=merge-duplicates", forHTTPHeaderField: "Prefer")
+        
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.keyEncodingStrategy = .convertToSnakeCase
+        request.httpBody = try encoder.encode(component)
+        
+        let (_, response) = try await URLSession.shared.data(for: request)
+        if let httpResponse = response as? HTTPURLResponse, !(200...299).contains(httpResponse.statusCode) {
+            throw ServiceError.serverError(httpResponse.statusCode)
+        }
+    }
+    
+    // MARK: - Full Assembly Projects (Relational Assembly)
+    
+    /// Fetches full `AssemblyProject` domain models including their child steps and components from Supabase.
+    func fetchFullAssemblyProjects() async throws -> [AssemblyProject] {
+        let baseProjects = try await fetchProjects()
+        var fullProjects: [AssemblyProject] = []
+        
+        for base in baseProjects {
+            let steps = (try? await fetchAssemblySteps(projectId: base.id)) ?? []
+            let rawComponents = (try? await fetchComponents(projectId: base.id)) ?? []
+            
+            let domainSteps = steps.map { step in
+                ProjectStepSummary(
+                    id: step.id,
+                    stepOrder: step.stepOrder,
+                    title: step.title,
+                    instruction: step.instruction,
+                    expectedDurationMinutes: 0,
+                    visualContract: step.visualContract,
+                    commonMistakes: []
+                )
+            }
+            
+            let domainComponents = rawComponents.map { comp in
+                ComponentRequirement(
+                    id: comp.id,
+                    name: comp.name,
+                    detail: comp.description.isEmpty ? comp.name : comp.description,
+                    isRequired: true,
+                    partId: "part_\(comp.name.lowercased().replacingOccurrences(of: " ", with: "_"))"
+                )
+            }
+            
+            let project = AssemblyProject(
+                id: base.id,
+                title: base.title,
+                subtitle: base.description,
+                category: "Electronics",
+                difficulty: Difficulty(rawValue: base.difficulty) ?? .beginner,
+                estimatedMinutes: base.estimatedMinutes,
+                totalSteps: domainSteps.count,
+                completedSteps: 0,
+                imageName: base.thumbnailPath,
+                isActive: false,
+                nextAction: nil,
+                description: base.description,
+                components: domainComponents,
+                steps: domainSteps
+            )
+            fullProjects.append(project)
+        }
+        
+        return fullProjects
+    }
+    
+    /// Saves a full `AssemblyProject` into Supabase by saving the project, its components, and its steps.
+    func saveFullAssemblyProject(_ project: AssemblyProject) async throws {
+        let ownerId = await supabaseManager.currentUserId ?? project.id
+        let baseProject = Project(
+            id: project.id,
+            ownerId: ownerId,
+            title: project.title,
+            description: project.description,
+            difficulty: project.difficulty.rawValue,
+            estimatedMinutes: project.estimatedMinutes,
+            thumbnailPath: project.imageName,
+            createdAt: Date(),
+            updatedAt: Date(),
+            syncState: .synced
+        )
+        
+        try await saveProject(baseProject)
+        
+        // Save components
+        for comp in project.components {
+            let componentRecord = Component(
+                id: comp.id,
+                projectId: project.id,
+                name: comp.name,
+                type: comp.componentType?.rawValue ?? "hardware",
+                description: comp.detail,
+                metadata: "{}"
+            )
+            try await saveComponent(componentRecord)
+        }
+        
+        // Save steps
+        for step in project.steps {
+            let stepRecord = AssemblyStep(
+                id: step.id,
+                projectId: project.id,
+                stepOrder: step.stepOrder,
+                title: step.title,
+                instruction: step.instruction,
+                visualContract: step.visualContract
+            )
+            try await saveAssemblyStep(stepRecord)
         }
     }
     

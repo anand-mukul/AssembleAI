@@ -39,6 +39,11 @@ nonisolated enum ResearchEventType: String, Codable, Hashable, Equatable, Sendab
     case liveTutorResumed
     case manualAnalysisTriggered
     
+    // AI Ingestion Pipeline Events
+    case projectIngestionStarted
+    case projectIngestionCompleted
+    case projectIngestionFailed
+    
     // Legacy Compatibility Events
     case instructionViewed
     case cameraOpened

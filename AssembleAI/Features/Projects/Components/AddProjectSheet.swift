@@ -25,8 +25,10 @@ struct AddProjectSheet: View {
                 Text("Choose how you'd like to begin your assembly.")
                     .font(.subheadline)
                     .foregroundColor(AppColors.secondaryText)
+                    .multilineTextAlignment(.center)
             }
-            .padding(.top, AppSpacing.lg)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.top, 28)
             
             VStack(spacing: AppSpacing.mdSm) {
                 PrimaryButton(title: "Choose a Project", iconName: "folder") {

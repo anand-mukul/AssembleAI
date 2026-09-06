@@ -11,20 +11,20 @@ struct PrivacySheet: View {
     let onContinue: () -> Void
     
     var body: some View {
-        VStack(spacing: AppSpacing.lg) {
-            // Header Graphic & Titles
+        VStack(spacing: 0) {
+            // Header: Generous breathing space below modal grabber + strictly centered icon & title
             VStack(spacing: AppSpacing.sm) {
                 AnimatedHeaderIcon(
                     iconName: "lock.shield.fill",
-                    iconSize: 32,
-                    circleDiameter: 64,
+                    iconSize: 34,
+                    circleDiameter: 68,
                     staticColor: AppColors.badgeGreen
                 )
-                .padding(.top, AppSpacing.sm)
+                .frame(maxWidth: .infinity, alignment: .center)
                 
-                VStack(spacing: 4) {
+                VStack(spacing: AppSpacing.xs) {
                     Text("Your Camera, Your Data")
-                        .font(.title3)
+                        .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(AppColors.primaryText)
                         .multilineTextAlignment(.center)
@@ -36,10 +36,13 @@ struct PrivacySheet: View {
                         .adaptiveMultiline()
                         .padding(.horizontal, AppSpacing.sm)
                 }
+                .frame(maxWidth: .infinity, alignment: .center)
             }
+            .padding(.top, 28)
             .padding(.horizontal, AppSpacing.screenEdge)
+            .padding(.bottom, AppSpacing.lg)
             
-            // Privacy Bullet Points Card
+            // Privacy Disclosure Grouped Card
             VStack(spacing: 0) {
                 privacyTile(
                     icon: "cpu.fill",
@@ -49,7 +52,7 @@ struct PrivacySheet: View {
                 )
                 
                 Divider()
-                    .padding(.leading, AppSpacing.dividerLeadingInset)
+                    .padding(.leading, 62)
                 
                 privacyTile(
                     icon: "icloud.slash.fill",
@@ -59,7 +62,7 @@ struct PrivacySheet: View {
                 )
                 
                 Divider()
-                    .padding(.leading, AppSpacing.dividerLeadingInset)
+                    .padding(.leading, 62)
                 
                 privacyTile(
                     icon: "hand.raised.fill",
@@ -74,32 +77,31 @@ struct PrivacySheet: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                    .strokeBorder(AppColors.borderSubtle, lineWidth: 0.5)
+                    .strokeBorder(AppColors.cardBorder, lineWidth: 0.5)
             )
-            .shadow(color: AppShadow.subtleColor, radius: 4, x: 0, y: 1)
             .padding(.horizontal, AppSpacing.screenEdge)
             
-            Spacer(minLength: 16)
+            Spacer(minLength: AppSpacing.md)
             
+            // Primary Bottom Action
             PrimaryButton(title: "Continue") {
                 dismiss()
                 onContinue()
             }
             .padding(.horizontal, AppSpacing.screenEdge)
-            .padding(.bottom, AppSpacing.md)
+            .padding(.bottom, AppSpacing.lg)
         }
         .background(AppColors.groupedBackground.ignoresSafeArea())
-        .presentationDetents([.height(520), .medium])
+        .presentationDetents([.height(530)])
         .presentationDragIndicator(.visible)
         .presentationCornerRadius(AppRadius.sheet)
     }
     
     private func privacyTile(icon: String, title: String, description: String, color: Color) -> some View {
-        HStack(alignment: .top, spacing: AppSpacing.mdSm) {
-            SemanticIconBadge(iconName: icon, size: 30, iconSize: 15, color: color)
-                .padding(.top, 2)
+        HStack(alignment: .center, spacing: 14) {
+            SemanticIconBadge(iconName: icon, size: 32, iconSize: 16, color: color)
             
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(title)
                     .font(.subheadline)
                     .fontWeight(.semibold)
@@ -107,7 +109,7 @@ struct PrivacySheet: View {
                     .lineLimit(1)
                 
                 Text(description)
-                    .font(.caption)
+                    .font(.footnote)
                     .foregroundColor(AppColors.secondaryText)
                     .lineSpacing(2)
                     .adaptiveMultiline()
@@ -115,7 +117,8 @@ struct PrivacySheet: View {
             
             Spacer(minLength: 0)
         }
-        .padding(AppSpacing.md)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
     }
 }
 

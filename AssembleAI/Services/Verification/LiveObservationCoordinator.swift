@@ -88,6 +88,8 @@ extension LiveObservationCoordinating {
 actor LiveObservationCoordinator: LiveObservationCoordinating {
     private let estimator: AssemblyStateEstimating
     private let comparator: AssemblyStateComparator
+    private let acousticDetector: AcousticInsertionDetector?
+    private let handPoseDetector: HandPoseActivityDetecting?
     private var configuration: LiveObservationConfiguration
     
     private var metrics = LiveObservationMetrics()
@@ -105,10 +107,14 @@ actor LiveObservationCoordinator: LiveObservationCoordinating {
     init(
         estimator: AssemblyStateEstimating = SpatialAssemblyStateEstimator(),
         comparator: AssemblyStateComparator? = nil,
+        acousticDetector: AcousticInsertionDetector? = nil,
+        handPoseDetector: HandPoseActivityDetecting? = nil,
         configuration: LiveObservationConfiguration = .default
     ) {
         self.estimator = estimator
         self.configuration = configuration
+        self.acousticDetector = acousticDetector
+        self.handPoseDetector = handPoseDetector
         self.comparator = comparator ?? AssemblyStateComparator(
             configuration: VerificationConfiguration(
                 minimumEvidenceConfidence: configuration.minimumEvidenceConfidence

@@ -11,20 +11,20 @@ struct TermsOfServiceSheet: View {
     var onContinue: (() -> Void)? = nil
     
     var body: some View {
-        VStack(spacing: AppSpacing.lg) {
-            // Header Graphic & Titles
+        VStack(spacing: 0) {
+            // Header: Generous breathing space below modal grabber + strictly centered icon & title
             VStack(spacing: AppSpacing.sm) {
                 AnimatedHeaderIcon(
                     iconName: "doc.text.fill",
-                    iconSize: 32,
-                    circleDiameter: 64,
+                    iconSize: 34,
+                    circleDiameter: 68,
                     staticColor: AppColors.badgeBlue
                 )
-                .padding(.top, AppSpacing.sm)
+                .frame(maxWidth: .infinity, alignment: .center)
                 
-                VStack(spacing: 4) {
+                VStack(spacing: AppSpacing.xs) {
                     Text("Terms & Safety Guidelines")
-                        .font(.title3)
+                        .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(AppColors.primaryText)
                         .multilineTextAlignment(.center)
@@ -36,8 +36,11 @@ struct TermsOfServiceSheet: View {
                         .adaptiveMultiline()
                         .padding(.horizontal, AppSpacing.sm)
                 }
+                .frame(maxWidth: .infinity, alignment: .center)
             }
+            .padding(.top, 28)
             .padding(.horizontal, AppSpacing.screenEdge)
+            .padding(.bottom, AppSpacing.lg)
             
             // Terms Bullet Points Card
             VStack(spacing: 0) {
@@ -49,7 +52,7 @@ struct TermsOfServiceSheet: View {
                 )
                 
                 Divider()
-                    .padding(.leading, AppSpacing.dividerLeadingInset)
+                    .padding(.leading, 62)
                 
                 termsTile(
                     icon: "eye.fill",
@@ -59,7 +62,7 @@ struct TermsOfServiceSheet: View {
                 )
                 
                 Divider()
-                    .padding(.leading, AppSpacing.dividerLeadingInset)
+                    .padding(.leading, 62)
                 
                 termsTile(
                     icon: "lock.shield.fill",
@@ -74,12 +77,11 @@ struct TermsOfServiceSheet: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                    .strokeBorder(AppColors.borderSubtle, lineWidth: 0.5)
+                    .strokeBorder(AppColors.cardBorder, lineWidth: 0.5)
             )
-            .shadow(color: AppShadow.subtleColor, radius: 4, x: 0, y: 1)
             .padding(.horizontal, AppSpacing.screenEdge)
             
-            Spacer(minLength: 16)
+            Spacer(minLength: AppSpacing.md)
             
             // Dismiss Action
             PrimaryButton(title: "I Understand") {
@@ -91,21 +93,19 @@ struct TermsOfServiceSheet: View {
                 }
             }
             .padding(.horizontal, AppSpacing.screenEdge)
-            .padding(.bottom, AppSpacing.md)
+            .padding(.bottom, AppSpacing.lg)
         }
-        .padding(.top, AppSpacing.xs)
         .background(AppColors.groupedBackground.ignoresSafeArea())
-        .presentationDetents([.height(520)])
+        .presentationDetents([.height(530)])
         .presentationDragIndicator(.visible)
         .presentationCornerRadius(AppRadius.sheet)
     }
     
     private func termsTile(icon: String, title: String, description: String, color: Color) -> some View {
-        HStack(alignment: .top, spacing: AppSpacing.mdSm) {
-            SemanticIconBadge(iconName: icon, size: 30, iconSize: 15, color: color)
-                .padding(.top, 2)
+        HStack(alignment: .center, spacing: 14) {
+            SemanticIconBadge(iconName: icon, size: 32, iconSize: 16, color: color)
             
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(title)
                     .font(.subheadline)
                     .fontWeight(.semibold)
@@ -113,7 +113,7 @@ struct TermsOfServiceSheet: View {
                     .lineLimit(1)
                 
                 Text(description)
-                    .font(.caption)
+                    .font(.footnote)
                     .foregroundColor(AppColors.secondaryText)
                     .lineSpacing(2)
                     .adaptiveMultiline()
@@ -121,7 +121,8 @@ struct TermsOfServiceSheet: View {
             
             Spacer(minLength: 0)
         }
-        .padding(AppSpacing.md)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
     }
 }
 

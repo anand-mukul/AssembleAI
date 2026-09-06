@@ -165,6 +165,6 @@ struct AssemblyContainerView: View {
 }
 
 #Preview("Assembly Container View") {
-    AssemblyContainerView(project: MockProjectData.sampleProjects[0])
+    AssemblyContainerView(project: MockProjectData.previewProject)
         .environmentObject(AppRouter())
 }

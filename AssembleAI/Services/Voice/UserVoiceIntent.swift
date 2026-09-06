@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import NaturalLanguage
 
 // MARK: - User Voice Intent
 
@@ -80,74 +81,71 @@ nonisolated struct VoiceIntentParser: Sendable {
         return cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
     }
     
-    /// Parses a raw user transcript into a deterministic `UserVoiceIntent`.
+    /// Parses a raw user transcript into a structured `UserVoiceIntent` using Apple NaturalLanguage.
     func parse(_ rawTranscript: String) -> UserVoiceIntent {
         let text = normalize(rawTranscript)
         guard !text.isEmpty else {
             return .unknown(transcript: rawTranscript)
         }
         
+        let tokenizer = NLTokenizer(unit: .word)
+        tokenizer.string = text
+        let tokens = tokenizer.tokens(for: text.startIndex..<text.endIndex).map { String(text[$0]) }
+        let tokenSet = Set(tokens)
+        
         // 1. Repeat Instruction Patterns
-        if text == "repeat" || text == "repeat that" || text == "say that again" ||
-           text == "say again" || text == "what did you say" || text == "pardon" ||
-           text == "can you repeat that" || text.contains("repeat") {
+        if tokenSet.contains("repeat") || tokenSet.contains("pardon") ||
+           text == "say that again" || text == "say again" || text == "what did you say" ||
+           text.contains("repeat that") {
             return .repeatInstruction
         }
         
         // 2. Ask Why Patterns
-        if text == "why" || text == "why is that" || text == "why is this wrong" ||
-           text == "why though" || text == "explain why" || text.starts(with: "why ") {
+        if text.starts(with: "why") || tokenSet.contains("why") || text.contains("explain") {
             return .askWhy
         }
         
         // 3. Ask What Next Patterns
-        if text == "what next" || text == "what's next" || text == "what do i do next" ||
-           text == "what do i do now" || text == "what now" || text == "what should i do" ||
-           text.contains("what next") || text.contains("what do i do") {
+        if text.contains("next") || text.contains("what now") || (tokenSet.contains("what") && tokenSet.contains("do")) {
             return .askWhatNext
         }
         
         // 4. Ask Where Patterns
-        if text == "where" || text == "where does this go" || text == "where should this go" ||
-           text == "where does it go" || text == "where do i put this" || text == "where is it" ||
-           text.contains("where does") || text.contains("where do i put") {
+        if tokenSet.contains("where") || text.contains("where does") || text.contains("where do i put") {
             return .askWhere
         }
         
         // 5. Request Help / Stuck Patterns
-        if text == "help" || text == "i'm stuck" || text == "im stuck" || text == "i am stuck" ||
-           text == "i need help" || text == "help me" || text == "stuck" || text.contains("need help") {
+        if tokenSet.contains("stuck") || tokenSet.contains("help") || text.contains("confused") {
             return .requestHelp
         }
         
         // 6. Request Visual Help Patterns
-        if text == "show me" || text == "highlight" || text == "show where" ||
-           text == "visual help" || text == "point it out" || text.contains("show me") {
+        if text.contains("show me") || tokenSet.contains("highlight") || text.contains("visual") || text.contains("point") {
             return .requestVisualHelp
         }
         
         // 7. Ask Polarity / Orientation Patterns
-        if text.contains("which way") || text.contains("positive") || text.contains("negative") ||
-           text.contains("anode") || text.contains("cathode") || text.contains("polarity") ||
-           text.contains("which side") || text.contains("how do i turn") || text.contains("orientation") {
+        if tokenSet.contains("polarity") || tokenSet.contains("anode") || tokenSet.contains("cathode") ||
+           tokenSet.contains("positive") || tokenSet.contains("negative") || text.contains("which way") ||
+           text.contains("which side") || text.contains("orientation") {
             return .askPolarity
         }
         
         // 8. Ask If Correct Patterns
-        if text == "is this right" || text == "is this correct" || text == "did i do this right" ||
-           text == "check this" || text == "check my work" || text == "how does this look" ||
-           text.contains("is this right") || text.contains("is it right") || text.contains("did i get") {
+        if text.contains("correct") || text.contains("is this right") || text.contains("check this") ||
+           text.contains("did i do") || text.contains("how does this look") {
             return .askIsCorrect
         }
         
         // 9. Continue Task Patterns
-        if text == "continue" || text == "let's continue" || text == "next step" ||
-           text == "proceed" || text == "i'm done" || text == "done" || text == "next" {
+        if tokenSet.contains("continue") || tokenSet.contains("proceed") || tokenSet.contains("done") ||
+           text == "next step" || text == "let's go" {
             return .continueTask
         }
         
         // 10. Stop Task Patterns
-        if text == "stop" || text == "pause" || text == "cancel" || text == "exit" {
+        if tokenSet.contains("stop") || tokenSet.contains("pause") || tokenSet.contains("cancel") || tokenSet.contains("exit") {
             return .stopTask
         }
         

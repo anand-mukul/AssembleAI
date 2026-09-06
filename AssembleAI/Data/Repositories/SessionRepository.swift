@@ -16,9 +16,11 @@ protocol SessionRepository: Sendable {
 @MainActor
 final class LocalFirstSessionRepository: SessionRepository {
     private let modelContext: ModelContext
+    private let supabaseService: SupabaseProjectService?
     
-    init(modelContext: ModelContext) {
+    init(modelContext: ModelContext, supabaseService: SupabaseProjectService? = nil) {
         self.modelContext = modelContext
+        self.supabaseService = supabaseService
     }
     
     func fetchSessions(userId: UUID) async throws -> [AssemblySession] {
@@ -58,5 +60,11 @@ final class LocalFirstSessionRepository: SessionRepository {
         }
         
         try modelContext.save()
+        
+        if let supabaseService = supabaseService {
+            Task {
+                try? await supabaseService.saveSession(session)
+            }
+        }
     }
 }

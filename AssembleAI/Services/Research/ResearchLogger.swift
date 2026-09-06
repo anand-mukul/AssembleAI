@@ -1256,7 +1256,11 @@ actor ResearchLogger: ResearchLogging {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first ?? FileManager.default.temporaryDirectory
         let exports = docs.appendingPathComponent("ResearchExports", isDirectory: true)
         if !FileManager.default.fileExists(atPath: exports.path) {
-            try FileManager.default.createDirectory(at: exports, withIntermediateDirectories: true)
+            try FileManager.default.createDirectory(
+                at: exports,
+                withIntermediateDirectories: true,
+                attributes: [.protectionKey: FileProtectionType.complete]
+            )
         }
         return exports
     }

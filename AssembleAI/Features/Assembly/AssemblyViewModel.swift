@@ -11,11 +11,9 @@ import CoreVideo
 import CoreMedia
 import SwiftData
 
-/// Verification execution mode selector.
 enum VerificationMode: String, CaseIterable, Identifiable, Codable, Hashable, Equatable, Sendable {
-    case mock = "Mock Verification"
-    case vision = "Vision Pipeline"
-    case hybrid = "Hybrid Foundation"
+    case hybrid = "State-Aware Hybrid"
+    case vision = "Vision Direct"
     
     var id: String { rawValue }
 }
@@ -106,6 +104,7 @@ final class AssemblyViewModel: ObservableObject {
         self.sessionRepository = sessionRepository ?? LocalFirstSessionRepository(modelContext: PersistenceController.shared.container.mainContext)
         self.session = AssemblySession(projectId: project.id, currentStepIndex: project.completedSteps)
         self.currentStepIndex = max(0, min(project.completedSteps, max(0, project.steps.count - 1)))
+        self.persistSessionState()
     }
     
     deinit {
@@ -468,7 +467,17 @@ final class AssemblyViewModel: ObservableObject {
         
         Task { [weak self] in
             guard let self = self else { return }
-            let targetImage = self.capturedImage ?? self.createFallbackFrame()
+            guard let targetImage = self.capturedImage else {
+                let uncertainResult = VerificationResult(
+                    status: .uncertain,
+                    confidence: 0.0,
+                    detectedDescription: "No camera image acquired.",
+                    expectedDescription: self.currentStep.title,
+                    explanation: "Camera frame could not be acquired. Please ensure camera permissions are enabled and aim at your workspace."
+                )
+                self.phase = .verification(uncertainResult)
+                return
+            }
             let observation: VisualObservation
             do {
                 observation = try await visionAnalyzer.analyze(image: targetImage)
@@ -585,6 +594,8 @@ final class AssemblyViewModel: ObservableObject {
         if currentStepIndex + 1 < totalStepsCount {
             currentStepIndex += 1
             session.currentStepIndex = currentStepIndex
+            session.currentStepOrder = currentStepIndex + 1
+            persistSessionState()
             logResearchEvent(.stepStarted, metadata: ["stepOrder": "\(currentStep.stepOrder)"])
             withAnimation(.easeInOut(duration: 0.3)) {
                 phase = .instruction
@@ -613,15 +624,6 @@ final class AssemblyViewModel: ObservableObject {
         
         withAnimation(.easeInOut(duration: 0.3)) {
             phase = .camera
-        }
-    }
-    
-    private func createFallbackFrame() -> UIImage {
-        let size = CGSize(width: 800, height: 600)
-        let renderer = UIGraphicsImageRenderer(size: size)
-        return renderer.image { ctx in
-            UIColor.darkGray.setFill()
-            ctx.fill(CGRect(origin: .zero, size: size))
         }
     }
 }

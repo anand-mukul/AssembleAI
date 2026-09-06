@@ -30,10 +30,12 @@ protocol GuideIngestionServiceProtocol: Sendable {
     ) async throws -> IngestionResult
 }
 
-// MARK: - Ingestion Errors
+/// Maximum allowed character limit for guide ingestion to prevent on-device memory exhaustion.
+public let maxGuidePayloadCharacters: Int = 50_000
 
 enum GuideIngestionError: LocalizedError {
     case emptyInput
+    case payloadTooLarge(Int)
     case parsingFailed(String)
     case noStepsExtracted
     case modelUnavailable
@@ -42,6 +44,8 @@ enum GuideIngestionError: LocalizedError {
         switch self {
         case .emptyInput:
             return "The provided guide text is empty."
+        case .payloadTooLarge(let limit):
+            return "The guide text exceeds the maximum safety limit of \(limit) characters."
         case .parsingFailed(let reason):
             return "Failed to parse guide: \(reason)"
         case .noStepsExtracted:
@@ -59,7 +63,7 @@ enum GuideIngestionError: LocalizedError {
 ///
 /// Sends the raw guide text to the on-device language model with a structured extraction prompt.
 /// The model returns a JSON representation of the project that is decoded into an `AssemblyProject`.
-@available(iOS 26.0, *)
+@available(iOS 18.0, *)
 actor FoundationModelIngestionService: GuideIngestionServiceProtocol {
     
     func ingest(
@@ -69,63 +73,106 @@ actor FoundationModelIngestionService: GuideIngestionServiceProtocol {
     ) async throws -> IngestionResult {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw GuideIngestionError.emptyInput }
+        guard trimmed.count <= maxGuidePayloadCharacters else {
+            throw GuideIngestionError.payloadTooLarge(maxGuidePayloadCharacters)
+        }
         
         let startTime = Date()
+        let sessionID = UUID()
+        
+        await ResearchLogger.shared.logEvent(
+            ResearchEvent(
+                sessionID: sessionID,
+                projectID: UUID(),
+                eventType: .projectIngestionStarted,
+                metadata: ["format": format.rawValue, "domain": domain.rawValue]
+            )
+        )
+        
         let prompt = GuideIngestionPrompts.buildExtractionPrompt(
             guideText: trimmed,
             format: format,
             domain: domain
         )
         
-        let session = LanguageModelSession()
-        let response = try await session.respond(to: prompt)
-        let responseText = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        let processingMs = Int(Date().timeIntervalSince(startTime) * 1000)
-        
-        // Extract JSON block from response
-        let jsonString = extractJSONBlock(from: responseText)
-        
-        guard let jsonData = jsonString.data(using: .utf8) else {
-            throw GuideIngestionError.parsingFailed("Could not encode model response as UTF-8 data.")
-        }
-        
-        // Decode with snake_case strategy matching our schema
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        
-        let project: AssemblyProject
         do {
-            project = try decoder.decode(AssemblyProject.self, from: jsonData)
+            let session = LanguageModelSession()
+            let response = try await session.respond(to: prompt)
+            let responseText = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            let processingMs = Int(Date().timeIntervalSince(startTime) * 1000)
+            
+            // Extract JSON block from response
+            let jsonString = extractJSONBlock(from: responseText)
+            
+            guard let jsonData = jsonString.data(using: .utf8) else {
+                throw GuideIngestionError.parsingFailed("Could not encode model response as UTF-8 data.")
+            }
+            
+            // Decode with snake_case strategy matching our schema
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .convertFromSnakeCase
+            
+            let project: AssemblyProject
+            do {
+                project = try decoder.decode(AssemblyProject.self, from: jsonData)
+            } catch {
+                throw GuideIngestionError.parsingFailed("JSON decoding failed: \(error.localizedDescription)")
+            }
+            
+            guard !project.steps.isEmpty else {
+                throw GuideIngestionError.noStepsExtracted
+            }
+            
+            // Generate warnings from validation
+            var warnings: [IngestionWarning] = []
+            let diagnostics = ProjectPackageValidator.diagnose(project)
+            for diagnostic in diagnostics {
+                warnings.append(IngestionWarning(
+                    message: diagnostic,
+                    severity: diagnostic.contains("totalSteps") ? .moderate : .info,
+                    affectedField: "schema"
+                ))
+            }
+            
+            // Estimate confidence based on extracted data quality
+            let confidence = estimateConfidence(project: project, warnings: warnings)
+            
+            await ResearchLogger.shared.logEvent(
+                ResearchEvent(
+                    sessionID: sessionID,
+                    projectID: project.id,
+                    eventType: .projectIngestionCompleted,
+                    durationMilliseconds: processingMs,
+                    metadata: [
+                        "title": project.title,
+                        "stepsCount": "\(project.steps.count)",
+                        "componentsCount": "\(project.components.count)",
+                        "confidence": String(format: "%.2f", confidence)
+                    ]
+                )
+            )
+            
+            return IngestionResult(
+                project: project,
+                confidence: confidence,
+                warnings: warnings,
+                sourceText: trimmed,
+                processingTimeMs: processingMs
+            )
         } catch {
-            throw GuideIngestionError.parsingFailed("JSON decoding failed: \(error.localizedDescription)")
+            let processingMs = Int(Date().timeIntervalSince(startTime) * 1000)
+            await ResearchLogger.shared.logEvent(
+                ResearchEvent(
+                    sessionID: sessionID,
+                    projectID: UUID(),
+                    eventType: .projectIngestionFailed,
+                    durationMilliseconds: processingMs,
+                    metadata: ["error": error.localizedDescription]
+                )
+            )
+            throw error
         }
-        
-        guard !project.steps.isEmpty else {
-            throw GuideIngestionError.noStepsExtracted
-        }
-        
-        // Generate warnings from validation
-        var warnings: [IngestionWarning] = []
-        let diagnostics = ProjectPackageValidator.diagnose(project)
-        for diagnostic in diagnostics {
-            warnings.append(IngestionWarning(
-                message: diagnostic,
-                severity: diagnostic.contains("totalSteps") ? .moderate : .info,
-                affectedField: "schema"
-            ))
-        }
-        
-        // Estimate confidence based on extracted data quality
-        let confidence = estimateConfidence(project: project, warnings: warnings)
-        
-        return IngestionResult(
-            project: project,
-            confidence: confidence,
-            warnings: warnings,
-            sourceText: trimmed,
-            processingTimeMs: processingMs
-        )
     }
     
     /// Extracts a JSON object from a model response that may contain markdown code fences.
@@ -197,6 +244,9 @@ struct DeterministicIngestionFallback: GuideIngestionServiceProtocol {
     ) async throws -> IngestionResult {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw GuideIngestionError.emptyInput }
+        guard trimmed.count <= maxGuidePayloadCharacters else {
+            throw GuideIngestionError.payloadTooLarge(maxGuidePayloadCharacters)
+        }
         
         let startTime = Date()
         
@@ -206,35 +256,26 @@ struct DeterministicIngestionFallback: GuideIngestionServiceProtocol {
             return result
         }
         
-        // For plain text, create a minimal project from line-by-line instructions
+        // For plain text, use Apple Intelligence NaturalLanguage extraction
+        let (extractedComponents, extractedSteps) = await AppleIntelligenceService.shared.extractStructuredEntities(from: trimmed, domain: domain)
+        guard !extractedSteps.isEmpty else { throw GuideIngestionError.noStepsExtracted }
+        
         let lines = trimmed.components(separatedBy: .newlines)
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty }
         
-        guard !lines.isEmpty else { throw GuideIngestionError.noStepsExtracted }
-        
-        // First line as title, rest as steps
-        let title = lines[0]
+        let title = lines.first?
             .replacingOccurrences(of: "#", with: "")
-            .trimmingCharacters(in: .whitespaces)
-        
-        let stepLines = lines.dropFirst().enumerated().map { index, line in
-            ProjectStepSummary(
-                stepOrder: index + 1,
-                title: "Step \(index + 1)",
-                instruction: line
-            )
-        }
+            .trimmingCharacters(in: .whitespaces) ?? "Imported Project"
         
         let project = AssemblyProject(
             title: title.isEmpty ? "Imported Project" : title,
             category: domain == .electronics ? "Electronics" : "Assembly",
             difficulty: .beginner,
-            estimatedMinutes: max(5, stepLines.count * 3),
-            totalSteps: max(1, stepLines.count),
-            steps: stepLines.isEmpty
-                ? [ProjectStepSummary(stepOrder: 1, title: "Step 1", instruction: title)]
-                : stepLines,
+            estimatedMinutes: max(5, extractedSteps.count * 3),
+            totalSteps: max(1, extractedSteps.count),
+            components: extractedComponents,
+            steps: extractedSteps,
             domain: domain
         )
         
@@ -262,7 +303,7 @@ struct DeterministicIngestionFallback: GuideIngestionServiceProtocol {
 enum GuideIngestionServiceFactory {
     static func resolve() -> GuideIngestionServiceProtocol {
         #if canImport(FoundationModels)
-        if #available(iOS 26.0, *) {
+        if #available(iOS 18.0, *) {
             return FoundationModelIngestionService()
         }
         #endif

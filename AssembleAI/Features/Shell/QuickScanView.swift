@@ -239,9 +239,8 @@ struct QuickScanView: View {
                 selectedProjectID = projects.first(where: { $0.isActive })?.id ?? projects.first?.id
             }
         } catch {
-            let fallbackProjects = BundledProjectRepository.bundledProjects
-            availableProjects = !fallbackProjects.isEmpty ? fallbackProjects : SampleProjectData.sampleProjects
-            selectedProjectID = availableProjects.first?.id
+            availableProjects = []
+            selectedProjectID = nil
         }
     }
     

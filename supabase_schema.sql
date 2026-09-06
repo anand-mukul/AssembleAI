@@ -3,8 +3,11 @@
 -- ============================================================================
 -- Instructions:
 -- 1. Log in to your Supabase Dashboard: https://supabase.com/dashboard
--- 2. Select project (e.g. gbbsttpnmvfplmbumguq) -> SQL Editor -> "+ New query"
+-- 2. Select your project -> SQL Editor -> "+ New query"
 -- 3. Paste this complete script and click "Run"
+--
+-- This script is completely IDEMPOTENT: it safely drops existing policies/triggers
+-- before creating them, so you can re-run it anytime without errors.
 -- ============================================================================
 
 -- Enable standard UUID generator
@@ -50,19 +53,44 @@ create table if not exists public.profiles (
     full_name text,
     email text,
     avatar_url text,
+    is_admin boolean default false not null,
     created_at timestamptz default now() not null,
     updated_at timestamptz default now() not null
 );
 
+-- Helper function to check if current user is an App Owner / Administrator
+create or replace function public.is_admin()
+returns boolean
+language sql
+security definer
+stable
+as $$
+    select coalesce(
+        (select is_admin from public.profiles where id = auth.uid()),
+        false
+    );
+$$;
+
+grant execute on function public.is_admin() to authenticated;
+
 alter table public.profiles enable row level security;
 
+drop policy if exists "Users can view own profile" on public.profiles;
 create policy "Users can view own profile"
     on public.profiles for select
     using (auth.uid() = id);
 
+drop policy if exists "Users can update own profile" on public.profiles;
 create policy "Users can update own profile"
     on public.profiles for update
-    using (auth.uid() = id);
+    using (auth.uid() = id)
+    with check (
+        auth.uid() = id
+        and (
+            -- Prevent vertical privilege escalation: regular users cannot set is_admin = true
+            is_admin = false or public.is_admin()
+        )
+    );
 
 -- Trigger to automatically create a public profile on auth.users signup
 create or replace function public.handle_new_user()
@@ -72,12 +100,13 @@ security definer
 set search_path = public, auth
 as $$
 begin
-    insert into public.profiles (id, full_name, email, avatar_url)
+    insert into public.profiles (id, full_name, email, avatar_url, is_admin)
     values (
         new.id,
         coalesce(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
         new.email,
-        new.raw_user_meta_data->>'avatar_url'
+        new.raw_user_meta_data->>'avatar_url',
+        false
     )
     on conflict (id) do update set
         full_name = coalesce(excluded.full_name, public.profiles.full_name),
@@ -108,7 +137,7 @@ create table if not exists public.projects (
     difficulty text default 'Beginner',
     estimated_minutes integer default 30,
     thumbnail_path text,
-    is_public boolean default false,
+    is_public boolean default true,
     sync_state text default 'synced',
     created_at timestamptz default now() not null,
     updated_at timestamptz default now() not null
@@ -116,21 +145,28 @@ create table if not exists public.projects (
 
 alter table public.projects enable row level security;
 
+drop policy if exists "Users can view own or public projects" on public.projects;
 create policy "Users can view own or public projects"
     on public.projects for select
     using (auth.uid() = owner_id or is_public = true or owner_id is null);
 
-create policy "Users can insert own projects"
+drop policy if exists "Users can insert own projects" on public.projects;
+drop policy if exists "Admins can insert projects" on public.projects;
+create policy "Admins can insert projects"
     on public.projects for insert
-    with check (auth.uid() = owner_id);
+    with check (public.is_admin());
 
-create policy "Users can update own projects"
+drop policy if exists "Users can update own projects" on public.projects;
+drop policy if exists "Admins can update projects" on public.projects;
+create policy "Admins can update projects"
     on public.projects for update
-    using (auth.uid() = owner_id);
+    using (public.is_admin());
 
-create policy "Users can delete own projects"
+drop policy if exists "Users can delete own projects" on public.projects;
+drop policy if exists "Admins can delete projects" on public.projects;
+create policy "Admins can delete projects"
     on public.projects for delete
-    using (auth.uid() = owner_id);
+    using (public.is_admin());
 
 drop trigger if exists set_projects_updated_at on public.projects;
 create trigger set_projects_updated_at
@@ -153,6 +189,7 @@ create table if not exists public.assembly_steps (
 
 alter table public.assembly_steps enable row level security;
 
+drop policy if exists "Users can view steps of accessible projects" on public.assembly_steps;
 create policy "Users can view steps of accessible projects"
     on public.assembly_steps for select
     using (
@@ -163,15 +200,11 @@ create policy "Users can view steps of accessible projects"
         )
     );
 
-create policy "Users can manage steps of own projects"
+drop policy if exists "Users can manage steps of own projects" on public.assembly_steps;
+drop policy if exists "Admins can manage assembly steps" on public.assembly_steps;
+create policy "Admins can manage assembly steps"
     on public.assembly_steps for all
-    using (
-        exists (
-            select 1 from public.projects
-            where projects.id = assembly_steps.project_id
-            and projects.owner_id = auth.uid()
-        )
-    );
+    using (public.is_admin());
 
 drop trigger if exists set_assembly_steps_updated_at on public.assembly_steps;
 create trigger set_assembly_steps_updated_at
@@ -193,6 +226,7 @@ create table if not exists public.components (
 
 alter table public.components enable row level security;
 
+drop policy if exists "Users can view components of accessible projects" on public.components;
 create policy "Users can view components of accessible projects"
     on public.components for select
     using (
@@ -203,15 +237,11 @@ create policy "Users can view components of accessible projects"
         )
     );
 
-create policy "Users can manage components of own projects"
+drop policy if exists "Users can manage components of own projects" on public.components;
+drop policy if exists "Admins can manage components" on public.components;
+create policy "Admins can manage components"
     on public.components for all
-    using (
-        exists (
-            select 1 from public.projects
-            where projects.id = components.project_id
-            and projects.owner_id = auth.uid()
-        )
-    );
+    using (public.is_admin());
 
 -- ============================================================================
 -- 5. Assembly Sessions Table
@@ -233,18 +263,22 @@ create table if not exists public.assembly_sessions (
 
 alter table public.assembly_sessions enable row level security;
 
+drop policy if exists "Users can view own assembly sessions" on public.assembly_sessions;
 create policy "Users can view own assembly sessions"
     on public.assembly_sessions for select
     using (auth.uid() = user_id);
 
+drop policy if exists "Users can insert own assembly sessions" on public.assembly_sessions;
 create policy "Users can insert own assembly sessions"
     on public.assembly_sessions for insert
     with check (auth.uid() = user_id);
 
+drop policy if exists "Users can update own assembly sessions" on public.assembly_sessions;
 create policy "Users can update own assembly sessions"
     on public.assembly_sessions for update
     using (auth.uid() = user_id);
 
+drop policy if exists "Users can delete own assembly sessions" on public.assembly_sessions;
 create policy "Users can delete own assembly sessions"
     on public.assembly_sessions for delete
     using (auth.uid() = user_id);
@@ -271,6 +305,7 @@ create table if not exists public.attempts (
 
 alter table public.attempts enable row level security;
 
+drop policy if exists "Users can view attempts of own sessions" on public.attempts;
 create policy "Users can view attempts of own sessions"
     on public.attempts for select
     using (
@@ -281,6 +316,7 @@ create policy "Users can view attempts of own sessions"
         )
     );
 
+drop policy if exists "Users can insert attempts of own sessions" on public.attempts;
 create policy "Users can insert attempts of own sessions"
     on public.attempts for insert
     with check (
@@ -305,8 +341,26 @@ create index if not exists idx_attempts_session on public.attempts(session_id);
 -- ============================================================================
 -- 8. Realtime Replication Publication
 -- ============================================================================
-alter publication supabase_realtime add table public.projects;
-alter publication supabase_realtime add table public.assembly_sessions;
+do $$
+begin
+    if not exists (
+        select 1 from pg_publication_tables 
+        where pubname = 'supabase_realtime' 
+        and schemaname = 'public' 
+        and tablename = 'projects'
+    ) then
+        alter publication supabase_realtime add table public.projects;
+    end if;
+
+    if not exists (
+        select 1 from pg_publication_tables 
+        where pubname = 'supabase_realtime' 
+        and schemaname = 'public' 
+        and tablename = 'assembly_sessions'
+    ) then
+        alter publication supabase_realtime add table public.assembly_sessions;
+    end if;
+end $$;
 
 -- ============================================================================
 -- 9. Storage Buckets & Policies (Project Assets & Camera Frames)
@@ -317,34 +371,46 @@ values
     ('verification-snapshots', 'verification-snapshots', false)
 on conflict (id) do update set public = false;
 
+drop policy if exists "Users can view own or authenticated project assets" on storage.objects;
 create policy "Users can view own or authenticated project assets"
     on storage.objects for select
     using (bucket_id = 'project-assets' and auth.role() = 'authenticated');
 
-create policy "Authenticated users can upload project assets"
+drop policy if exists "Authenticated users can upload project assets" on storage.objects;
+drop policy if exists "Authenticated users can upload project assets" on storage.objects;
+drop policy if exists "Admins can upload project assets" on storage.objects;
+create policy "Admins can upload project assets"
     on storage.objects for insert
-    with check (bucket_id = 'project-assets' and auth.role() = 'authenticated' and auth.uid() = owner);
+    with check (bucket_id = 'project-assets' and public.is_admin());
 
-create policy "Users can update own project assets"
+drop policy if exists "Users can update own project assets" on storage.objects;
+drop policy if exists "Admins can update project assets" on storage.objects;
+create policy "Admins can update project assets"
     on storage.objects for update
-    using (bucket_id = 'project-assets' and auth.uid() = owner);
+    using (bucket_id = 'project-assets' and public.is_admin());
 
-create policy "Users can delete own project assets"
+drop policy if exists "Users can delete own project assets" on storage.objects;
+drop policy if exists "Admins can delete project assets" on storage.objects;
+create policy "Admins can delete project assets"
     on storage.objects for delete
-    using (bucket_id = 'project-assets' and auth.uid() = owner);
+    using (bucket_id = 'project-assets' and public.is_admin());
 
+drop policy if exists "Users can view own verification snapshots" on storage.objects;
 create policy "Users can view own verification snapshots"
     on storage.objects for select
     using (bucket_id = 'verification-snapshots' and auth.uid() = owner);
 
+drop policy if exists "Users can upload own verification snapshots" on storage.objects;
 create policy "Users can upload own verification snapshots"
     on storage.objects for insert
     with check (bucket_id = 'verification-snapshots' and auth.uid() = owner);
 
+drop policy if exists "Users can update own verification snapshots" on storage.objects;
 create policy "Users can update own verification snapshots"
     on storage.objects for update
     using (bucket_id = 'verification-snapshots' and auth.uid() = owner);
 
+drop policy if exists "Users can delete own verification snapshots" on storage.objects;
 create policy "Users can delete own verification snapshots"
     on storage.objects for delete
     using (bucket_id = 'verification-snapshots' and auth.uid() = owner);

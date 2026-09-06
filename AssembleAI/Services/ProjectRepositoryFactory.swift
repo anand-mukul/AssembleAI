@@ -14,19 +14,12 @@ import SwiftData
 /// - **Testing**: Callers inject `MockProjectRepository` directly via initializer.
 enum ProjectRepositoryFactory {
     
-    /// Resolves the production-appropriate project repository.
-    ///
-    /// If bundled JSON project files exist in the `Projects` resource directory,
-    /// returns a `BundledProjectRepository`. Otherwise, falls back to `MockProjectRepository`
-    /// to ensure the app always has content to display.
+    /// Resolves the production-appropriate project repository connected to SwiftData and Supabase.
+    @MainActor
     static func resolve() -> ProjectRepository {
-        let bundledProjects = ProjectPackageLoader.loadAllFromBundle()
-        if !bundledProjects.isEmpty {
-            return BundledProjectRepository()
-        } else {
-            // Fallback to sample data when running in environments where bundle resources are not present (e.g., Xcode Previews)
-            return SampleProjectRepository()
-        }
+        let context = PersistenceController.shared.container.mainContext
+        let supabase = SupabaseProjectService(supabaseManager: SupabaseManager.shared)
+        return LocalFirstProjectRepository(modelContext: context, supabaseService: supabase)
     }
     
     /// Returns a sample repository for preview/test injection.

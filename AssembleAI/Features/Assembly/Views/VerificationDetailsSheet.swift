@@ -22,6 +22,8 @@ struct VerificationDetailsSheet: View {
                     .font(.caption)
                     .foregroundColor(AppColors.secondaryText)
             }
+            .padding(.top, 28)
+            .frame(maxWidth: .infinity, alignment: .center)
             
             VStack(spacing: AppSpacing.mdSm) {
                 detailTile(title: "Expected State", value: result.expectedDescription, color: AppColors.success)

@@ -45,7 +45,8 @@ struct WhyExplanationSheet: View {
                     .lineLimit(nil)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(.top, AppSpacing.sm)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.top, 24)
             
             // Model Explanation Card
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
@@ -79,7 +80,7 @@ struct WhyExplanationSheet: View {
             .padding(.bottom, AppSpacing.lg)
         }
         .background(AppColors.groupedBackground.ignoresSafeArea())
-        .presentationDetents([.height(380), .medium])
+        .presentationDetents([.height(380)])
         .presentationDragIndicator(.visible)
         .presentationCornerRadius(28)
         .sheet(isPresented: $showModelDebug) {

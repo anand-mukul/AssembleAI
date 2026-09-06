@@ -110,7 +110,7 @@ struct AssemblyCompletedView: View {
 
 #Preview("Assembly Completed View") {
     AssemblyCompletedView(
-        project: MockProjectData.sampleProjects[0],
+        project: MockProjectData.previewProject,
         session: AssemblySession(projectId: UUID(), attempts: 10, errors: 2),
         onDone: {}
     )

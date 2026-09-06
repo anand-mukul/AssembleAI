@@ -341,7 +341,7 @@ final class ProjectCreatorViewModel: ObservableObject {
         )
     }
     
-    /// Saves the created project as a JSON package in the documents directory.
+    /// Validates the project against the full schema, publishes it to Supabase PostgreSQL, caches it in SwiftData, and logs research telemetry.
     func saveProject() async {
         guard validateAll() else { return }
         
@@ -350,8 +350,56 @@ final class ProjectCreatorViewModel: ObservableObject {
         
         let project = buildProject()
         
+        // Strict Schema Validation
         do {
-            try ProjectPackageLoader.saveToDocuments(project)
+            try ProjectPackageValidator.validate(project)
+        } catch {
+            saveError = "Schema Validation Failed: \(error.localizedDescription)"
+            isSaving = false
+            return
+        }
+        
+        do {
+            // 1. Publish to Supabase PostgreSQL database
+            let supabase = SupabaseProjectService(supabaseManager: SupabaseManager.shared)
+            try await supabase.saveFullAssemblyProject(project)
+            
+            // 2. Cache in SwiftData for instant offline-first local access
+            let context = PersistenceController.shared.container.mainContext
+            let localProject = LocalProject(
+                id: project.id,
+                ownerId: project.id,
+                title: project.title,
+                projectDescription: project.description,
+                difficulty: project.difficulty.rawValue,
+                estimatedMinutes: project.estimatedMinutes,
+                thumbnailPath: project.imageName,
+                syncStateRaw: SyncState.synced.rawValue
+            )
+            context.insert(localProject)
+            try? context.save()
+            
+            // 3. Local JSON redundancy in documents
+            try? ProjectPackageLoader.saveToDocuments(project)
+            
+            // 4. Record telemetry event in ResearchLogger
+            await ResearchLogger.shared.logEvent(
+                ResearchEvent(
+                    sessionID: UUID(),
+                    projectID: project.id,
+                    eventType: .projectIngestionCompleted,
+                    metadata: [
+                        "action": "projectPublished",
+                        "title": project.title,
+                        "steps": "\(project.steps.count)",
+                        "components": "\(project.components.count)"
+                    ]
+                )
+            )
+            
+            // 5. Index in Apple Intelligence CoreSpotlight
+            await AppleIntelligenceService.shared.indexInSpotlight(project: project)
+            
             savedProject = project
         } catch {
             saveError = error.localizedDescription

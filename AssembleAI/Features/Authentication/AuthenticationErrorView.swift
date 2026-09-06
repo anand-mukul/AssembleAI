@@ -21,8 +21,6 @@ struct AuthenticationErrorView: View {
             AppColors.groupedBackground.ignoresSafeArea()
             
             VStack(spacing: AppSpacing.lg) {
-                Spacer(minLength: 8)
-                
                 // Animated Error Icon
                 AnimatedHeaderIcon(
                     iconName: "exclamationmark.triangle.fill",
@@ -31,6 +29,8 @@ struct AuthenticationErrorView: View {
                     useGradient: false,
                     staticColor: AppColors.error
                 )
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.top, 28)
                 
                 // Error Details Card
                 VStack(spacing: AppSpacing.sm) {
@@ -77,7 +77,7 @@ struct AuthenticationErrorView: View {
                 .padding(.bottom, AppSpacing.md)
             }
         }
-        .presentationDetents([.height(480), .medium])
+        .presentationDetents([.height(480)])
         .presentationDragIndicator(.visible)
         .presentationCornerRadius(28)
         .onAppear {

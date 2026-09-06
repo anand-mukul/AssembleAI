@@ -60,17 +60,19 @@ struct ProjectsView: View {
             UISelectionFeedbackGenerator().selectionChanged()
         }
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button(action: {
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    viewModel.showAddProjectSheet = true
-                }) {
-                    Image(systemName: "plus")
-                        .font(.body.weight(.semibold))
-                        .foregroundColor(.assembleBrandPrimary)
-                        .touchTarget()
+            if viewModel.isUserAdmin {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(action: {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        viewModel.showAddProjectSheet = true
+                    }) {
+                        Image(systemName: "plus")
+                            .font(.body.weight(.semibold))
+                            .foregroundColor(.assembleBrandPrimary)
+                            .touchTarget()
+                    }
+                    .accessibilityLabel("Add Project")
                 }
-                .accessibilityLabel("Add Project")
             }
         }
         .sheet(isPresented: $viewModel.showAddProjectSheet) {
@@ -112,13 +114,15 @@ struct ProjectsView: View {
             )
         } else {
             EmptyProjectsView(
-                title: "No projects yet",
-                subtitle: "Start your first assembly project and we'll guide you step by step.",
-                iconName: "folder.badge.plus",
-                buttonTitle: "Add Project",
-                onAction: {
+                title: viewModel.isUserAdmin ? "No projects yet" : "No Published Projects",
+                subtitle: viewModel.isUserAdmin
+                    ? "Create your first assembly project to publish to the catalog."
+                    : "Published hardware projects from the database will appear here.",
+                iconName: "cube.box",
+                buttonTitle: viewModel.isUserAdmin ? "Add Project" : nil,
+                onAction: viewModel.isUserAdmin ? {
                     viewModel.showAddProjectSheet = true
-                }
+                } : nil
             )
         }
     }

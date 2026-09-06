@@ -89,6 +89,18 @@ struct ProfileView: View {
         .onChange(of: authService.currentUser) { _, newUser in
             viewModel.updateUser(user: newUser)
         }
+        .navigationDestination(for: ProfileNavigationDestination.self) { destination in
+            switch destination {
+            case .appSettings:
+                AppSettingsView(viewModel: viewModel)
+            case .dataPrivacy:
+                DataPrivacySettingsView(viewModel: viewModel)
+            case .notifications:
+                NotificationsSettingsView(viewModel: viewModel)
+            case .help:
+                HelpAndSupportView()
+            }
+        }
     }
     
     // MARK: - Subviews

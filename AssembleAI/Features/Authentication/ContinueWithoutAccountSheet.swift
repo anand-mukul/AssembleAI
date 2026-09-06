@@ -12,36 +12,40 @@ struct ContinueWithoutAccountSheet: View {
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        VStack(spacing: AppSpacing.md) {
-            Spacer(minLength: 8)
-            
+        VStack(spacing: AppSpacing.lg) {
+            // Header: Top breathing space + strictly centered icon & titles
             VStack(spacing: AppSpacing.sm) {
                 AnimatedHeaderIcon(
                     iconName: "iphone.circle.fill",
-                    iconSize: 34,
-                    circleDiameter: 68,
+                    iconSize: 36,
+                    circleDiameter: 72,
                     useGradient: false,
                     staticColor: AppColors.badgeBlue
                 )
-                    .padding(.bottom, AppSpacing.xxs)
+                .frame(maxWidth: .infinity, alignment: .center)
                 
-                Text("Continue on iPhone")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .foregroundColor(AppColors.primaryText)
-                    .accessibilityAddTraits(.isHeader)
-                
-                Text("Use AssembleAI without an account. Your assembly projects and inspection history stay strictly on this device.")
-                    .font(.subheadline)
-                    .foregroundColor(AppColors.secondaryText)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(nil)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.horizontal, AppSpacing.sm)
+                VStack(spacing: AppSpacing.xs) {
+                    Text("Continue on iPhone")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(AppColors.primaryText)
+                        .accessibilityAddTraits(.isHeader)
+                    
+                    Text("Use AssembleAI without an account. Your assembly projects and inspection history stay strictly on this device.")
+                        .font(.subheadline)
+                        .foregroundColor(AppColors.secondaryText)
+                        .multilineTextAlignment(.center)
+                        .adaptiveMultiline()
+                        .padding(.horizontal, AppSpacing.sm)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
             }
+            .padding(.top, 28)
+            .padding(.horizontal, AppSpacing.screenEdge)
             
-            Spacer(minLength: 12)
+            Spacer(minLength: AppSpacing.md)
             
+            // Actions
             VStack(spacing: AppSpacing.xs) {
                 PrimaryButton(title: "Continue", iconName: "arrow.right") {
                     dismiss()
@@ -62,13 +66,13 @@ struct ContinueWithoutAccountSheet: View {
                         .contentShape(Rectangle())
                 }
             }
-            .padding(.bottom, AppSpacing.md)
+            .padding(.horizontal, AppSpacing.screenEdge)
+            .padding(.bottom, AppSpacing.lg)
         }
-        .padding(.horizontal, AppSpacing.screenEdge)
         .background(AppColors.secondaryGroupedBackground.ignoresSafeArea())
-        .presentationDetents([.height(400), .medium])
+        .presentationDetents([.height(390)])
         .presentationDragIndicator(.visible)
-        .presentationCornerRadius(28)
+        .presentationCornerRadius(AppRadius.sheet)
         .accessibilityElement(children: .contain)
     }
 }

@@ -119,16 +119,16 @@ final class BundledProjectRepositoryTests: XCTestCase {
         XCTAssertNil(project)
     }
     
-    func testMockProjectRepositoryStillWorks() async throws {
+    func testMockProjectRepositoryHasZeroSampleProjects() async throws {
         let repo = MockProjectRepository()
         let projects = try await repo.fetchProjects()
-        
-        XCTAssertGreaterThan(projects.count, 0, "MockProjectRepository should return sample projects.")
+        XCTAssertEqual(projects.count, 0, "In-memory sample projects are removed in favor of live database records.")
         
         let activity = try await repo.fetchRecentActivity()
-        XCTAssertGreaterThan(activity.count, 0, "MockProjectRepository should return sample activity.")
+        XCTAssertEqual(activity.count, 0, "In-memory sample activity is removed in favor of live session records.")
     }
     
+    @MainActor
     func testProjectRepositoryFactoryReturnsRepository() {
         let repo = ProjectRepositoryFactory.resolve()
         XCTAssertNotNil(repo)

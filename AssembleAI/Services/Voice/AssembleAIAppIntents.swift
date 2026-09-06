@@ -5,6 +5,7 @@
 
 import Foundation
 import SwiftUI
+import SwiftData
 
 #if canImport(AppIntents)
 import AppIntents
@@ -43,17 +44,23 @@ public struct AssemblyProjectEntity: AppEntity {
 public struct AssemblyProjectQuery: EntityQuery {
     public init() {}
     
+    @MainActor
     public func entities(for identifiers: [UUID]) async throws -> [AssemblyProjectEntity] {
-        let projects = BundledProjectRepository.bundledProjects
-        return projects.filter { identifiers.contains($0.id) }.map {
-            AssemblyProjectEntity(id: $0.id, title: $0.title, domain: $0.domain.rawValue, stepCount: $0.steps.count)
+        let context = PersistenceController.shared.container.mainContext
+        let descriptor = FetchDescriptor<LocalProject>()
+        let localProjects = (try? context.fetch(descriptor)) ?? []
+        return localProjects.filter { identifiers.contains($0.id) }.map {
+            AssemblyProjectEntity(id: $0.id, title: $0.title, domain: "Electronics", stepCount: 0)
         }
     }
     
+    @MainActor
     public func suggestedEntities() async throws -> [AssemblyProjectEntity] {
-        let projects = BundledProjectRepository.bundledProjects
-        return projects.map {
-            AssemblyProjectEntity(id: $0.id, title: $0.title, domain: $0.domain.rawValue, stepCount: $0.steps.count)
+        let context = PersistenceController.shared.container.mainContext
+        let descriptor = FetchDescriptor<LocalProject>()
+        let localProjects = (try? context.fetch(descriptor)) ?? []
+        return localProjects.map {
+            AssemblyProjectEntity(id: $0.id, title: $0.title, domain: "Electronics", stepCount: 0)
         }
     }
 }
@@ -92,18 +99,22 @@ public struct AssemblyStepEntity: AppEntity {
 public struct AssemblyStepQuery: EntityQuery {
     public init() {}
     
+    @MainActor
     public func entities(for identifiers: [UUID]) async throws -> [AssemblyStepEntity] {
-        let projects = BundledProjectRepository.bundledProjects
-        let allSteps = projects.flatMap(\.steps)
-        return allSteps.filter { identifiers.contains($0.id) }.map {
+        let context = PersistenceController.shared.container.mainContext
+        let descriptor = FetchDescriptor<LocalAssemblyStep>()
+        let localSteps = (try? context.fetch(descriptor)) ?? []
+        return localSteps.filter { identifiers.contains($0.id) }.map {
             AssemblyStepEntity(id: $0.id, stepOrder: $0.stepOrder, title: $0.title, instruction: $0.instruction)
         }
     }
     
+    @MainActor
     public func suggestedEntities() async throws -> [AssemblyStepEntity] {
-        let projects = BundledProjectRepository.bundledProjects
-        let allSteps = projects.flatMap(\.steps)
-        return allSteps.map {
+        let context = PersistenceController.shared.container.mainContext
+        let descriptor = FetchDescriptor<LocalAssemblyStep>()
+        let localSteps = (try? context.fetch(descriptor)) ?? []
+        return localSteps.map {
             AssemblyStepEntity(id: $0.id, stepOrder: $0.stepOrder, title: $0.title, instruction: $0.instruction)
         }
     }
@@ -161,17 +172,56 @@ public struct InspectAssemblyIntent: AppIntent {
     
     @MainActor
     public func perform() async throws -> some ProvidesDialog & ShowsSnippetView {
-        let activeProject = BundledProjectRepository.bundledProjects.first
-        let currentStep = activeProject?.steps.first
+        let context = PersistenceController.shared.container.mainContext
+        let sessionDesc = FetchDescriptor<LocalAssemblySession>(
+            predicate: #Predicate<LocalAssemblySession> { $0.statusRaw == "inProgress" },
+            sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
+        )
+        let activeSession = try? context.fetch(sessionDesc).first
         
-        let title = currentStep?.title ?? "Assembly In Progress"
-        let dialog = IntentDialog("I am checking your assembly. Your active step is \(title). Follow the highlighted pin guides.")
+        let projectTitle: String
+        let stepTitle: String
+        let stepOrder: Int
+        
+        if let session = activeSession {
+            let pid = session.projectId
+            let projectDesc = FetchDescriptor<LocalProject>(predicate: #Predicate<LocalProject> { $0.id == pid })
+            let proj = try? context.fetch(projectDesc).first
+            projectTitle = proj?.title ?? "Assembly Project"
+            stepOrder = session.currentStepOrder
+            
+            let order = stepOrder
+            let stepDesc = FetchDescriptor<LocalAssemblyStep>(predicate: #Predicate<LocalAssemblyStep> { $0.projectId == pid && $0.stepOrder == order })
+            let step = try? context.fetch(stepDesc).first
+            stepTitle = step?.title ?? "Step \(order)"
+        } else {
+            let projDesc = FetchDescriptor<LocalProject>(sortBy: [SortDescriptor(\.updatedAt, order: .reverse)])
+            if let proj = try? context.fetch(projDesc).first {
+                projectTitle = proj.title
+                stepOrder = 1
+                let pid = proj.id
+                let stepDesc = FetchDescriptor<LocalAssemblyStep>(predicate: #Predicate<LocalAssemblyStep> { $0.projectId == pid && $0.stepOrder == 1 })
+                stepTitle = (try? context.fetch(stepDesc).first)?.title ?? "Initial Step"
+            } else {
+                return .result(
+                    dialog: IntentDialog("No active assembly project was found. Open AssembleAI to start assembling."),
+                    view: AssemblyIntentSnippetView(
+                        title: "No Project Active",
+                        subtitle: "Open AssembleAI to select or start a project.",
+                        statusText: "Idle",
+                        statusColorName: "blue"
+                    )
+                )
+            }
+        }
+        
+        let dialog = IntentDialog("Checking \(projectTitle). Your active step is \(stepOrder): \(stepTitle). Follow the camera guidance.")
         
         return .result(
             dialog: dialog,
             view: AssemblyIntentSnippetView(
-                title: "AssembleAI Verification",
-                subtitle: title,
+                title: projectTitle,
+                subtitle: "Step \(stepOrder): \(stepTitle)",
                 statusText: "Ready for live inspection",
                 statusColorName: "green"
             )
@@ -200,17 +250,59 @@ public struct QueryNextStepIntent: AppIntent {
     
     @MainActor
     public func perform() async throws -> some ProvidesDialog & ShowsSnippetView {
-        let activeProject = BundledProjectRepository.bundledProjects.first
-        let targetStep: ProjectStepSummary?
-        if let num = stepNumber, let match = activeProject?.steps.first(where: { $0.stepOrder == num }) {
-            targetStep = match
-        } else {
-            targetStep = activeProject?.steps.first
+        let context = PersistenceController.shared.container.mainContext
+        let sessionDesc = FetchDescriptor<LocalAssemblySession>(
+            predicate: #Predicate<LocalAssemblySession> { $0.statusRaw == "inProgress" },
+            sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
+        )
+        let activeSession = try? context.fetch(sessionDesc).first
+        
+        guard let session = activeSession else {
+            let projDesc = FetchDescriptor<LocalProject>(sortBy: [SortDescriptor(\.updatedAt, order: .reverse)])
+            guard let proj = try? context.fetch(projDesc).first else {
+                return .result(
+                    dialog: IntentDialog("No assembly projects found. Open AssembleAI to browse projects."),
+                    view: AssemblyIntentSnippetView(
+                        title: "No Projects",
+                        subtitle: "Open the app to start",
+                        statusText: "No Data",
+                        statusColorName: "blue"
+                    )
+                )
+            }
+            
+            let pid = proj.id
+            let stepDesc = FetchDescriptor<LocalAssemblyStep>(
+                predicate: #Predicate<LocalAssemblyStep> { $0.projectId == pid },
+                sortBy: [SortDescriptor(\.stepOrder, order: .asc)]
+            )
+            let steps = (try? context.fetch(stepDesc)) ?? []
+            let target = steps.first
+            let order = target?.stepOrder ?? 1
+            let title = target?.title ?? "Step 1"
+            let instruction = target?.instruction ?? "Follow instructions in app."
+            
+            return .result(
+                dialog: IntentDialog("Step \(order): \(title). \(instruction)"),
+                view: AssemblyIntentSnippetView(
+                    title: "Step \(order): \(title)",
+                    subtitle: instruction,
+                    statusText: proj.title,
+                    statusColorName: "blue"
+                )
+            )
         }
         
-        let order = targetStep?.stepOrder ?? 1
-        let title = targetStep?.title ?? "Place 10k Resistor"
-        let instruction = targetStep?.instruction ?? "Insert leads into row 10 and row 14."
+        let pid = session.projectId
+        let targetOrder = stepNumber ?? session.currentStepOrder
+        let stepDesc = FetchDescriptor<LocalAssemblyStep>(
+            predicate: #Predicate<LocalAssemblyStep> { $0.projectId == pid && $0.stepOrder == targetOrder }
+        )
+        let step = try? context.fetch(stepDesc).first
+        
+        let order = step?.stepOrder ?? targetOrder
+        let title = step?.title ?? "Step \(order)"
+        let instruction = step?.instruction ?? "Inspect physical placement."
         
         let speech = IntentDialog("Step \(order): \(title). \(instruction)")
         

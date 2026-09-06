@@ -82,7 +82,7 @@ final class ComponentIntegrationTests: XCTestCase {
         let controller = PersistenceController(inMemory: true)
         let repo = LocalFirstProjectRepository(modelContext: controller.container.mainContext)
         
-        let initialProjects = try await repo.fetchProjects()
+        let initialProjects: [Project] = try await repo.fetchProjects()
         XCTAssertTrue(initialProjects.isEmpty)
         
         let newProject = Project(

@@ -9,6 +9,7 @@ import SwiftData
 /// Production-ready History screen presenting real user assembly sessions, verification outcomes, and completion metrics.
 struct HistoryView: View {
     @Query(sort: \LocalAssemblySession.startedAt, order: .reverse) private var sessions: [LocalAssemblySession]
+    @Query private var localProjects: [LocalProject]
     @Environment(\.modelContext) private var modelContext
     
     var onSelectProject: ((AssemblyProject) -> Void)? = nil
@@ -180,8 +181,25 @@ struct HistoryView: View {
     }
     
     private func findProject(for id: UUID) -> AssemblyProject? {
-        BundledProjectRepository.bundledProjects.first { $0.id == id }
-            ?? SampleProjectData.sampleProjects.first { $0.id == id }
+        if let local = localProjects.first(where: { $0.id == id }) {
+            return AssemblyProject(
+                id: local.id,
+                title: local.title,
+                subtitle: local.projectDescription,
+                category: "Electronics",
+                difficulty: Difficulty(rawValue: local.difficulty) ?? .beginner,
+                estimatedMinutes: local.estimatedMinutes,
+                totalSteps: 0,
+                completedSteps: 0,
+                imageName: local.thumbnailPath,
+                isActive: false,
+                nextAction: nil,
+                description: local.projectDescription,
+                components: [],
+                steps: []
+            )
+        }
+        return nil
     }
 }
 

@@ -24,6 +24,7 @@ final class ProjectsViewModel: ObservableObject {
     @Published private(set) var isLoading: Bool = false
     @Published var showAddProjectSheet: Bool = false
     @Published var errorMessage: String? = nil
+    @Published private(set) var isUserAdmin: Bool = false
     
     private let repository: ProjectRepository
     
@@ -60,9 +61,15 @@ final class ProjectsViewModel: ObservableObject {
         }
     }
     
+    func checkAdminStatus() async {
+        let supabase = SupabaseProjectService(supabaseManager: SupabaseManager.shared)
+        self.isUserAdmin = await supabase.checkIsAdmin()
+    }
+    
     func loadProjects() async {
         isLoading = true
         errorMessage = nil
+        await checkAdminStatus()
         do {
             self.allProjects = try await repository.fetchProjects()
             self.isLoading = false
