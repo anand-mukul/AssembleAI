@@ -473,6 +473,22 @@ struct StatusPill: View {
     }
 }
 
+// MARK: - Status Badge
+
+/// Minimal semantic label for difficulty level, sync state, and verification outcomes without capsule clutter.
+struct BadgeView: View {
+    let text: String
+    var color: Color = .assembleBrandPrimary
+    
+    var body: some View {
+        Text(text)
+            .font(.caption)
+            .fontWeight(.medium)
+            .foregroundColor(color)
+            .accessibilityLabel(text)
+    }
+}
+
 // MARK: - Custom Input Text Field
 
 /// Standardized native text field with icon, focus highlighting, error state, and clear button.
@@ -610,6 +626,20 @@ struct SemanticIconBadge: View {
     var size: CGFloat = 30
     var iconSize: CGFloat = 15
     var color: Color = AppColors.badgeBlue
+    
+    init(iconName: String, size: CGFloat = 30, iconSize: CGFloat = 15, color: Color = AppColors.badgeBlue) {
+        self.iconName = iconName
+        self.size = size
+        self.iconSize = iconSize
+        self.color = color
+    }
+    
+    init(systemName: String, size: CGFloat = 30, iconSize: CGFloat = 15, tintColor: Color = AppColors.badgeBlue) {
+        self.iconName = systemName
+        self.size = size
+        self.iconSize = iconSize
+        self.color = tintColor
+    }
     
     var body: some View {
         ZStack {

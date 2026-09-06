@@ -155,6 +155,16 @@ struct CreateAccountView: View {
         } message: {
             Text("We've sent a verification link to \(email). Please confirm your email address, then sign in.")
         }
+        .alert("Account Creation Failed", isPresented: Binding(
+            get: { authService.authError != nil },
+            set: { if !$0 { authService.clearError() } }
+        )) {
+            Button("OK", role: .cancel) {
+                authService.clearError()
+            }
+        } message: {
+            Text(authService.authError ?? "")
+        }
         .onAppear {
             withAnimation(reduceMotion ? .none : AppAnimation.entranceSpring) {
                 contentAppeared = true
@@ -226,9 +236,15 @@ struct CreateAccountView: View {
         guard validateForm() else { return }
         
         Task {
-            let success = await authService.signUp(email: email, password: password, name: name)
-            if success {
-                showEmailConfirmationAlert = true
+            do {
+                try await authService.createAccount(name: name, email: email, password: password)
+                if authService.isAuthenticated {
+                    router.transitionToHome()
+                } else {
+                    showEmailConfirmationAlert = true
+                }
+            } catch {
+                // Auth error captured by authService.authError
             }
         }
     }

@@ -117,8 +117,9 @@ enum AppColors {
                                               dark: Color(red: 1.0, green: 0.62, blue: 0.30))
     
     // Card Border (Crisp 0.5pt subtle boundary for grouped surfaces)
-    static let glassBorderUnified = Color(light: Color.black.opacity(0.06),
-                                           dark: Color.white.opacity(0.10))
+    static let cardBorder = Color(light: Color.black.opacity(0.06),
+                                   dark: Color.white.opacity(0.10))
+    static let glassBorderUnified = cardBorder
 }
 
 extension Color {

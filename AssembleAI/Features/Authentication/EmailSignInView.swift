@@ -18,6 +18,7 @@ struct EmailSignInView: View {
     @State private var passwordError: String? = nil
     @State private var hasSubmitted: Bool = false
     @State private var contentAppeared = false
+    @State private var showErrorSheet = false
     
     var body: some View {
         ZStack {
@@ -137,19 +138,22 @@ struct EmailSignInView: View {
                 contentAppeared = true
             }
         }
-        .sheet(isPresented: $authService.showErrorSheet) {
+        .sheet(isPresented: $showErrorSheet) {
             AuthenticationErrorView(
-                errorMessage: authService.authErrorMessage,
+                errorMessage: authService.authError ?? "Incorrect email or password. Please verify your credentials and try again.",
                 onRetry: {
-                    authService.showErrorSheet = false
+                    showErrorSheet = false
+                    authService.clearError()
                     handleSignIn()
                 },
                 onCreateAccount: {
-                    authService.showErrorSheet = false
+                    showErrorSheet = false
+                    authService.clearError()
                     router.navigateToCreateAccount()
                 },
                 onDismiss: {
-                    authService.showErrorSheet = false
+                    showErrorSheet = false
+                    authService.clearError()
                 }
             )
         }
@@ -198,9 +202,11 @@ struct EmailSignInView: View {
         guard validateForm() else { return }
         
         Task {
-            let success = await authService.signIn(email: email, password: password)
-            if success {
+            do {
+                try await authService.signIn(email: email, password: password)
                 router.transitionToHome()
+            } catch {
+                showErrorSheet = true
             }
         }
     }

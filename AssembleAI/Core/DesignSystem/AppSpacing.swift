@@ -33,6 +33,9 @@ enum AppSpacing {
     
     /// Standard divider leading inset for grouped list cards with icon badges (16pt padding + 30pt badge + 10pt gap = 56pt)
     static let dividerLeadingInset: CGFloat = 56
+    
+    /// Standard Apple HIG button height (50pt)
+    static let buttonHeight: CGFloat = 50
 }
 
 /// Unified corner radius tokens adhering to Apple iOS continuous curvature standards.
