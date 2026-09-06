@@ -85,7 +85,9 @@ final class SupabaseAuthService: AuthenticationService {
             if let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) {
                 if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
                     if let newToken = json["access_token"] as? String {
-                        supabaseManager.updateAuthToken(newToken)
+                        let userObj = json["user"] as? [String: Any]
+                        let userId = userObj?["id"] as? String
+                        supabaseManager.updateAuthToken(newToken, userId: userId)
                     }
                     if let newRefreshToken = json["refresh_token"] as? String {
                         keychain.save(key: "supabase_refresh_token", value: newRefreshToken)
@@ -160,7 +162,7 @@ final class SupabaseAuthService: AuthenticationService {
                 if let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode),
                    let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
                     if let token = json["access_token"] as? String {
-                        supabaseManager.updateAuthToken(token)
+                        supabaseManager.updateAuthToken(token, userId: resolvedUserId)
                     }
                     if let refreshToken = json["refresh_token"] as? String {
                         keychain.save(key: "supabase_refresh_token", value: refreshToken)
@@ -170,7 +172,7 @@ final class SupabaseAuthService: AuthenticationService {
                     }
                 }
             } catch {
-                // Retain local sign-in if remote Supabase Apple provider exchange encounters transient errors
+                throw AuthError.serviceError("Backend authentication failed: \(error.localizedDescription)")
             }
         }
         
@@ -235,13 +237,16 @@ final class SupabaseAuthService: AuthenticationService {
                 if (200...299).contains(http.statusCode) {
                     if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
                         let token = json["access_token"] as? String
-                        supabaseManager.updateAuthToken(token)
+                        
+                        let userObj = json["user"] as? [String: Any]
+                        let userId = (userObj?["id"] as? String) ?? UUID().uuidString
+                        
+                        supabaseManager.updateAuthToken(token, userId: userId)
+                        
                         if let refreshToken = json["refresh_token"] as? String {
                             keychain.save(key: "supabase_refresh_token", value: refreshToken)
                         }
                         
-                        let userObj = json["user"] as? [String: Any]
-                        let userId = (userObj?["id"] as? String) ?? UUID().uuidString
                         let meta = userObj?["user_metadata"] as? [String: Any]
                         let fullName = (meta?["full_name"] as? String) ?? trimmedEmail.components(separatedBy: "@").first ?? "Hardware Assembler"
                         
@@ -349,17 +354,18 @@ final class SupabaseAuthService: AuthenticationService {
                         let token = json["access_token"] as? String
                         let refreshToken = json["refresh_token"] as? String
                         
+                        // Parse user object whether nested under "user" (when token present) or root (when confirmation required)
+                        let userObj = (json["user"] as? [String: Any]) ?? json
+                        let userId = (userObj["id"] as? String) ?? UUID().uuidString
+                        
                         if let token = token {
-                            supabaseManager.updateAuthToken(token)
+                            supabaseManager.updateAuthToken(token, userId: userId)
                         }
                         if let refreshToken = refreshToken {
                             keychain.save(key: "supabase_refresh_token", value: refreshToken)
                         }
                         
-                        // Parse user object whether nested under "user" (when token present) or root (when confirmation required)
-                        let userObj = (json["user"] as? [String: Any]) ?? json
-                        let userId = (userObj["id"] as? String) ?? UUID().uuidString
-                        
+
                         let user = User(
                             id: userId,
                             name: trimmedName.isEmpty ? "Hardware Assembler" : trimmedName,
@@ -494,7 +500,10 @@ final class SupabaseAuthService: AuthenticationService {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             request.setValue(AppConfig.supabaseAnonKey, forHTTPHeaderField: "apikey")
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            _ = try? await URLSession.shared.data(for: request)
+            let (_, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+                throw AuthError.serviceError("Failed to delete account on the server. Please try again.")
+            }
         }
         
         // 2. Purge Keychain tokens and credentials

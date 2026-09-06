@@ -15,7 +15,8 @@ protocol LocalProjectRepository: Sendable {
 }
 
 /// Local-first implementation querying SwiftData instantly and syncing with Supabase asynchronously.
-final class LocalFirstProjectRepository: LocalProjectRepository, @unchecked Sendable {
+@MainActor
+final class LocalFirstProjectRepository: LocalProjectRepository {
     private let modelContext: ModelContext
     private let supabaseService: SupabaseProjectService?
     
@@ -24,7 +25,6 @@ final class LocalFirstProjectRepository: LocalProjectRepository, @unchecked Send
         self.supabaseService = supabaseService
     }
     
-    @MainActor
     func fetchProjects() async throws -> [Project] {
         let descriptor = FetchDescriptor<LocalProject>(sortBy: [SortDescriptor(\.updatedAt, order: .reverse)])
         let localProjects = try modelContext.fetch(descriptor)
@@ -62,7 +62,6 @@ final class LocalFirstProjectRepository: LocalProjectRepository, @unchecked Send
         return domainProjects
     }
     
-    @MainActor
     func fetchProject(id: UUID) async throws -> Project? {
         do {
             let fetchLocal = FetchDescriptor<LocalProject>(predicate: #Predicate<LocalProject> { $0.id == id })
@@ -75,7 +74,6 @@ final class LocalFirstProjectRepository: LocalProjectRepository, @unchecked Send
         }
     }
     
-    @MainActor
     func saveProject(_ project: Project) async throws {
         let targetId = project.id
         let fetchLocal = FetchDescriptor<LocalProject>(predicate: #Predicate<LocalProject> { $0.id == targetId })
@@ -116,7 +114,6 @@ final class LocalFirstProjectRepository: LocalProjectRepository, @unchecked Send
         }
     }
     
-    @MainActor
     func deleteProject(id: UUID) async throws {
         do {
             let fetchLocal = FetchDescriptor<LocalProject>(predicate: #Predicate<LocalProject> { $0.id == id })

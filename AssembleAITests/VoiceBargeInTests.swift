@@ -25,11 +25,19 @@ final class VoiceBargeInTests: XCTestCase {
             currentUtteranceText = nil
             stopCalledCount += 1
         }
+        
+        func pause() async {
+            state = .paused
+        }
+        
+        func resume() async {
+            state = .speaking
+        }
     }
     
     func testBargeInSilencesAssistantWhenSpeaking() async {
         let mockOutput = MockVoiceOutput()
-        await mockOutput.speak(TutorResponse(text: "Hello, place the resistor in row 10.", priority: .standard))
+        await mockOutput.speak(TutorResponse(text: "Hello, place the resistor in row 10.", priority: .normal))
         
         let bargeInManager = VoiceBargeInManager(voiceOutput: mockOutput)
         

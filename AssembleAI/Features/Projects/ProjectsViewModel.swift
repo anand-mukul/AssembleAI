@@ -23,6 +23,7 @@ final class ProjectsViewModel: ObservableObject {
     @Published private(set) var allProjects: [AssemblyProject] = []
     @Published private(set) var isLoading: Bool = false
     @Published var showAddProjectSheet: Bool = false
+    @Published var errorMessage: String? = nil
     
     private let repository: ProjectRepository
     
@@ -61,10 +62,12 @@ final class ProjectsViewModel: ObservableObject {
     
     func loadProjects() async {
         isLoading = true
+        errorMessage = nil
         do {
             self.allProjects = try await repository.fetchProjects()
             self.isLoading = false
         } catch {
+            self.errorMessage = error.localizedDescription
             self.isLoading = false
         }
     }

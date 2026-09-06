@@ -12,21 +12,20 @@ protocol UserRepository: Sendable {
     func deleteCurrentUser() async throws
 }
 
-final class UserRepositoryImpl: UserRepository, @unchecked Sendable {
+@MainActor
+final class UserRepositoryImpl: UserRepository {
     private let modelContext: ModelContext
     
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
     }
     
-    @MainActor
     func fetchCurrentUser() async throws -> User? {
         let descriptor = FetchDescriptor<LocalUser>()
         let users = try modelContext.fetch(descriptor)
         return users.first?.toDomainModel()
     }
     
-    @MainActor
     func saveUser(_ user: User) async throws {
         let descriptor = FetchDescriptor<LocalUser>()
         let existingUsers = try modelContext.fetch(descriptor)
@@ -40,7 +39,6 @@ final class UserRepositoryImpl: UserRepository, @unchecked Sendable {
         try modelContext.save()
     }
     
-    @MainActor
     func deleteCurrentUser() async throws {
         let descriptor = FetchDescriptor<LocalUser>()
         let users = try modelContext.fetch(descriptor)

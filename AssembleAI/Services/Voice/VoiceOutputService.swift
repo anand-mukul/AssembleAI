@@ -14,6 +14,7 @@ import Combine
 final class VoiceOutputService: NSObject, ObservableObject, VoiceOutputServiceProtocol {
     @Published private(set) var state: SpeechState = .idle
     @Published private(set) var currentUtteranceText: String? = nil
+    @Published private(set) var lastError: String? = nil
     
     var configuration: VoiceOutputConfiguration
     
@@ -34,15 +35,10 @@ final class VoiceOutputService: NSObject, ObservableObject, VoiceOutputServicePr
     private func configureAudioSession() {
         #if os(iOS)
         do {
-            let session = AVAudioSession.sharedInstance()
-            try session.setCategory(
-                .playAndRecord,
-                mode: .spokenAudio,
-                options: [.defaultToSpeaker, .allowBluetoothHFP, .duckOthers]
-            )
-            try session.setActive(true, options: .notifyOthersOnDeactivation)
+            try AudioSessionCoordinator.shared.activateWorkbenchAudioSession()
+            self.lastError = nil
         } catch {
-            // Audio session setup failure handled gracefully
+            self.lastError = error.localizedDescription
         }
         #endif
     }
@@ -82,15 +78,10 @@ final class VoiceOutputService: NSObject, ObservableObject, VoiceOutputServicePr
         
         #if os(iOS)
         do {
-            let session = AVAudioSession.sharedInstance()
-            try session.setCategory(
-                .playAndRecord,
-                mode: .spokenAudio,
-                options: [.defaultToSpeaker, .allowBluetoothHFP, .duckOthers]
-            )
-            try session.setActive(true, options: .notifyOthersOnDeactivation)
+            try AudioSessionCoordinator.shared.activateWorkbenchAudioSession()
+            self.lastError = nil
         } catch {
-            // Graceful fallback
+            self.lastError = error.localizedDescription
         }
         #endif
         

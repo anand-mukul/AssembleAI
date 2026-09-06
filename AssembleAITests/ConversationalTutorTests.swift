@@ -68,8 +68,7 @@ final class ConversationalTutorTests: XCTestCase {
             confidence: 0.90,
             detectedDescription: "Lead in Row 14",
             expectedDescription: "Lead in Row 15",
-            explanation: issue.explanation,
-            issues: [issue]
+            explanation: issue.explanation
         )
         let decision = InterventionDecision(action: .correct(description: issue.explanation, level: .explicit), reason: "Mistake")
         let context = AssistantContext(

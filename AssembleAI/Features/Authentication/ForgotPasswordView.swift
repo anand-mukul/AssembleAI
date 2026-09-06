@@ -181,7 +181,7 @@ struct ForgotPasswordView: View {
 }
 
 #Preview("Forgot Password View") {
-    NavigationView {
+    NavigationStack {
         ForgotPasswordView()
             .environmentObject(AppRouter())
             .environmentObject(SupabaseAuthService())

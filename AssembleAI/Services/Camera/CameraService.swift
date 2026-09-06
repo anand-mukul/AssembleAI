@@ -201,6 +201,10 @@ final class CameraService: NSObject, ObservableObject {
             return createSimulatorTestImage()
         }
         
+        guard photoContinuation == nil else {
+            throw NSError(domain: "CameraService", code: -2, userInfo: [NSLocalizedDescriptionKey: "Capture already in progress"])
+        }
+        
         return try await withCheckedThrowingContinuation { continuation in
             self.photoContinuation = continuation
             

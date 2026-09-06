@@ -65,7 +65,7 @@ final class ProfileViewModelTests: XCTestCase {
     
     // MARK: - Test 3: Account Deletion Flow (Guideline 5.1.1(v))
     func testAccountDeletionFlow() async {
-        XCTAssertTrue(await authService.isAuthenticated)
+        XCTAssertTrue(authService.isAuthenticated)
         
         viewModel.showDeleteAccountConfirmation = true
         XCTAssertTrue(viewModel.showDeleteAccountConfirmation)
@@ -75,18 +75,18 @@ final class ProfileViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.isDeletingAccount)
         XCTAssertFalse(viewModel.showDeleteAccountConfirmation)
         XCTAssertNil(viewModel.deletionError)
-        XCTAssertFalse(await authService.isAuthenticated)
-        XCTAssertNil(await authService.currentUser)
+        XCTAssertFalse(authService.isAuthenticated)
+        XCTAssertNil(authService.currentUser)
     }
     
     // MARK: - Test 4: Sign Out Flow
     func testSignOutFlow() async {
-        XCTAssertTrue(await authService.isAuthenticated)
+        XCTAssertTrue(authService.isAuthenticated)
         
         await viewModel.signOut()
         
-        XCTAssertFalse(await authService.isAuthenticated)
-        XCTAssertNil(await authService.currentUser)
+        XCTAssertFalse(authService.isAuthenticated)
+        XCTAssertNil(authService.currentUser)
     }
     
     // MARK: - Test 5: Research Telemetry & Strategy Configuration

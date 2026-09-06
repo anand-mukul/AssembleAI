@@ -15,7 +15,6 @@ struct MainTabView: View {
     @State private var scanPath = NavigationPath()
     @State private var historyPath = NavigationPath()
     @State private var profilePath = NavigationPath()
-    @StateObject private var profileViewModel = ProfileViewModel()
     
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -109,18 +108,6 @@ struct MainTabView: View {
             // Tab 4: Profile
             NavigationStack(path: $profilePath) {
                 ProfileView()
-                    .navigationDestination(for: ProfileNavigationDestination.self) { dest in
-                        switch dest {
-                        case .appSettings:
-                            AppSettingsView(viewModel: profileViewModel)
-                        case .dataPrivacy:
-                            DataPrivacySettingsView(viewModel: profileViewModel)
-                        case .notifications:
-                            NotificationsSettingsView(viewModel: profileViewModel)
-                        case .help:
-                            HelpAndSupportView()
-                        }
-                    }
             }
             .tabItem {
                 Label("Profile", systemImage: "person.crop.circle")

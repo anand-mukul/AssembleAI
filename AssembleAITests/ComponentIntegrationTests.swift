@@ -51,7 +51,7 @@ final class ComponentIntegrationTests: XCTestCase {
     func testFoundationModelDebugViewBinding() {
         let debugView = FoundationModelDebugView(
             stepTitle: "Insert Capacitor",
-            issueType: .wrongPolarity,
+            issueType: .wrongConnection,
             expectedDesc: "GND bus line",
             observedDesc: "5V line",
             latencyMs: 112,

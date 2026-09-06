@@ -25,11 +25,22 @@ $$ language plpgsql;
 
 -- Secure self-deletion RPC for Apple App Store Guideline 5.1.1(v) compliance
 create or replace function public.delete_user_account()
-returns void as $$
+returns void
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
 begin
+    if auth.uid() is null then
+        raise exception 'Not authenticated';
+    end if;
     delete from auth.users where id = auth.uid();
 end;
-$$ language plpgsql security definer;
+$$;
+
+revoke all on function public.delete_user_account() from public;
+revoke all on function public.delete_user_account() from anon;
+grant execute on function public.delete_user_account() to authenticated;
 
 -- ============================================================================
 -- 1. Profiles Table (1:1 with Supabase auth.users)
@@ -55,7 +66,11 @@ create policy "Users can update own profile"
 
 -- Trigger to automatically create a public profile on auth.users signup
 create or replace function public.handle_new_user()
-returns trigger as $$
+returns trigger
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
 begin
     insert into public.profiles (id, full_name, email, avatar_url)
     values (
@@ -70,7 +85,7 @@ begin
         updated_at = now();
     return new;
 end;
-$$ language plpgsql security definer;
+$$;
 
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
@@ -298,17 +313,25 @@ alter publication supabase_realtime add table public.assembly_sessions;
 -- ============================================================================
 insert into storage.buckets (id, name, public)
 values 
-    ('project-assets', 'project-assets', true),
+    ('project-assets', 'project-assets', false),
     ('verification-snapshots', 'verification-snapshots', false)
-on conflict (id) do nothing;
+on conflict (id) do update set public = false;
 
-create policy "Public can view project-assets"
+create policy "Users can view own or authenticated project assets"
     on storage.objects for select
-    using (bucket_id = 'project-assets');
+    using (bucket_id = 'project-assets' and auth.role() = 'authenticated');
 
 create policy "Authenticated users can upload project assets"
     on storage.objects for insert
-    with check (bucket_id = 'project-assets' and auth.role() = 'authenticated');
+    with check (bucket_id = 'project-assets' and auth.role() = 'authenticated' and auth.uid() = owner);
+
+create policy "Users can update own project assets"
+    on storage.objects for update
+    using (bucket_id = 'project-assets' and auth.uid() = owner);
+
+create policy "Users can delete own project assets"
+    on storage.objects for delete
+    using (bucket_id = 'project-assets' and auth.uid() = owner);
 
 create policy "Users can view own verification snapshots"
     on storage.objects for select
@@ -317,3 +340,11 @@ create policy "Users can view own verification snapshots"
 create policy "Users can upload own verification snapshots"
     on storage.objects for insert
     with check (bucket_id = 'verification-snapshots' and auth.uid() = owner);
+
+create policy "Users can update own verification snapshots"
+    on storage.objects for update
+    using (bucket_id = 'verification-snapshots' and auth.uid() = owner);
+
+create policy "Users can delete own verification snapshots"
+    on storage.objects for delete
+    using (bucket_id = 'verification-snapshots' and auth.uid() = owner);

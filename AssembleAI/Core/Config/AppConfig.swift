@@ -20,15 +20,14 @@ enum AppConfig {
             if let plistUrl = Bundle.main.object(forInfoDictionaryKey: "SUPABASE_URL") as? String, !plistUrl.isEmpty, !plistUrl.contains("$") {
                 return plistUrl
             }
-            // Project configured fallback
-            return "https://gbbsttpnmvfplmbumguq.supabase.co"
+            return nil
         }()
         
         guard let url = rawUrl?.trimmingCharacters(in: .whitespacesAndNewlines),
               !url.isEmpty,
               url.hasPrefix("https://"),
               !url.contains("SUPABASE_URL_NOT_FOUND") else {
-            return "https://gbbsttpnmvfplmbumguq.supabase.co"
+            return "SUPABASE_URL_NOT_FOUND"
         }
         
         // Strip trailing slash if present for consistent endpoint concatenation
@@ -46,8 +45,7 @@ enum AppConfig {
                 return plistKey.trimmingCharacters(in: .whitespacesAndNewlines)
             }
         }
-        // Project configured fallback
-        return "sb_publishable_d2uxJkzSO7BfOW5Pgw9Rtw_K4CojNiA"
+        return "SUPABASE_ANON_KEY_NOT_FOUND"
     }
     
     /// Returns true if valid live Supabase credentials are wired into the environment

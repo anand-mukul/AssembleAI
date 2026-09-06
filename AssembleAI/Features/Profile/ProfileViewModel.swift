@@ -193,7 +193,8 @@ final class ProfileViewModel: ObservableObject {
     
     /// Exports research summary CSV (one row per session) to Documents/ResearchExports and presents share sheet.
     func exportSummaryCSV() {
-        Task {
+        Task { [weak self] in
+            guard let self = self else { return }
             self.isGeneratingExport = true
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
             do {
@@ -214,7 +215,8 @@ final class ProfileViewModel: ObservableObject {
     
     /// Exports all raw chronological events as RFC 4180 CSV and presents share sheet.
     func exportDetailedEventsCSV() {
-        Task {
+        Task { [weak self] in
+            guard let self = self else { return }
             self.isGeneratingExport = true
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
             do {
@@ -235,7 +237,8 @@ final class ProfileViewModel: ObservableObject {
     
     /// Exports complete telemetry data as pretty-printed JSON file.
     func exportJSONTelemetry() {
-        Task {
+        Task { [weak self] in
+            guard let self = self else { return }
             self.isGeneratingExport = true
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
             do {
@@ -261,17 +264,17 @@ final class ProfileViewModel: ObservableObject {
     
     /// Clears only the research telemetry events and sessions without touching user progress.
     func clearResearchData() {
-        Task {
+        Task { [weak self] in
+            guard let self = self else { return }
             await ResearchLogger.shared.clearLogs()
-            await loadResearchStats()
+            await self.loadResearchStats()
             UINotificationFeedbackGenerator().notificationOccurred(.success)
             withAnimation {
                 self.showClearResearchToast = true
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-                withAnimation {
-                    self.showClearResearchToast = false
-                }
+            try? await Task.sleep(nanoseconds: 2_500_000_000)
+            withAnimation {
+                self.showClearResearchToast = false
             }
         }
     }
@@ -279,16 +282,16 @@ final class ProfileViewModel: ObservableObject {
     // MARK: - Cache & Governance
     
     func clearModelCache() {
-        Task {
+        Task { [weak self] in
+            guard let self = self else { return }
             await GuidanceCache.shared.clear()
             UINotificationFeedbackGenerator().notificationOccurred(.success)
             withAnimation {
                 self.showClearCacheToast = true
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-                withAnimation {
-                    self.showClearCacheToast = false
-                }
+            try? await Task.sleep(nanoseconds: 2_500_000_000)
+            withAnimation {
+                self.showClearCacheToast = false
             }
         }
     }
@@ -299,10 +302,11 @@ final class ProfileViewModel: ObservableObject {
             try modelContext.delete(model: LocalAttempt.self)
             try modelContext.save()
             
-            Task {
+            Task { [weak self] in
+                guard let self = self else { return }
                 await ResearchLogger.shared.clearLogs()
                 await GuidanceCache.shared.clear()
-                await loadResearchStats()
+                await self.loadResearchStats()
             }
             
             self.completedSessionsCount = 0
@@ -313,9 +317,10 @@ final class ProfileViewModel: ObservableObject {
             withAnimation {
                 self.showResetSuccessToast = true
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+            Task { [weak self] in
+                try? await Task.sleep(nanoseconds: 2_500_000_000)
                 withAnimation {
-                    self.showResetSuccessToast = false
+                    self?.showResetSuccessToast = false
                 }
             }
         } catch {

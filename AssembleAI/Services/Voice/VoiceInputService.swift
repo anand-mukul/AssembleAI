@@ -63,11 +63,9 @@ final class VoiceInputService: NSObject, ObservableObject, VoiceInputServiceProt
             throw NSError(domain: "VoiceInputService", code: -2, userInfo: [NSLocalizedDescriptionKey: "Microphone access denied"])
         }
         
-        // 2. Configure Audio Session
+        // 2. Configure Audio Session via Coordinator
         do {
-            let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playAndRecord, mode: .spokenAudio, options: [.defaultToSpeaker, .allowBluetoothHFP])
-            try session.setActive(true, options: .notifyOthersOnDeactivation)
+            try AudioSessionCoordinator.shared.activateWorkbenchAudioSession()
         } catch {
             throw error
         }
@@ -79,7 +77,7 @@ final class VoiceInputService: NSObject, ObservableObject, VoiceInputServiceProt
         
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
-        request.requiresOnDeviceRecognition = false
+        request.requiresOnDeviceRecognition = true
         self.recognitionRequest = request
         
         let inputNode = engine.inputNode

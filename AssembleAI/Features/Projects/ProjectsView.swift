@@ -31,6 +31,31 @@ struct ProjectsView: View {
                 .padding(.horizontal, AppSpacing.screenEdge)
                 .padding(.vertical, AppSpacing.sm)
                 
+                if let error = viewModel.errorMessage {
+                    HStack(spacing: AppSpacing.xs) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundColor(AppColors.warning)
+                        Text(error)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .lineLimit(2)
+                        Spacer()
+                        Button("Retry") {
+                            Task {
+                                await viewModel.loadProjects()
+                            }
+                        }
+                        .font(.caption.weight(.semibold))
+                        .foregroundColor(.assembleBrandPrimary)
+                    }
+                    .padding(.horizontal, AppSpacing.md)
+                    .padding(.vertical, AppSpacing.sm)
+                    .background(AppColors.secondaryBackground)
+                    .cornerRadius(8)
+                    .padding(.horizontal, AppSpacing.screenEdge)
+                    .padding(.bottom, AppSpacing.xs)
+                }
+                
                 // Projects Content
                 ScrollView {
                     VStack(spacing: AppSpacing.sm) {

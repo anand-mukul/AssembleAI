@@ -13,14 +13,14 @@ protocol SessionRepository: Sendable {
     func saveSession(_ session: AssemblySession) async throws
 }
 
-final class LocalFirstSessionRepository: SessionRepository, @unchecked Sendable {
+@MainActor
+final class LocalFirstSessionRepository: SessionRepository {
     private let modelContext: ModelContext
     
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
     }
     
-    @MainActor
     func fetchSessions(userId: UUID) async throws -> [AssemblySession] {
         let descriptor = FetchDescriptor<LocalAssemblySession>(
             predicate: #Predicate<LocalAssemblySession> { $0.userId == userId },
@@ -30,7 +30,6 @@ final class LocalFirstSessionRepository: SessionRepository, @unchecked Sendable 
         return localSessions.map { $0.toDomainModel() }
     }
     
-    @MainActor
     func fetchAllSessions() async throws -> [AssemblySession] {
         let descriptor = FetchDescriptor<LocalAssemblySession>(
             sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
@@ -39,13 +38,11 @@ final class LocalFirstSessionRepository: SessionRepository, @unchecked Sendable 
         return localSessions.map { $0.toDomainModel() }
     }
     
-    @MainActor
     func fetchSession(id: UUID) async throws -> AssemblySession? {
         let fetchLocal = FetchDescriptor<LocalAssemblySession>(predicate: #Predicate<LocalAssemblySession> { $0.id == id })
         return try modelContext.fetch(fetchLocal).first?.toDomainModel()
     }
     
-    @MainActor
     func saveSession(_ session: AssemblySession) async throws {
         let targetId = session.id
         let fetchLocal = FetchDescriptor<LocalAssemblySession>(predicate: #Predicate<LocalAssemblySession> { $0.id == targetId })

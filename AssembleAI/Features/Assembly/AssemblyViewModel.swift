@@ -108,6 +108,12 @@ final class AssemblyViewModel: ObservableObject {
         self.currentStepIndex = max(0, min(project.completedSteps, max(0, project.steps.count - 1)))
     }
     
+    deinit {
+        liveObservationTask?.cancel()
+        voiceInputTask?.cancel()
+        autoProgressTask?.cancel()
+    }
+    
     /// Current assembly step or fallback step
     var currentStep: AssemblyStep {
         if currentStepIndex < project.steps.count {
@@ -331,7 +337,7 @@ final class AssemblyViewModel: ObservableObject {
         autoProgressTask?.cancel()
         autoProgressTask = nil
         transitioningStepID = nil
-        Task {
+        Task { [voiceOutput, voiceInput] in
             await voiceOutput.stop()
             await voiceInput.stopListening()
         }
@@ -343,7 +349,7 @@ final class AssemblyViewModel: ObservableObject {
         liveStatus = isLivePaused ? .paused : .live
         logResearchEvent(isLivePaused ? .liveTutorPaused : .liveTutorResumed)
         if isLivePaused {
-            Task {
+            Task { [voiceOutput] in
                 await voiceOutput.stop()
             }
         }
@@ -354,7 +360,7 @@ final class AssemblyViewModel: ObservableObject {
         if isListening {
             isListening = false
             liveStatus = isLivePaused ? .paused : .live
-            Task {
+            Task { [voiceInput] in
                 await voiceInput.stopListening()
             }
             voiceInputTask?.cancel()
@@ -460,8 +466,9 @@ final class AssemblyViewModel: ObservableObject {
             phase = .analyzing
         }
         
-        Task {
-            let targetImage = capturedImage ?? createFallbackFrame()
+        Task { [weak self] in
+            guard let self = self else { return }
+            let targetImage = self.capturedImage ?? self.createFallbackFrame()
             let observation: VisualObservation
             do {
                 observation = try await visionAnalyzer.analyze(image: targetImage)
@@ -522,16 +529,17 @@ final class AssemblyViewModel: ObservableObject {
     
     /// Continues from development debug view to verification result.
     func proceedFromVisionDebug() {
-        Task {
-            let targetImage = capturedImage ?? createFallbackFrame()
-            let result = (try? await verificationService.verifyStep(currentStep, image: targetImage)) ?? VerificationResult(
+        Task { [weak self] in
+            guard let self = self else { return }
+            let targetImage = self.capturedImage ?? self.createFallbackFrame()
+            let result = (try? await self.verificationService.verifyStep(self.currentStep, image: targetImage)) ?? VerificationResult(
                 status: .incorrect,
                 confidence: 0.0,
                 detectedDescription: "Analysis fallback",
-                expectedDescription: currentStep.title,
+                expectedDescription: self.currentStep.title,
                 explanation: "Processing fallback."
             )
-            handleVerificationResult(result)
+            self.handleVerificationResult(result)
         }
     }
     
@@ -570,7 +578,7 @@ final class AssemblyViewModel: ObservableObject {
         liveUserTranscript = ""
         
         interventionPolicy.resetForStepChange()
-        Task {
+        Task { [observationCoordinator] in
             await observationCoordinator.resetForStepChange()
         }
         
@@ -599,7 +607,7 @@ final class AssemblyViewModel: ObservableObject {
         liveUserTranscript = ""
         
         interventionPolicy.resetForStepChange()
-        Task {
+        Task { [observationCoordinator] in
             await observationCoordinator.resetForStepChange()
         }
         

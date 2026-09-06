@@ -57,9 +57,13 @@ struct AssemblyCameraView: View {
                 if cameraService.authorizationStatus == .authorized && cameraService.isCameraAvailable {
                     CameraPreviewView(session: cameraService.captureSession)
                         .ignoresSafeArea()
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel("Live camera feed")
                 } else {
                     simulatorOrPermissionViewfinder
                         .ignoresSafeArea()
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel("Camera unavailable or waiting for permission")
                 }
                 
                 // Alignment Grid Overlay (Configurable via Settings)
@@ -137,7 +141,7 @@ struct AssemblyCameraView: View {
             }
         }
         .ignoresSafeArea()
-        .navigationBarHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $showStepsSheet) {
             StepsOverviewSheet(
                 currentStep: currentStep,
@@ -155,17 +159,17 @@ struct AssemblyCameraView: View {
                 )
             )
         }
-        .onAppear {
-            Task {
-                if cameraService.authorizationStatus == .notDetermined {
-                    await cameraService.requestPermission()
-                } else if cameraService.authorizationStatus == .authorized {
-                    cameraService.startSession()
-                    if liveTutorEnabled {
-                        onStartLiveStream?(cameraService.frameStream)
-                    }
+        .task {
+            if cameraService.authorizationStatus == .notDetermined {
+                await cameraService.requestPermission()
+            } else if cameraService.authorizationStatus == .authorized {
+                cameraService.startSession()
+                if liveTutorEnabled {
+                    onStartLiveStream?(cameraService.frameStream)
                 }
             }
+        }
+        .onAppear {
             
             let timing = reduceMotion ? 0.0 : 0.4
             withAnimation(.easeOut(duration: timing).delay(0.1)) {

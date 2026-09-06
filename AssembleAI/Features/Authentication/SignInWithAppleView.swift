@@ -146,7 +146,7 @@ struct SignInWithAppleView: View {
 }
 
 #Preview("Sign in with Apple View") {
-    NavigationView {
+    NavigationStack {
         SignInWithAppleView()
             .environmentObject(AppRouter())
             .environmentObject(SupabaseAuthService())

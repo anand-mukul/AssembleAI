@@ -119,15 +119,15 @@ enum MemorySampler: Sendable {
     /// Does not use private APIs or synthetic estimates.
     static func currentResidentMemoryMB() -> Double {
         #if canImport(Darwin)
-        var info = mach_task_basic_info()
-        var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size / MemoryLayout<integer_t>.size)
+        var info = task_vm_info_data_t()
+        var count = mach_msg_type_number_t(MemoryLayout.size(ofValue: info) / MemoryLayout<integer_t>.size)
         let kerr = withUnsafeMutablePointer(to: &info) {
             $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
-                task_info(mach_task_self_, task_flavor_t(MACH_TASK_BASIC_INFO), $0, &count)
+                task_info(mach_task_self_, task_flavor_t(TASK_VM_INFO), $0, &count)
             }
         }
         guard kerr == KERN_SUCCESS else { return 0.0 }
-        let bytes = Double(info.resident_size)
+        let bytes = Double(info.phys_footprint)
         return (bytes / (1024.0 * 1024.0) * 100.0).rounded() / 100.0
         #else
         return 0.0
@@ -517,6 +517,7 @@ actor ResearchLogger: ResearchLogging {
     nonisolated static let researchSchemaVersion: Int = 1
     
     // In-Memory State
+    private static let maxInMemoryEvents: Int = 1000
     private var events: [ResearchEvent] = []
     private var sessionSequences: [UUID: Int] = [:]
     private var sessions: [UUID: ResearchSessionConfig] = [:]
@@ -527,6 +528,7 @@ actor ResearchLogger: ResearchLogging {
     private let sessionsFileURL: URL
     
     /// Initializes ResearchLogger with persistent local disk storage.
+    /// Telemetry is stored in Application Support and excluded from iCloud backups to comply with App Store guidelines.
     /// - Parameter customBaseDirectory: Optional custom directory for testing or isolated environments.
     init(customBaseDirectory: URL? = nil) {
         let baseDir: URL
@@ -540,8 +542,12 @@ actor ResearchLogger: ResearchLogging {
         self.eventsFileURL = baseDir.appendingPathComponent("events.jsonl")
         self.sessionsFileURL = baseDir.appendingPathComponent("sessions.json")
         
-        // Ensure directory exists
+        // Ensure directory exists and is excluded from iCloud backups
         try? FileManager.default.createDirectory(at: baseDir, withIntermediateDirectories: true)
+        var resourceValues = URLResourceValues()
+        resourceValues.isExcludedFromBackup = true
+        var mutableBaseDir = baseDir
+        try? mutableBaseDir.setResourceValues(resourceValues)
         
         // Load persisted records synchronously from disk
         let (loadedSessions, loadedEvents, loadedSequences) = Self.loadPersistedRecordsFromDisk(
@@ -549,7 +555,7 @@ actor ResearchLogger: ResearchLogging {
             eventsFileURL: self.eventsFileURL
         )
         self.sessions = loadedSessions
-        self.events = loadedEvents
+        self.events = loadedEvents.count > Self.maxInMemoryEvents ? Array(loadedEvents.suffix(Self.maxInMemoryEvents)) : loadedEvents
         self.sessionSequences = loadedSequences
     }
     
@@ -735,6 +741,9 @@ actor ResearchLogger: ResearchLogging {
         )
         
         events.append(sequencedEvent)
+        if events.count > Self.maxInMemoryEvents {
+            events.removeFirst(events.count - Self.maxInMemoryEvents)
+        }
         appendEventToDisk(sequencedEvent)
         
         // Auto-register session configuration if not created via startResearchSession

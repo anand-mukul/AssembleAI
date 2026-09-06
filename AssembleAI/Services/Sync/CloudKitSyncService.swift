@@ -8,7 +8,7 @@ import CloudKit
 
 
 /// CloudKit implementation of the cloud synchronization backend.
-final class CloudKitSyncService: CloudSyncBackend, @unchecked Sendable {
+final class CloudKitSyncService: CloudSyncBackend, Sendable {
     
     private let container: CKContainer
     private let database: CKDatabase
@@ -50,8 +50,7 @@ final class CloudKitSyncService: CloudSyncBackend, @unchecked Sendable {
                 updated.updatedAt = Date()
                 uploaded.append(updated)
             } catch {
-                // If single record fails, continue with remainder
-                continue
+                throw error
             }
         }
         
@@ -108,7 +107,7 @@ final class CloudKitSyncService: CloudSyncBackend, @unchecked Sendable {
                 }
             }
         } catch {
-            return []
+            throw error
         }
         
         return fetched

@@ -245,7 +245,7 @@ struct CreateAccountView: View {
 }
 
 #Preview("Create Account View") {
-    NavigationView {
+    NavigationStack {
         CreateAccountView()
             .environmentObject(AppRouter())
             .environmentObject(SupabaseAuthService())

@@ -200,7 +200,7 @@ struct EmailSignInView: View {
 }
 
 #Preview("Email Sign In View") {
-    NavigationView {
+    NavigationStack {
         EmailSignInView()
             .environmentObject(AppRouter())
             .environmentObject(SupabaseAuthService())

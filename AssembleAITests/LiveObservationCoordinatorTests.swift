@@ -125,7 +125,7 @@ final class LiveObservationCoordinatorTests: XCTestCase {
     func testInsufficientVisualEvidenceYieldsUncertain() async {
         let blankObservation = VisualObservation(
             imageSize: CGSize(width: 1084, height: 812),
-            detectedText: [],
+            detectedText: [DetectedText](),
             regions: [],
             processingTimeMs: 10.0
         )
