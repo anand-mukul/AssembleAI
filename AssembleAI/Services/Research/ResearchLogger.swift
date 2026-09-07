@@ -25,13 +25,13 @@ import UIKit
 /// - `lastNFrames`: Strategy B — Sliding window of the most recent N visual frames.
 /// - `fullVisualHistory`: Strategy C — Unbounded chronological accumulation of all session frames.
 /// - `compressedStateHistory`: Strategy D — Semantic state-aware keyframe representation with structural state summaries.
-enum VisualHistoryStrategy: String, Codable, Sendable, CaseIterable {
+nonisolated enum VisualHistoryStrategy: String, Codable, Sendable, CaseIterable {
     case currentFrame = "currentFrame"
     case lastNFrames = "lastNFrames"
     case fullVisualHistory = "fullVisualHistory"
     case compressedStateHistory = "compressedStateHistory"
     
-    var displayName: String {
+    nonisolated var displayName: String {
         switch self {
         case .currentFrame: return "Strategy A: Current Frame Only"
         case .lastNFrames: return "Strategy B: Last N Frames"
@@ -43,7 +43,7 @@ enum VisualHistoryStrategy: String, Codable, Sendable, CaseIterable {
 
 /// Persistent configuration and device metadata for a research evaluation session.
 /// Guarantees reproducibility without storing personally identifying information (PII).
-struct ResearchSessionConfig: Identifiable, Codable, Sendable, Equatable {
+nonisolated struct ResearchSessionConfig: Identifiable, Codable, Sendable, Equatable {
     let id: UUID
     let projectID: String
     let interactionMode: InteractionMode
@@ -65,7 +65,7 @@ struct ResearchSessionConfig: Identifiable, Codable, Sendable, Equatable {
     var framesIncludedInModelContext: Int
     var framesDropped: Int
     
-    init(
+    nonisolated init(
         id: UUID = UUID(),
         projectID: String,
         interactionMode: InteractionMode = .liveTutor,
@@ -114,10 +114,10 @@ struct ResearchSessionConfig: Identifiable, Codable, Sendable, Equatable {
 
 /// Hardware-level resident memory sampling using Darwin Mach kernel task information.
 /// Measures physical memory (resident size) actually occupied in RAM, rounded to megabytes.
-enum MemorySampler: Sendable {
+nonisolated enum MemorySampler: Sendable {
     /// Returns current resident memory size in Megabytes (MB).
     /// Does not use private APIs or synthetic estimates.
-    static func currentResidentMemoryMB() -> Double {
+    nonisolated static func currentResidentMemoryMB() -> Double {
         #if canImport(Darwin)
         var info = task_vm_info_data_t()
         var count = mach_msg_type_number_t(MemoryLayout.size(ofValue: info) / MemoryLayout<integer_t>.size)
@@ -138,14 +138,14 @@ enum MemorySampler: Sendable {
 // MARK: - Latency Statistics
 
 /// Min, max, average, and total latency profile for a specific telemetry dimension.
-struct LatencyProfile: Codable, Sendable, Equatable {
+nonisolated struct LatencyProfile: Codable, Sendable, Equatable {
     let count: Int
     let totalMs: Int
     let avgMs: Int
     let minMs: Int?
     let maxMs: Int?
     
-    init(latencies: [Int]) {
+    nonisolated init(latencies: [Int]) {
         self.count = latencies.count
         if latencies.isEmpty {
             self.totalMs = 0
@@ -524,10 +524,19 @@ actor ResearchLogger: ResearchLogging {
     nonisolated static let researchSchemaVersion: Int = 1
     
     // In-Memory State
-    private static let maxInMemoryEvents: Int = 1000
+    private nonisolated static let maxInMemoryEvents: Int = 1000
     private var events: [ResearchEvent] = []
     private var sessionSequences: [UUID: Int] = [:]
     private var sessions: [UUID: ResearchSessionConfig] = [:]
+    
+    @MainActor
+    private static func sampleBatteryLevel() -> Float? {
+        #if canImport(UIKit)
+        return UIDevice.current.isBatteryMonitoringEnabled ? UIDevice.current.batteryLevel : nil
+        #else
+        return nil
+        #endif
+    }
     
     // Persistence File Paths
     private let storageDirectoryURL: URL
@@ -575,15 +584,10 @@ actor ResearchLogger: ResearchLogging {
         strategy: VisualHistoryStrategy,
         lastNFrames: Int? = nil,
         mode: InteractionMode = .liveTutor
-    ) -> UUID {
+    ) async -> UUID {
         let sessionID = UUID()
         let mem = MemorySampler.currentResidentMemoryMB()
-        
-        #if canImport(UIKit)
-        let battery = UIDevice.current.isBatteryMonitoringEnabled ? UIDevice.current.batteryLevel : nil
-        #else
-        let battery: Float? = nil
-        #endif
+        let battery = await Self.sampleBatteryLevel()
         
         let config = ResearchSessionConfig(
             id: sessionID,
@@ -634,14 +638,9 @@ actor ResearchLogger: ResearchLogging {
     func endResearchSession(
         sessionID: UUID,
         externalBatteryCost: Double? = nil
-    ) -> ResearchSessionMetrics {
+    ) async -> ResearchSessionMetrics {
         let mem = MemorySampler.currentResidentMemoryMB()
-        
-        #if canImport(UIKit)
-        let battery = UIDevice.current.isBatteryMonitoringEnabled ? UIDevice.current.batteryLevel : nil
-        #else
-        let battery: Float? = nil
-        #endif
+        let battery = await Self.sampleBatteryLevel()
         
         if var config = sessions[sessionID] {
             config.endedAt = Date()

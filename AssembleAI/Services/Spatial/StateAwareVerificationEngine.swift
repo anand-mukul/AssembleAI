@@ -107,9 +107,6 @@ nonisolated struct StateAwareVerificationEngine: Sendable {
                         // Correct bridging
                     } else {
                         // Pin misalignment detected!
-                        let fromDelta = BreadboardGeometry.rowDelta(from: detectedFrom, to: placement.fromPin) ?? 0
-                        let toDelta = BreadboardGeometry.rowDelta(from: detectedTo, to: placement.toPin) ?? 0
-                        
                         let deltaExplanation: String
                         let sourcePin: PinCoordinate
                         let targetPin: PinCoordinate

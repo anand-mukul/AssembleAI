@@ -164,6 +164,7 @@ struct EmailSignInView: View {
         password.isEmpty
     }
     
+    @discardableResult
     private func validateForm() -> Bool {
         var isValid = true
         let trimmedEmail = email.trimmingCharacters(in: .whitespaces)

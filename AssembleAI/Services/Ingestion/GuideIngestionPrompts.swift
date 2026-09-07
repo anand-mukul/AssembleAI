@@ -10,10 +10,10 @@ import Foundation
 /// These prompts instruct the on-device Foundation Model to extract structured
 /// assembly data from unstructured guide text. The model output must be valid JSON
 /// conforming to the AssembleAI project schema.
-enum GuideIngestionPrompts {
+nonisolated enum GuideIngestionPrompts: Sendable {
     
     /// Builds the extraction prompt for converting raw guide text into an AssemblyProject JSON.
-    static func buildExtractionPrompt(
+    nonisolated static func buildExtractionPrompt(
         guideText: String,
         format: GuideSourceFormat,
         domain: AssemblyDomain

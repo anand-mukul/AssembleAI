@@ -229,13 +229,13 @@ protocol BreadboardHomographyServicing: Sendable {
     func detectCalibration(in pixelBuffer: CVPixelBuffer, orientation: CGImagePropertyOrientation) async -> BreadboardCalibration?
     
     /// Projects a logical `PinCoordinate` to normalized camera coordinates [0...1].
-    func projectPinToCamera(pin: PinCoordinate, calibration: BreadboardCalibration) -> CGPoint?
+    nonisolated func projectPinToCamera(pin: PinCoordinate, calibration: BreadboardCalibration) -> CGPoint?
     
     /// Projects a camera view coordinate back to the closest breadboard pin with millimeter distance.
-    func mapCameraPointToPin(cameraPoint: CGPoint, calibration: BreadboardCalibration) -> (pin: PinCoordinate, distanceMm: Double)?
+    nonisolated func mapCameraPointToPin(cameraPoint: CGPoint, calibration: BreadboardCalibration) -> (pin: PinCoordinate, distanceMm: Double)?
     
     /// Projects a pin placement (fromPin -> toPin) to a camera space bounding box with tolerance padding.
-    func projectPinPlacementRegion(from: PinCoordinate, to: PinCoordinate, calibration: BreadboardCalibration) -> CGRect?
+    nonisolated func projectPinPlacementRegion(from: PinCoordinate, to: PinCoordinate, calibration: BreadboardCalibration) -> CGRect?
 }
 
 /// Production implementation of breadboard planar homography detection and coordinate transformation.
@@ -312,19 +312,19 @@ nonisolated final class BreadboardHomographyService: BreadboardHomographyServici
     
     // MARK: - Coordinate Transformations
     
-    func projectPinToCamera(pin: PinCoordinate, calibration: BreadboardCalibration) -> CGPoint? {
+    nonisolated func projectPinToCamera(pin: PinCoordinate, calibration: BreadboardCalibration) -> CGPoint? {
         guard let canonicalPos = calibration.geometry.normalizedPosition(for: pin) else {
             return nil
         }
         return calibration.rectifiedToCamera.transform(canonicalPos)
     }
     
-    func mapCameraPointToPin(cameraPoint: CGPoint, calibration: BreadboardCalibration) -> (pin: PinCoordinate, distanceMm: Double)? {
+    nonisolated func mapCameraPointToPin(cameraPoint: CGPoint, calibration: BreadboardCalibration) -> (pin: PinCoordinate, distanceMm: Double)? {
         let rectifiedPoint = calibration.cameraToRectified.transform(cameraPoint)
         return calibration.geometry.nearestPin(toNormalizedPoint: rectifiedPoint)
     }
     
-    func projectPinPlacementRegion(from: PinCoordinate, to: PinCoordinate, calibration: BreadboardCalibration) -> CGRect? {
+    nonisolated func projectPinPlacementRegion(from: PinCoordinate, to: PinCoordinate, calibration: BreadboardCalibration) -> CGRect? {
         guard let p1 = projectPinToCamera(pin: from, calibration: calibration),
               let p2 = projectPinToCamera(pin: to, calibration: calibration) else {
             return nil

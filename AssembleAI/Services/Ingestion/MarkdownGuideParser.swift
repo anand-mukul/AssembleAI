@@ -165,7 +165,6 @@ struct MarkdownGuideParser {
         
         for line in lines {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
-            let lower = trimmed.lowercased()
             
             // Check for BOM section heading
             if trimmed.hasPrefix("## ") || trimmed.hasPrefix("### ") {

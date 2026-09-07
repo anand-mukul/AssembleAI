@@ -13,10 +13,10 @@ import Foundation
 /// 3. Step orders must be sequential with no duplicates.
 /// 4. If visual contracts reference component part IDs, those IDs must exist in the project BOM.
 /// 5. Schema version must be a recognized format.
-struct ProjectPackageValidator {
+nonisolated struct ProjectPackageValidator: Sendable {
     
     /// Validates a project package, throwing on the first structural violation.
-    static func validate(_ project: AssemblyProject) throws {
+    nonisolated static func validate(_ project: AssemblyProject) throws {
         // Rule 1: Non-empty title
         guard !project.title.trimmingCharacters(in: .whitespaces).isEmpty else {
             throw ProjectPackageError.invalidSchema("Project title cannot be empty.")
@@ -63,7 +63,7 @@ struct ProjectPackageValidator {
     }
     
     /// Performs a non-throwing validation, returning all discovered issues.
-    static func diagnose(_ project: AssemblyProject) -> [String] {
+    nonisolated static func diagnose(_ project: AssemblyProject) -> [String] {
         var issues: [String] = []
         
         if project.title.trimmingCharacters(in: .whitespaces).isEmpty {

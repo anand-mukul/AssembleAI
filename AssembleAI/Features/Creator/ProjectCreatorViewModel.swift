@@ -6,6 +6,7 @@
 import Foundation
 import Combine
 import SwiftUI
+import SwiftData
 
 /// Orchestrates manual project creation and AI-assisted guide import.
 ///
@@ -377,10 +378,10 @@ final class ProjectCreatorViewModel: ObservableObject {
                 syncStateRaw: SyncState.synced.rawValue
             )
             context.insert(localProject)
-            try? context.save()
+            try context.save()
             
             // 3. Local JSON redundancy in documents
-            try? ProjectPackageLoader.saveToDocuments(project)
+            try ProjectPackageLoader.saveToDocuments(project)
             
             // 4. Record telemetry event in ResearchLogger
             await ResearchLogger.shared.logEvent(

@@ -56,7 +56,7 @@ struct LaunchView: View {
                 }
             }
         }
-        .onChange(of: authService.isSessionRestored) { _ in
+        .onChange(of: authService.isSessionRestored) {
             evaluateTransition()
         }
     }

@@ -56,7 +56,7 @@ struct ProjectsView: View {
             placement: .navigationBarDrawer(displayMode: .automatic),
             prompt: "Search projects or categories"
         )
-        .onChange(of: viewModel.selectedFilter) { _ in
+        .onChange(of: viewModel.selectedFilter) {
             UISelectionFeedbackGenerator().selectionChanged()
         }
         .toolbar {

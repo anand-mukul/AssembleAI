@@ -37,7 +37,7 @@ enum ProjectPackageError: LocalizedError {
 /// JSON packages are the portable distribution format for AssembleAI projects.
 /// They are self-contained files containing the project manifest, bill of materials,
 /// step sequence with visual contracts, and common mistake remediation graphs.
-struct ProjectPackageLoader {
+nonisolated struct ProjectPackageLoader: Sendable {
     
     /// Shared JSON decoder configured for AssembleAI project packages.
     private static let decoder: JSONDecoder = {
@@ -77,7 +77,7 @@ struct ProjectPackageLoader {
     /// Loads all project JSON files from the app bundle, checking common resource subdirectories.
     /// - Parameter directory: Primary bundle subdirectory to search (default "Projects").
     /// - Returns: Array of decoded projects, deduplicated by ID.
-    static func loadAllFromBundle(directory: String = "Projects") -> [AssemblyProject] {
+    nonisolated static func loadAllFromBundle(directory: String = "Projects") -> [AssemblyProject] {
         var foundURLs: [URL] = []
         
         if let urls = Bundle.main.urls(forResourcesWithExtension: "json", subdirectory: directory), !urls.isEmpty {

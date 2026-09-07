@@ -15,7 +15,7 @@ import SwiftData
 ///
 /// This replaces `MockProjectRepository` for production use while preserving
 /// the same `ProjectRepository` protocol contract.
-struct BundledProjectRepository: ProjectRepository {
+nonisolated struct BundledProjectRepository: ProjectRepository, Sendable {
     
     /// Optional bundle subdirectory name containing project JSON files.
     private let bundleDirectory: String
@@ -23,7 +23,7 @@ struct BundledProjectRepository: ProjectRepository {
     /// Whether to also load user projects from the documents directory.
     private let includeUserProjects: Bool
     
-    init(bundleDirectory: String = "Projects", includeUserProjects: Bool = true) {
+    nonisolated init(bundleDirectory: String = "Projects", includeUserProjects: Bool = true) {
         self.bundleDirectory = bundleDirectory
         self.includeUserProjects = includeUserProjects
     }

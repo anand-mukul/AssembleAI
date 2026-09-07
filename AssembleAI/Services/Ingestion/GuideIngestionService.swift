@@ -31,7 +31,7 @@ protocol GuideIngestionServiceProtocol: Sendable {
 }
 
 /// Maximum allowed character limit for guide ingestion to prevent on-device memory exhaustion.
-public let maxGuidePayloadCharacters: Int = 50_000
+public nonisolated let maxGuidePayloadCharacters: Int = 50_000
 
 enum GuideIngestionError: LocalizedError {
     case emptyInput

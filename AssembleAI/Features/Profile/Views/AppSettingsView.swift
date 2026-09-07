@@ -62,7 +62,7 @@ struct AppSettingsView: View {
                         Text("Detailed").tag(GuidanceLevel.detailed.rawValue)
                     }
                     .pickerStyle(.segmented)
-                    .onChange(of: viewModel.guidanceLevelRaw) { _ in
+                    .onChange(of: viewModel.guidanceLevelRaw) {
                         UISelectionFeedbackGenerator().selectionChanged()
                     }
                     
@@ -95,7 +95,7 @@ struct AppSettingsView: View {
                         Text("Optical Only").tag("vision")
                     }
                     .pickerStyle(.segmented)
-                    .onChange(of: viewModel.verificationMode) { _ in
+                    .onChange(of: viewModel.verificationMode) {
                         UISelectionFeedbackGenerator().selectionChanged()
                     }
                     

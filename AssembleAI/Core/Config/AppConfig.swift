@@ -7,9 +7,9 @@ import Foundation
 
 /// Centralized configuration provider for API endpoints, backend options, and runtime environments.
 enum AppConfig {
-    static let appName = "AssembleAI"
-    static let appVersion = "1.0.0"
-    static let buildNumber = "1"
+    nonisolated static let appName = "AssembleAI"
+    nonisolated static let appVersion = "1.0.0"
+    nonisolated static let buildNumber = "1"
     
     /// Supabase Project URL
     nonisolated static var supabaseUrl: String {

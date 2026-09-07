@@ -31,6 +31,9 @@ enum AppSpacing {
     /// Standard horizontal inset for screen-edge content (matches Apple native 16pt grouped list margin)
     static let screenEdge: CGFloat = 16
     
+    /// Standard internal padding for cards (16pt)
+    static let cardPadding: CGFloat = 16
+    
     /// Standard divider leading inset for grouped list cards with icon badges (16pt padding + 30pt badge + 10pt gap = 56pt)
     static let dividerLeadingInset: CGFloat = 56
     
