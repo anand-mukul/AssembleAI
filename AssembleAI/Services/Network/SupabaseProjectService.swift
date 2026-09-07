@@ -263,7 +263,7 @@ actor SupabaseProjectService {
     
     /// Saves a full `AssemblyProject` into Supabase by saving the project, its components, and its steps.
     func saveFullAssemblyProject(_ project: AssemblyProject) async throws {
-        let ownerId = await supabaseManager.currentUserId ?? project.id
+        let ownerId = (await supabaseManager.currentUserId).flatMap { UUID(uuidString: $0) } ?? project.id
         let baseProject = Project(
             id: project.id,
             ownerId: ownerId,
