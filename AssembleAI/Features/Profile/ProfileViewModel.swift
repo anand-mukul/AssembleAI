@@ -57,11 +57,16 @@ final class ProfileViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var deletionError: String? = nil
     
-    // MARK: - Research Telemetry State
+    // MARK: - Research Telemetry & Cloud Sync State
     @Published var researchSessionCount: Int = 0
     @Published var researchEventsCount: Int = 0
+    @Published var pendingSyncCount: Int = 0
+    @Published var isCloudSyncing: Bool = false
+    @Published var researchWebhookURL: String = ""
     @Published var showClearResearchAlert: Bool = false
     @Published var showClearResearchToast: Bool = false
+    @Published var showSyncSuccessToast: Bool = false
+    @Published var showWebhookEditorSheet: Bool = false
     
     // MARK: - App Preferences (Persisted via @AppStorage)
     @AppStorage("app_guidance_level") var guidanceLevelRaw: String = GuidanceLevel.concise.rawValue
@@ -121,6 +126,8 @@ final class ProfileViewModel: ObservableObject {
         if let savedColor = UserDefaults.standard.string(forKey: "user_avatar_color_hex"), !savedColor.isEmpty {
             self.avatarColorHex = savedColor
         }
+        self.researchWebhookURL = UserDefaults.standard.string(forKey: "research_webhook_url")
+            ?? AppConfig.researchTelemetryWebhookURL ?? ""
     }
     
     func updateUser(user: User?) {
@@ -184,11 +191,41 @@ final class ProfileViewModel: ObservableObject {
     
     // MARK: - Research Telemetry & Export Engine
     
-    /// Refreshes live research telemetry counters from local disk storage.
+    /// Refreshes live research telemetry counters and offline queue count from disk storage.
     func loadResearchStats() async {
         let stats = await ResearchLogger.shared.getTelemetryStats()
         self.researchSessionCount = stats.sessionCount
         self.researchEventsCount = stats.eventCount
+        self.pendingSyncCount = await ResearchCloudSyncService.shared.getPendingQueueCount()
+    }
+    
+    /// Updates and persists the destination webhook URL for automated Google Sheets / Airtable syncing.
+    func saveWebhookURL(_ urlString: String) {
+        let trimmed = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
+        UserDefaults.standard.set(trimmed, forKey: "research_webhook_url")
+        self.researchWebhookURL = trimmed
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+    }
+    
+    /// Manually triggers immediate upload of any pending offline research evaluation payloads.
+    func flushCloudTelemetry() {
+        Task { [weak self] in
+            guard let self = self else { return }
+            self.isCloudSyncing = true
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            await ResearchLogger.shared.flushCloudSyncQueue()
+            await self.loadResearchStats()
+            self.isCloudSyncing = false
+            
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            withAnimation {
+                self.showSyncSuccessToast = true
+            }
+            try? await Task.sleep(nanoseconds: 2_500_000_000)
+            withAnimation {
+                self.showSyncSuccessToast = false
+            }
+        }
     }
     
     /// Exports research summary CSV (one row per session) to Documents/ResearchExports and presents share sheet.

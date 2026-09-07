@@ -43,6 +43,9 @@ struct DataPrivacySettingsView: View {
                 ShareSheet(activityItems: [viewModel.exportedCSVContent])
             }
         }
+        .sheet(isPresented: $viewModel.showWebhookEditorSheet) {
+            WebhookConfigurationSheet(viewModel: viewModel)
+        }
         .alert("Reset All Local Data?", isPresented: $viewModel.showResetDataAlert) {
             Button("Cancel", role: .cancel) {}
             Button("Reset Everything", role: .destructive) {
@@ -66,6 +69,8 @@ struct DataPrivacySettingsView: View {
                 toastView(title: "All local data reset", icon: "trash.circle.fill", color: AppColors.warning)
             } else if viewModel.showClearResearchToast {
                 toastView(title: "Research telemetry cleared", icon: "chart.line.uptrend.xyaxis.circle.fill", color: .assembleBrandPrimary)
+            } else if viewModel.showSyncSuccessToast {
+                toastView(title: "Telemetry synced to cloud", icon: "icloud.and.arrow.up.fill", color: AppColors.success)
             }
         }
         .task {
@@ -142,10 +147,8 @@ struct DataPrivacySettingsView: View {
                     telemetryPill(icon: "memorychip", title: "Format", count: "RFC 4180")
                 }
                 
-                Text("Export anonymized evaluation benchmarks comparing visual-history architectures. Outputs RFC 4180 CSVs structured for Excel, Python (pandas), R, or SPSS.")
-                    .font(.caption)
-                    .foregroundColor(AppColors.secondaryText)
-                    .lineSpacing(2)
+                // Automated Cloud Telemetry (Google Sheets / Webhook)
+                cloudSyncCard
                 
                 // Export Buttons Grid
                 VStack(spacing: AppSpacing.sm) {
@@ -387,6 +390,175 @@ struct DataPrivacySettingsView: View {
         )
         .padding(.top, AppSpacing.sm)
         .transition(.move(edge: .top).combined(with: .opacity))
+    }
+    
+    // MARK: - Automated Cloud Telemetry Card
+    
+    private var cloudSyncCard: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            HStack(spacing: AppSpacing.mdSm) {
+                SemanticIconBadge(
+                    iconName: "icloud.and.arrow.up.fill",
+                    size: 32,
+                    iconSize: 16,
+                    color: !viewModel.researchWebhookURL.isEmpty ? AppColors.badgeGreen : AppColors.badgeBlue
+                )
+                
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 6) {
+                        Text("Google Sheets / Cloud Sync")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(AppColors.primaryText)
+                        
+                        if !viewModel.researchWebhookURL.isEmpty {
+                            Text("Active")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(AppColors.badgeGreen)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(AppColors.badgeGreen.opacity(0.12))
+                                .clipShape(Capsule())
+                        } else {
+                            Text("Optional")
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundColor(AppColors.secondaryText)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(AppColors.tertiaryBackground)
+                                .clipShape(Capsule())
+                        }
+                    }
+                    
+                    Text(!viewModel.researchWebhookURL.isEmpty
+                         ? "Session runs stream live into spreadsheet rows"
+                         : "Stream benchmarks into Google Sheets for papers")
+                        .font(.caption2)
+                        .foregroundColor(AppColors.secondaryText)
+                }
+                
+                Spacer()
+                
+                Button(action: {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    viewModel.showWebhookEditorSheet = true
+                }) {
+                    Text(!viewModel.researchWebhookURL.isEmpty ? "Settings" : "Connect")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.assembleBrandPrimary)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.assembleBrandPrimary.opacity(0.12))
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(ScaleButtonStyle())
+            }
+            
+            if viewModel.pendingSyncCount > 0 {
+                Divider()
+                
+                HStack {
+                    HStack(spacing: 5) {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(AppColors.warning)
+                        Text("\(viewModel.pendingSyncCount) offline sessions pending")
+                            .font(.caption2)
+                            .foregroundColor(AppColors.secondaryText)
+                    }
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        viewModel.flushCloudTelemetry()
+                    }) {
+                        if viewModel.isCloudSyncing {
+                            ProgressView()
+                                .scaleEffect(0.7)
+                        } else {
+                            Text("Sync Now")
+                                .font(.caption2)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.assembleBrandPrimary)
+                        }
+                    }
+                    .disabled(viewModel.isCloudSyncing)
+                }
+            }
+        }
+        .padding(AppSpacing.sm)
+        .background(
+            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                .fill(AppColors.secondaryBackground)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                .strokeBorder(AppColors.borderSubtle, lineWidth: 0.5)
+        )
+    }
+}
+
+// MARK: - Webhook Configuration Sheet
+
+/// Modal sheet for entering a Google Apps Script Web App URL or Airtable webhook.
+struct WebhookConfigurationSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var viewModel: ProfileViewModel
+    @State private var webhookURLInput: String = ""
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("https://script.google.com/macros/s/.../exec", text: $webhookURLInput)
+                        .font(.subheadline)
+                        .autocapitalization(.none)
+                        .disableAutocorrection(true)
+                        .keyboardType(.URL)
+                } header: {
+                    Text("Webhook URL")
+                } footer: {
+                    Text("Paste your Google Apps Script Web App URL or Airtable webhook. Each completed assembly run automatically appends a row with all 25+ benchmark columns (latency, memory, tokens, accuracy) ready for LaTeX/Word tables.")
+                        .font(.caption)
+                        .foregroundColor(AppColors.secondaryText)
+                }
+                
+                if !viewModel.researchWebhookURL.isEmpty {
+                    Section {
+                        Button(role: .destructive, action: {
+                            viewModel.saveWebhookURL("")
+                            dismiss()
+                        }) {
+                            HStack {
+                                Spacer()
+                                Text("Disconnect Webhook")
+                                    .fontWeight(.medium)
+                                Spacer()
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Cloud Telemetry")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        viewModel.saveWebhookURL(webhookURLInput)
+                        dismiss()
+                    }
+                }
+            }
+            .onAppear {
+                webhookURLInput = viewModel.researchWebhookURL
+            }
+        }
     }
 }
 

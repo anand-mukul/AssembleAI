@@ -59,4 +59,19 @@ enum AppConfig {
                !key.contains("NOT_FOUND") &&
                !key.contains("dummy_anon_key")
     }
+    
+    /// Optional research telemetry webhook URL (e.g. Google Apps Script, Airtable, PostHog, or custom endpoint).
+    nonisolated static var researchTelemetryWebhookURL: String? {
+        if let envUrl = ProcessInfo.processInfo.environment["RESEARCH_WEBHOOK_URL"], !envUrl.isEmpty {
+            return envUrl.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        if let plistUrl = Bundle.main.object(forInfoDictionaryKey: "RESEARCH_WEBHOOK_URL") as? String, !plistUrl.isEmpty, !plistUrl.contains("$") {
+            return plistUrl.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        if let stored = UserDefaults.standard.string(forKey: "research_webhook_url") {
+            return stored.isEmpty ? nil : stored.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        // Default Google Apps Script research spreadsheet webhook
+        return "https://script.google.com/macros/s/AKfycbyuhGRPNL2LpkHKaUrpTSSEq0rm6P6ZLD9H0EU6c8d_2x7rKT-awTRxV5z6kNa1sVVz/exec"
+    }
 }

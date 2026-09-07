@@ -489,10 +489,17 @@ protocol ResearchLogging: Sendable {
     func exportJSONFile(for sessionID: UUID?) async throws -> URL
     func exportSummaryCSV() async -> String
     func exportSummaryCSVFile() async throws -> URL
+    
+    // Automatic Cloud Telemetry
+    func flushCloudSyncQueue() async
 }
 
 // Default parameter extensions for convenience
 extension ResearchLogging {
+    func flushCloudSyncQueue() async {
+        await ResearchCloudSyncService.shared.flushPendingQueue()
+    }
+    
     func startResearchSession(
         projectID: String,
         strategy: VisualHistoryStrategy,
@@ -666,7 +673,20 @@ actor ResearchLogger: ResearchLogging {
         )
         logEvent(endEvent)
         
-        return calculateMetrics(for: sessionID)
+        let metrics = calculateMetrics(for: sessionID)
+        let config = sessions[sessionID]
+        
+        // Asynchronously stream session metrics to cloud telemetry (Google Sheets / Webhook)
+        Task {
+            await ResearchCloudSyncService.shared.syncSessionMetrics(metrics: metrics, config: config)
+        }
+        
+        return metrics
+    }
+    
+    /// Flushes any pending offline queued research payloads to the configured cloud webhook.
+    func flushCloudSyncQueue() async {
+        await ResearchCloudSyncService.shared.flushPendingQueue()
     }
     
     /// Returns the active or saved session configuration.

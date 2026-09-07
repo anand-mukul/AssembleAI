@@ -127,7 +127,7 @@ struct ProfileView: View {
             }
             
             // Name & Email
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                 Text(viewModel.displayName)
                     .font(.title3)
                     .fontWeight(.bold)
@@ -136,31 +136,13 @@ struct ProfileView: View {
                 Text(viewModel.email)
                     .font(.subheadline)
                     .foregroundColor(AppColors.secondaryText)
-                
-                // Status Indicator
-                HStack(spacing: 5) {
-                    Circle()
-                        .fill(viewModel.isGuest ? AppColors.warning : AppColors.success)
-                        .frame(width: 6, height: 6)
-                    Text(viewModel.isGuest ? "Guest Mode (Local)" : "Synced to Supabase")
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .foregroundColor(AppColors.secondaryText)
-                }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .background(
-                    Capsule()
-                        .fill((viewModel.isGuest ? AppColors.warning : AppColors.success).opacity(0.1))
-                )
-                .padding(.top, 2)
             }
             
             Spacer()
         }
         .appCard()
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(viewModel.displayName), \(viewModel.email), Status: \(viewModel.isGuest ? "Guest Mode" : "Synced to Supabase")")
+        .accessibilityLabel("\(viewModel.displayName), \(viewModel.email)")
     }
     
     private var metricsGrid: some View {
