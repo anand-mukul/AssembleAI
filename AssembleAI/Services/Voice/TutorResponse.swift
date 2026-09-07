@@ -58,9 +58,9 @@ nonisolated protocol TutorResponseProviding: Sendable {
 
 // MARK: - Deterministic Tutor Response Provider
 
-/// Concrete deterministic response provider generating concise, friendly tutor dialogue.
+/// Concrete deterministic response provider generating warm, friendly, natural guide dialogue.
 ///
-/// Serves as the baseline spoken language provider before Apple Foundation Models integration in Phase 8.
+/// Serves as the conversational baseline and fallback across all physical assembly tasks (furniture, mechanical, electronics, hybrid).
 nonisolated struct DeterministicTutorResponseProvider: TutorResponseProviding {
     nonisolated init() {}
     
@@ -72,19 +72,27 @@ nonisolated struct DeterministicTutorResponseProvider: TutorResponseProviding {
             return nil
             
         case .instruct(let step):
+            let intros = [
+                "Alright! Let's tackle Step \(step.stepOrder): \(step.title). \(step.instruction)",
+                "Next up, Step \(step.stepOrder): \(step.title). \(step.instruction)",
+                "Here's our next step, Step \(step.stepOrder): \(step.title). \(step.instruction)"
+            ]
+            let chosen = intros[abs(step.stepOrder.hashValue) % intros.count]
             return TutorResponse(
-                text: "Let's start step \(step.stepOrder): \(step.title). \(step.instruction)",
+                text: chosen,
                 priority: .normal,
                 category: "instruction"
             )
             
         case .confirm(let step):
             let confirmations = [
-                "Perfect. That's exactly right.",
-                "Great job! Step \(step.stepOrder) is complete.",
-                "Nicely done. That component is placed correctly."
+                "Awesome job! That's locked in place.",
+                "Spot on! Step \(step.stepOrder) is complete.",
+                "Nicely done! That fits together cleanly.",
+                "Boom! That's set up exactly right.",
+                "Perfect! That connection is solid."
             ]
-            let chosen = confirmations[step.stepOrder % confirmations.count]
+            let chosen = confirmations[abs(step.stepOrder.hashValue) % confirmations.count]
             return TutorResponse(
                 text: chosen,
                 priority: .normal,
@@ -96,13 +104,13 @@ nonisolated struct DeterministicTutorResponseProvider: TutorResponseProviding {
             let priority: ResponsePriority
             switch level {
             case .gentle:
-                prefix = "Almost."
+                prefix = "Almost there! Quick check:"
                 priority = .normal
             case .explicit:
-                prefix = "Check your placement."
+                prefix = "Good try! Make sure to align this:"
                 priority = .high
             case .detailed:
-                prefix = "Let's take a closer look."
+                prefix = "Don't sweat it, assembly tasks take a little patience. Let's adjust this step-by-step:"
                 priority = .high
             }
             return TutorResponse(
@@ -113,21 +121,21 @@ nonisolated struct DeterministicTutorResponseProvider: TutorResponseProviding {
             
         case .requestBetterView(let explanation):
             return TutorResponse(
-                text: "I need a clearer view. \(explanation)",
+                text: "Could you tilt the phone slightly or bring it a little closer? \(explanation)",
                 priority: .normal,
                 category: "camera_guidance"
             )
             
         case .offerHelp(let step, _):
             return TutorResponse(
-                text: "Need a hand with \(step.title)? I can show you where it goes.",
+                text: "Taking your time on \(step.title)? Totally fine! Whenever you're ready, let me know or check the onscreen highlight.",
                 priority: .normal,
                 category: "stuck_help"
             )
             
         case .respondToUser(let query):
             return TutorResponse(
-                text: "Here is what you need to know about \(query).",
+                text: "Got it! Regarding \(query), let's keep working through this together.",
                 priority: .immediate,
                 category: "user_query_response"
             )

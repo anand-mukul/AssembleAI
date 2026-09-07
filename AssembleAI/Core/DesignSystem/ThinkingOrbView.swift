@@ -926,6 +926,7 @@ struct ThinkingOrb: View {
         case .speaking: mappedState = .composing
         case .verifying: mappedState = .solving
         case .paused: mappedState = .breathing
+        case .handsWorking: mappedState = .working
         }
         self.init(
             state: mappedState,

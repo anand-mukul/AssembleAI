@@ -180,9 +180,50 @@ extension LocalFirstProjectRepository: ProjectRepository {
         
         // Query local SwiftData cache
         let descriptor = FetchDescriptor<LocalProject>(sortBy: [SortDescriptor(\.updatedAt, order: .reverse)])
-        let localProjects = (try? modelContext.fetch(descriptor)) ?? []
+        var localProjects = (try? modelContext.fetch(descriptor)) ?? []
+        
+        // If local cache is empty, seed from bundled project packages (supporting diverse physical domains)
+        if localProjects.isEmpty {
+            let bundled = BundledProjectRepository.bundledProjects
+            if !bundled.isEmpty {
+                for bProject in bundled {
+                    let newLocal = LocalProject(
+                        id: bProject.id,
+                        ownerId: bProject.id,
+                        title: bProject.title,
+                        projectDescription: bProject.description,
+                        difficulty: bProject.difficulty.rawValue,
+                        estimatedMinutes: bProject.estimatedMinutes,
+                        thumbnailPath: bProject.imageName,
+                        syncStateRaw: SyncState.synced.rawValue
+                    )
+                    modelContext.insert(newLocal)
+                    
+                    // Also seed steps
+                    for step in bProject.steps {
+                        let localStep = LocalAssemblyStep(
+                            id: step.id,
+                            projectId: bProject.id,
+                            stepOrder: step.stepOrder,
+                            title: step.title,
+                            instruction: step.instruction
+                        )
+                        modelContext.insert(localStep)
+                    }
+                }
+                try? modelContext.save()
+                return bundled
+            }
+        }
+        
+        // Find matching bundled projects to recover full component and domain metadata
+        let bundledMap = Dictionary(uniqueKeysWithValues: BundledProjectRepository.bundledProjects.map { ($0.id, $0) })
         
         return localProjects.map { local in
+            if let bundled = bundledMap[local.id] {
+                return bundled
+            }
+            
             let pid = local.id
             let stepDesc = FetchDescriptor<LocalAssemblyStep>(
                 predicate: #Predicate<LocalAssemblyStep> { $0.projectId == pid },
@@ -205,7 +246,7 @@ extension LocalFirstProjectRepository: ProjectRepository {
                 id: local.id,
                 title: local.title,
                 subtitle: local.projectDescription,
-                category: "Electronics",
+                category: local.difficulty == "Beginner" ? "General Assembly" : "Hardware",
                 difficulty: Difficulty(rawValue: local.difficulty) ?? .beginner,
                 estimatedMinutes: local.estimatedMinutes,
                 totalSteps: domainSteps.count,

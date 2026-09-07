@@ -89,6 +89,9 @@ struct AssemblyContainerView: View {
                             viewModel.stopLiveTutor()
                             dismiss()
                             router.pop()
+                        },
+                        onSelectStep: { step in
+                            viewModel.jumpToStep(step: step)
                         }
                     )
                     .ignoresSafeArea()

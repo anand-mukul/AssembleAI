@@ -66,14 +66,16 @@ final class VoiceOutputService: NSObject, ObservableObject, VoiceOutputServicePr
             }
         }
         
-        // 3. Prepare AVSpeechUtterance
+        // 3. Prepare AVSpeechUtterance with natural cadence
         let utterance = AVSpeechUtterance(string: text)
-        utterance.rate = configuration.rate
+        utterance.rate = min(configuration.rate, 0.49)
         utterance.pitchMultiplier = configuration.pitchMultiplier
         utterance.volume = configuration.volume
+        utterance.preUtteranceDelay = 0.05
+        utterance.postUtteranceDelay = 0.1
         
-        if let voice = AVSpeechSynthesisVoice(language: configuration.language) {
-            utterance.voice = voice
+        if let naturalVoice = resolveNaturalVoice() {
+            utterance.voice = naturalVoice
         }
         
         #if os(iOS)
@@ -92,6 +94,20 @@ final class VoiceOutputService: NSObject, ObservableObject, VoiceOutputServicePr
         state = .speaking
         
         synthesizer.speak(utterance)
+    }
+    
+    // MARK: - Natural Voice Resolution
+    
+    /// Selects the highest available fidelity Apple natural/enhanced speech voice for conversational guidance.
+    private func resolveNaturalVoice() -> AVSpeechSynthesisVoice? {
+        let allVoices = AVSpeechSynthesisVoice.speechVoices().filter { $0.language.hasPrefix("en") }
+        if let premium = allVoices.first(where: { $0.quality == .premium }) {
+            return premium
+        }
+        if let enhanced = allVoices.first(where: { $0.quality == .enhanced }) {
+            return enhanced
+        }
+        return AVSpeechSynthesisVoice(language: configuration.language)
     }
     
     func stop() async {

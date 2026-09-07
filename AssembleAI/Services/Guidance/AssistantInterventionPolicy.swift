@@ -23,6 +23,12 @@ nonisolated enum TutorEvent: Sendable, Equatable {
     
     /// The entire assembly project session completed.
     case sessionCompleted
+    
+    /// User is hesitating on the current physical step.
+    case hesitationDetected(step: AssemblyStep, seconds: Double)
+    
+    /// Hand activity changed relative to the workpiece.
+    case handActivityChanged(activity: WorkbenchHandActivity)
 }
 
 // MARK: - Intervention Level & Action
@@ -103,7 +109,7 @@ nonisolated struct InterventionDecision: Sendable, Equatable {
 
 // MARK: - Tutor Context
 
-/// Snapshot of current session, step, and timing context required for policy decisions.
+/// Snapshot of current session, step, timing, and physical situational context required for policy decisions.
 nonisolated struct TutorContext: Sendable {
     let currentStep: AssemblyStep
     let sessionID: UUID
@@ -113,6 +119,7 @@ nonisolated struct TutorContext: Sendable {
     let consecutiveMistakeCount: Int
     let consecutiveUncertainCount: Int
     let isStepCompleted: Bool
+    let handActivity: WorkbenchHandActivity
     
     nonisolated init(
         currentStep: AssemblyStep,
@@ -122,7 +129,8 @@ nonisolated struct TutorContext: Sendable {
         lastVerificationResult: VerificationResult? = nil,
         consecutiveMistakeCount: Int = 0,
         consecutiveUncertainCount: Int = 0,
-        isStepCompleted: Bool = false
+        isStepCompleted: Bool = false,
+        handActivity: WorkbenchHandActivity = .clear
     ) {
         self.currentStep = currentStep
         self.sessionID = sessionID
@@ -132,6 +140,7 @@ nonisolated struct TutorContext: Sendable {
         self.consecutiveMistakeCount = max(0, consecutiveMistakeCount)
         self.consecutiveUncertainCount = max(0, consecutiveUncertainCount)
         self.isStepCompleted = isStepCompleted
+        self.handActivity = handActivity
     }
 }
 
@@ -257,9 +266,20 @@ final class AssistantInterventionPolicy: AssistantInterventionPolicing, @uncheck
             return evaluateVerificationResult(result, context: context)
         }
         
-        // 7. Priority 4: Stuck Detection / Inactivity Timeout
+        // 7. Priority 4: Hesitation / Inactivity Timeout
         if case .inactiveTimeout = event {
             return evaluateStuckTimeout(context: context)
+        }
+        
+        if case .hesitationDetected = event {
+            return evaluateStuckTimeout(context: context)
+        }
+        
+        if case .handActivityChanged(let activity) = event {
+            if activity == .handsWorking {
+                return InterventionDecision.silent(reason: "User actively manipulating components. Holding speech.")
+            }
+            return InterventionDecision.silent(reason: "Hand activity updated.")
         }
         
         // Default: Silence
@@ -287,6 +307,11 @@ final class AssistantInterventionPolicy: AssistantInterventionPolicing, @uncheck
             )
             
         case .incorrect:
+            // Situational Awareness: If hands are actively working, hold speech until hands clear
+            if context.handActivity == .handsWorking {
+                return InterventionDecision.silent(reason: "User actively manipulating workpiece; holding correction until hands clear.")
+            }
+            
             consecutiveMistakes += 1
             consecutiveUncertainties = 0
             

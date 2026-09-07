@@ -15,6 +15,7 @@ enum LiveTutorStatus: String, Sendable, Equatable {
     case speaking = "SPEAKING"
     case listening = "LISTENING"
     case verifying = "CHECKING"
+    case handsWorking = "HANDS ACTIVE"
 }
 
 // MARK: - Live Tutor Configuration

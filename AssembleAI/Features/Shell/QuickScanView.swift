@@ -35,7 +35,7 @@ struct QuickScanView: View {
                         .foregroundColor(AppColors.primaryText)
                         .accessibilityAddTraits(.isHeader)
                     
-                    Text("Align camera directly above breadboard to track pin connections, wire rows, and polarities in real time.")
+                    Text("Align camera directly above your workpiece to track components, fasteners, and physical connections in real time.")
                         .font(.subheadline)
                         .foregroundColor(AppColors.secondaryText)
                         .multilineTextAlignment(.center)
@@ -182,7 +182,7 @@ struct QuickScanView: View {
                 checklistRow(
                     icon: "iphone.gen3",
                     title: "Optimal Distance",
-                    subtitle: "Hold camera 20–35 cm directly above breadboard.",
+                    subtitle: "Hold camera 20–35 cm directly above your workpiece.",
                     color: AppColors.badgeBlue
                 )
                 

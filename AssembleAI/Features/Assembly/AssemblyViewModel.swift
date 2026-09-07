@@ -53,6 +53,12 @@ final class AssemblyViewModel: ObservableObject {
     @Published var isListening: Bool = false
     @Published var liveUserTranscript: String = ""
     
+    // Situational Awareness State
+    @Published var handActivity: WorkbenchHandActivity = .clear
+    private var stepStartTime: Date = Date()
+    private var lastInterventionTime: Date = Date()
+    private var hesitationTask: Task<Void, Never>?
+    
     // Double-Advancement & Stale Progression Guard
     private var transitioningStepID: UUID? = nil
     
@@ -111,6 +117,7 @@ final class AssemblyViewModel: ObservableObject {
         liveObservationTask?.cancel()
         voiceInputTask?.cancel()
         autoProgressTask?.cancel()
+        hesitationTask?.cancel()
     }
     
     /// Current assembly step or fallback step
@@ -186,6 +193,7 @@ final class AssemblyViewModel: ObservableObject {
         
         liveStatus = isLivePaused ? .paused : .live
         logResearchEvent(.stepStarted, metadata: ["stepOrder": "\(currentStep.stepOrder)"])
+        startHesitationWatchdog(for: currentStep)
         
         liveObservationTask = Task { [weak self] in
             guard let self = self else { return }
@@ -194,6 +202,15 @@ final class AssemblyViewModel: ObservableObject {
             for await frame in sampledFrames {
                 if Task.isCancelled { break }
                 if self.isLivePaused { continue }
+                
+                // 0. Situational Awareness: Evaluate user's hand activity on the workpiece
+                let activity = await self.observationCoordinator.evaluateHandActivity(in: frame)
+                self.handActivity = activity
+                if activity == .handsWorking && self.liveStatus != .listening && self.liveStatus != .speaking && !self.isLivePaused {
+                    self.liveStatus = .handsWorking
+                } else if activity != .handsWorking && self.liveStatus == .handsWorking {
+                    self.liveStatus = .live
+                }
                 
                 let activeStep = self.currentStep
                 let startTime = Date()
@@ -218,16 +235,22 @@ final class AssemblyViewModel: ObservableObject {
                 let verType: ResearchEventType = verification.isCorrect ? .verificationCorrect : (verification.status == .uncertain ? .verificationUncertain : .verificationIncorrect)
                 self.logResearchEvent(verType, durationMs: verDurationMs, status: verification.status.rawValue)
                 
-                // 3. Evaluate Assistant Intervention Policy
+                // 3. Evaluate Assistant Intervention Policy with Situational Timing and Hand Awareness
+                let timeSinceStart = Date().timeIntervalSince(self.stepStartTime)
+                let timeSinceLastIntervention = Date().timeIntervalSince(self.lastInterventionTime)
                 let context = TutorContext(
                     currentStep: activeStep,
-                    timeSinceStepStartedSeconds: 5.0,
-                    lastVerificationResult: verification
+                    sessionID: self.session.id,
+                    timeSinceStepStartedSeconds: timeSinceStart,
+                    timeSinceLastInterventionSeconds: timeSinceLastIntervention,
+                    lastVerificationResult: verification,
+                    handActivity: activity
                 )
                 let decision = self.interventionPolicy.evaluate(event: .verificationUpdated(result: verification), context: context)
                 
                 // 4. Handle Spoken Guidance & Automatic Step Progression
                 if decision.shouldIntervene {
+                    self.lastInterventionTime = Date()
                     self.logResearchEvent(.interventionTriggered, metadata: ["reason": decision.reason])
                     
                     let assistantContext = AssistantContext(
@@ -296,6 +319,7 @@ final class AssemblyViewModel: ObservableObject {
                 
                 let nextStep = self.currentStep
                 self.logResearchEvent(.stepStarted, metadata: ["stepOrder": "\(nextStep.stepOrder)"])
+                self.startHesitationWatchdog(for: nextStep)
                 
                 let introText = "Next, Step \(nextStep.stepOrder): \(nextStep.title). \(nextStep.instruction)"
                 let introResponse = TutorResponse(text: introText, priority: .normal, category: "instruction")
@@ -303,6 +327,7 @@ final class AssemblyViewModel: ObservableObject {
                 
                 if self.liveStatus != .listening && !self.isLivePaused {
                     self.liveStatus = .speaking
+                    self.lastInterventionTime = Date()
                     await self.voiceOutput.speak(introResponse)
                     if self.liveStatus == .speaking {
                         self.liveStatus = self.isLivePaused ? .paused : .live
@@ -335,6 +360,8 @@ final class AssemblyViewModel: ObservableObject {
         voiceInputTask = nil
         autoProgressTask?.cancel()
         autoProgressTask = nil
+        hesitationTask?.cancel()
+        hesitationTask = nil
         transitioningStepID = nil
         Task { [voiceOutput, voiceInput] in
             await voiceOutput.stop()
@@ -626,4 +653,94 @@ final class AssemblyViewModel: ObservableObject {
             phase = .camera
         }
     }
+    
+    /// Jumps directly to the selected step from the Steps Overview Sheet with full state and voice resynchronization.
+    func jumpToStep(step: AssemblyStep) {
+        stopLiveTutor()
+        activeGuidance = nil
+        currentTutorMessage = nil
+        currentVerificationResult = nil
+        liveUserTranscript = ""
+        
+        let targetIndex = max(0, min(totalStepsCount - 1, step.stepOrder - 1))
+        currentStepIndex = targetIndex
+        session.currentStepIndex = currentStepIndex
+        session.currentStepOrder = currentStepIndex + 1
+        persistSessionState()
+        
+        interventionPolicy.resetForStepChange()
+        Task { [observationCoordinator] in
+            await observationCoordinator.resetForStepChange()
+        }
+        
+        logResearchEvent(.stepStarted, metadata: ["stepOrder": "\(currentStep.stepOrder)", "reason": "userJump"])
+        startHesitationWatchdog(for: currentStep)
+        
+        let targetStep = currentStep
+        let introText = "Switched to Step \(targetStep.stepOrder): \(targetStep.title). \(targetStep.instruction)"
+        let introResponse = TutorResponse(text: introText, priority: .normal, category: "instruction")
+        self.currentTutorMessage = introResponse
+        
+        Task { [weak self] in
+            guard let self = self else { return }
+            if self.liveStatus != .listening && !self.isLivePaused {
+                self.liveStatus = .speaking
+                self.lastInterventionTime = Date()
+                await self.voiceOutput.speak(introResponse)
+                if self.liveStatus == .speaking {
+                    self.liveStatus = self.isLivePaused ? .paused : .live
+                }
+            }
+        }
+    }
+    
+    /// Proactively detects hesitation when user is stuck on a step for >20 seconds without hand manipulation.
+    private func startHesitationWatchdog(for step: AssemblyStep) {
+        hesitationTask?.cancel()
+        stepStartTime = Date()
+        
+        hesitationTask = Task { [weak self] in
+            guard let self = self else { return }
+            try? await Task.sleep(nanoseconds: 20_000_000_000)
+            guard !Task.isCancelled else { return }
+            guard self.currentStep.id == step.id, !self.isLivePaused else { return }
+            
+            // If hands are actively working, do not interrupt
+            guard self.handActivity != .handsWorking else { return }
+            
+            let timeSinceLast = Date().timeIntervalSince(self.lastInterventionTime)
+            guard timeSinceLast >= 15.0 else { return }
+            
+            let context = TutorContext(
+                currentStep: step,
+                sessionID: self.session.id,
+                timeSinceStepStartedSeconds: Date().timeIntervalSince(self.stepStartTime),
+                timeSinceLastInterventionSeconds: timeSinceLast,
+                lastVerificationResult: self.currentVerificationResult,
+                handActivity: self.handActivity
+            )
+            
+            let decision = self.interventionPolicy.evaluate(event: .hesitationDetected(step: step, seconds: 20.0), context: context)
+            if decision.shouldIntervene {
+                let assistantContext = AssistantContext(
+                    currentStep: step,
+                    sessionID: self.session.id,
+                    verificationResult: self.currentVerificationResult
+                )
+                if let response = await self.conversationalTutor.generateResponse(for: decision, context: assistantContext) {
+                    guard self.currentStep.id == step.id else { return }
+                    self.currentTutorMessage = response
+                    if self.liveStatus != .listening && !self.isLivePaused {
+                        self.liveStatus = .speaking
+                        self.lastInterventionTime = Date()
+                        await self.voiceOutput.speak(response)
+                        if self.liveStatus == .speaking {
+                            self.liveStatus = self.isLivePaused ? .paused : .live
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
+

@@ -69,75 +69,87 @@ struct HistoryView: View {
             return 1
         }()
         
-        return VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(project?.title ?? "Hardware Assembly Project")
-                        .font(.headline)
-                        .foregroundColor(AppColors.primaryText)
-                    
-                    Text(session.startedAt.formatted(date: .abbreviated, time: .shortened))
-                        .font(.caption)
-                        .foregroundColor(AppColors.secondaryText)
-                }
-                
-                Spacer()
-                
-                HStack(spacing: 5) {
-                    Image(systemName: isCompleted ? "checkmark.circle.fill" : "clock.fill")
-                        .font(.caption2)
-                    Text(isCompleted ? "Completed" : "In Progress")
-                        .font(.caption2)
-                        .fontWeight(.semibold)
-                }
-                .foregroundColor(isCompleted ? AppColors.statusSuccess : AppColors.statusWarning)
-                .padding(.horizontal, 9)
-                .padding(.vertical, 4)
-                .background(
-                    Capsule()
-                        .fill((isCompleted ? AppColors.statusSuccess : AppColors.statusWarning).opacity(0.12))
-                )
+        return Button(action: {
+            if let project = project, let onSelectProject = onSelectProject {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                onSelectProject(project)
             }
-            
-            Divider()
-            
-            HStack(spacing: AppSpacing.lg) {
-                HStack(spacing: 4) {
-                    Image(systemName: "timer")
-                        .font(.caption)
-                        .foregroundColor(AppColors.secondaryText)
-                    Text("\(durationMinutes)m")
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .monospacedDigit()
-                        .foregroundColor(AppColors.primaryText)
-                }
-                
-                HStack(spacing: 4) {
-                    Image(systemName: "list.bullet.clipboard")
-                        .font(.caption)
-                        .foregroundColor(AppColors.secondaryText)
-                    Text("Step \(session.currentStepOrder)")
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .foregroundColor(AppColors.primaryText)
-                }
-                
-                if let domain = project?.domain {
-                    HStack(spacing: 4) {
-                        Image(systemName: "cpu")
-                            .font(.caption)
-                            .foregroundColor(AppColors.secondaryText)
-                        Text(domain.rawValue.capitalized)
+        }) {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(project?.title ?? "Physical Assembly Project")
+                            .font(.headline)
+                            .foregroundColor(AppColors.primaryText)
+                        
+                        Text(session.startedAt.formatted(date: .abbreviated, time: .shortened))
                             .font(.caption)
                             .foregroundColor(AppColors.secondaryText)
                     }
+                    
+                    Spacer()
+                    
+                    HStack(spacing: 5) {
+                        Image(systemName: isCompleted ? "checkmark.circle.fill" : "clock.fill")
+                            .font(.caption2)
+                        Text(isCompleted ? "Completed" : "In Progress")
+                            .font(.caption2)
+                            .fontWeight(.semibold)
+                    }
+                    .foregroundColor(isCompleted ? AppColors.statusSuccess : AppColors.statusWarning)
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .fill((isCompleted ? AppColors.statusSuccess : AppColors.statusWarning).opacity(0.12))
+                    )
                 }
                 
-                Spacer()
+                Divider()
+                
+                HStack(spacing: AppSpacing.lg) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "timer")
+                            .font(.caption)
+                            .foregroundColor(AppColors.secondaryText)
+                        Text("\(durationMinutes)m")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .monospacedDigit()
+                            .foregroundColor(AppColors.primaryText)
+                    }
+                    
+                    HStack(spacing: 4) {
+                        Image(systemName: "list.bullet.clipboard")
+                            .font(.caption)
+                            .foregroundColor(AppColors.secondaryText)
+                        Text("Step \(session.currentStepOrder)")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(AppColors.primaryText)
+                    }
+                    
+                    if let domain = project?.domain {
+                        HStack(spacing: 4) {
+                            Image(systemName: domain.iconName)
+                                .font(.caption)
+                                .foregroundColor(AppColors.secondaryText)
+                            Text(domain.displayName)
+                                .font(.caption)
+                                .foregroundColor(AppColors.secondaryText)
+                        }
+                    }
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundColor(AppColors.tertiaryText)
+                }
             }
+            .appCard()
         }
-        .appCard()
+        .buttonStyle(ScaleButtonStyle())
     }
     
     // MARK: - Empty State
@@ -181,12 +193,15 @@ struct HistoryView: View {
     }
     
     private func findProject(for id: UUID) -> AssemblyProject? {
+        if let bundled = BundledProjectRepository.bundledProjects.first(where: { $0.id == id }) {
+            return bundled
+        }
         if let local = localProjects.first(where: { $0.id == id }) {
             return AssemblyProject(
                 id: local.id,
                 title: local.title,
                 subtitle: local.projectDescription,
-                category: "Electronics",
+                category: "Hardware",
                 difficulty: Difficulty(rawValue: local.difficulty) ?? .beginner,
                 estimatedMinutes: local.estimatedMinutes,
                 totalSteps: 0,

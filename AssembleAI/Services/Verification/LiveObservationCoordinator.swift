@@ -66,6 +66,9 @@ protocol LiveObservationCoordinating: Sendable {
     
     /// Retrieves current coordinator metrics.
     func getMetrics() async -> LiveObservationMetrics
+    
+    /// Evaluates hand pose in the frame to determine if user is actively manipulating components.
+    func evaluateHandActivity(in pixelBuffer: CVPixelBuffer) async -> WorkbenchHandActivity
 }
 
 extension LiveObservationCoordinating {
@@ -78,13 +81,18 @@ extension LiveObservationCoordinating {
     func resetForStepChange() async {
         await reset()
     }
+    
+    /// Default fallback for hand activity evaluation.
+    func evaluateHandActivity(in pixelBuffer: CVPixelBuffer) async -> WorkbenchHandActivity {
+        .clear
+    }
 }
 
 // MARK: - Live Observation Coordinator Implementation
 
 /// Actor-isolated orchestrator connecting `VisualObservation` stream to `AssemblyStateEstimator` and `AssemblyStateComparator`.
 ///
-/// Enforces step identity validation, transient motion debounce, stale result protection, and duplicate emission filtering.
+/// Enforces step identity validation, transient motion debounce, stale result protection, duplicate emission filtering, and situational hand activity awareness.
 actor LiveObservationCoordinator: LiveObservationCoordinating {
     private let estimator: AssemblyStateEstimating
     private let comparator: AssemblyStateComparator
@@ -114,12 +122,21 @@ actor LiveObservationCoordinator: LiveObservationCoordinating {
         self.estimator = estimator
         self.configuration = configuration
         self.acousticDetector = acousticDetector
-        self.handPoseDetector = handPoseDetector
+        self.handPoseDetector = handPoseDetector ?? HandPoseActivityDetector()
         self.comparator = comparator ?? AssemblyStateComparator(
             configuration: VerificationConfiguration(
                 minimumEvidenceConfidence: configuration.minimumEvidenceConfidence
             )
         )
+    }
+    
+    // MARK: - Hand Activity Evaluation
+    
+    /// Evaluates hand pose in the pixel buffer to distinguish active manipulation from clear inspection windows.
+    func evaluateHandActivity(in pixelBuffer: CVPixelBuffer) async -> WorkbenchHandActivity {
+        guard let detector = handPoseDetector else { return .clear }
+        let observation = await detector.analyze(pixelBuffer: pixelBuffer, orientation: .up, targetRegion: nil)
+        return observation.activity
     }
     
     // MARK: - Single Observation Processing

@@ -318,48 +318,48 @@ actor FoundationModelTutorResponseProvider: ConversationalTutorProviding {
     
     private func buildConfirmationPrompt(step: AssemblyStep, context: AssistantContext) -> String {
         """
-        SYSTEM: You are AssembleAI, a calm, friendly, expert live assembly tutor.
-        Produce a warm, concise 1-sentence spoken confirmation that step \(step.stepOrder) ("\(step.title)") is successfully verified.
-        Do not use bullet points, markdown, or robot jargon.
+        SYSTEM: You are AssembleAI, an enthusiastic, friendly workshop partner and physical task guide.
+        Produce a warm, encouraging, concise 1-sentence spoken confirmation that Step \(step.stepOrder) ("\(step.title)") is successfully verified.
+        Celebrate the user's progress naturally. Do not use bullet points, markdown, or robot jargon.
         """
     }
     
     private func buildCorrectionPrompt(description: String, level: InterventionLevel, context: AssistantContext) -> String {
         let historyStr = formatRecentHistory(for: context.sessionID)
         return """
-        SYSTEM: You are AssembleAI, a calm, friendly, expert live assembly tutor.
-        The physical state comparator detected an issue: "\(description)".
+        SYSTEM: You are AssembleAI, a friendly, patient workshop companion and physical task guide.
+        The physical state comparator detected an alignment or placement issue: "\(description)".
         Current Step: \(context.currentStep.stepOrder) — \(context.currentStep.title).
         Escalation Level: \(level.rawValue).
         \(historyStr)
         
-        INSTRUCTION: Explain the adjustment in 1-2 spoken sentences. Be concise and actionable.
-        Never claim the circuit is correct when an issue is detected.
+        INSTRUCTION: Explain the adjustment in 1-2 spoken sentences with warm empathy and actionable physical guidance.
+        Never claim the physical assembly is complete when an issue remains. Keep the tone supportive and friendly.
         """
     }
     
     private func buildInstructionPrompt(step: AssemblyStep, context: AssistantContext) -> String {
         """
-        SYSTEM: You are AssembleAI, a calm, friendly, expert live assembly tutor.
-        Introduce step \(step.stepOrder): "\(step.title)".
+        SYSTEM: You are AssembleAI, a friendly workshop partner and physical assembly guide.
+        Introduce Step \(step.stepOrder): "\(step.title)".
         Instruction: "\(step.instruction)".
-        Deliver a concise 1-2 sentence spoken orientation.
+        Deliver a concise, welcoming 1-2 sentence spoken orientation so the user feels confident getting started.
         """
     }
     
     private func buildCameraViewPrompt(explanation: String, context: AssistantContext) -> String {
         """
-        SYSTEM: You are AssembleAI.
-        Visual occlusion issue: "\(explanation)".
-        Ask the user in 1 friendly sentence to move closer or improve lighting.
+        SYSTEM: You are AssembleAI, a friendly workshop guide.
+        Camera view condition: "\(explanation)".
+        Ask the user in 1 friendly spoken sentence to adjust camera angle, move closer, or check workspace lighting.
         """
     }
     
     private func buildStuckPrompt(step: AssemblyStep, attemptCount: Int, context: AssistantContext) -> String {
         """
-        SYSTEM: You are AssembleAI.
-        The user has spent time on step \(step.stepOrder) ("\(step.title)").
-        Offer gentle, friendly assistance in 1 sentence.
+        SYSTEM: You are AssembleAI, a supportive, patient workshop friend.
+        The user has spent time on Step \(step.stepOrder) ("\(step.title)") and may be hesitating.
+        Offer gentle, friendly encouragement and a helpful hint in 1 spoken sentence.
         """
     }
     
@@ -369,8 +369,8 @@ actor FoundationModelTutorResponseProvider: ConversationalTutorProviding {
         let issueDesc = context.primaryIssue?.explanation ?? (context.verificationResult?.explanation ?? "No active errors.")
         
         return """
-        SYSTEM: You are AssembleAI, a live pair-programming and hardware tutor.
-        Keep responses concise (1-2 sentences) and conversational for voice output.
+        SYSTEM: You are AssembleAI, a friendly and expert live workshop companion for physical assembly tasks (furniture, mechanical kits, electronics, and maker projects).
+        Keep responses concise (1-2 sentences), warm, and spoken-first for natural voice output.
         Grounded task facts:
         - Current Step: \(context.currentStep.stepOrder) (\(context.currentStep.title))
         - Instruction: \(context.currentStep.instruction)
@@ -380,7 +380,7 @@ actor FoundationModelTutorResponseProvider: ConversationalTutorProviding {
         \(historyStr)
         
         User question: "\(query)"
-        Respond directly, accurately, and naturally.
+        Respond directly, warmly, and naturally.
         """
     }
     
