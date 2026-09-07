@@ -274,7 +274,7 @@ public struct QueryNextStepIntent: AppIntent {
             let pid = proj.id
             let stepDesc = FetchDescriptor<LocalAssemblyStep>(
                 predicate: #Predicate<LocalAssemblyStep> { $0.projectId == pid },
-                sortBy: [SortDescriptor(\.stepOrder, order: .asc)]
+                sortBy: [SortDescriptor(\.stepOrder, order: .forward)]
             )
             let steps = (try? context.fetch(stepDesc)) ?? []
             let target = steps.first
