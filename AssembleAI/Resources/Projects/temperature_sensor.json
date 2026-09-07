@@ -58,7 +58,7 @@
   ],
   "steps": [
     {
-      "id": "S0000002-0001-0001-0001-000000000001",
+      "id": "A0000002-0001-0001-0001-000000000001",
       "step_order": 1,
       "title": "Insert NTC Thermistor",
       "instruction": "Place thermistor leads across pin A5 and pin A10 on the breadboard.",
@@ -90,7 +90,7 @@
       ]
     },
     {
-      "id": "S0000002-0001-0001-0001-000000000002",
+      "id": "A0000002-0001-0001-0001-000000000002",
       "step_order": 2,
       "title": "Insert Voltage Divider Resistor",
       "instruction": "Place the 10K precision resistor from pin B10 to pin B15, forming the lower leg of the voltage divider.",
@@ -114,7 +114,7 @@
       "common_mistakes": []
     },
     {
-      "id": "S0000002-0001-0001-0001-000000000003",
+      "id": "A0000002-0001-0001-0001-000000000003",
       "step_order": 3,
       "title": "Connect VCC to Thermistor",
       "instruction": "Connect a jumper wire from the 5V power rail to Row 5 to supply voltage to the thermistor.",
@@ -133,7 +133,7 @@
       "common_mistakes": []
     },
     {
-      "id": "S0000002-0001-0001-0001-000000000004",
+      "id": "A0000002-0001-0001-0001-000000000004",
       "step_order": 4,
       "title": "Connect Analog Output and Ground",
       "instruction": "Connect a jumper from Row 10 (voltage divider midpoint) to the analog input pin. Connect Row 15 to GND rail.",

@@ -77,32 +77,31 @@ final class ComponentIntegrationTests: XCTestCase {
         XCTAssertEqual(arView.guidance.style, .move)
     }
     
-    // MARK: - Test 6: LocalFirstProjectRepository SwiftData Persistence
-    func testLocalFirstProjectRepositoryOperations() async throws {
+    // MARK: - Test 6: SupabaseProjectRepository & SwiftData Persistence
+    func testSupabaseProjectRepositoryFallback() async throws {
+        let repo = SupabaseProjectRepository()
+        let projects = try await repo.fetchProjects()
+        XCTAssertFalse(projects.isEmpty, "Repository should successfully resolve seeded or bundled projects")
+        
         let controller = PersistenceController(inMemory: true)
-        let repo = LocalFirstProjectRepository(modelContext: controller.container.mainContext)
+        let context = controller.container.mainContext
         
-        let initialProjects: [Project] = try await repo.fetchProjects()
-        XCTAssertTrue(initialProjects.isEmpty)
-        
-        let newProject = Project(
+        let localProject = LocalProject(
             id: UUID(),
             ownerId: UUID(),
             title: "Breadboard Power Unit",
-            description: "5V/3.3V dual rail supply",
+            projectDescription: "5V/3.3V dual rail supply",
             difficulty: "Beginner",
             estimatedMinutes: 20
         )
+        context.insert(localProject)
+        try context.save()
         
-        try await repo.saveProject(newProject)
-        
-        let fetched = try await repo.fetchProject(id: newProject.id)
+        let targetId = localProject.id
+        let fetchDesc = FetchDescriptor<LocalProject>(predicate: #Predicate<LocalProject> { $0.id == targetId })
+        let fetched = try context.fetch(fetchDesc).first
         XCTAssertNotNil(fetched)
         XCTAssertEqual(fetched?.title, "Breadboard Power Unit")
         XCTAssertEqual(fetched?.estimatedMinutes, 20)
-        
-        try await repo.deleteProject(id: newProject.id)
-        let deleted = try await repo.fetchProject(id: newProject.id)
-        XCTAssertNil(deleted)
     }
 }

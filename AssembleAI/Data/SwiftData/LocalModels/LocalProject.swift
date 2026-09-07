@@ -9,7 +9,7 @@ import SwiftData
 @Model
 final class LocalProject {
     @Attribute(.unique) var id: UUID
-    var ownerId: UUID
+    var ownerId: UUID?
     var title: String
     var projectDescription: String
     var difficulty: String
@@ -21,7 +21,7 @@ final class LocalProject {
     
     init(
         id: UUID = UUID(),
-        ownerId: UUID,
+        ownerId: UUID? = nil,
         title: String,
         projectDescription: String = "",
         difficulty: String = "Beginner",

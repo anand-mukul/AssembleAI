@@ -58,6 +58,14 @@ create table if not exists public.profiles (
     updated_at timestamptz default now() not null
 );
 
+-- Ensure all columns exist idempotently if the table was created previously (prevents ERROR 42703)
+alter table public.profiles add column if not exists full_name text;
+alter table public.profiles add column if not exists email text;
+alter table public.profiles add column if not exists avatar_url text;
+alter table public.profiles add column if not exists is_admin boolean default false not null;
+alter table public.profiles add column if not exists created_at timestamptz default now() not null;
+alter table public.profiles add column if not exists updated_at timestamptz default now() not null;
+
 -- Helper function to check if current user is an App Owner / Administrator
 create or replace function public.is_admin()
 returns boolean
@@ -137,11 +145,25 @@ create table if not exists public.projects (
     difficulty text default 'Beginner',
     estimated_minutes integer default 30,
     thumbnail_path text,
+    category text default 'General Assembly',
     is_public boolean default true,
     sync_state text default 'synced',
     created_at timestamptz default now() not null,
     updated_at timestamptz default now() not null
 );
+
+-- Idempotent column upgrades for projects
+alter table public.projects add column if not exists owner_id uuid references auth.users(id) on delete cascade;
+alter table public.projects add column if not exists title text;
+alter table public.projects add column if not exists description text default '';
+alter table public.projects add column if not exists difficulty text default 'Beginner';
+alter table public.projects add column if not exists estimated_minutes integer default 30;
+alter table public.projects add column if not exists thumbnail_path text;
+alter table public.projects add column if not exists category text default 'General Assembly';
+alter table public.projects add column if not exists is_public boolean default true;
+alter table public.projects add column if not exists sync_state text default 'synced';
+alter table public.projects add column if not exists created_at timestamptz default now() not null;
+alter table public.projects add column if not exists updated_at timestamptz default now() not null;
 
 alter table public.projects enable row level security;
 
@@ -183,9 +205,20 @@ create table if not exists public.assembly_steps (
     title text not null,
     instruction text default '',
     expected_state text default '{}',
+    expected_duration_minutes integer default 2,
     created_at timestamptz default now() not null,
     updated_at timestamptz default now() not null
 );
+
+-- Idempotent column upgrades for assembly_steps
+alter table public.assembly_steps add column if not exists project_id uuid references public.projects(id) on delete cascade;
+alter table public.assembly_steps add column if not exists step_order integer;
+alter table public.assembly_steps add column if not exists title text;
+alter table public.assembly_steps add column if not exists instruction text default '';
+alter table public.assembly_steps add column if not exists expected_state text default '{}';
+alter table public.assembly_steps add column if not exists expected_duration_minutes integer default 2;
+alter table public.assembly_steps add column if not exists created_at timestamptz default now() not null;
+alter table public.assembly_steps add column if not exists updated_at timestamptz default now() not null;
 
 alter table public.assembly_steps enable row level security;
 
@@ -221,8 +254,22 @@ create table if not exists public.components (
     type text not null,
     description text default '',
     metadata text default '{}',
+    part_id text,
+    is_required boolean default true,
+    quantity integer default 1,
     created_at timestamptz default now() not null
 );
+
+-- Idempotent column upgrades for components
+alter table public.components add column if not exists project_id uuid references public.projects(id) on delete cascade;
+alter table public.components add column if not exists name text;
+alter table public.components add column if not exists type text;
+alter table public.components add column if not exists description text default '';
+alter table public.components add column if not exists metadata text default '{}';
+alter table public.components add column if not exists part_id text;
+alter table public.components add column if not exists is_required boolean default true;
+alter table public.components add column if not exists quantity integer default 1;
+alter table public.components add column if not exists created_at timestamptz default now() not null;
 
 alter table public.components enable row level security;
 
@@ -414,3 +461,4 @@ drop policy if exists "Users can delete own verification snapshots" on storage.o
 create policy "Users can delete own verification snapshots"
     on storage.objects for delete
     using (bucket_id = 'verification-snapshots' and auth.uid() = owner);
+

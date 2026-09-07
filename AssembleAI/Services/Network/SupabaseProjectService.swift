@@ -202,48 +202,58 @@ actor SupabaseProjectService {
     func fetchFullAssemblyProjects() async throws -> [AssemblyProject] {
         let baseProjects = try await fetchProjects()
         var fullProjects: [AssemblyProject] = []
+        let bundledMap = Dictionary(uniqueKeysWithValues: BundledProjectRepository.bundledProjects.map { ($0.id, $0) })
         
         for base in baseProjects {
             let steps = (try? await fetchAssemblySteps(projectId: base.id)) ?? []
             let rawComponents = (try? await fetchComponents(projectId: base.id)) ?? []
+            let bundled = bundledMap[base.id]
             
             let domainSteps = steps.map { step in
-                ProjectStepSummary(
+                let matchingBundledStep = bundled?.steps.first(where: { $0.stepOrder == step.stepOrder })
+                return ProjectStepSummary(
                     id: step.id,
                     stepOrder: step.stepOrder,
                     title: step.title,
                     instruction: step.instruction,
-                    expectedDurationMinutes: 0,
-                    visualContract: step.visualContract,
-                    commonMistakes: []
+                    expectedDurationMinutes: matchingBundledStep?.expectedDurationMinutes ?? 2,
+                    visualContract: step.visualContract ?? matchingBundledStep?.visualContract,
+                    commonMistakes: matchingBundledStep?.commonMistakes ?? []
                 )
             }
             
             let domainComponents = rawComponents.map { comp in
-                ComponentRequirement(
+                let matchingBundledComp = bundled?.components.first(where: { $0.name.lowercased() == comp.name.lowercased() })
+                return ComponentRequirement(
                     id: comp.id,
                     name: comp.name,
-                    detail: comp.description.isEmpty ? comp.name : comp.description,
-                    isRequired: true,
-                    partId: "part_\(comp.name.lowercased().replacingOccurrences(of: " ", with: "_"))"
+                    detail: comp.description.isEmpty ? (matchingBundledComp?.detail ?? comp.name) : comp.description,
+                    isRequired: matchingBundledComp?.isRequired ?? true,
+                    partId: matchingBundledComp?.partId ?? "part_\(comp.name.lowercased().replacingOccurrences(of: " ", with: "_"))",
+                    componentType: matchingBundledComp?.componentType,
+                    physicalAttributes: matchingBundledComp?.physicalAttributes,
+                    quantity: matchingBundledComp?.quantity ?? 1
                 )
             }
+            
+            let resolvedSteps = domainSteps.isEmpty ? (bundled?.steps ?? []) : domainSteps
+            let resolvedComponents = domainComponents.isEmpty ? (bundled?.components ?? []) : domainComponents
             
             let project = AssemblyProject(
                 id: base.id,
                 title: base.title,
                 subtitle: base.description,
-                category: "Electronics",
+                category: base.category ?? (bundled?.category ?? "General Assembly"),
                 difficulty: Difficulty(rawValue: base.difficulty) ?? .beginner,
                 estimatedMinutes: base.estimatedMinutes,
-                totalSteps: domainSteps.count,
+                totalSteps: resolvedSteps.count,
                 completedSteps: 0,
-                imageName: base.thumbnailPath,
+                imageName: base.thumbnailPath ?? (bundled?.imageName ?? "wrench.and.screwdriver.fill"),
                 isActive: false,
-                nextAction: nil,
+                nextAction: bundled?.nextAction,
                 description: base.description,
-                components: domainComponents,
-                steps: domainSteps
+                components: resolvedComponents,
+                steps: resolvedSteps
             )
             fullProjects.append(project)
         }

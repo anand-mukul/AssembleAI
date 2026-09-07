@@ -16,27 +16,29 @@ nonisolated enum SyncState: String, Codable, Hashable, Equatable, Sendable {
 /// Project Domain Model representing an electronics or physical task assembly workflow.
 nonisolated struct Project: Identifiable, Hashable, Codable, Equatable, Sendable {
     let id: UUID
-    let ownerId: UUID
+    let ownerId: UUID?
     var title: String
     var description: String
     var difficulty: String
     var estimatedMinutes: Int
     var thumbnailPath: String?
+    var category: String?
     let createdAt: Date
     var updatedAt: Date
     var syncState: SyncState
     
     nonisolated init(
         id: UUID = UUID(),
-        ownerId: UUID,
+        ownerId: UUID? = nil,
         title: String,
         description: String = "",
         difficulty: String = "Beginner",
         estimatedMinutes: Int = 30,
         thumbnailPath: String? = nil,
+        category: String? = "General Assembly",
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
-        syncState: SyncState = .pendingUpload
+        syncState: SyncState = .synced
     ) {
         self.id = id
         self.ownerId = ownerId
@@ -45,6 +47,7 @@ nonisolated struct Project: Identifiable, Hashable, Codable, Equatable, Sendable
         self.difficulty = difficulty
         self.estimatedMinutes = estimatedMinutes
         self.thumbnailPath = thumbnailPath
+        self.category = category
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.syncState = syncState

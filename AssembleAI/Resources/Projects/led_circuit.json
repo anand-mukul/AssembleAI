@@ -74,7 +74,7 @@
   ],
   "steps": [
     {
-      "id": "S0000001-0001-0001-0001-000000000001",
+      "id": "A0000001-0001-0001-0001-000000000001",
       "step_order": 1,
       "title": "Insert 220\u03a9 Resistor",
       "instruction": "Place the 220\u03a9 resistor bridging Row 10 to Row 15 across the center divider of the breadboard.",
@@ -113,7 +113,7 @@
       ]
     },
     {
-      "id": "S0000001-0001-0001-0001-000000000002",
+      "id": "A0000001-0001-0001-0001-000000000002",
       "step_order": 2,
       "title": "Insert 100\u00b5F Capacitor",
       "instruction": "Insert the 100\u00b5F electrolytic capacitor into the C2 header slot, observing polarity. The white stripe (negative) faces the GND rail.",
@@ -144,7 +144,7 @@
       ]
     },
     {
-      "id": "S0000001-0001-0001-0001-000000000003",
+      "id": "A0000001-0001-0001-0001-000000000003",
       "step_order": 3,
       "title": "Connect LED Anode to Node 12A",
       "instruction": "Align the long lead (anode) of the red LED with pin 12A on the breadboard.",
@@ -184,7 +184,7 @@
       ]
     },
     {
-      "id": "S0000001-0001-0001-0001-000000000004",
+      "id": "A0000001-0001-0001-0001-000000000004",
       "step_order": 4,
       "title": "Place Current Limiting Resistor",
       "instruction": "Bridge the current limiting resistor from pin 12B to the ground rail.",
@@ -211,7 +211,7 @@
       ]
     },
     {
-      "id": "S0000001-0001-0001-0001-000000000005",
+      "id": "A0000001-0001-0001-0001-000000000005",
       "step_order": 5,
       "title": "Insert Ground Jumper Wire",
       "instruction": "Connect a black jumper wire from the breadboard GND rail to the power supply ground terminal.",
@@ -230,7 +230,7 @@
       "common_mistakes": []
     },
     {
-      "id": "S0000001-0001-0001-0001-000000000006",
+      "id": "A0000001-0001-0001-0001-000000000006",
       "step_order": 6,
       "title": "Connect VCC Jumper Wire",
       "instruction": "Connect a red jumper wire from the VCC positive bus line to the power supply 5V terminal.",
@@ -257,7 +257,7 @@
       ]
     },
     {
-      "id": "S0000001-0001-0001-0001-000000000007",
+      "id": "A0000001-0001-0001-0001-000000000007",
       "step_order": 7,
       "title": "Verify Voltage Drop Across Resistor",
       "instruction": "Use a multimeter to measure the voltage drop across the 220\u03a9 resistor. Expected reading: approximately 2.8V.",
@@ -266,7 +266,7 @@
       "common_mistakes": []
     },
     {
-      "id": "S0000001-0001-0001-0001-000000000008",
+      "id": "A0000001-0001-0001-0001-000000000008",
       "step_order": 8,
       "title": "Power Circuit and Observe",
       "instruction": "Switch the power supply ON and confirm the LED illuminates bright red. If not, check all connections and polarity.",

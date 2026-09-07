@@ -79,7 +79,7 @@
   ],
   "steps": [
     {
-      "id": "S0000006-0001-0001-0001-000000000001",
+      "id": "A0000006-0001-0001-0001-000000000001",
       "step_order": 1,
       "title": "Insert Dowels into Side Panels",
       "instruction": "Press 6 wooden dowels into the pre-drilled holes on the inner face of each side panel. Each side panel has 6 holes arranged in 3 pairs.",
@@ -124,7 +124,7 @@
       ]
     },
     {
-      "id": "S0000006-0001-0001-0001-000000000002",
+      "id": "A0000006-0001-0001-0001-000000000002",
       "step_order": 2,
       "title": "Thread Cam Lock Bolts into Shelves",
       "instruction": "Screw a cam lock bolt into each pre-drilled hole on the ends of all 3 shelf boards. Each shelf end has 1 bolt hole.",
@@ -162,7 +162,7 @@
       ]
     },
     {
-      "id": "S0000006-0001-0001-0001-000000000003",
+      "id": "A0000006-0001-0001-0001-000000000003",
       "step_order": 3,
       "title": "Attach Bottom Shelf to Left Side Panel",
       "instruction": "Align the bottom shelf dowels with the lowest pair of holes on the left side panel. Insert the cam bolt into the cam disc hole and turn the disc clockwise to lock.",
@@ -202,7 +202,7 @@
       ]
     },
     {
-      "id": "S0000006-0001-0001-0001-000000000004",
+      "id": "A0000006-0001-0001-0001-000000000004",
       "step_order": 4,
       "title": "Attach Middle and Top Shelves",
       "instruction": "Repeat the shelf attachment process for the middle and top shelf positions on the left side panel.",
@@ -226,7 +226,7 @@
       "common_mistakes": []
     },
     {
-      "id": "S0000006-0001-0001-0001-000000000005",
+      "id": "A0000006-0001-0001-0001-000000000005",
       "step_order": 5,
       "title": "Attach Right Side Panel",
       "instruction": "Align the right side panel dowel holes and cam disc holes with the protruding dowels and cam bolts on the right ends of all 3 shelves. Press firmly and lock all 3 cam discs.",
@@ -258,7 +258,7 @@
       ]
     },
     {
-      "id": "S0000006-0001-0001-0001-000000000006",
+      "id": "A0000006-0001-0001-0001-000000000006",
       "step_order": 6,
       "title": "Attach Back Panel",
       "instruction": "Lay the assembled bookshelf face down. Place the HDF back panel over the rear opening and secure with 8 panel pins along the edges.",
