@@ -142,7 +142,7 @@ actor AppleIntelligenceService {
                     )
                 )
                 currentStepNumber += 1
-            } else if var lastStep = extractedSteps.last {
+            } else if let lastStep = extractedSteps.last {
                 // Append instruction detail to current step
                 extractedSteps.removeLast()
                 extractedSteps.append(

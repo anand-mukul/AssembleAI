@@ -12,6 +12,8 @@ nonisolated enum Difficulty: String, CaseIterable, Codable, Hashable, Sendable {
     case intermediate = "Intermediate"
     case advanced = "Advanced"
     
+    var displayName: String { rawValue }
+    
     var color: Color {
         switch self {
         case .beginner: return AppColors.success
