@@ -7,6 +7,7 @@ import Foundation
 import CoreGraphics
 import Vision
 import CoreVideo
+import ImageIO
 
 /// Temporal user hand activity state relative to the active assembly target.
 nonisolated enum WorkbenchHandActivity: String, Sendable, Equatable {

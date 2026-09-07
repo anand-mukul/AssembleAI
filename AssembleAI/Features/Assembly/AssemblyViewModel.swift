@@ -9,6 +9,7 @@ import SwiftUI
 import UIKit
 import CoreVideo
 import CoreMedia
+import ImageIO
 import SwiftData
 
 enum VerificationMode: String, CaseIterable, Identifiable, Codable, Hashable, Equatable, Sendable {
@@ -198,7 +199,7 @@ final class AssemblyViewModel: ObservableObject {
         liveObservationTask = Task { [weak self] in
             guard let self = self else { return }
             
-            let sampledFrames = await self.frameSampler.sample(stream: frameStream)
+            let sampledFrames = self.frameSampler.sample(stream: frameStream)
             for await frame in sampledFrames {
                 if Task.isCancelled { break }
                 if self.isLivePaused { continue }
@@ -576,6 +577,15 @@ final class AssemblyViewModel: ObservableObject {
                 explanation: "Processing fallback."
             )
             self.handleVerificationResult(result)
+        }
+    }
+    
+    private func createFallbackFrame() -> UIImage {
+        let size = CGSize(width: 320, height: 240)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        return renderer.image { ctx in
+            UIColor.systemGray5.setFill()
+            ctx.fill(CGRect(origin: .zero, size: size))
         }
     }
     
