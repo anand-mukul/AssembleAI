@@ -21,15 +21,15 @@ import FoundationModels
 // MARK: - Capabilities
 
 /// Hardware and framework capabilities for Apple Intelligence on the current device.
-public struct AppleIntelligenceCapabilities: Sendable, Equatable {
-    public let isAppleIntelligenceSupported: Bool
-    public let supportsFoundationModels: Bool
-    public let supportsNaturalLanguageEmbedding: Bool
-    public let neuralEngineGeneration: String
-    public let deviceModel: String
-    public let osVersion: String
+struct AppleIntelligenceCapabilities: Sendable, Equatable {
+    let isAppleIntelligenceSupported: Bool
+    let supportsFoundationModels: Bool
+    let supportsNaturalLanguageEmbedding: Bool
+    let neuralEngineGeneration: String
+    let deviceModel: String
+    let osVersion: String
     
-    public var summary: String {
+    var summary: String {
         """
         Apple Intelligence: \(isAppleIntelligenceSupported ? "Available" : "Standard Engine")
         Foundation Models: \(supportsFoundationModels ? "Active" : "NLP Fallback")
@@ -42,15 +42,15 @@ public struct AppleIntelligenceCapabilities: Sendable, Equatable {
 // MARK: - Apple Intelligence Service
 
 /// Central actor coordinating Apple Intelligence features across the application.
-public actor AppleIntelligenceService {
-    public static let shared = AppleIntelligenceService()
+actor AppleIntelligenceService {
+    static let shared = AppleIntelligenceService()
     
     private init() {}
     
     // MARK: - Capabilities Detection
     
     /// Evaluates current device hardware and OS capabilities for Apple Intelligence.
-    public func getCapabilities() -> AppleIntelligenceCapabilities {
+    func getCapabilities() -> AppleIntelligenceCapabilities {
         let processInfo = ProcessInfo.processInfo
         let osVersion = processInfo.operatingSystemVersionString
         let deviceModel = getDeviceIdentifier()
@@ -77,7 +77,7 @@ public actor AppleIntelligenceService {
     // MARK: - NaturalLanguage Entity Extraction
     
     /// Parses unstructured text using Apple's `NaturalLanguage` framework to extract hardware components and sequential steps.
-    public func extractStructuredEntities(
+    func extractStructuredEntities(
         from text: String,
         domain: AssemblyDomain = .electronics
     ) -> (components: [ComponentRequirement], steps: [ProjectStepSummary]) {
@@ -175,7 +175,7 @@ public actor AppleIntelligenceService {
     
     #if canImport(CoreSpotlight)
     /// Indexes an `AssemblyProject` and its assembly steps in iOS Spotlight search.
-    public func indexInSpotlight(project: AssemblyProject) async {
+    func indexInSpotlight(project: AssemblyProject) async {
         let attributeSet = CSSearchableItemAttributeSet(contentType: .content)
         attributeSet.title = project.title
         attributeSet.contentDescription = "\(project.subtitle) • \(project.steps.count) steps • \(project.difficulty.displayName)"
@@ -203,7 +203,7 @@ public actor AppleIntelligenceService {
     }
     
     /// Removes an `AssemblyProject` from iOS Spotlight search.
-    public func deindexFromSpotlight(projectId: UUID) async {
+    func deindexFromSpotlight(projectId: UUID) async {
         let identifier = "com.assembleai.project.\(projectId.uuidString)"
         try? await CSSearchableIndex.default().deleteSearchableItems(withIdentifiers: [identifier])
     }

@@ -6,6 +6,7 @@
 import Foundation
 import CoreGraphics
 import CoreVideo
+import ImageIO
 
 // MARK: - Live Observation Configuration
 

@@ -12,10 +12,16 @@ struct SupabaseProjectRepository: ProjectRepository {
     private let fallbackRepository: BundledProjectRepository
     
     init(
-        supabaseService: SupabaseProjectService = SupabaseProjectService(supabaseManager: SupabaseManager.shared),
+        supabaseService: SupabaseProjectService,
         fallbackRepository: BundledProjectRepository = BundledProjectRepository()
     ) {
         self.supabaseService = supabaseService
+        self.fallbackRepository = fallbackRepository
+    }
+    
+    @MainActor
+    init(fallbackRepository: BundledProjectRepository = BundledProjectRepository()) {
+        self.supabaseService = SupabaseProjectService(supabaseManager: SupabaseManager.shared)
         self.fallbackRepository = fallbackRepository
     }
     
