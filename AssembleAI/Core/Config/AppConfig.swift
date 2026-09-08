@@ -20,7 +20,7 @@ enum AppConfig {
             if let plistUrl = Bundle.main.object(forInfoDictionaryKey: "SUPABASE_URL") as? String, !plistUrl.isEmpty, !plistUrl.contains("$") {
                 return plistUrl
             }
-            return nil
+            return nil  // No fallback — credentials must come from Config.xcconfig
         }()
         
         guard let url = rawUrl?.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -45,7 +45,7 @@ enum AppConfig {
                 return plistKey.trimmingCharacters(in: .whitespacesAndNewlines)
             }
         }
-        return "SUPABASE_ANON_KEY_NOT_FOUND"
+        return "SUPABASE_KEY_NOT_FOUND"
     }
     
     /// Returns true if valid live Supabase credentials are wired into the environment
@@ -71,7 +71,7 @@ enum AppConfig {
         if let stored = UserDefaults.standard.string(forKey: "research_webhook_url") {
             return stored.isEmpty ? nil : stored.trimmingCharacters(in: .whitespacesAndNewlines)
         }
-        // Default Google Apps Script research spreadsheet webhook
-        return "https://script.google.com/macros/s/AKfycbyuhGRPNL2LpkHKaUrpTSSEq0rm6P6ZLD9H0EU6c8d_2x7rKT-awTRxV5z6kNa1sVVz/exec"
+        // No default webhook — set RESEARCH_WEBHOOK_URL in Config.xcconfig or UserDefaults
+        return nil
     }
 }

@@ -8,3 +8,4 @@
 
 SUPABASE_URL = https://your-project-id.supabase.co
 SUPABASE_PUBLISHABLE_KEY = your-anon-publishable-key-here
+RESEARCH_WEBHOOK_URL = your-optional-webhook-url-here
