@@ -558,6 +558,6 @@ final class SupabaseAuthService: AuthenticationService {
         if lower.contains("password should be at least") {
             return "Password must be at least 6 characters long."
         }
-        return "Incorrect email or password. Please check your credentials and try again."
+        return raw.isEmpty ? "Incorrect email or password. Please check your credentials and try again." : raw
     }
 }
