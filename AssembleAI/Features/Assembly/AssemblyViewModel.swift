@@ -203,6 +203,7 @@ final class AssemblyViewModel: ObservableObject {
             for await frame in sampledFrames {
                 if Task.isCancelled { break }
                 if self.isLivePaused { continue }
+                if self.transitioningStepID != nil { continue }
                 
                 // 0. Situational Awareness: Evaluate user's hand activity on the workpiece
                 let activity = await self.observationCoordinator.evaluateHandActivity(in: frame)
@@ -650,6 +651,7 @@ final class AssemblyViewModel: ObservableObject {
     
     func retryCurrentStep() {
         stopLiveTutor()
+        activeGuidance = nil
         currentTutorMessage = nil
         currentVerificationResult = nil
         liveUserTranscript = ""

@@ -66,7 +66,7 @@ nonisolated struct BundledProjectRepository: ProjectRepository, Sendable {
         }
         
         let projects = (try? await fetchProjects()) ?? []
-        let projectMap = Dictionary(uniqueKeysWithValues: projects.map { ($0.id, $0.title) })
+        let projectMap = Dictionary(projects.map { ($0.id, $0.title) }, uniquingKeysWith: { first, _ in first })
         let relativeFormatter = RelativeDateTimeFormatter()
         relativeFormatter.unitsStyle = .short
         

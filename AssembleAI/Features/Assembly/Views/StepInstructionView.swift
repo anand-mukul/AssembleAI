@@ -11,6 +11,7 @@ struct StepInstructionView: View {
     let totalSteps: Int
     let title: String
     let instruction: String
+    var visualContract: VisualContract? = nil
     let onScanSetup: () -> Void
     let onClose: () -> Void
     
@@ -52,7 +53,7 @@ struct StepInstructionView: View {
                 }
                 
                 // Target Blueprint Illustration Card
-                StepIllustrationView(stepOrder: stepOrder, title: title)
+                StepIllustrationView(stepOrder: stepOrder, title: title, visualContract: visualContract)
                 
                 // Expected Result Callout
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
@@ -83,16 +84,23 @@ struct StepInstructionView: View {
     }
     
     private var expectedResultDescription: String {
-        switch stepOrder {
-        case 1:
-            return "The 220Ω resistor should bridge rows 10 and 15 on the breadboard with leads firmly inserted."
-        case 2:
-            return "The 100uF capacitor should bridge C2 header slots observing positive anode alignment."
-        case 3:
-            return "The LED anode lead (longer pin) must connect to Node 12A."
-        default:
-            return "Component placement should match the target blueprint layout shown above."
+        if let contract = visualContract {
+            if let pin = contract.pinPlacements.first {
+                let toText = pin.toPin.label.isEmpty ? "" : " to pin \(pin.toPin.label)"
+                let orient = contract.orientationConstraints.first.map { " (\($0.ruleDescription))" } ?? ""
+                return "\(pin.partId) should connect from pin \(pin.fromPin.label)\(toText)\(orient)."
+            }
+            if let spatial = contract.spatialPlacements.first {
+                let orient = contract.orientationConstraints.first.map { " (\($0.ruleDescription))" } ?? ""
+                return "\(spatial.partId) placed at \(spatial.locationDescription)\(orient)."
+            }
         }
+        
+        if !instruction.isEmpty {
+            return instruction
+        }
+        
+        return "Complete \(title) following the layout shown in the blueprint above."
     }
 }
 

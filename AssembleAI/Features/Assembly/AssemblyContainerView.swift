@@ -29,7 +29,6 @@ struct AssemblyContainerView: View {
                         },
                         onBack: {
                             dismiss()
-                            router.pop()
                         }
                     )
                     .transition(.opacity)
@@ -40,12 +39,12 @@ struct AssemblyContainerView: View {
                         totalSteps: viewModel.totalStepsCount,
                         title: viewModel.currentStep.title,
                         instruction: viewModel.currentStep.instruction,
+                        visualContract: viewModel.currentStep.visualContract,
                         onScanSetup: {
                             viewModel.openCamera()
                         },
                         onClose: {
                             dismiss()
-                            router.pop()
                         }
                     )
                     .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
@@ -88,7 +87,6 @@ struct AssemblyContainerView: View {
                         onClose: {
                             viewModel.stopLiveTutor()
                             dismiss()
-                            router.pop()
                         },
                         onSelectStep: { step in
                             viewModel.jumpToStep(step: step)
@@ -154,7 +152,6 @@ struct AssemblyContainerView: View {
                         session: viewModel.session,
                         onDone: {
                             dismiss()
-                            router.pop()
                         }
                     )
                     .transition(.opacity)
@@ -164,6 +161,16 @@ struct AssemblyContainerView: View {
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .tabBar)
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
+        .onChange(of: scenePhase) { newPhase in
+            switch newPhase {
+            case .background, .inactive:
+                viewModel.stopLiveTutor()
+            case .active:
+                break
+            @unknown default:
+                break
+            }
+        }
     }
 }
 

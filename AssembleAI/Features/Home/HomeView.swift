@@ -38,6 +38,46 @@ struct HomeView: View {
                 .opacity(hasAppeared ? 1 : 0)
                 .offset(y: hasAppeared ? 0 : 6)
                 
+                // Error Alert Banner with Retry
+                if let error = viewModel.errorMessage {
+                    HStack(spacing: 12) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundColor(AppColors.error)
+                            .font(.title3)
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Unable to load projects")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundColor(AppColors.primaryText)
+                            Text(error)
+                                .font(.caption)
+                                .foregroundColor(AppColors.secondaryText)
+                                .lineLimit(2)
+                        }
+                        
+                        Spacer()
+                        
+                        Button("Retry") {
+                            Task {
+                                await viewModel.loadContent()
+                            }
+                        }
+                        .font(.caption.weight(.bold))
+                        .buttonStyle(.borderedProminent)
+                        .tint(Color.assembleBrandPrimary)
+                    }
+                    .padding(12)
+                    .background(
+                        RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                            .fill(AppColors.secondaryGroupedBackground)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                                    .strokeBorder(AppColors.error.opacity(0.3), lineWidth: 1)
+                            )
+                    )
+                    .padding(.horizontal, AppSpacing.screenEdge)
+                }
+                
                 // Active Project Centerpiece OR Empty Active State
                 Group {
                     if let activeProject = viewModel.activeProject {

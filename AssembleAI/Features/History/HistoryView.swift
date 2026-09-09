@@ -70,9 +70,13 @@ struct HistoryView: View {
         }()
         
         return Button(action: {
-            if let project = project, let onSelectProject = onSelectProject {
-                UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                onSelectProject(project)
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            Task {
+                let repo = ProjectRepositoryFactory.resolve()
+                let full = (try? await repo.fetchProject(byId: session.projectId)) ?? project
+                if let full = full, let onSelectProject = onSelectProject {
+                    onSelectProject(full)
+                }
             }
         }) {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {

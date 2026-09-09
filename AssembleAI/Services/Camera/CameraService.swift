@@ -15,7 +15,11 @@ import UIKit
 final class CameraService: NSObject, ObservableObject {
     @Published private(set) var authorizationStatus: AVAuthorizationStatus = .notDetermined
     @Published private(set) var isSessionRunning: Bool = false
+#if targetEnvironment(simulator)
+    @Published private(set) var isCameraAvailable: Bool = false
+#else
     @Published private(set) var isCameraAvailable: Bool = true
+#endif
     @Published private(set) var isTorchSupported: Bool = false
     @Published var isTorchOn: Bool = false
     @Published var errorMessage: String? = nil
@@ -36,14 +40,49 @@ final class CameraService: NSObject, ObservableObject {
     
     private var isConfigured = false
     private var photoContinuation: CheckedContinuation<UIImage, Error>? = nil
+    private var simulatorFrameTask: Task<Void, Never>? = nil
     
     override init() {
         super.init()
         checkPermission()
+        setupInterruptionObservers()
     }
     
     deinit {
         broadcaster.finishAll()
+        simulatorFrameTask?.cancel()
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    private func setupInterruptionObservers() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleSessionWasInterrupted),
+            name: AVCaptureSession.wasInterruptedNotification,
+            object: captureSession
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleSessionInterruptionEnded),
+            name: AVCaptureSession.interruptionEndedNotification,
+            object: captureSession
+        )
+    }
+    
+    @objc private func handleSessionWasInterrupted(notification: Notification) {
+        Task { @MainActor in
+            self.isSessionRunning = false
+            self.errorMessage = "Camera session interrupted"
+        }
+    }
+    
+    @objc private func handleSessionInterruptionEnded(notification: Notification) {
+        Task { @MainActor in
+            self.errorMessage = nil
+            if self.authorizationStatus == .authorized {
+                self.startSession()
+            }
+        }
     }
     
     // MARK: - Frame Stream API
@@ -98,6 +137,7 @@ final class CameraService: NSObject, ObservableObject {
                 DispatchQueue.main.async {
                     self.isCameraAvailable = false
                     self.errorMessage = "Camera unavailable (Simulator or hardware restriction)"
+                    self.startSimulatorStreamIfNeeded()
                 }
                 captureSession.commitConfiguration()
                 return
@@ -137,12 +177,23 @@ final class CameraService: NSObject, ObservableObject {
             
             captureSession.commitConfiguration()
             
-            let torchAvailable = videoDevice.hasTorch && videoDevice.isTorchAvailable
-            
             DispatchQueue.main.async {
                 self.isConfigured = true
-                self.isCameraAvailable = true
-                self.isTorchSupported = torchAvailable
+                self.isTorchSupported = videoDevice.hasTorch
+            }
+        }
+    }
+    
+    private func startSimulatorStreamIfNeeded() {
+        guard !isCameraAvailable && isSessionRunning else { return }
+        simulatorFrameTask?.cancel()
+        simulatorFrameTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                guard let self = self, !Task.isCancelled else { break }
+                if let buffer = self.createSimulatorPixelBuffer() {
+                    self.broadcaster.broadcast(buffer)
+                }
             }
         }
     }
@@ -153,6 +204,13 @@ final class CameraService: NSObject, ObservableObject {
         
         if !isConfigured {
             configureSession()
+        }
+        
+        // Handle simulator fallback optical stream
+        if !isCameraAvailable {
+            self.isSessionRunning = true
+            startSimulatorStreamIfNeeded()
+            return
         }
         
         cameraQueue.async { [weak self, captureSession] in
@@ -167,6 +225,14 @@ final class CameraService: NSObject, ObservableObject {
     
     /// Stops AVCaptureSession asynchronously.
     func stopSession() {
+        simulatorFrameTask?.cancel()
+        simulatorFrameTask = nil
+        
+        if !isCameraAvailable {
+            self.isSessionRunning = false
+            return
+        }
+        
         cameraQueue.async { [weak self, captureSession] in
             guard let self = self, captureSession.isRunning else { return }
             captureSession.stopRunning()

@@ -73,8 +73,11 @@ struct AssemblyCameraView: View {
                 
                 // Visual Guidance Overlay Layer (Target / Move / Warning / Success)
                 if let guidance = activeGuidance {
-                    SpatialAROverlayView(guidance: guidance)
-                    AssemblyGuidanceOverlayView(guidance: guidance)
+                    if guidance.hasCoordinates {
+                        SpatialAROverlayView(guidance: guidance)
+                    } else {
+                        AssemblyGuidanceOverlayView(guidance: guidance)
+                    }
                 }
                 
                 // Spatial Inspection Centerpiece Reticle (only if no custom coordinate guidance)
@@ -162,7 +165,8 @@ struct AssemblyCameraView: View {
         .task {
             if cameraService.authorizationStatus == .notDetermined {
                 await cameraService.requestPermission()
-            } else if cameraService.authorizationStatus == .authorized {
+            }
+            if cameraService.authorizationStatus == .authorized {
                 cameraService.startSession()
                 if liveTutorEnabled {
                     onStartLiveStream?(cameraService.frameStream)

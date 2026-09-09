@@ -28,6 +28,44 @@ struct ProjectsView: View {
             // Projects Content
             ScrollView {
                 VStack(spacing: AppSpacing.sm) {
+                    if let error = viewModel.errorMessage {
+                        HStack(spacing: 12) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundColor(AppColors.error)
+                                .font(.title3)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Unable to load projects")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundColor(AppColors.primaryText)
+                                Text(error)
+                                    .font(.caption)
+                                    .foregroundColor(AppColors.secondaryText)
+                                    .lineLimit(2)
+                            }
+                            
+                            Spacer()
+                            
+                            Button("Retry") {
+                                Task {
+                                    await viewModel.loadProjects()
+                                }
+                            }
+                            .font(.caption.weight(.bold))
+                            .buttonStyle(.borderedProminent)
+                            .tint(Color.assembleBrandPrimary)
+                        }
+                        .padding(12)
+                        .background(
+                            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                                .fill(AppColors.secondaryGroupedBackground)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                                        .strokeBorder(AppColors.error.opacity(0.3), lineWidth: 1)
+                                )
+                        )
+                    }
+                    
                     if viewModel.filteredProjects.isEmpty {
                         emptyResultsOrProjectsState
                     } else {

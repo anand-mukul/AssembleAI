@@ -234,4 +234,26 @@ final class LiveObservationCoordinatorTests: XCTestCase {
         XCTAssertEqual(metrics.verificationsEmitted, 0)
         XCTAssertNil(metrics.currentStableStatus)
     }
+    
+    // MARK: - Test 8: Duplicate Verification Suppression
+    func testDuplicateVerificationSuppression() async {
+        let observation = VisualObservation(
+            imageSize: CGSize(width: 1084, height: 812),
+            detectedText: [
+                DetectedText(text: "220 OHM RESISTOR R1", confidence: 0.95, boundingBox: CGRect(x: 0.1, y: 0.2, width: 0.5, height: 0.1))
+            ],
+            regions: [
+                DetectedRegion(label: "Row 10 to Row 15", confidence: 0.90, boundingBox: CGRect(x: 0.1, y: 0.2, width: 0.5, height: 0.2))
+            ],
+            processingTimeMs: 15.0
+        )
+        
+        // First observation produces verified result
+        let result1 = await coordinator.process(observation: observation, for: step1)
+        XCTAssertNotNil(result1)
+        
+        // Immediate identical observation is safely suppressed by duplicate protection
+        let duplicate = await coordinator.process(observation: observation, for: step1)
+        XCTAssertNil(duplicate, "Identical sequential verification results must be suppressed to avoid UI flickering")
+    }
 }

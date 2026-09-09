@@ -83,6 +83,16 @@ final class VoiceInputService: NSObject, ObservableObject, VoiceInputServiceProt
         let inputNode = engine.inputNode
         let recordingFormat = inputNode.outputFormat(forBus: 0)
         
+        guard recordingFormat.sampleRate > 0, recordingFormat.channelCount > 0 else {
+            self.audioEngine = nil
+            self.recognitionRequest = nil
+            throw NSError(
+                domain: "VoiceInputService",
+                code: -3,
+                userInfo: [NSLocalizedDescriptionKey: "Invalid audio input format: sample rate \(recordingFormat.sampleRate)Hz, \(recordingFormat.channelCount) channels"]
+            )
+        }
+        
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
             self?.recognitionRequest?.append(buffer)
         }
@@ -124,8 +134,12 @@ final class VoiceInputService: NSObject, ObservableObject, VoiceInputServiceProt
         
         state = .processing
         
-        audioEngine?.stop()
-        audioEngine?.inputNode.removeTap(onBus: 0)
+        if let engine = audioEngine {
+            if engine.isRunning {
+                engine.stop()
+            }
+            engine.inputNode.removeTap(onBus: 0)
+        }
         audioEngine = nil
         
         recognitionRequest?.endAudio()
@@ -140,8 +154,12 @@ final class VoiceInputService: NSObject, ObservableObject, VoiceInputServiceProt
     func cancelListening() async {
         guard state == .listening || state == .processing else { return }
         
-        audioEngine?.stop()
-        audioEngine?.inputNode.removeTap(onBus: 0)
+        if let engine = audioEngine {
+            if engine.isRunning {
+                engine.stop()
+            }
+            engine.inputNode.removeTap(onBus: 0)
+        }
         audioEngine = nil
         
         recognitionRequest?.endAudio()

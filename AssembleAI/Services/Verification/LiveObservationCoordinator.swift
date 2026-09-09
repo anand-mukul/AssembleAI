@@ -113,6 +113,7 @@ actor LiveObservationCoordinator: LiveObservationCoordinating {
     private var lastConfirmedStatus: ComparisonStatus? = nil
     private var lastEmittedResult: VerificationResult? = nil
     private var lastProcessedStepID: UUID? = nil
+    private var lastHandActivity: WorkbenchHandActivity = .clear
     
     init(
         estimator: AssemblyStateEstimating = SpatialAssemblyStateEstimator(),
@@ -138,7 +139,14 @@ actor LiveObservationCoordinator: LiveObservationCoordinating {
     func evaluateHandActivity(in pixelBuffer: CVPixelBuffer) async -> WorkbenchHandActivity {
         guard let detector = handPoseDetector else { return .clear }
         let observation = await detector.analyze(pixelBuffer: pixelBuffer, orientation: .up, targetRegion: nil)
-        return observation.activity
+        let currentActivity = observation.activity
+        if lastHandActivity == .handsWorking && currentActivity == .clear {
+            // User finished manual adjustment and cleared hands: allow fresh verification
+            lastEmittedResult = nil
+            resetStabilityCounters()
+        }
+        lastHandActivity = currentActivity
+        return currentActivity
     }
     
     // MARK: - Single Observation Processing
@@ -251,6 +259,7 @@ actor LiveObservationCoordinator: LiveObservationCoordinating {
         lastProcessedStepID = nil
         lastConfirmedStatus = nil
         lastEmittedResult = nil
+        lastHandActivity = .clear
         metrics = LiveObservationMetrics()
     }
     

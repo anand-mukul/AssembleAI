@@ -84,8 +84,8 @@ nonisolated struct ComponentSpatialDetector: Sendable {
                 let name = is220 ? "220Ω Resistor" : "10K Resistor"
                 let partId = is220 ? "part_res_220" : "part_res_10k"
                 
-                let fromPin = pinInfo?.pin ?? PinCoordinate(row: "10", column: "E")
-                let toPin = PinCoordinate(row: is220 ? "15" : "15", column: "F")
+                let fromPin = pinInfo?.pin
+                let toPin: PinCoordinate? = nil
                 
                 detected.append(
                     SpatiallyDetectedComponent(
@@ -103,8 +103,8 @@ nonisolated struct ComponentSpatialDetector: Sendable {
             }
             // Check for LEDs
             else if text.localizedCaseInsensitiveContains("LED") || text.localizedCaseInsensitiveContains("DIODE") {
-                let fromPin = pinInfo?.pin ?? PinCoordinate(row: "12", column: "A")
-                let toPin = PinCoordinate(row: "12", column: "B")
+                let fromPin = pinInfo?.pin
+                let toPin: PinCoordinate? = nil
                 
                 detected.append(
                     SpatiallyDetectedComponent(
@@ -121,7 +121,7 @@ nonisolated struct ComponentSpatialDetector: Sendable {
             }
             // Check for Capacitors
             else if text.localizedCaseInsensitiveContains("CAP") || text.localizedCaseInsensitiveContains("100U") || text.localizedCaseInsensitiveContains("UF") {
-                let fromPin = pinInfo?.pin ?? PinCoordinate(row: "2", column: "C")
+                let fromPin = pinInfo?.pin
                 detected.append(
                     SpatiallyDetectedComponent(
                         partId: "part_cap_100u",

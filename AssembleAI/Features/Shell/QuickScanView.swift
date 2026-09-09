@@ -248,25 +248,28 @@ struct QuickScanView: View {
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         guard let project = selectedProject ?? availableProjects.first else { return }
         
-        if let onLaunch = onLaunchInspection {
-            onLaunch(project)
-        } else {
-            let step = project.steps.first.map { summary in
-                AssemblyStep(
-                    id: summary.id,
-                    projectId: project.id,
-                    stepOrder: summary.stepOrder,
-                    title: summary.title,
-                    instruction: summary.instruction,
-                    visualContract: summary.visualContract
+        Task {
+            let fullProject = (try? await repository.fetchProject(byId: project.id)) ?? project
+            if let onLaunch = onLaunchInspection {
+                onLaunch(fullProject)
+            } else {
+                let step = fullProject.steps.first.map { summary in
+                    AssemblyStep(
+                        id: summary.id,
+                        projectId: fullProject.id,
+                        stepOrder: summary.stepOrder,
+                        title: summary.title,
+                        instruction: summary.instruction,
+                        visualContract: summary.visualContract
+                    )
+                } ?? AssemblyStep(
+                    projectId: fullProject.id,
+                    stepOrder: 1,
+                    title: "Inspect Component Placement",
+                    instruction: "Position camera over workpiece."
                 )
-            } ?? AssemblyStep(
-                projectId: project.id,
-                stepOrder: 1,
-                title: "Inspect Component Placement",
-                instruction: "Position camera over workpiece."
-            )
-            router.navigateToCamera(step: step)
+                router.navigateToCamera(step: step)
+            }
         }
     }
 }

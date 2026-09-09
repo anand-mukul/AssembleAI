@@ -189,4 +189,29 @@ final class BundledProjectRepositoryTests: XCTestCase {
         XCTAssertEqual(state.requiredComponents.count, 1)
         XCTAssertEqual(state.requiredComponents[0].name, "Connect Wire")
     }
+    
+    func testDuplicateProjectIDResilience() {
+        let duplicateId = UUID()
+        let project1 = AssemblyProject(
+            id: duplicateId,
+            title: "Original Project",
+            category: "Electronics",
+            difficulty: .beginner,
+            estimatedMinutes: 10,
+            totalSteps: 1
+        )
+        let project2 = AssemblyProject(
+            id: duplicateId,
+            title: "Duplicate Project",
+            category: "Electronics",
+            difficulty: .intermediate,
+            estimatedMinutes: 20,
+            totalSteps: 1
+        )
+        
+        let projects = [project1, project2]
+        let projectMap = Dictionary(projects.map { ($0.id, $0.title) }, uniquingKeysWith: { first, _ in first })
+        XCTAssertEqual(projectMap.count, 1)
+        XCTAssertEqual(projectMap[duplicateId], "Original Project")
+    }
 }

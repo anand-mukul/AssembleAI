@@ -5,7 +5,10 @@
 // Copy this file to "Config.xcconfig" and fill in your Supabase project credentials.
 // "Config.xcconfig" is ignored by git and will never be committed to your repository.
 //
+// Note: In xcconfig files, // begins a comment. SLASH prevents Xcode from truncating URLs.
+SLASH = /
 
-SUPABASE_URL = https://your-project-id.supabase.co
+SUPABASE_URL = https:$(SLASH)/your-project-id.supabase.co
 SUPABASE_PUBLISHABLE_KEY = your-anon-publishable-key-here
-RESEARCH_WEBHOOK_URL = your-optional-webhook-url-here
+RESEARCH_WEBHOOK_URL = https:$(SLASH)/your-optional-webhook-url-here
+

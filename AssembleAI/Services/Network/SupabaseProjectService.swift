@@ -202,7 +202,7 @@ actor SupabaseProjectService {
     func fetchFullAssemblyProjects() async throws -> [AssemblyProject] {
         let baseProjects = try await fetchProjects()
         var fullProjects: [AssemblyProject] = []
-        let bundledMap = Dictionary(uniqueKeysWithValues: BundledProjectRepository.bundledProjects.map { ($0.id, $0) })
+        let bundledMap = Dictionary(BundledProjectRepository.bundledProjects.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         
         for base in baseProjects {
             let steps = (try? await fetchAssemblySteps(projectId: base.id)) ?? []

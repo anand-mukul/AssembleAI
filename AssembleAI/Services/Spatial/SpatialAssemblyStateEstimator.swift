@@ -49,24 +49,26 @@ nonisolated struct SpatialAssemblyStateEstimator: AssemblyStateEstimating {
                 )
             )
             
-            // Map pin positions to ObservedPosition
+            // Map pin or spatial positions to ObservedPosition
+            let targetDesc: String
             if let fromPin = comp.fromPin {
-                let targetDesc: String
                 if let toPin = comp.toPin {
                     targetDesc = "\(fromPin.label) to \(toPin.label)"
                 } else {
                     targetDesc = fromPin.label
                 }
-                
-                observedPositions.append(
-                    ObservedPosition(
-                        componentID: comp.partId ?? "comp_\(comp.id.uuidString.prefix(4))",
-                        detectedDescription: targetDesc,
-                        region: comp.cameraBoundingBox,
-                        confidence: comp.confidence
-                    )
-                )
+            } else {
+                targetDesc = comp.name
             }
+            
+            observedPositions.append(
+                ObservedPosition(
+                    componentID: comp.partId ?? "comp_\(comp.id.uuidString.prefix(4))",
+                    detectedDescription: targetDesc,
+                    region: comp.cameraBoundingBox,
+                    confidence: comp.confidence
+                )
+            )
         }
         
         // 2. Derive wire / rail connections from detected text markings and pin observations
