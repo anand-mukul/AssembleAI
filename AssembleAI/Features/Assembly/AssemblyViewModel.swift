@@ -107,11 +107,43 @@ final class AssemblyViewModel: ObservableObject {
         self.voiceOutput = voiceOutput ?? VoiceOutputService()
         self.voiceInput = voiceInput ?? VoiceInputService()
         self.intentParser = VoiceIntentParser()
-        self.researchLogger = researchLogger ?? ResearchLogger.shared
-        self.sessionRepository = sessionRepository ?? LocalFirstSessionRepository(modelContext: PersistenceController.shared.container.mainContext)
-        self.session = AssemblySession(projectId: project.id, currentStepIndex: project.completedSteps)
-        self.currentStepIndex = max(0, min(project.completedSteps, max(0, project.steps.count - 1)))
+        self.sessionRepository = sessionRepository ?? LocalFirstSessionRepository(
+            modelContext: PersistenceController.shared.container.mainContext,
+            supabaseService: AppConfig.isSupabaseConfigured ? SupabaseProjectService() : nil
+        )
+        
+        let mainContext = PersistenceController.shared.container.mainContext
+        let targetProjId = project.id
+        let descriptor = FetchDescriptor<LocalAssemblySession>(
+            predicate: #Predicate<LocalAssemblySession> { $0.projectId == targetProjId },
+            sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
+        )
+        let existingSessions = (try? mainContext.fetch(descriptor)) ?? []
+        let existingActive = existingSessions.first(where: { $0.statusRaw != SessionStatus.completed.rawValue })
+            ?? existingSessions.first
+        
+        if let existing = existingActive {
+            var domainSession = existing.toDomainModel()
+            domainSession.status = .inProgress
+            domainSession.updatedAt = Date()
+            self.session = domainSession
+            let restoredIndex = max(0, min(domainSession.currentStepIndex, max(0, project.steps.count - 1)))
+            self.currentStepIndex = restoredIndex
+        } else {
+            let initialStepIndex = max(0, min(project.completedSteps, max(0, project.steps.count - 1)))
+            self.currentStepIndex = initialStepIndex
+            self.session = AssemblySession(
+                projectId: project.id,
+                currentStepIndex: initialStepIndex,
+                currentStepOrder: initialStepIndex + 1
+            )
+        }
         self.persistSessionState()
+        
+        // Pause any other active projects so only this project is currently in-progress
+        Task { [sessionRepo = self.sessionRepository, projId = project.id] in
+            try? await sessionRepo?.pauseOtherActiveSessions(except: projId)
+        }
     }
     
     deinit {
@@ -131,7 +163,8 @@ final class AssemblyViewModel: ObservableObject {
                 stepOrder: summary.stepOrder,
                 title: summary.title,
                 instruction: summary.instruction,
-                visualContract: summary.visualContract
+                visualContract: summary.visualContract,
+                commonMistakes: summary.commonMistakes
             )
         } else {
             return AssemblyStep(
@@ -232,6 +265,16 @@ final class AssemblyViewModel: ObservableObject {
                 guard self.currentStep.id == activeStep.id else { continue }
                 self.currentVerificationResult = verification
                 
+                // Real-time dynamic overlay update in Live Tutor
+                let liveComparison = StateComparison(
+                    status: verification.isCorrect ? .correct : (verification.status == .uncertain ? .uncertain : .incorrect),
+                    confidence: verification.confidence,
+                    issues: verification.primaryIssue.map { [$0] } ?? [],
+                    matchedComponents: []
+                )
+                let overlay = await self.guidanceProvider.guidance(for: liveComparison, step: activeStep, viewSize: UIScreen.main.bounds.size)
+                self.activeGuidance = overlay
+                
                 // Log Verification Research Telemetry
                 let verDurationMs = Int(Date().timeIntervalSince(startTime) * 1000)
                 let verType: ResearchEventType = verification.isCorrect ? .verificationCorrect : (verification.status == .uncertain ? .verificationUncertain : .verificationIncorrect)
@@ -300,6 +343,8 @@ final class AssemblyViewModel: ObservableObject {
         transitioningStepID = completedStep.id
         session.completedSteps.insert(currentStepIndex)
         session.currentStepOrder = currentStepIndex + 1
+        project.completedSteps = session.completedSteps.count
+        project.isActive = session.status != .completed
         persistSessionState()
         logResearchEvent(.stepCompleted, metadata: ["stepOrder": "\(completedStep.stepOrder)"])
         
@@ -338,6 +383,8 @@ final class AssemblyViewModel: ObservableObject {
             } else {
                 self.session.status = .completed
                 self.session.endedAt = Date()
+                self.project.completedSteps = self.totalStepsCount
+                self.project.isActive = false
                 self.persistSessionState()
                 self.transitioningStepID = nil
                 self.stopLiveTutor()
@@ -377,9 +424,23 @@ final class AssemblyViewModel: ObservableObject {
         liveStatus = isLivePaused ? .paused : .live
         logResearchEvent(isLivePaused ? .liveTutorPaused : .liveTutorResumed)
         if isLivePaused {
+            if isListening {
+                isListening = false
+                voiceInputTask?.cancel()
+                voiceInputTask = nil
+                Task { [voiceInput] in
+                    await voiceInput.stopListening()
+                }
+            }
             Task { [voiceOutput] in
                 await voiceOutput.stop()
             }
+        } else {
+            // Resuming: cleanly reset coordinator stability and restart hesitation watchdog
+            Task { [observationCoordinator] in
+                await observationCoordinator.resetForStepChange()
+            }
+            startHesitationWatchdog(for: currentStep)
         }
     }
     
@@ -537,16 +598,16 @@ final class AssemblyViewModel: ObservableObject {
             let verType: ResearchEventType = result.isCorrect ? .verificationCorrect : (result.status == .uncertain ? .verificationUncertain : .verificationIncorrect)
             self.logResearchEvent(verType, status: result.status.rawValue)
             
+            let resolvedIssue: StateIssue? = result.primaryIssue ?? (result.isCorrect ? nil : StateIssue(
+                type: result.status == .uncertain ? .insufficientVisualEvidence : .wrongPosition,
+                title: result.status == .uncertain ? "Need a clearer view" : "Placement Mismatch",
+                explanation: result.explanation
+            ))
+            
             let comparison = StateComparison(
                 status: result.isCorrect ? .correct : (result.status == .uncertain ? .uncertain : .incorrect),
                 confidence: result.confidence,
-                issues: result.isCorrect ? [] : [
-                    StateIssue(
-                        type: result.detectedDescription.contains("5V") ? .wrongConnection : .wrongPosition,
-                        title: result.status == .uncertain ? "Need a clearer view" : "Wrong position",
-                        explanation: result.explanation
-                    )
-                ],
+                issues: resolvedIssue.map { [$0] } ?? [],
                 matchedComponents: []
             )
             
@@ -595,12 +656,15 @@ final class AssemblyViewModel: ObservableObject {
             if result.isCorrect {
                 session.completedSteps.insert(currentStepIndex)
                 session.currentStepOrder = currentStepIndex + 1
+                project.completedSteps = session.completedSteps.count
+                project.isActive = session.status != .completed
                 persistSessionState()
                 activeGuidance = nil
                 logResearchEvent(.stepCompleted, metadata: ["stepOrder": "\(currentStep.stepOrder)"])
                 phase = .verification(result)
             } else {
                 session.errors += 1
+                persistSessionState()
                 phase = .verification(result)
             }
         }
@@ -633,6 +697,8 @@ final class AssemblyViewModel: ObservableObject {
             currentStepIndex += 1
             session.currentStepIndex = currentStepIndex
             session.currentStepOrder = currentStepIndex + 1
+            project.completedSteps = session.completedSteps.count
+            project.isActive = true
             persistSessionState()
             logResearchEvent(.stepStarted, metadata: ["stepOrder": "\(currentStep.stepOrder)"])
             withAnimation(.easeInOut(duration: 0.3)) {
@@ -641,6 +707,8 @@ final class AssemblyViewModel: ObservableObject {
         } else {
             session.status = .completed
             session.endedAt = Date()
+            project.completedSteps = totalStepsCount
+            project.isActive = false
             persistSessionState()
             logResearchEvent(.sessionCompleted)
             withAnimation(.easeInOut(duration: 0.4)) {

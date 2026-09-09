@@ -79,7 +79,7 @@ nonisolated struct AssemblySession: Identifiable, Hashable, Codable, Equatable, 
         self.userId = userId
         self.projectId = projectId
         self.currentStepIndex = max(0, currentStepOrder - 1)
-        self.completedSteps = []
+        self.completedSteps = currentStepOrder > 1 ? Set(0..<(currentStepOrder - 1)) : []
         self.attempts = 0
         self.errors = 0
         self.startedAt = startedAt

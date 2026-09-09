@@ -84,10 +84,18 @@ final class StateAwareVerificationService: VerificationServiceProtocol {
         // Prioritize spatial contract evaluation if defined
         let status: VerificationStatus
         let explanationText: String
+        let detectedDesc: String
+        let expectedDesc: String
+        let primaryIssue: StateIssue?
         
-        if let contract = decodedContract, (!contract.pinPlacements.isEmpty || !contract.spatialPlacements.isEmpty) {
+        let hasSpatialOrPins = decodedContract.map { !$0.pinPlacements.isEmpty || !$0.spatialPlacements.isEmpty } ?? false
+        
+        if hasSpatialOrPins {
             status = spatialOutcome.status
             explanationText = spatialOutcome.explanation
+            detectedDesc = spatialOutcome.detectedDescription.isEmpty ? "No components recognized in target area" : spatialOutcome.detectedDescription
+            expectedDesc = spatialOutcome.expectedDescription.isEmpty ? step.title : spatialOutcome.expectedDescription
+            primaryIssue = spatialOutcome.issues.first
         } else {
             switch comparison.status {
             case .correct:
@@ -98,9 +106,11 @@ final class StateAwareVerificationService: VerificationServiceProtocol {
                 status = .uncertain
             }
             
-            if let primaryIssue = comparison.issues.first {
+            primaryIssue = comparison.issues.first
+            
+            if let issue = primaryIssue {
                 let response = try await guidanceGenerator.generateGuidance(
-                    issue: primaryIssue,
+                    issue: issue,
                     expectedState: expectedState,
                     observedState: observedState
                 )
@@ -110,20 +120,22 @@ final class StateAwareVerificationService: VerificationServiceProtocol {
             } else {
                 explanationText = "Could not determine placement confidence. Please ensure good lighting and clear camera framing."
             }
-        }
-        
-        let detectedDesc: String
-        if observedState.detectedComponents.isEmpty {
-            detectedDesc = "No component markings recognized in viewfinder area."
-        } else {
-            detectedDesc = observedState.detectedComponents.map(\.name).joined(separator: ", ")
-        }
-        
-        let expectedDesc: String
-        if expectedState.requiredComponents.isEmpty {
-            expectedDesc = step.title
-        } else {
-            expectedDesc = expectedState.requiredComponents.map(\.name).joined(separator: ", ")
+            
+            if observedState.detectedComponents.isEmpty {
+                if !observedState.detectedPositions.isEmpty {
+                    detectedDesc = observedState.detectedPositions.map(\.detectedDescription).joined(separator: ", ")
+                } else {
+                    detectedDesc = "No component markings recognized in viewfinder area."
+                }
+            } else {
+                detectedDesc = observedState.detectedComponents.map(\.name).joined(separator: ", ")
+            }
+            
+            if expectedState.requiredComponents.isEmpty {
+                expectedDesc = step.title
+            } else {
+                expectedDesc = expectedState.requiredComponents.map(\.name).joined(separator: ", ")
+            }
         }
         
         return VerificationResult(
@@ -131,7 +143,8 @@ final class StateAwareVerificationService: VerificationServiceProtocol {
             confidence: max(comparison.confidence, spatialOutcome.confidence),
             detectedDescription: detectedDesc,
             expectedDescription: expectedDesc,
-            explanation: explanationText
+            explanation: explanationText,
+            primaryIssue: primaryIssue
         )
     }
     

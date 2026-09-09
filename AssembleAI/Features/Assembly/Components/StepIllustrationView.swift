@@ -14,14 +14,19 @@ struct StepIllustrationView: View {
     
     private var isPhysicalDomain: Bool {
         if let contract = visualContract {
-            if contract.hasPhysicalConstraints && !contract.hasElectronicsConstraints {
+            if contract.hasPhysicalConstraints {
                 return true
+            }
+            if contract.hasElectronicsConstraints {
+                return false
             }
         }
         let lower = title.lowercased()
         return lower.contains("shelf") || lower.contains("panel") || lower.contains("dowel") ||
                lower.contains("cam") || lower.contains("screw") || lower.contains("bolt") ||
-               lower.contains("wood") || lower.contains("furniture") || lower.contains("bracket")
+               lower.contains("wood") || lower.contains("furniture") || lower.contains("bracket") ||
+               lower.contains("board") || lower.contains("nail") || lower.contains("back") ||
+               lower.contains("fastener")
     }
     
     var body: some View {
@@ -146,6 +151,45 @@ struct StepIllustrationView: View {
                     Text("Rotate 180° clockwise")
                         .font(.system(size: 9))
                         .foregroundColor(.white.opacity(0.7))
+                }
+            }
+        } else if lower.contains("back") || lower.contains("nail") {
+            // Back panel & panel pins schematic
+            HStack(spacing: 14) {
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(Color(white: 0.28))
+                    .frame(width: 76, height: 72)
+                    .overlay(
+                        VStack {
+                            HStack {
+                                Circle().fill(Color.gray).frame(width: 4, height: 4)
+                                Spacer()
+                                Circle().fill(Color.gray).frame(width: 4, height: 4)
+                            }
+                            Spacer()
+                            Text("Back Panel")
+                                .font(.system(size: 8, weight: .bold))
+                                .foregroundColor(.white)
+                            Spacer()
+                            HStack {
+                                Circle().fill(Color.gray).frame(width: 4, height: 4)
+                                Spacer()
+                                Circle().fill(Color.gray).frame(width: 4, height: 4)
+                            }
+                        }
+                        .padding(6)
+                    )
+                
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("HDF Back Panel")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(.white)
+                    Text("Smooth side facing out")
+                        .font(.system(size: 9))
+                        .foregroundColor(.white.opacity(0.7))
+                    Text("8 Panel Pins")
+                        .font(.system(size: 8, weight: .medium))
+                        .foregroundColor(Color.assembleBrandPrimary)
                 }
             }
         } else if lower.contains("shelf") || lower.contains("board") || lower.contains("panel") {

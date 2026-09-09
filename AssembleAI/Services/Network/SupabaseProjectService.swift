@@ -207,7 +207,9 @@ actor SupabaseProjectService {
         for base in baseProjects {
             let steps = (try? await fetchAssemblySteps(projectId: base.id)) ?? []
             let rawComponents = (try? await fetchComponents(projectId: base.id)) ?? []
-            let bundled = bundledMap[base.id]
+            let bundled = bundledMap[base.id] ?? BundledProjectRepository.bundledProjects.first(where: {
+                $0.title.localizedCaseInsensitiveCompare(base.title) == .orderedSame
+            })
             
             let domainSteps = steps.map { step in
                 let matchingBundledStep = bundled?.steps.first(where: { $0.stepOrder == step.stepOrder })
@@ -236,7 +238,11 @@ actor SupabaseProjectService {
                 )
             }
             
-            let resolvedSteps = domainSteps.isEmpty ? (bundled?.steps ?? []) : domainSteps
+            let rawSteps = domainSteps.isEmpty ? (bundled?.steps ?? []) : domainSteps
+            // Strict step deduplication by stepOrder to prevent duplicate or merged steps
+            let resolvedSteps = Dictionary(rawSteps.map { ($0.stepOrder, $0) }, uniquingKeysWith: { first, _ in first })
+                .values
+                .sorted { $0.stepOrder < $1.stepOrder }
             let resolvedComponents = domainComponents.isEmpty ? (bundled?.components ?? []) : domainComponents
             
             let project = AssemblyProject(

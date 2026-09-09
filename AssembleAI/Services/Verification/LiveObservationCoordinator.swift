@@ -326,7 +326,11 @@ actor LiveObservationCoordinator: LiveObservationCoordinating {
         
         let detectedDesc: String
         if observedState.detectedComponents.isEmpty {
-            detectedDesc = "No components recognized in target workspace area."
+            if !observedState.detectedPositions.isEmpty {
+                detectedDesc = observedState.detectedPositions.map(\.detectedDescription).joined(separator: ", ")
+            } else {
+                detectedDesc = "No components recognized in target workspace area."
+            }
         } else {
             detectedDesc = observedState.detectedComponents.map(\.name).joined(separator: ", ")
         }
@@ -343,7 +347,8 @@ actor LiveObservationCoordinator: LiveObservationCoordinating {
             confidence: comparison.confidence,
             detectedDescription: detectedDesc,
             expectedDescription: expectedDesc,
-            explanation: explanationText
+            explanation: explanationText,
+            primaryIssue: comparison.issues.first
         )
     }
 }

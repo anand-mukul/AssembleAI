@@ -86,13 +86,15 @@ struct StepInstructionView: View {
     private var expectedResultDescription: String {
         if let contract = visualContract {
             if let pin = contract.pinPlacements.first {
+                let name = friendlyPartName(pin.partId)
                 let toText = pin.toPin.label.isEmpty ? "" : " to pin \(pin.toPin.label)"
                 let orient = contract.orientationConstraints.first.map { " (\($0.ruleDescription))" } ?? ""
-                return "\(pin.partId) should connect from pin \(pin.fromPin.label)\(toText)\(orient)."
+                return "\(name) should connect from pin \(pin.fromPin.label)\(toText)\(orient)."
             }
             if let spatial = contract.spatialPlacements.first {
+                let name = friendlyPartName(spatial.partId)
                 let orient = contract.orientationConstraints.first.map { " (\($0.ruleDescription))" } ?? ""
-                return "\(spatial.partId) placed at \(spatial.locationDescription)\(orient)."
+                return "\(name) seated at \(spatial.locationDescription)\(orient)."
             }
         }
         
@@ -101,6 +103,24 @@ struct StepInstructionView: View {
         }
         
         return "Complete \(title) following the layout shown in the blueprint above."
+    }
+    
+    private func friendlyPartName(_ rawId: String) -> String {
+        switch rawId {
+        case "part_dowel_8mm": return "Wooden Dowel Pins"
+        case "part_cam_bolt": return "Cam Lock Bolts"
+        case "part_cam_disc": return "Cam Lock Discs"
+        case "part_shelf": return "Shelf Board"
+        case "part_side_panel": return "Side Panel"
+        case "part_back_panel": return "HDF Back Panel"
+        case "part_nail_15mm": return "15mm Panel Pins"
+        case "part_res_220": return "220Ω Resistor"
+        case "part_res_10k": return "10kΩ Resistor"
+        case "part_led_red": return "Red LED"
+        case "part_cap_100u": return "100µF Capacitor"
+        default:
+            return rawId.replacingOccurrences(of: "part_", with: "").replacingOccurrences(of: "_", with: " ").capitalized
+        }
     }
 }
 

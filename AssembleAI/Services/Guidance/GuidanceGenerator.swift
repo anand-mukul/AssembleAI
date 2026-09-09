@@ -78,13 +78,60 @@ nonisolated struct RuleBasedGuidanceGenerator: GuidanceGenerating {
         step: AssemblyStep,
         issue: StateIssue
     ) async throws -> String {
-        switch issue.type {
-        case .wrongConnection:
-            return "GND provides the zero-volt reference path for electrical current flow. Connecting to 5V creates a short circuit risk or improper power bias across the active components."
-        case .wrongPosition:
-            return "Breadboard rows are connected internally underneath the plastic housing. Placing a lead in Row 14 instead of Row 15 leaves the component disconnected from the rest of the node."
-        default:
-            return "Correct physical orientation ensures current flows safely through current-limiting elements rather than overloading sensitive semiconductor junctions."
+        // 1. Check step common mistakes for a matching condition or text
+        let issueLower = (issue.explanation + " " + issue.title).lowercased()
+        if let matchedMistake = step.commonMistakes.first(where: { mistake in
+            let cond = mistake.condition.lowercased()
+            let expl = mistake.explanation.lowercased()
+            return issueLower.contains(cond) || issueLower.contains(expl) ||
+                   (cond.contains("flip") && issueLower.contains("rough")) ||
+                   (cond.contains("dowel") && issueLower.contains("dowel")) ||
+                   (cond.contains("panel") && issueLower.contains("panel")) ||
+                   (cond.contains("cam") && issueLower.contains("cam")) ||
+                   (cond.contains("row") && issueLower.contains("row"))
+        }) {
+            return "\(matchedMistake.explanation) \(matchedMistake.correctionAction)"
+        }
+        
+        // 2. Identify physical domain vs electronics
+        let isPhysical: Bool
+        if let contract = step.visualContract {
+            isPhysical = contract.hasPhysicalConstraints && !contract.hasElectronicsConstraints
+        } else {
+            let titleLower = step.title.lowercased()
+            isPhysical = titleLower.contains("shelf") || titleLower.contains("panel") ||
+                         titleLower.contains("dowel") || titleLower.contains("cam") ||
+                         titleLower.contains("screw") || titleLower.contains("bolt") ||
+                         titleLower.contains("wood") || titleLower.contains("furniture") ||
+                         titleLower.contains("bracket") || titleLower.contains("board") ||
+                         titleLower.contains("nail")
+        }
+        
+        if isPhysical {
+            let textLower = (step.title + " " + issue.title + " " + issue.explanation).lowercased()
+            if textLower.contains("dowel") {
+                return "Wooden dowels provide structural shear alignment between side panels and shelves. Partial seating or incorrect hole alignment creates joint racking under mechanical load."
+            } else if textLower.contains("cam") || textLower.contains("lock") {
+                return "Cam lock fasteners pull the joint flush when rotated 180° clockwise over the cam bolt head. Unlocked or loose cams leave panels loose and susceptible to structural collapse."
+            } else if textLower.contains("back") || textLower.contains("nail") {
+                return "The back panel provides diagonal squaring and shear rigidity for the entire cabinet. Placing the smooth laminated side outward protects the backing board against environmental warping."
+            } else if textLower.contains("shelf") || textLower.contains("panel") {
+                return "Proper orientation ensures pre-drilled hardware holes align with the matching side panel. Inverting or reversing the panel misaligns the internal cam bolt receptors."
+            } else {
+                return "Accurate fastener depth and alignment ensures each structural joint achieves full rated clamping force and prevents joint play."
+            }
+        } else {
+            // Electronics circuit domain
+            switch issue.type {
+            case .wrongConnection:
+                return "GND provides the zero-volt reference path for electrical current flow. Connecting to 5V creates a short circuit risk or improper power bias across the active components."
+            case .wrongPosition:
+                return "Breadboard tie-points share internal metal contact clips within each 5-pin row. Misaligning by one row leaves the component node electrically open or connected to the wrong circuit branch."
+            case .missingComponent:
+                return "Each circuit component fulfills an essential role in the signal or power path. Omitting this component leaves the circuit loop incomplete."
+            default:
+                return "Correct component orientation ensures current flows safely through polarized semiconductors rather than overloading sensitive PN junctions."
+            }
         }
     }
 }

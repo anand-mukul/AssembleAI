@@ -95,7 +95,7 @@ struct VerificationResultView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("• Move closer to the component area")
                             Text("• Ensure your workspace has bright, even lighting")
-                            Text("• Keep the breadboard centered inside the viewfinder frame")
+                            Text("• Keep the workpiece centered inside the viewfinder frame")
                         }
                         .font(.subheadline)
                         .foregroundColor(AppColors.secondaryText)
@@ -167,8 +167,8 @@ struct VerificationResultView: View {
         .background(AppColors.groupedBackground.ignoresSafeArea())
         .sheet(isPresented: $showWhySheet) {
             WhyExplanationSheet(
-                step: currentStep ?? AssemblyStep(projectId: UUID(), stepOrder: 2, title: "Attach Component", instruction: "Follow instructions"),
-                issue: StateIssue(type: result.detectedDescription.contains("5V") ? .wrongConnection : .wrongPosition, title: heroTitle, explanation: result.explanation)
+                step: currentStep ?? AssemblyStep(projectId: UUID(), stepOrder: 1, title: "Assembly Step", instruction: "Follow instructions"),
+                issue: result.primaryIssue ?? StateIssue(type: .wrongPosition, title: heroTitle, explanation: result.explanation)
             )
         }
         .sheet(isPresented: $showDetailsSheet) {

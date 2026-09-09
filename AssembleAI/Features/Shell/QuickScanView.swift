@@ -50,7 +50,10 @@ struct QuickScanView: View {
                 readinessCard
                 
                 // Launch Action
-                PrimaryButton(title: "Start Visual Inspection", iconName: "camera.viewfinder") {
+                let buttonTitle = (selectedProject?.isActive == true)
+                    ? "Resume Assembly Inspection"
+                    : "Start Visual Inspection"
+                PrimaryButton(title: buttonTitle, iconName: "camera.viewfinder") {
                     launchInspection()
                 }
                 .padding(.top, AppSpacing.xs)
@@ -143,7 +146,7 @@ struct QuickScanView: View {
                             Text(selectedProject?.title ?? "Select Project")
                                 .font(.headline)
                                 .foregroundColor(AppColors.primaryText)
-                            Text(selectedProject?.subtitle ?? "Tap to choose target circuit")
+                            Text(selectedProject?.subtitle ?? "Tap to choose target project")
                                 .font(.caption)
                                 .foregroundColor(AppColors.secondaryText)
                         }
@@ -172,7 +175,7 @@ struct QuickScanView: View {
                 checklistRow(
                     icon: "sun.max.fill",
                     title: "Bright Workspace",
-                    subtitle: "Direct overhead lighting prevents component lead shadows.",
+                    subtitle: "Direct overhead lighting prevents deep workpiece and component shadows.",
                     color: AppColors.badgeOrange
                 )
                 
@@ -253,7 +256,9 @@ struct QuickScanView: View {
             if let onLaunch = onLaunchInspection {
                 onLaunch(fullProject)
             } else {
-                let step = fullProject.steps.first.map { summary in
+                let stepIdx = max(0, min(fullProject.completedSteps, max(0, fullProject.steps.count - 1)))
+                let currentSummary = fullProject.steps.indices.contains(stepIdx) ? fullProject.steps[stepIdx] : fullProject.steps.first
+                let step = currentSummary.map { summary in
                     AssemblyStep(
                         id: summary.id,
                         projectId: fullProject.id,
@@ -264,7 +269,7 @@ struct QuickScanView: View {
                     )
                 } ?? AssemblyStep(
                     projectId: fullProject.id,
-                    stepOrder: 1,
+                    stepOrder: stepIdx + 1,
                     title: "Inspect Component Placement",
                     instruction: "Position camera over workpiece."
                 )

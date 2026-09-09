@@ -20,6 +20,7 @@ struct AssemblyCameraView: View {
     let currentStep: AssemblyStep
     var allSteps: [AssemblyStep] = []
     var activeGuidance: GuidanceOverlay? = nil
+    var currentIssue: StateIssue? = nil
     
     // Live Tutor Integration Properties
     var liveTutorEnabled: Bool = true
@@ -155,10 +156,10 @@ struct AssemblyCameraView: View {
         .sheet(isPresented: $showWhySheet) {
             WhyExplanationSheet(
                 step: currentStep,
-                issue: StateIssue(
+                issue: currentIssue ?? StateIssue(
                     type: .wrongPosition,
                     title: "Placement Adjustment",
-                    explanation: currentTutorMessage?.text ?? "Inspect the indicated pin routing on the breadboard."
+                    explanation: currentTutorMessage?.text ?? "Inspect the physical workpiece alignment according to the step instructions."
                 )
             )
         }

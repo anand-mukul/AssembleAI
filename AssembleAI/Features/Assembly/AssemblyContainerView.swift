@@ -63,6 +63,7 @@ struct AssemblyContainerView: View {
                             )
                         },
                         activeGuidance: viewModel.activeGuidance,
+                        currentIssue: viewModel.currentVerificationResult?.primaryIssue,
                         liveTutorEnabled: viewModel.liveTutorEnabled,
                         liveStatus: viewModel.liveStatus,
                         currentTutorMessage: viewModel.currentTutorMessage,
@@ -128,6 +129,8 @@ struct AssemblyContainerView: View {
                 case .errorGuidance(let result):
                     ErrorGuidanceView(
                         stepOrder: viewModel.stepOrderLabel,
+                        stepTitle: viewModel.currentStep.title,
+                        visualContract: viewModel.currentStep.visualContract,
                         result: result,
                         onScanAgain: {
                             viewModel.retryCurrentStep()

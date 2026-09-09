@@ -13,6 +13,7 @@ nonisolated struct AssemblyStep: Identifiable, Hashable, Codable, Sendable {
     var title: String
     var instruction: String
     var expectedState: String // Stored as JSON string representation
+    var commonMistakes: [CommonMistake] = []
     let createdAt: Date
     var updatedAt: Date
     
@@ -29,6 +30,7 @@ nonisolated struct AssemblyStep: Identifiable, Hashable, Codable, Sendable {
         instruction: String,
         expectedState: String = "{}",
         visualContract: VisualContract? = nil,
+        commonMistakes: [CommonMistake] = [],
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -37,6 +39,7 @@ nonisolated struct AssemblyStep: Identifiable, Hashable, Codable, Sendable {
         self.stepOrder = stepOrder
         self.title = title
         self.instruction = instruction
+        self.commonMistakes = commonMistakes
         if let contract = visualContract,
            let data = try? JSONEncoder().encode(contract),
            let str = String(data: data, encoding: .utf8) {

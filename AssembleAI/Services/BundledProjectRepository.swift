@@ -46,10 +46,67 @@ nonisolated struct BundledProjectRepository: ProjectRepository, Sendable {
             }
         }
         
-        // Sort: active projects first, then by title
+        // Enrich projects with persisted session progress
+        projects = await enrichProjectsWithSessions(projects)
+        
+        // Sort: active projects first, then most recently worked on, then alphabetical by title
         return projects.sorted { lhs, rhs in
             if lhs.isActive != rhs.isActive { return lhs.isActive }
+            if let lDate = lhs.lastWorkedOn, let rDate = rhs.lastWorkedOn {
+                return lDate > rDate
+            }
+            if lhs.lastWorkedOn != nil { return true }
+            if rhs.lastWorkedOn != nil { return false }
             return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
+        }
+    }
+    
+    @MainActor
+    private func enrichProjectsWithSessions(_ projects: [AssemblyProject]) async -> [AssemblyProject] {
+        let repo = LocalFirstSessionRepository(modelContext: PersistenceController.shared.container.mainContext)
+        guard let sessions = try? await repo.fetchAllSessions(), !sessions.isEmpty else {
+            return projects
+        }
+        
+        // Latest session per project ID or matching title
+        var latestSessionByProject: [UUID: AssemblySession] = [:]
+        for session in sessions {
+            if let existing = latestSessionByProject[session.projectId] {
+                if session.updatedAt > existing.updatedAt {
+                    latestSessionByProject[session.projectId] = session
+                }
+            } else {
+                latestSessionByProject[session.projectId] = session
+            }
+        }
+        
+        return projects.map { project in
+            guard let session = latestSessionByProject[project.id] else {
+                return project
+            }
+            
+            let isCompleted = session.status == .completed || session.completedSteps.count >= project.totalSteps
+            let isActive = !isCompleted && (session.status == .inProgress || session.completedSteps.count > 0)
+            let completedCount = min(project.totalSteps, max(session.completedSteps.count, session.currentStepIndex))
+            
+            return AssemblyProject(
+                id: project.id,
+                title: project.title,
+                subtitle: project.subtitle,
+                category: project.category,
+                difficulty: project.difficulty,
+                estimatedMinutes: project.estimatedMinutes,
+                totalSteps: project.totalSteps,
+                completedSteps: completedCount,
+                imageName: project.imageName,
+                isActive: isActive,
+                nextAction: isCompleted ? "Completed" : "Step \(completedCount + 1)",
+                description: project.description,
+                components: project.components,
+                steps: project.steps,
+                domain: project.domain,
+                lastWorkedOn: session.updatedAt
+            )
         }
     }
     

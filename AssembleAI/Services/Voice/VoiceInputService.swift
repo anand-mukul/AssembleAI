@@ -20,6 +20,7 @@ final class VoiceInputService: NSObject, ObservableObject, VoiceInputServiceProt
     private var audioEngine: AVAudioEngine?
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
+    private var silenceWatchdogTask: Task<Void, Never>?
     
     nonisolated private let broadcaster = TranscriptStreamBroadcaster()
     
@@ -29,6 +30,7 @@ final class VoiceInputService: NSObject, ObservableObject, VoiceInputServiceProt
     }
     
     deinit {
+        silenceWatchdogTask?.cancel()
         broadcaster.finishAll()
     }
     
@@ -116,13 +118,29 @@ final class VoiceInputService: NSObject, ObservableObject, VoiceInputServiceProt
                     self.broadcaster.broadcast(UserVoiceMessage(transcript: text, isFinal: isFinal))
                     
                     if isFinal {
+                        self.silenceWatchdogTask?.cancel()
+                        self.silenceWatchdogTask = nil
                         await self.stopListening()
+                    } else if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        // 1.2s trailing silence watchdog for immediate real-time response
+                        self.silenceWatchdogTask?.cancel()
+                        self.silenceWatchdogTask = Task { @MainActor [weak self] in
+                            try? await Task.sleep(nanoseconds: 1_200_000_000)
+                            guard !Task.isCancelled else { return }
+                            guard let self = self, self.state == .listening else { return }
+                            let finalText = self.latestTranscript
+                            guard !finalText.isEmpty else { return }
+                            self.broadcaster.broadcast(UserVoiceMessage(transcript: finalText, isFinal: true))
+                            await self.stopListening()
+                        }
                     }
                 }
             }
             
             if error != nil {
                 Task { @MainActor in
+                    self.silenceWatchdogTask?.cancel()
+                    self.silenceWatchdogTask = nil
                     await self.stopListening()
                 }
             }
@@ -132,6 +150,8 @@ final class VoiceInputService: NSObject, ObservableObject, VoiceInputServiceProt
     func stopListening() async {
         guard state == .listening else { return }
         
+        silenceWatchdogTask?.cancel()
+        silenceWatchdogTask = nil
         state = .processing
         
         if let engine = audioEngine {

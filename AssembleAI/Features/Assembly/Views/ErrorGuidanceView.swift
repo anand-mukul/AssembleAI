@@ -8,6 +8,8 @@ import SwiftUI
 /// Detailed troubleshooting guidance view explaining physical assembly mistakes and corrective actions.
 struct ErrorGuidanceView: View {
     let stepOrder: Int
+    var stepTitle: String = "Assembly Step"
+    var visualContract: VisualContract? = nil
     let result: VerificationResult
     let onScanAgain: () -> Void
     
@@ -40,6 +42,22 @@ struct ErrorGuidanceView: View {
                     observedText: extractObservedShort(result.detectedDescription)
                 )
                 
+                // Target Reference Blueprint Card
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                    HStack(spacing: AppSpacing.xs) {
+                        SemanticIconBadge(systemName: "photo.fill", tintColor: AppColors.badgeBlue)
+                        Text("Target Blueprint Reference")
+                            .font(.headline)
+                            .foregroundColor(AppColors.primaryText)
+                    }
+                    
+                    StepIllustrationView(
+                        stepOrder: stepOrder,
+                        title: stepTitle,
+                        visualContract: visualContract
+                    )
+                }
+                
                 // Remediation Instructions Card
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
                     HStack(spacing: AppSpacing.xs) {
@@ -69,21 +87,31 @@ struct ErrorGuidanceView: View {
     }
     
     private func extractExpectedShort(_ full: String) -> String {
-        if full.contains("Row 10 to Row 15") {
-            return "Row 10 → Row 15"
-        } else if full.contains("GND") {
-            return "GND Rail"
-        }
-        return full
+        cleanDescription(full)
     }
     
     private func extractObservedShort(_ full: String) -> String {
-        if full.contains("Row 10 to Row 14") {
-            return "Row 10 → Row 14"
-        } else if full.contains("5V") {
-            return "5V Power Rail"
+        cleanDescription(full)
+    }
+    
+    private func cleanDescription(_ text: String) -> String {
+        var clean = text
+        clean = clean.replacingOccurrences(of: "part_dowel_8mm", with: "Wooden Dowels")
+        clean = clean.replacingOccurrences(of: "part_cam_bolt", with: "Cam Bolts")
+        clean = clean.replacingOccurrences(of: "part_cam_disc", with: "Cam Discs")
+        clean = clean.replacingOccurrences(of: "part_shelf", with: "Shelf Board")
+        clean = clean.replacingOccurrences(of: "part_side_panel", with: "Side Panel")
+        clean = clean.replacingOccurrences(of: "part_back_panel", with: "Back Panel")
+        clean = clean.replacingOccurrences(of: "part_nail_15mm", with: "Panel Pins")
+        clean = clean.replacingOccurrences(of: "part_res_220", with: "220Ω Resistor")
+        clean = clean.replacingOccurrences(of: "part_res_10k", with: "10kΩ Resistor")
+        clean = clean.replacingOccurrences(of: "part_led_red", with: "Red LED")
+        clean = clean.replacingOccurrences(of: "part_cap_100u", with: "100µF Capacitor")
+        clean = clean.replacingOccurrences(of: "part_", with: "").replacingOccurrences(of: "_", with: " ")
+        if clean.contains(" to ") {
+            clean = clean.replacingOccurrences(of: " to ", with: " → ")
         }
-        return full
+        return clean
     }
 }
 

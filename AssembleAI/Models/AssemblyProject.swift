@@ -125,6 +125,9 @@ nonisolated struct AssemblyProject: Identifiable, Hashable, Codable, Sendable {
     /// Assembly domain (electronics, physical, or hybrid).
     let domain: AssemblyDomain
     
+    /// Timestamp of most recent user interaction or progress.
+    let lastWorkedOn: Date?
+    
     init(
         id: UUID = UUID(),
         title: String,
@@ -141,7 +144,8 @@ nonisolated struct AssemblyProject: Identifiable, Hashable, Codable, Sendable {
         components: [ComponentRequirement] = [],
         steps: [ProjectStepSummary] = [],
         schemaVersion: String = "1.0.0",
-        domain: AssemblyDomain = .electronics
+        domain: AssemblyDomain = .electronics,
+        lastWorkedOn: Date? = nil
     ) {
         self.id = id
         self.title = title
@@ -159,6 +163,7 @@ nonisolated struct AssemblyProject: Identifiable, Hashable, Codable, Sendable {
         self.steps = steps
         self.schemaVersion = schemaVersion
         self.domain = domain
+        self.lastWorkedOn = lastWorkedOn
     }
     
     /// Compatibility initializer for tests and legacy call sites.
@@ -189,6 +194,7 @@ nonisolated struct AssemblyProject: Identifiable, Hashable, Codable, Sendable {
         self.steps = steps
         self.schemaVersion = "1.0.0"
         self.domain = .electronics
+        self.lastWorkedOn = nil
     }
     
     // MARK: - Computed Properties

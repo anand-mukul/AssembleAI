@@ -21,6 +21,7 @@ nonisolated struct VerificationResult: Identifiable, Hashable, Codable, Equatabl
     let detectedDescription: String
     let expectedDescription: String
     let explanation: String
+    let primaryIssue: StateIssue?
     
     init(
         id: UUID = UUID(),
@@ -28,7 +29,8 @@ nonisolated struct VerificationResult: Identifiable, Hashable, Codable, Equatabl
         confidence: Double,
         detectedDescription: String,
         expectedDescription: String,
-        explanation: String
+        explanation: String,
+        primaryIssue: StateIssue? = nil
     ) {
         self.id = id
         self.status = status
@@ -36,6 +38,7 @@ nonisolated struct VerificationResult: Identifiable, Hashable, Codable, Equatabl
         self.detectedDescription = detectedDescription
         self.expectedDescription = expectedDescription
         self.explanation = explanation
+        self.primaryIssue = primaryIssue
     }
     
     var isCorrect: Bool {
