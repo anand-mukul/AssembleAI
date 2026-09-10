@@ -98,7 +98,7 @@ nonisolated struct AssemblyStateComparator: Sendable {
                     StateIssue(
                         type: .insufficientVisualEvidence,
                         title: "Need a clearer view",
-                        explanation: "Visual evidence confidence (\(Int(observed.overallConfidence * 100))%) is below required threshold. Move closer and ensure your workspace is well lit.",
+                        explanation: "Visual evidence confidence (\(Int(observed.overallConfidence * 100))%) is below the required threshold.",
                         severity: .medium
                     )
                 ],

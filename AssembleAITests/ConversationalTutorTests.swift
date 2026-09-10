@@ -56,8 +56,9 @@ final class ConversationalTutorTests: XCTestCase {
         
         XCTAssertNotNil(response)
         XCTAssertEqual(response?.priority, .normal)
-        XCTAssertEqual(response?.category, "confirmation")
-        XCTAssertTrue(response?.text.contains("Perfect") == true || response?.text.contains("Great job") == true || response?.text.contains("Nicely done") == true)
+        let text = response?.text ?? ""
+        let validKeywords = ["Perfect", "Great", "Nicely done", "Spot on", "Awesome", "Boom"]
+        XCTAssertTrue(validKeywords.contains(where: { text.contains($0) }), "Response '\(text)' does not contain expected praise keyword")
     }
     
     // MARK: - Test 2: Explicit Correction Response

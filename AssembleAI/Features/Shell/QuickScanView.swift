@@ -59,13 +59,23 @@ struct QuickScanView: View {
                 .padding(.top, AppSpacing.xs)
             }
             .padding(.horizontal, AppSpacing.screenEdge)
-            .padding(.bottom, AppSpacing.xl)
+            .padding(.bottom, 100)
         }
         .background(AppColors.groupedBackground.ignoresSafeArea())
         .navigationTitle("Scan")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            Task {
+                await loadProjects()
+            }
+        }
         .task {
             await loadProjects()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("AssemblySessionUpdated"))) { _ in
+            Task {
+                await loadProjects()
+            }
         }
     }
     

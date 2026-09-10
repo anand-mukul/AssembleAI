@@ -9,6 +9,7 @@ import UIKit
 /// Camera guidance overlay rendering target bounding boxes, move arrows (source -> destination), warning callouts, and success banners over live camera preview.
 struct AssemblyGuidanceOverlayView: View {
     let guidance: GuidanceOverlay
+    var onDismiss: (() -> Void)? = nil
     
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isPulseAnimating = false
@@ -139,26 +140,41 @@ struct AssemblyGuidanceOverlayView: View {
     
     private func renderFloatingLabel(title: String, message: String, color: Color) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 6) {
+            HStack(spacing: 8) {
                 Circle()
                     .fill(color)
                     .frame(width: 8, height: 8)
+                
                 Text(title)
-                    .font(.headline)
+                    .font(.subheadline.weight(.semibold))
                     .foregroundColor(.white)
+                
+                Spacer()
+                
+                Button(action: {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    onDismiss?()
+                }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 18))
+                        .foregroundColor(.white.opacity(0.6))
+                }
+                .touchTarget()
+                .accessibilityLabel("Dismiss notification")
             }
             
             Text(message)
-                .font(.subheadline)
-                .foregroundColor(.white.opacity(0.9))
+                .font(.caption)
+                .foregroundColor(.white.opacity(0.88))
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(AppSpacing.md)
+        .padding(.horizontal, AppSpacing.md)
+        .padding(.vertical, AppSpacing.sm)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             ZStack {
                 RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                    .fill(Color.black.opacity(0.35))
+                    .fill(Color.black.opacity(0.55))
                 RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
                     .fill(.ultraThinMaterial)
             }
@@ -168,7 +184,7 @@ struct AssemblyGuidanceOverlayView: View {
                 .strokeBorder(color.opacity(0.35), lineWidth: 0.5)
         )
         .padding(.horizontal, AppSpacing.screenEdge)
-        .padding(.top, 100)
+        .padding(.top, 84)
         .frame(maxHeight: .infinity, alignment: .top)
     }
     

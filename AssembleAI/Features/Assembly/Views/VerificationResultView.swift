@@ -20,30 +20,29 @@ struct VerificationResultView: View {
     
     var body: some View {
         ScrollView {
-            VStack(spacing: AppSpacing.lg) {
-                Spacer(minLength: 40)
-                
+            VStack(spacing: AppSpacing.md) {
                 // Result Hero Graphic
                 ZStack {
                     Circle()
-                        .fill(heroColor.opacity(0.12))
-                        .frame(width: 130, height: 130)
+                        .fill(heroColor.opacity(0.10))
+                        .frame(width: 96, height: 96)
                     
                     Circle()
-                        .stroke(heroColor.opacity(0.3), lineWidth: 2)
-                        .frame(width: 160, height: 160)
+                        .stroke(heroColor.opacity(0.25), lineWidth: 1.5)
+                        .frame(width: 116, height: 116)
                     
                     Image(systemName: heroIcon)
-                        .font(.system(size: 60, weight: .light))
+                        .font(.system(size: 46, weight: .light))
                         .foregroundColor(heroColor)
                         .scaleEffect(iconScale)
                 }
-                .frame(height: 180)
+                .frame(height: 124)
+                .padding(.top, AppSpacing.sm)
                 
                 // Title & Subtitle
                 VStack(spacing: AppSpacing.xs) {
                     Text(heroTitle)
-                        .font(.title)
+                        .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(AppColors.primaryText)
                         .accessibilityAddTraits(.isHeader)
@@ -92,10 +91,25 @@ struct VerificationResultView: View {
                             .foregroundColor(AppColors.warning)
                             .textCase(.uppercase)
                         
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("• Move closer to the component area")
-                            Text("• Ensure your workspace has bright, even lighting")
-                            Text("• Keep the workpiece centered inside the viewfinder frame")
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack(alignment: .top, spacing: 6) {
+                                Image(systemName: "arrow.down.forward.and.arrow.up.backward")
+                                    .font(.caption)
+                                    .foregroundColor(AppColors.warning)
+                                Text("Move closer to the component area")
+                            }
+                            HStack(alignment: .top, spacing: 6) {
+                                Image(systemName: "sun.max.fill")
+                                    .font(.caption)
+                                    .foregroundColor(AppColors.warning)
+                                Text("Ensure your workspace has bright, even lighting")
+                            }
+                            HStack(alignment: .top, spacing: 6) {
+                                Image(systemName: "viewfinder")
+                                    .font(.caption)
+                                    .foregroundColor(AppColors.warning)
+                                Text("Keep the workpiece centered inside the frame")
+                            }
                         }
                         .font(.subheadline)
                         .foregroundColor(AppColors.secondaryText)
@@ -120,49 +134,12 @@ struct VerificationResultView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .appCard(backgroundColor: AppColors.error.opacity(0.06), borderColor: AppColors.error.opacity(0.2))
                 }
-                
-                Spacer(minLength: 32)
-                
-                // Bottom CTAs
-                if result.status == .correct {
-                    PrimaryButton(title: "Continue", iconName: "arrow.right") {
-                        onContinue()
-                    }
-                    .padding(.bottom, AppSpacing.xl)
-                } else if result.status == .uncertain {
-                    PrimaryButton(title: "Scan Again", iconName: "camera") {
-                        onRetry()
-                    }
-                    .padding(.bottom, AppSpacing.xl)
-                } else {
-                    VStack(spacing: AppSpacing.mdSm) {
-                        PrimaryButton(title: "Show Me How to Fix", iconName: "wrench.and.screwdriver") {
-                            onShowErrorGuidance()
-                        }
-                        
-                        Button(action: {
-                            showWhySheet = true
-                        }) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "questionmark.circle")
-                                Text("Why is this wrong?")
-                            }
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                            .foregroundColor(.assembleBrandPrimary)
-                            .frame(minHeight: 44)
-                            .contentShape(Rectangle())
-                        }
-                        .padding(.vertical, 2)
-                        
-                        SecondaryButton(title: "Try Again", iconName: "arrow.clockwise") {
-                            onRetry()
-                        }
-                    }
-                    .padding(.bottom, AppSpacing.xl)
-                }
             }
             .padding(.horizontal, AppSpacing.screenEdge)
+            .padding(.bottom, 24)
+        }
+        .safeAreaInset(edge: .bottom) {
+            bottomActionView
         }
         .background(AppColors.groupedBackground.ignoresSafeArea())
         .sheet(isPresented: $showWhySheet) {
@@ -191,6 +168,62 @@ struct VerificationResultView: View {
             }
         }
         .accessibilityElement(children: .contain)
+    }
+    
+    // MARK: - Sticky Bottom Actions
+    
+    private var bottomActionView: some View {
+        VStack(spacing: AppSpacing.sm) {
+            if result.status == .correct {
+                PrimaryButton(title: "Continue", iconName: "arrow.right") {
+                    onContinue()
+                }
+            } else if result.status == .uncertain {
+                PrimaryButton(title: "Scan Again", iconName: "camera") {
+                    onRetry()
+                }
+            } else {
+                VStack(spacing: AppSpacing.sm) {
+                    PrimaryButton(title: "Show Me How to Fix", iconName: "wrench.and.screwdriver") {
+                        onShowErrorGuidance()
+                    }
+                    
+                    HStack(spacing: AppSpacing.sm) {
+                        Button(action: {
+                            showWhySheet = true
+                        }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "questionmark.circle")
+                                Text("Why is this wrong?")
+                            }
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.assembleBrandPrimary)
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                        }
+                        .buttonStyle(.plain)
+                        
+                        SecondaryButton(title: "Try Again", iconName: "arrow.clockwise") {
+                            onRetry()
+                        }
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, AppSpacing.screenEdge)
+        .padding(.top, 12)
+        .padding(.bottom, 12)
+        .background(
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    Rectangle()
+                        .frame(height: 0.5)
+                        .foregroundColor(AppColors.separator),
+                    alignment: .top
+                )
+                .ignoresSafeArea(edges: .bottom)
+        )
     }
     
     // MARK: - Outcome State Helpers

@@ -91,6 +91,9 @@ struct AssemblyContainerView: View {
                         },
                         onSelectStep: { step in
                             viewModel.jumpToStep(step: step)
+                        },
+                        onDismissGuidance: {
+                            viewModel.activeGuidance = nil
                         }
                     )
                     .ignoresSafeArea()

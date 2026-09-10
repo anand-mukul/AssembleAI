@@ -53,7 +53,7 @@ struct HistoryView: View {
                 }
             }
             .padding(.top, AppSpacing.xs)
-            .padding(.bottom, AppSpacing.xl)
+            .padding(.bottom, 100)
         }
     }
     
@@ -82,7 +82,7 @@ struct HistoryView: View {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 3) {
-                        Text(project?.title ?? "Physical Assembly Project")
+                        Text(project?.title ?? session.projectTitle ?? "Physical Assembly Project")
                             .font(.headline)
                             .foregroundColor(AppColors.primaryText)
                         

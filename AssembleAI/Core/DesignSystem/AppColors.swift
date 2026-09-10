@@ -135,7 +135,7 @@ extension Color {
     
     /// Apple Intelligence signature gradient colors harmonized with AssembleAI precision palette
     static var appleIntelligenceGradient: [Color] {
-        [AppColors.brandPrimary, AppColors.aiAmber, AppColors.aiCyan, AppColors.aiBlue, AppColors.brandPrimary]
+        [AppColors.brandPrimary, AppColors.aiAmber, AppColors.aiCyan, AppColors.aiBlue, AppColors.aiAmber, AppColors.brandPrimary]
     }
     
     /// Creates an adaptive color that resolves to `light` in light mode and `dark` in dark mode.

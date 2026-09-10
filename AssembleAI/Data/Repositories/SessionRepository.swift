@@ -78,11 +78,13 @@ final class LocalFirstSessionRepository: SessionRepository {
     func saveSession(_ session: AssemblySession) async throws {
         let targetId = session.id
         let fetchLocal = FetchDescriptor<LocalAssemblySession>(predicate: #Predicate<LocalAssemblySession> { $0.id == targetId })
-        
         if let existing = try modelContext.fetch(fetchLocal).first {
             existing.statusRaw = session.status.rawValue
             existing.currentStepOrder = session.currentStepOrder
             existing.completedAt = session.completedAt
+            if let title = session.projectTitle {
+                existing.projectTitle = title
+            }
             existing.updatedAt = Date()
         } else {
             let localSession = LocalAssemblySession.fromDomainModel(session)

@@ -63,7 +63,7 @@ nonisolated struct RuleBasedGuidanceGenerator: GuidanceGenerating {
             return GuidanceResponse(
                 title: "Need a clearer view",
                 explanation: issue.explanation,
-                action: "Move closer and ensure the board is clearly illuminated."
+                action: "Move closer and ensure your workspace is well lit."
             )
         default:
             return GuidanceResponse(

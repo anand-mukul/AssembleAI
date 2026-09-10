@@ -175,21 +175,40 @@ struct HomeView: View {
                         .padding(.horizontal, AppSpacing.screenEdge)
                     }
                     .opacity(hasAppeared ? 1 : 0)
-                    .offset(y: hasAppeared ? 0 : 12)
                 }
             }
-            .padding(.bottom, AppSpacing.xl)
+            .padding(.bottom, 100)
         }
         .background(AppColors.groupedBackground.ignoresSafeArea())
         .navigationTitle("AssembleAI")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                HStack(spacing: 6) {
+                    Image(systemName: "cube.transparent.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.assembleBrandPrimary)
+                    Text("AssembleAI")
+                        .font(.headline.weight(.bold))
+                        .foregroundColor(AppColors.primaryText)
+                }
+            }
+        }
         .onAppear {
             withAnimation(reduceMotion ? .none : AppAnimation.entranceSpring) {
                 hasAppeared = true
             }
+            Task {
+                await viewModel.loadContent()
+            }
         }
         .task {
             await viewModel.loadContent()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("AssemblySessionUpdated"))) { _ in
+            Task {
+                await viewModel.loadContent()
+            }
         }
         .refreshable {
             await viewModel.loadContent()

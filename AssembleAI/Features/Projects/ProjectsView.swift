@@ -83,7 +83,7 @@ struct ProjectsView: View {
                 }
                 .padding(.horizontal, AppSpacing.screenEdge)
                 .padding(.top, AppSpacing.xs)
-                .padding(.bottom, AppSpacing.xl)
+                .padding(.bottom, 100)
             }
         }
         .background(AppColors.groupedBackground.ignoresSafeArea())
@@ -120,8 +120,18 @@ struct ProjectsView: View {
                 }
             )
         }
+        .onAppear {
+            Task {
+                await viewModel.loadProjects()
+            }
+        }
         .task {
             await viewModel.loadProjects()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("AssemblySessionUpdated"))) { _ in
+            Task {
+                await viewModel.loadProjects()
+            }
         }
         .refreshable {
             await viewModel.loadProjects()

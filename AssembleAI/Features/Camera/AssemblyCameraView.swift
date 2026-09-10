@@ -37,6 +37,7 @@ struct AssemblyCameraView: View {
     var onAnalyze: ((UIImage?) -> Void)? = nil
     var onClose: (() -> Void)? = nil
     var onSelectStep: ((AssemblyStep) -> Void)? = nil
+    var onDismissGuidance: (() -> Void)? = nil
     
     @AppStorage("app_camera_grid") private var showCameraGrid: Bool = true
     @AppStorage("app_reticle_pulsing") private var reticlePulsing: Bool = true
@@ -77,7 +78,14 @@ struct AssemblyCameraView: View {
                     if guidance.hasCoordinates {
                         SpatialAROverlayView(guidance: guidance)
                     } else {
-                        AssemblyGuidanceOverlayView(guidance: guidance)
+                        AssemblyGuidanceOverlayView(
+                            guidance: guidance,
+                            onDismiss: {
+                                withAnimation(.easeOut(duration: 0.25)) {
+                                    onDismissGuidance?()
+                                }
+                            }
+                        )
                     }
                 }
                 
@@ -189,6 +197,17 @@ struct AssemblyCameraView: View {
                 onStopLiveStream?()
             }
             cameraService.stopSession()
+        }
+        .onChange(of: activeGuidance) { newGuidance in
+            guard let g = newGuidance, g.style == .warning else { return }
+            Task {
+                try? await Task.sleep(nanoseconds: 6_000_000_000)
+                if activeGuidance == g {
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        onDismissGuidance?()
+                    }
+                }
+            }
         }
     }
     

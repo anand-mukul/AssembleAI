@@ -11,6 +11,7 @@ final class LocalAssemblySession {
     @Attribute(.unique) var id: UUID
     var userId: UUID?
     var projectId: UUID
+    var projectTitle: String?
     var startedAt: Date
     var completedAt: Date?
     var statusRaw: String
@@ -23,6 +24,7 @@ final class LocalAssemblySession {
         id: UUID = UUID(),
         userId: UUID? = nil,
         projectId: UUID,
+        projectTitle: String? = nil,
         startedAt: Date = Date(),
         completedAt: Date? = nil,
         statusRaw: String = SessionStatus.notStarted.rawValue,
@@ -34,6 +36,7 @@ final class LocalAssemblySession {
         self.id = id
         self.userId = userId
         self.projectId = projectId
+        self.projectTitle = projectTitle
         self.startedAt = startedAt
         self.completedAt = completedAt
         self.statusRaw = statusRaw
@@ -48,6 +51,7 @@ final class LocalAssemblySession {
             id: id,
             userId: userId,
             projectId: projectId,
+            projectTitle: projectTitle,
             startedAt: startedAt,
             completedAt: completedAt,
             status: SessionStatus(rawValue: statusRaw) ?? .notStarted,
@@ -63,6 +67,7 @@ final class LocalAssemblySession {
             id: session.id,
             userId: session.userId,
             projectId: session.projectId,
+            projectTitle: session.projectTitle,
             startedAt: session.startedAt,
             completedAt: session.completedAt,
             statusRaw: session.status.rawValue,

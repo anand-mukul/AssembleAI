@@ -126,6 +126,7 @@ final class AssemblyViewModel: ObservableObject {
         if let existing = existingActive {
             var domainSession = existing.toDomainModel()
             domainSession.status = .inProgress
+            domainSession.projectTitle = project.title
             domainSession.updatedAt = Date()
             self.session = domainSession
             let restoredIndex = max(0, min(domainSession.currentStepIndex, max(0, project.steps.count - 1)))
@@ -135,6 +136,7 @@ final class AssemblyViewModel: ObservableObject {
             self.currentStepIndex = initialStepIndex
             self.session = AssemblySession(
                 projectId: project.id,
+                projectTitle: project.title,
                 currentStepIndex: initialStepIndex,
                 currentStepOrder: initialStepIndex + 1
             )
@@ -227,6 +229,7 @@ final class AssemblyViewModel: ObservableObject {
         let currentSession = self.session
         Task { [weak self] in
             try? await self?.sessionRepository?.saveSession(currentSession)
+            NotificationCenter.default.post(name: NSNotification.Name("AssemblySessionUpdated"), object: nil)
         }
     }
     
@@ -370,6 +373,10 @@ final class AssemblyViewModel: ObservableObject {
             if self.currentStepIndex + 1 < self.totalStepsCount {
                 self.currentStepIndex += 1
                 self.session.currentStepIndex = self.currentStepIndex
+                self.session.currentStepOrder = self.currentStepIndex + 1
+                self.project.completedSteps = self.session.completedSteps.count
+                self.project.isActive = true
+                self.persistSessionState()
                 self.transitioningStepID = nil
                 
                 await self.observationCoordinator.resetForStepChange()

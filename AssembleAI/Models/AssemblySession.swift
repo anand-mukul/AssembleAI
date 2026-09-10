@@ -18,6 +18,7 @@ nonisolated struct AssemblySession: Identifiable, Hashable, Codable, Equatable, 
     let id: UUID
     var userId: UUID?
     let projectId: UUID
+    var projectTitle: String?
     var currentStepIndex: Int
     var completedSteps: Set<Int>
     var attempts: Int
@@ -34,6 +35,7 @@ nonisolated struct AssemblySession: Identifiable, Hashable, Codable, Equatable, 
         id: UUID = UUID(),
         userId: UUID? = nil,
         projectId: UUID,
+        projectTitle: String? = nil,
         currentStepIndex: Int = 0,
         completedSteps: Set<Int> = [],
         attempts: Int = 0,
@@ -49,6 +51,7 @@ nonisolated struct AssemblySession: Identifiable, Hashable, Codable, Equatable, 
         self.id = id
         self.userId = userId
         self.projectId = projectId
+        self.projectTitle = projectTitle
         self.currentStepIndex = currentStepIndex
         self.completedSteps = completedSteps
         self.attempts = attempts
@@ -67,6 +70,7 @@ nonisolated struct AssemblySession: Identifiable, Hashable, Codable, Equatable, 
         id: UUID = UUID(),
         userId: UUID? = nil,
         projectId: UUID,
+        projectTitle: String? = nil,
         startedAt: Date,
         completedAt: Date?,
         status: SessionStatus,
@@ -78,6 +82,7 @@ nonisolated struct AssemblySession: Identifiable, Hashable, Codable, Equatable, 
         self.id = id
         self.userId = userId
         self.projectId = projectId
+        self.projectTitle = projectTitle
         self.currentStepIndex = max(0, currentStepOrder - 1)
         self.completedSteps = currentStepOrder > 1 ? Set(0..<(currentStepOrder - 1)) : []
         self.attempts = 0

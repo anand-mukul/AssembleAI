@@ -81,13 +81,32 @@ nonisolated struct BundledProjectRepository: ProjectRepository, Sendable {
         }
         
         return projects.map { project in
-            guard let session = latestSessionByProject[project.id] else {
+            let matchingSession = latestSessionByProject[project.id] ?? sessions.first { session in
+                if let title = session.projectTitle, !title.isEmpty,
+                   title.localizedCaseInsensitiveCompare(project.title) == .orderedSame {
+                    return true
+                }
+                return false
+            }
+            
+            guard let session = matchingSession else {
                 return project
             }
             
             let isCompleted = session.status == .completed || session.completedSteps.count >= project.totalSteps
-            let isActive = !isCompleted && (session.status == .inProgress || session.completedSteps.count > 0)
-            let completedCount = min(project.totalSteps, max(session.completedSteps.count, session.currentStepIndex))
+            let completedCount = min(project.totalSteps, max(session.completedSteps.count, max(0, session.currentStepOrder - 1)))
+            let isActive = !isCompleted && (session.status == .inProgress || completedCount > 0)
+            
+            let nextActionText: String = {
+                if isCompleted {
+                    return "Completed"
+                }
+                let nextIndex = completedCount
+                if nextIndex < project.steps.count {
+                    return project.steps[nextIndex].title
+                }
+                return "Step \(completedCount + 1)"
+            }()
             
             return AssemblyProject(
                 id: project.id,
@@ -100,7 +119,7 @@ nonisolated struct BundledProjectRepository: ProjectRepository, Sendable {
                 completedSteps: completedCount,
                 imageName: project.imageName,
                 isActive: isActive,
-                nextAction: isCompleted ? "Completed" : "Step \(completedCount + 1)",
+                nextAction: nextActionText,
                 description: project.description,
                 components: project.components,
                 steps: project.steps,
@@ -128,7 +147,7 @@ nonisolated struct BundledProjectRepository: ProjectRepository, Sendable {
         relativeFormatter.unitsStyle = .short
         
         return sessions.prefix(5).map { session in
-            let title = projectMap[session.projectId] ?? "Assembly Task"
+            let title = session.projectTitle ?? projectMap[session.projectId] ?? "Assembly Task"
             let timeStr = relativeFormatter.localizedString(for: session.updatedAt, relativeTo: Date())
             let isComplete = session.status == .completed
             return ActivityItemModel(
