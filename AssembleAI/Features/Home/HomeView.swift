@@ -182,7 +182,7 @@ struct HomeView: View {
         }
         .background(AppColors.groupedBackground.ignoresSafeArea())
         .navigationTitle("AssembleAI")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
         .onAppear {
             withAnimation(reduceMotion ? .none : AppAnimation.entranceSpring) {
                 hasAppeared = true

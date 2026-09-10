@@ -237,13 +237,16 @@ actor SupabaseProjectService {
         }
         let baseProjects = try await fetchProjects()
         var fullProjects: [AssemblyProject] = []
-        let bundledMap = Dictionary(BundledProjectRepository.bundledProjects.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let bundledProjects = BundledProjectRepository.bundledProjects + ProjectPackageLoader.loadAllFromDocuments()
+        let bundledMap = Dictionary(bundledProjects.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         
         for base in baseProjects {
             let steps = (try? await fetchAssemblySteps(projectId: base.id)) ?? []
             let rawComponents = (try? await fetchComponents(projectId: base.id)) ?? []
-            let bundled = bundledMap[base.id] ?? BundledProjectRepository.bundledProjects.first(where: {
-                $0.title.localizedCaseInsensitiveCompare(base.title) == .orderedSame
+            let bundled = bundledMap[base.id] ?? bundledProjects.first(where: {
+                $0.title.localizedCaseInsensitiveCompare(base.title) == .orderedSame ||
+                base.title.localizedCaseInsensitiveContains($0.title) ||
+                $0.title.localizedCaseInsensitiveContains(base.title)
             })
             
             let domainSteps = steps.map { step in

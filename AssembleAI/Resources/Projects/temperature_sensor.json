@@ -81,7 +81,7 @@
       },
       "common_mistakes": [
         {
-          "id": "M0000002-0001-0001-0001-000000000001",
+          "id": "E0000002-0001-0001-0001-000000000001",
           "condition": "Leads in same row",
           "explanation": "Both thermistor leads are inserted into the same row, creating a short circuit.",
           "correction_action": "Separate the leads so they span different rows (A5 to A10).",

@@ -14,22 +14,6 @@ struct AssemblyIntroView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                // Top Cancel / Back Button
-                HStack {
-                    Button(action: onBack) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "chevron.left")
-                            Text("Back")
-                        }
-                        .font(.subheadline)
-                        .foregroundColor(AppColors.secondaryText)
-                        .frame(minHeight: 44)
-                        .contentShape(Rectangle())
-                    }
-                    Spacer()
-                }
-                .padding(.top, AppSpacing.sm)
-                
                 // Header
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
                     Text(project.title)
@@ -85,6 +69,33 @@ struct AssemblyIntroView: View {
             .padding(.horizontal, AppSpacing.screenEdge)
         }
         .background(AppColors.groupedBackground.ignoresSafeArea())
+        .safeAreaInset(edge: .top) {
+            HStack {
+                Button(action: {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    onBack()
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                            .fontWeight(.semibold)
+                        Text("Back")
+                    }
+                    .font(.body)
+                    .foregroundColor(AppColors.primaryText)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+                }
+                .accessibilityLabel("Back to project details")
+                
+                Spacer()
+            }
+            .padding(.horizontal, AppSpacing.screenEdge)
+            .padding(.vertical, 4)
+            .background(.ultraThinMaterial)
+            .overlay(alignment: .bottom) {
+                Divider()
+            }
+        }
     }
     
     private func checklistRow(title: String, subtitle: String, icon: String) -> some View {

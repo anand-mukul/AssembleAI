@@ -70,6 +70,21 @@
       "part_id": "part_psu_5v",
       "component_type": "connector",
       "quantity": 1
+    },
+    {
+      "id": "C0000001-0001-0001-0001-000000000006",
+      "name": "100µF Capacitor",
+      "detail": "100µF 25V electrolytic capacitor",
+      "is_required": true,
+      "part_id": "part_cap_100u",
+      "component_type": "capacitor",
+      "physical_attributes": {
+        "polarity_sensitive": true,
+        "orientation_marker": "Negative terminal marked with white stripe",
+        "package_type": "radial",
+        "nominal_value": "100µF"
+      },
+      "quantity": 1
     }
   ],
   "steps": [
@@ -97,14 +112,14 @@
       },
       "common_mistakes": [
         {
-          "id": "M0000001-0001-0001-0001-000000000001",
+          "id": "E0000001-0001-0001-0001-000000000001",
           "condition": "Resistor bridging Row 10 to Row 14",
           "explanation": "The resistor right lead is inserted into Row 14 instead of Row 15.",
           "correction_action": "Shift the right lead one slot down from Row 14 to Row 15.",
           "severity": "moderate"
         },
         {
-          "id": "M0000001-0001-0001-0001-000000000002",
+          "id": "E0000001-0001-0001-0001-000000000002",
           "condition": "Both leads on same side of divider",
           "explanation": "Both resistor leads are on the same half of the breadboard. The resistor must bridge across the center divider.",
           "correction_action": "Move one lead to the opposite side so the resistor crosses the center channel.",
@@ -135,7 +150,7 @@
       },
       "common_mistakes": [
         {
-          "id": "M0000001-0001-0001-0001-000000000003",
+          "id": "E0000001-0001-0001-0001-000000000003",
           "condition": "Reversed polarity",
           "explanation": "The capacitor polarity is reversed. The white stripe should face the GND rail.",
           "correction_action": "Rotate the capacitor 180 degrees so the white stripe aligns with the ground rail.",
@@ -175,7 +190,7 @@
       },
       "common_mistakes": [
         {
-          "id": "M0000001-0001-0001-0001-000000000004",
+          "id": "E0000001-0001-0001-0001-000000000004",
           "condition": "LED polarity reversed",
           "explanation": "The LED leads are reversed. The longer lead (anode) should go into pin 12A.",
           "correction_action": "Remove the LED and reinsert with the long lead in pin 12A.",
@@ -202,7 +217,7 @@
       },
       "common_mistakes": [
         {
-          "id": "M0000001-0001-0001-0001-000000000005",
+          "id": "E0000001-0001-0001-0001-000000000005",
           "condition": "Connected to VCC rail instead of GND",
           "explanation": "The resistor is connected to the positive VCC rail instead of the ground rail.",
           "correction_action": "Move the lead from the red VCC rail to the blue GND rail.",
@@ -248,7 +263,7 @@
       },
       "common_mistakes": [
         {
-          "id": "M0000001-0001-0001-0001-000000000006",
+          "id": "E0000001-0001-0001-0001-000000000006",
           "condition": "Connected to wrong rail",
           "explanation": "The wire is connected to the GND rail instead of the VCC rail.",
           "correction_action": "Move the jumper wire from the blue GND rail to the red VCC rail.",

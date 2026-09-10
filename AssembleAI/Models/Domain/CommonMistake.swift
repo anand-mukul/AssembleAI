@@ -36,6 +36,27 @@ nonisolated struct CommonMistake: Identifiable, Codable, Hashable, Equatable, Se
         self.correctionAction = correctionAction.isEmpty ? explanation : correctionAction
         self.severity = severity
     }
+    
+    enum CodingKeys: String, CodingKey {
+        case id, condition, explanation, correctionAction, severity
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        if let uuid = try? container.decode(UUID.self, forKey: .id) {
+            self.id = uuid
+        } else if let idString = try? container.decode(String.self, forKey: .id) {
+            // Support prefix-based IDs like "M0000001-..." by converting 'M' to 'E' for valid hex
+            let validHex = idString.replacingOccurrences(of: "^[Mm]", with: "E", options: .regularExpression)
+            self.id = UUID(uuidString: validHex) ?? UUID(uuidString: idString) ?? UUID()
+        } else {
+            self.id = UUID()
+        }
+        self.condition = try container.decode(String.self, forKey: .condition)
+        self.explanation = try container.decode(String.self, forKey: .explanation)
+        self.correctionAction = try container.decodeIfPresent(String.self, forKey: .correctionAction) ?? self.explanation
+        self.severity = try container.decodeIfPresent(MistakeSeverity.self, forKey: .severity) ?? .moderate
+    }
 }
 
 /// Severity classification for common assembly mistakes.

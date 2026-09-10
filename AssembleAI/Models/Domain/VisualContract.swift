@@ -97,6 +97,7 @@ nonisolated struct ComponentPhysicalAttributes: Codable, Hashable, Equatable, Se
 /// Classification of physical components for Core ML detection model class mapping.
 nonisolated enum ComponentType: String, CaseIterable, Codable, Hashable, Equatable, Sendable {
     case resistor = "resistor"
+    case capacitor = "capacitor"
     case capacitorElectrolytic = "capacitor_electrolytic"
     case capacitorCeramic = "capacitor_ceramic"
     case led = "led"

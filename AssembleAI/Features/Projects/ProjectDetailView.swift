@@ -95,6 +95,41 @@ struct ProjectDetailView: View {
                     }
                 }
                 
+                // Assembly Steps Section
+                if !project.steps.isEmpty {
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        HStack(alignment: .firstTextBaseline) {
+                            Text("Assembly Steps")
+                                .font(.headline)
+                                .fontWeight(.bold)
+                                .foregroundColor(AppColors.primaryText)
+                            
+                            Spacer()
+                            
+                            Text("\(project.steps.count) steps")
+                                .font(.caption)
+                                .foregroundColor(AppColors.secondaryText)
+                        }
+                        .padding(.horizontal, AppSpacing.screenEdge)
+                        
+                        VStack(spacing: 0) {
+                            ForEach(Array(project.steps.enumerated()), id: \.element.id) { index, step in
+                                let isStepDone = index < project.completedSteps
+                                StepRowView(step: step, isCompleted: isStepDone)
+                                    .padding(.horizontal, AppSpacing.md)
+                                    .padding(.vertical, AppSpacing.xs)
+                                
+                                if index < project.steps.count - 1 {
+                                    Divider()
+                                        .padding(.leading, 52)
+                                }
+                            }
+                        }
+                        .appCard(padding: 0)
+                        .padding(.horizontal, AppSpacing.screenEdge)
+                    }
+                }
+                
                 // Progress Section
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
                     HStack {

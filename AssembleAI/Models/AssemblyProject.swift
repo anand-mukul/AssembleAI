@@ -98,6 +98,22 @@ nonisolated struct ProjectStepSummary: Identifiable, Hashable, Codable, Sendable
         self.visualContract = visualContract
         self.commonMistakes = commonMistakes
     }
+    
+    enum CodingKeys: String, CodingKey {
+        case id, stepOrder, title, instruction, isCompleted, expectedDurationMinutes, visualContract, commonMistakes
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = (try? container.decode(UUID.self, forKey: .id)) ?? UUID()
+        self.stepOrder = try container.decode(Int.self, forKey: .stepOrder)
+        self.title = try container.decode(String.self, forKey: .title)
+        self.instruction = try container.decodeIfPresent(String.self, forKey: .instruction) ?? ""
+        self.isCompleted = try container.decodeIfPresent(Bool.self, forKey: .isCompleted) ?? false
+        self.expectedDurationMinutes = try container.decodeIfPresent(Int.self, forKey: .expectedDurationMinutes) ?? 2
+        self.visualContract = try container.decodeIfPresent(VisualContract.self, forKey: .visualContract)
+        self.commonMistakes = try container.decodeIfPresent([CommonMistake].self, forKey: .commonMistakes) ?? []
+    }
 }
 
 typealias StepSummary = ProjectStepSummary
@@ -195,6 +211,33 @@ nonisolated struct AssemblyProject: Identifiable, Hashable, Codable, Sendable {
         self.schemaVersion = "1.0.0"
         self.domain = .electronics
         self.lastWorkedOn = nil
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case id, title, subtitle, category, difficulty, estimatedMinutes, totalSteps, completedSteps, imageName, isActive, nextAction, description, components, steps, schemaVersion, domain, lastWorkedOn
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(UUID.self, forKey: .id)
+        self.title = try container.decode(String.self, forKey: .title)
+        let desc = try container.decodeIfPresent(String.self, forKey: .description) ?? ""
+        self.description = desc
+        self.subtitle = try container.decodeIfPresent(String.self, forKey: .subtitle) ?? desc
+        self.category = try container.decodeIfPresent(String.self, forKey: .category) ?? "General Assembly"
+        self.difficulty = try container.decodeIfPresent(Difficulty.self, forKey: .difficulty) ?? .beginner
+        self.estimatedMinutes = try container.decodeIfPresent(Int.self, forKey: .estimatedMinutes) ?? 15
+        let decodedSteps = try container.decodeIfPresent([ProjectStepSummary].self, forKey: .steps) ?? []
+        self.steps = decodedSteps
+        self.totalSteps = try container.decodeIfPresent(Int.self, forKey: .totalSteps) ?? max(1, decodedSteps.count)
+        self.completedSteps = try container.decodeIfPresent(Int.self, forKey: .completedSteps) ?? 0
+        self.imageName = try container.decodeIfPresent(String.self, forKey: .imageName)
+        self.isActive = try container.decodeIfPresent(Bool.self, forKey: .isActive) ?? false
+        self.nextAction = try container.decodeIfPresent(String.self, forKey: .nextAction)
+        self.components = try container.decodeIfPresent([ComponentRequirement].self, forKey: .components) ?? []
+        self.schemaVersion = try container.decodeIfPresent(String.self, forKey: .schemaVersion) ?? "1.0.0"
+        self.domain = try container.decodeIfPresent(AssemblyDomain.self, forKey: .domain) ?? .electronics
+        self.lastWorkedOn = try container.decodeIfPresent(Date.self, forKey: .lastWorkedOn)
     }
     
     // MARK: - Computed Properties

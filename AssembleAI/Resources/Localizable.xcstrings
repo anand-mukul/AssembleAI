@@ -89,6 +89,9 @@
         }
       }
     },
+    "%lld guidance tips" : {
+
+    },
     "%lld guided steps · ~%lld minutes" : {
       "localizations" : {
         "en" : {
@@ -362,6 +365,9 @@
     "Back Panel" : {
 
     },
+    "Back to project details" : {
+
+    },
     "Before We Begin" : {
 
     },
@@ -398,6 +404,9 @@
 
     },
     "Camera unavailable or waiting for permission" : {
+
+    },
+    "Camera Verified" : {
 
     },
     "Cancel" : {

@@ -482,4 +482,34 @@ final class ProjectPackageLoaderTests: XCTestCase {
         let issues = ProjectPackageValidator.diagnose(project)
         XCTAssertTrue(issues.contains(where: { $0.contains("totalSteps") }))
     }
+    
+    // MARK: - Bundled Resources Package Validation Tests
+    
+    func testBundledPackagesValidateSuccessfully() throws {
+        let testBundle = Bundle(for: type(of: self))
+        let filenames = ["led_circuit", "modular_bookshelf", "temperature_sensor"]
+        
+        for name in filenames {
+            let possibleURLs = [
+                Bundle.main.url(forResource: name, withExtension: "json"),
+                Bundle.main.url(forResource: name, withExtension: "json", subdirectory: "Projects"),
+                testBundle.url(forResource: name, withExtension: "json"),
+                testBundle.url(forResource: name, withExtension: "json", subdirectory: "Projects"),
+                URL(fileURLWithPath: #file)
+                    .deletingLastPathComponent()
+                    .deletingLastPathComponent()
+                    .appendingPathComponent("AssembleAI/Resources/Projects/\(name).json")
+            ].compactMap { $0 }
+            
+            guard let url = possibleURLs.first(where: { FileManager.default.fileExists(atPath: $0.path) }) else {
+                XCTFail("Could not locate \(name).json")
+                continue
+            }
+            
+            let data = try Data(contentsOf: url)
+            let project = try ProjectPackageLoader.loadFromData(data, source: name)
+            XCTAssertFalse(project.steps.isEmpty, "Project \(name) must have steps")
+            XCTAssertNoThrow(try ProjectPackageValidator.validate(project), "Project \(name) must pass validation")
+        }
+    }
 }

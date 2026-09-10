@@ -18,24 +18,6 @@ struct StepInstructionView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                // Top Navigation Bar
-                HStack {
-                    AssemblyProgressHeader(currentStep: stepOrder, totalSteps: totalSteps)
-                    
-                    Button(action: {
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        onClose()
-                    }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.title3)
-                            .foregroundColor(AppColors.tertiaryText)
-                            .frame(width: 44, height: 44)
-                            .contentShape(Rectangle())
-                    }
-                    .accessibilityLabel("Cancel assembly session")
-                }
-                .padding(.top, AppSpacing.sm)
-                
                 // Step Title & Instruction
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
                     Text(title)
@@ -81,6 +63,31 @@ struct StepInstructionView: View {
             .padding(.horizontal, AppSpacing.screenEdge)
         }
         .background(AppColors.groupedBackground.ignoresSafeArea())
+        .safeAreaInset(edge: .top) {
+            HStack {
+                AssemblyProgressHeader(currentStep: stepOrder, totalSteps: totalSteps)
+                
+                Spacer()
+                
+                Button(action: {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    onClose()
+                }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.title3)
+                        .foregroundColor(AppColors.tertiaryText)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .accessibilityLabel("Cancel assembly session")
+            }
+            .padding(.horizontal, AppSpacing.screenEdge)
+            .padding(.vertical, 4)
+            .background(.ultraThinMaterial)
+            .overlay(alignment: .bottom) {
+                Divider()
+            }
+        }
     }
     
     private var expectedResultDescription: String {

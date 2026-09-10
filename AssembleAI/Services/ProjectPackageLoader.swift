@@ -19,6 +19,20 @@ enum ProjectPackageError: LocalizedError {
         case .fileNotFound(let path):
             return "Project package file not found: \(path)"
         case .decodingFailed(let path, let error):
+            if let decodingError = error as? DecodingError {
+                switch decodingError {
+                case .keyNotFound(let key, let context):
+                    return "Failed to decode project package at \(path): Missing key '\(key.stringValue)' at path '\(context.codingPath.map(\.stringValue).joined(separator: "."))'"
+                case .typeMismatch(let type, let context):
+                    return "Failed to decode project package at \(path): Type mismatch for \(type) at path '\(context.codingPath.map(\.stringValue).joined(separator: "."))': \(context.debugDescription)"
+                case .valueNotFound(let type, let context):
+                    return "Failed to decode project package at \(path): Value not found for \(type) at path '\(context.codingPath.map(\.stringValue).joined(separator: "."))': \(context.debugDescription)"
+                case .dataCorrupted(let context):
+                    return "Failed to decode project package at \(path): Data corrupted at path '\(context.codingPath.map(\.stringValue).joined(separator: "."))': \(context.debugDescription)"
+                @unknown default:
+                    return "Failed to decode project package at \(path): \(error)"
+                }
+            }
             return "Failed to decode project package at \(path): \(error.localizedDescription)"
         case .invalidSchema(let reason):
             return "Invalid project schema: \(reason)"
@@ -97,9 +111,18 @@ nonisolated struct ProjectPackageLoader: Sendable {
         var projects: [AssemblyProject] = []
         
         for url in foundURLs {
-            if let project = try? loadFromURL(url), !seenIDs.contains(project.id) {
-                seenIDs.insert(project.id)
-                projects.append(project)
+            do {
+                let project = try loadFromURL(url)
+                if !seenIDs.contains(project.id) {
+                    seenIDs.insert(project.id)
+                    projects.append(project)
+                }
+            } catch {
+                #if DEBUG
+                if !url.lastPathComponent.contains("version") {
+                    print("[ProjectPackageLoader] Warning: Failed to load project from \(url.lastPathComponent): \(error.localizedDescription)")
+                }
+                #endif
             }
         }
         
