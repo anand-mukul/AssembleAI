@@ -33,6 +33,7 @@ struct SpatialAROverlayView: View {
                 }
             }
             .frame(width: geo.size.width, height: geo.size.height)
+            .clipped()
         }
         .onAppear {
             withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
@@ -53,18 +54,19 @@ struct SpatialAROverlayView: View {
         switch primitive {
         case .pinBeacon(let position, let radius, let label):
             let screenPoint = projectToScreen(position: position, viewSize: viewSize)
-            let diameter = CGFloat(radius * 1200.0)
+            let rawDiameter = CGFloat(radius * 300.0)
+            let diameter = min(56.0, max(24.0, rawDiameter))
             
             ZStack {
                 // Outer pulsing ring
                 Circle()
-                    .stroke(Color.assembleBrandPrimary.opacity(0.4 - Double(pulsePhase) * 0.2), lineWidth: 3)
-                    .frame(width: diameter * (1.0 + pulsePhase * 0.4), height: diameter * (1.0 + pulsePhase * 0.4))
+                    .stroke(Color.assembleBrandPrimary.opacity(0.5 - Double(pulsePhase) * 0.25), lineWidth: 2)
+                    .frame(width: diameter * (1.0 + pulsePhase * 0.3), height: diameter * (1.0 + pulsePhase * 0.3))
                 
                 // Core beacon
                 Circle()
-                    .fill(Color.assembleBrandPrimary.opacity(0.7))
-                    .frame(width: max(14, diameter * 0.4), height: max(14, diameter * 0.4))
+                    .fill(Color.assembleBrandPrimary.opacity(0.85))
+                    .frame(width: min(12.0, diameter * 0.35), height: min(12.0, diameter * 0.35))
                 
                 // Vertical light beam indicator
                 Rectangle()

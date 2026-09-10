@@ -162,7 +162,7 @@ struct LiveTutorHUDView: View {
                             Text("Listening...")
                                 .font(.subheadline.weight(.semibold))
                         } else if status == .speaking {
-                            VoiceEqualizerView()
+                            VoiceEqualizerView(color: .white)
                             Text("AssembleAI is speaking...")
                                 .font(.subheadline.weight(.semibold))
                         } else {
@@ -262,7 +262,7 @@ struct LiveTutorHUDView: View {
     private func assistantMessageView(_ message: TutorResponse) -> some View {
         HStack(alignment: .top, spacing: 8) {
             if status == .speaking {
-                VoiceEqualizerView()
+                VoiceEqualizerView(color: .assembleBrandPrimary)
                     .padding(.top, 3)
             } else if message.priority == .high || message.category == "correction" {
                 Image(systemName: "exclamationmark.triangle.fill")
@@ -325,6 +325,7 @@ struct LiveTutorHUDView: View {
 
 /// Animated 3-bar audio equalizer indicating active spoken dialogue.
 struct VoiceEqualizerView: View {
+    var color: Color = .assembleBrandPrimary
     @State private var animating = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     
@@ -345,7 +346,7 @@ struct VoiceEqualizerView: View {
     
     private func bar(delay: Double, height: CGFloat) -> some View {
         RoundedRectangle(cornerRadius: 1.5)
-            .fill(AppColors.statusSpeaking)
+            .fill(color)
             .frame(width: 2.5, height: height)
     }
 }

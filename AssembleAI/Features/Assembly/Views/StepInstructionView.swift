@@ -38,56 +38,83 @@ struct StepInstructionView: View {
                 StepIllustrationView(stepOrder: stepOrder, title: title, visualContract: visualContract)
                 
                 // Expected Result Callout
-                VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "info.circle.fill")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(AppColors.badgeBlue)
-                        
+                HStack(alignment: .top, spacing: AppSpacing.sm) {
+                    Image(systemName: "info.circle.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(AppColors.badgeBlue)
+                        .frame(width: 22, height: 22)
+                    
+                    VStack(alignment: .leading, spacing: 4) {
                         Text("Expected Result")
                             .font(.subheadline.weight(.semibold))
                             .foregroundColor(AppColors.primaryText)
+                        
+                        Text(expectedResultDescription)
+                            .font(.subheadline)
+                            .foregroundColor(AppColors.secondaryText)
+                            .lineSpacing(2)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
-                    
-                    Text(expectedResultDescription)
-                        .font(.subheadline)
-                        .foregroundColor(AppColors.secondaryText)
-                        .lineSpacing(2)
-                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .appCard()
                 
             }
             .padding(.horizontal, AppSpacing.screenEdge)
+            .padding(.top, AppSpacing.sm)
             .padding(.bottom, AppSpacing.xl)
         }
         .background(AppColors.groupedBackground.ignoresSafeArea())
         .safeAreaInset(edge: .top) {
-            HStack {
-                AssemblyProgressHeader(currentStep: stepOrder, totalSteps: totalSteps)
-                
-                Spacer()
-                
-                Button(action: {
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    onClose()
-                }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.title3)
-                        .foregroundColor(AppColors.tertiaryText)
-                        .frame(width: 44, height: 44)
-                        .contentShape(Rectangle())
+            VStack(spacing: 0) {
+                HStack {
+                    HStack(spacing: 6) {
+                        Text("Step \(stepOrder) of \(totalSteps)")
+                            .font(.subheadline.weight(.bold))
+                            .foregroundColor(.assembleBrandPrimary)
+                        
+                        Text("·")
+                            .foregroundColor(AppColors.tertiaryText)
+                        
+                        Text("\(Int((Double(stepOrder) / Double(max(1, totalSteps))) * 100))%")
+                            .font(.subheadline)
+                            .monospacedDigit()
+                            .foregroundColor(AppColors.secondaryText)
+                    }
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        onClose()
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.title3)
+                            .symbolRenderingMode(.hierarchical)
+                            .foregroundColor(AppColors.tertiaryText)
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .accessibilityLabel("Cancel assembly session")
                 }
-                .accessibilityLabel("Cancel assembly session")
+                .padding(.leading, AppSpacing.screenEdge)
+                .padding(.trailing, AppSpacing.screenEdge - 8)
+                .frame(height: 44)
+                
+                // Edge-to-edge ambient progress rail spanning full screen width
+                GeometryReader { proxy in
+                    ZStack(alignment: .leading) {
+                        Rectangle()
+                            .fill(AppColors.borderSubtle.opacity(0.35))
+                        
+                        Rectangle()
+                            .fill(Color.assembleBrandPrimary)
+                            .frame(width: max(0, proxy.size.width * CGFloat(Double(stepOrder) / Double(max(1, totalSteps)))))
+                            .animation(.spring(response: 0.35, dampingFraction: 0.8), value: stepOrder)
+                    }
+                }
+                .frame(height: 3)
             }
-            .padding(.horizontal, AppSpacing.screenEdge)
-            .padding(.vertical, 4)
             .background(.ultraThinMaterial)
-            .overlay(alignment: .bottom) {
-                Rectangle()
-                    .fill(AppColors.borderSubtle)
-                    .frame(height: 0.5)
-            }
         }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 0) {

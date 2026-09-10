@@ -302,12 +302,12 @@ final class CameraService: NSObject, ObservableObject {
                 }
             }
             
-            // Draw text marking "ATmega328P 10K 220" for Vision OCR testing
+            // Draw clean workbench label representing an unpopulated assembly workspace
             let attrs: [NSAttributedString.Key: Any] = [
-                .font: UIFont.systemFont(ofSize: 36, weight: .bold),
-                .foregroundColor: UIColor.white
+                .font: UIFont.systemFont(ofSize: 30, weight: .semibold),
+                .foregroundColor: UIColor.white.withAlphaComponent(0.6)
             ]
-            let str = NSString(string: "AssembleAI Test Circuit — 220 OHM RESISTOR R1")
+            let str = NSString(string: "AssembleAI Workbench — Awaiting Component Placement")
             str.draw(at: CGPoint(x: 100, y: 100), withAttributes: attrs)
         }
     }

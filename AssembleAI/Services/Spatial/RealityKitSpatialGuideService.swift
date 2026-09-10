@@ -60,24 +60,35 @@ final class RealityKitSpatialGuideService: SpatialGuidanceProviding, @unchecked 
     ) -> [VolumetricGuidancePrimitive] {
         var primitives: [VolumetricGuidancePrimitive] = []
         
+        let screenWidth: CGFloat = 390.0
+        let screenHeight: CGFloat = 844.0
+        
+        func normalizePoint(_ pt: CGPoint) -> CGPoint {
+            let xNorm = pt.x > 1.0 ? pt.x / screenWidth : pt.x
+            let yNorm = pt.y > 1.0 ? pt.y / screenHeight : pt.y
+            return CGPoint(x: max(0.05, min(0.95, xNorm)), y: max(0.05, min(0.95, yNorm)))
+        }
+        
         switch overlay.style {
         case .target:
             if let targetBox = overlay.targetRegion {
-                let centerPoint = CGPoint(x: targetBox.midX, y: targetBox.midY)
+                let centerPoint = normalizePoint(CGPoint(x: targetBox.midX, y: targetBox.midY))
                 let pos3D = SpatialProjectionEngine.projectTo3D(
                     normalizedPoint: centerPoint,
                     distanceMeters: workbenchDistanceMeters
                 )
-                let radius = Float(max(targetBox.width, targetBox.height)) * workbenchDistanceMeters * 0.5
+                let maxDim = max(targetBox.width, targetBox.height)
+                let normDim = maxDim > 1.0 ? maxDim / screenWidth : maxDim
+                let radius = Float(min(0.08, max(0.015, normDim * 0.15)))
                 primitives.append(
-                    .pinBeacon(position: pos3D, radiusMeters: max(0.015, radius), label: overlay.message)
+                    .pinBeacon(position: pos3D, radiusMeters: radius, label: overlay.message)
                 )
             }
             
         case .move:
             if let src = overlay.sourceRegion, let dst = overlay.destinationRegion {
-                let srcCenter = CGPoint(x: src.midX, y: src.midY)
-                let dstCenter = CGPoint(x: dst.midX, y: dst.midY)
+                let srcCenter = normalizePoint(CGPoint(x: src.midX, y: src.midY))
+                let dstCenter = normalizePoint(CGPoint(x: dst.midX, y: dst.midY))
                 let startPos = SpatialProjectionEngine.projectTo3D(
                     normalizedPoint: srcCenter,
                     distanceMeters: workbenchDistanceMeters

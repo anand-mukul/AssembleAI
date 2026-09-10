@@ -41,7 +41,7 @@ enum AppColors {
     // Semantic Status Colors (Tutor & Live Feedback States)
     static let statusLive = Color(uiColor: .systemGreen)
     static let statusListening = Color(uiColor: .systemBlue)
-    static let statusSpeaking = Color(uiColor: .systemPurple)
+    static let statusSpeaking = brandPrimary
     static let statusVerifying = brandPrimary
     static let statusPaused = Color(uiColor: .systemGray)
     static let statusSuccess = success
@@ -133,9 +133,9 @@ extension Color {
         AppColors.brandPrimary
     }
     
-    /// Apple Intelligence signature gradient colors
+    /// Apple Intelligence signature gradient colors harmonized with AssembleAI precision palette
     static var appleIntelligenceGradient: [Color] {
-        [AppColors.aiCyan, AppColors.aiBlue, AppColors.aiPurple, AppColors.aiPink, AppColors.aiAmber, AppColors.aiCyan]
+        [AppColors.brandPrimary, AppColors.aiAmber, AppColors.aiCyan, AppColors.aiBlue, AppColors.brandPrimary]
     }
     
     /// Creates an adaptive color that resolves to `light` in light mode and `dark` in dark mode.
