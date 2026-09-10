@@ -26,12 +26,41 @@ actor SupabaseProjectService {
         case serverError(Int)
     }
     
+    // MARK: - Safe Endpoint Construction
+    
+    private func endpointComponents(path: String) throws -> URLComponents {
+        guard AppConfig.isSupabaseConfigured else {
+            throw ServiceError.invalidURL
+        }
+        let trimmedBase = AppConfig.supabaseUrl.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        let cleanPath = path.hasPrefix("/") ? path : "/\(path)"
+        guard let components = URLComponents(string: "\(trimmedBase)\(cleanPath)"),
+              components.scheme == "https" else {
+            throw ServiceError.invalidURL
+        }
+        return components
+    }
+    
+    private func endpointURL(path: String) throws -> URL {
+        guard AppConfig.isSupabaseConfigured else {
+            throw ServiceError.invalidURL
+        }
+        let trimmedBase = AppConfig.supabaseUrl.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        let cleanPath = path.hasPrefix("/") ? path : "/\(path)"
+        guard let url = URL(string: "\(trimmedBase)\(cleanPath)"),
+              url.scheme == "https" else {
+            throw ServiceError.invalidURL
+        }
+        return url
+    }
+    
     // MARK: - Admin Status
     
     /// Checks whether the currently authenticated user has administrator / app owner privileges.
     func checkIsAdmin() async -> Bool {
+        guard AppConfig.isSupabaseConfigured else { return false }
         guard let userId = await supabaseManager.currentUserId else { return false }
-        guard var components = URLComponents(string: "\(AppConfig.supabaseUrl)/rest/v1/profiles") else { return false }
+        guard var components = try? endpointComponents(path: "/rest/v1/profiles") else { return false }
         components.queryItems = [
             URLQueryItem(name: "select", value: "is_admin"),
             URLQueryItem(name: "id", value: "eq.\(userId)"),
@@ -58,9 +87,7 @@ actor SupabaseProjectService {
     
     /// Fetches all public and user-accessible projects from Supabase.
     func fetchProjects() async throws -> [Project] {
-        guard var components = URLComponents(string: "\(AppConfig.supabaseUrl)/rest/v1/projects") else {
-            throw ServiceError.invalidURL
-        }
+        var components = try endpointComponents(path: "/rest/v1/projects")
         
         // Supabase RLS automatically filters: is_public = true OR owner_id = auth.uid()
         components.queryItems = [
@@ -91,7 +118,7 @@ actor SupabaseProjectService {
     
     /// Upserts a Project record into Supabase PostgreSQL.
     func saveProject(_ project: Project) async throws {
-        guard let url = URL(string: "\(AppConfig.supabaseUrl)/rest/v1/projects") else { throw ServiceError.invalidURL }
+        let url = try endpointURL(path: "/rest/v1/projects")
         
         var request = await supabaseManager.prepareRequest(url: url, method: "POST")
         request.setValue("resolution=merge-duplicates", forHTTPHeaderField: "Prefer")
@@ -109,7 +136,7 @@ actor SupabaseProjectService {
     
     /// Deletes a Project record from Supabase PostgreSQL.
     func deleteProject(id: UUID) async throws {
-        guard var components = URLComponents(string: "\(AppConfig.supabaseUrl)/rest/v1/projects") else { throw ServiceError.invalidURL }
+        var components = try endpointComponents(path: "/rest/v1/projects")
         components.queryItems = [URLQueryItem(name: "id", value: "eq.\(id.uuidString)")]
         guard let url = components.url else { throw ServiceError.invalidURL }
         
@@ -124,7 +151,7 @@ actor SupabaseProjectService {
     
     /// Fetches assembly steps for a project from Supabase.
     func fetchAssemblySteps(projectId: UUID) async throws -> [AssemblyStep] {
-        guard var components = URLComponents(string: "\(AppConfig.supabaseUrl)/rest/v1/assembly_steps") else { throw ServiceError.invalidURL }
+        var components = try endpointComponents(path: "/rest/v1/assembly_steps")
         components.queryItems = [
             URLQueryItem(name: "project_id", value: "eq.\(projectId.uuidString)"),
             URLQueryItem(name: "order", value: "step_order.asc")
@@ -145,7 +172,7 @@ actor SupabaseProjectService {
     
     /// Upserts an AssemblyStep record into Supabase PostgreSQL.
     func saveAssemblyStep(_ step: AssemblyStep) async throws {
-        guard let url = URL(string: "\(AppConfig.supabaseUrl)/rest/v1/assembly_steps") else { throw ServiceError.invalidURL }
+        let url = try endpointURL(path: "/rest/v1/assembly_steps")
         
         var request = await supabaseManager.prepareRequest(url: url, method: "POST")
         request.setValue("resolution=merge-duplicates", forHTTPHeaderField: "Prefer")
@@ -165,7 +192,7 @@ actor SupabaseProjectService {
     
     /// Fetches all components for a project from Supabase.
     func fetchComponents(projectId: UUID) async throws -> [Component] {
-        guard var components = URLComponents(string: "\(AppConfig.supabaseUrl)/rest/v1/components") else { throw ServiceError.invalidURL }
+        var components = try endpointComponents(path: "/rest/v1/components")
         components.queryItems = [
             URLQueryItem(name: "project_id", value: "eq.\(projectId.uuidString)"),
             URLQueryItem(name: "order", value: "created_at.asc")
@@ -185,7 +212,7 @@ actor SupabaseProjectService {
     
     /// Upserts a Component record into Supabase PostgreSQL.
     func saveComponent(_ component: Component) async throws {
-        guard let url = URL(string: "\(AppConfig.supabaseUrl)/rest/v1/components") else { throw ServiceError.invalidURL }
+        let url = try endpointURL(path: "/rest/v1/components")
         
         var request = await supabaseManager.prepareRequest(url: url, method: "POST")
         request.setValue("resolution=merge-duplicates", forHTTPHeaderField: "Prefer")
@@ -205,6 +232,9 @@ actor SupabaseProjectService {
     
     /// Fetches full `AssemblyProject` domain models including their child steps and components from Supabase.
     func fetchFullAssemblyProjects() async throws -> [AssemblyProject] {
+        guard AppConfig.isSupabaseConfigured else {
+            return BundledProjectRepository.bundledProjects
+        }
         let baseProjects = try await fetchProjects()
         var fullProjects: [AssemblyProject] = []
         let bundledMap = Dictionary(BundledProjectRepository.bundledProjects.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
@@ -321,10 +351,11 @@ actor SupabaseProjectService {
     
     /// Fetches assembly sessions from Supabase.
     func fetchSessions() async throws -> [AssemblySession] {
+        guard AppConfig.isSupabaseConfigured else { return [] }
         guard let userId = await supabaseManager.currentUserId else {
             return [] // Not authenticated
         }
-        guard var components = URLComponents(string: "\(AppConfig.supabaseUrl)/rest/v1/assembly_sessions") else { throw ServiceError.invalidURL }
+        var components = try endpointComponents(path: "/rest/v1/assembly_sessions")
         components.queryItems = [
             URLQueryItem(name: "select", value: "*"),
             URLQueryItem(name: "user_id", value: "eq.\(userId)"),
@@ -346,7 +377,7 @@ actor SupabaseProjectService {
     
     /// Upserts an AssemblySession record into Supabase PostgreSQL.
     func saveSession(_ session: AssemblySession) async throws {
-        guard let url = URL(string: "\(AppConfig.supabaseUrl)/rest/v1/assembly_sessions") else { throw ServiceError.invalidURL }
+        let url = try endpointURL(path: "/rest/v1/assembly_sessions")
         
         var request = await supabaseManager.prepareRequest(url: url, method: "POST")
         request.setValue("resolution=merge-duplicates", forHTTPHeaderField: "Prefer")

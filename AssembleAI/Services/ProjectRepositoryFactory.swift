@@ -16,6 +16,9 @@ enum ProjectRepositoryFactory {
     /// Resolves the production-appropriate project repository connected to Supabase with bundled fallback.
     @MainActor
     static func resolve() -> ProjectRepository {
+        guard AppConfig.isSupabaseConfigured else {
+            return BundledProjectRepository()
+        }
         let supabase = SupabaseProjectService(supabaseManager: SupabaseManager.shared)
         return SupabaseProjectRepository(supabaseService: supabase)
     }

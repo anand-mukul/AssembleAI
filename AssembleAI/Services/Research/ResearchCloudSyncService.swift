@@ -207,7 +207,9 @@ actor ResearchCloudSyncService {
     }
     
     private func postToSupabase(payload: [String: Any]) async -> Bool {
-        guard let url = URL(string: "\(AppConfig.supabaseUrl)/rest/v1/research_sessions") else { return false }
+        guard AppConfig.isSupabaseConfigured,
+              let url = URL(string: "\(AppConfig.supabaseUrl)/rest/v1/research_sessions"),
+              url.scheme == "https" else { return false }
         do {
             var request = URLRequest(url: url)
             request.httpMethod = "POST"

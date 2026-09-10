@@ -1,71 +1,281 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Home" : {
-      "extractionState" : "manual",
+    "" : {
+
+    },
+    "'%@' has been created and is ready for assembly." : {
+
+    },
+    "\"%@\"" : {
+
+    },
+    "# My LED Circuit\n\n## Components\n- 220Ω Resistor — 1/4W\n- Red LED — 5mm\n\n## Step 1: Insert Resistor\nPlace the resistor into Row 10E..." : {
+
+    },
+    "%@" : {
+
+    },
+    "%@ • %lld steps" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "Home"
+            "state" : "new",
+            "value" : "%1$@ • %2$lld steps"
           }
         }
       }
     },
-    "Projects" : {
-      "extractionState" : "manual",
+    "%@, %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "Projects"
+            "state" : "new",
+            "value" : "%1$@, %2$@"
           }
         }
       }
     },
-    "Scan" : {
-      "extractionState" : "manual",
+    "%@, %@, %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "Scan"
+            "state" : "new",
+            "value" : "%1$@, %2$@, %3$@"
           }
         }
       }
     },
-    "History" : {
-      "extractionState" : "manual",
+    "%@, %@%@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "History"
+            "state" : "new",
+            "value" : "%1$@, %2$@%3$@"
           }
         }
       }
     },
-    "Profile" : {
-      "extractionState" : "manual",
+    "%@: %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "Profile"
+            "state" : "new",
+            "value" : "%1$@: %2$@"
           }
         }
       }
     },
-    "Settings" : {
-      "extractionState" : "manual",
+    "%@. %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "Settings"
+            "state" : "new",
+            "value" : "%1$@. %2$@"
           }
         }
       }
+    },
+    "%lld" : {
+
+    },
+    "%lld / %lld steps verified" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld / %2$lld steps verified"
+          }
+        }
+      }
+    },
+    "%lld guided steps · ~%lld minutes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld guided steps · ~%2$lld minutes"
+          }
+        }
+      }
+    },
+    "%lld ms" : {
+
+    },
+    "%lld of %lld steps" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld of %2$lld steps"
+          }
+        }
+      }
+    },
+    "%lld of %lld steps completed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld of %2$lld steps completed"
+          }
+        }
+      }
+    },
+    "%lld offline sessions pending" : {
+
+    },
+    "%lld parts" : {
+
+    },
+    "%lld percent" : {
+
+    },
+    "%lld Recorded Session%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld Recorded Session%2$@"
+          }
+        }
+      }
+    },
+    "%lld steps" : {
+
+    },
+    "%lld/%lld steps" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld/%2$lld steps"
+          }
+        }
+      }
+    },
+    "%lld%%" : {
+
+    },
+    "%lld%% conf" : {
+
+    },
+    "%lld%% confidence" : {
+
+    },
+    "%lldm" : {
+
+    },
+    "%lldms" : {
+
+    },
+    "•" : {
+
+    },
+    "• Ensure your workspace has bright, even lighting" : {
+
+    },
+    "• Keep the workpiece centered inside the viewfinder frame" : {
+
+    },
+    "• Move closer to the component area" : {
+
+    },
+    "• Power Rails (+ and -): Run vertically down the side columns. Red (+) is positive voltage (5V/3.3V), Blue/Black (-) is ground (GND)." : {
+
+    },
+    "• Tie-Point Rows (A–E, F–J): Connected horizontally across each row number. Inserting two leads into the same numbered row (e.g. 10A and 10B) connects them electrically." : {
+
+    },
+    "×%lld" : {
+
+    },
+    "~%lld min" : {
+
+    },
+    "1. Adequate Lighting: Ensure the workspace is well-lit without harsh glare or deep cast shadows." : {
+
+    },
+    "2. Perpendicular Angle: Hold your phone 15–20 cm directly above the board." : {
+
+    },
+    "3. Keep Steady: Hold the device still for 1 second during scan." : {
+
+    },
+    "8 Panel Pins" : {
+
+    },
+    "8mm Beech Dowel" : {
+
+    },
+    "220Ω Resistor" : {
+
+    },
+    "About" : {
+
+    },
+    "Accent Color" : {
+
+    },
+    "Account Access" : {
+
+    },
+    "Account Creation Failed" : {
+
+    },
+    "Accuracy Score: %lld%%" : {
+
+    },
+    "Action Required" : {
+
+    },
+    "Active" : {
+
+    },
+    "ACTIVE" : {
+
+    },
+    "Add" : {
+
+    },
+    "Add Project" : {
+
+    },
+    "AI indicator: %@" : {
+
+    },
+    "AI-Powered Hardware Assembly" : {
+
+    },
+    "Align camera directly above your workpiece to track components, fasteners, and physical connections in real time." : {
+
+    },
+    "Aligned" : {
+
+    },
+    "Alignment Grid Overlay" : {
+
+    },
+    "All physical components have been verified locally on-device." : {
+
+    },
+    "All physical step contracts verified successfully." : {
+
+    },
+    "Already have an account?" : {
+
+    },
+    "Already have an account? Sign In" : {
+
+    },
+    "Analyzing Visual Information" : {
+
+    },
+    "App Settings" : {
+
+    },
+    "Apple Vision • SwiftData • Neural Engine" : {
+
     },
     "AssembleAI" : {
       "extractionState" : "manual",
@@ -78,6 +288,86 @@
         }
       }
     },
+    "AssembleAI is speaking..." : {
+
+    },
+    "AssembleAI processes visual information locally on your device." : {
+
+    },
+    "AssembleAI v%@ (Build %@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "AssembleAI v%1$@ (Build %2$@)"
+          }
+        }
+      }
+    },
+    "AssembleAI. Precision Hardware Assembly." : {
+
+    },
+    "Assembly Complete" : {
+
+    },
+    "Assembly complete for %@. %lld steps verified. Time %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Assembly complete for %1$@. %2$lld steps verified. Time %3$@."
+          }
+        }
+      }
+    },
+    "Assembly Guide" : {
+
+    },
+    "Assembly Project" : {
+
+    },
+    "Assembly Reminders" : {
+
+    },
+    "Assembly Step" : {
+
+    },
+    "Assembly Steps" : {
+
+    },
+    "Assembly Telemetry & Logs" : {
+
+    },
+    "Assembly Type" : {
+
+    },
+    "Assessment" : {
+
+    },
+    "Authenticating..." : {
+
+    },
+    "Auto-Torch in Low Light" : {
+
+    },
+    "Automated" : {
+
+    },
+    "Avatar icon %@" : {
+
+    },
+    "Back" : {
+
+    },
+    "Back Panel" : {
+
+    },
+    "Before We Begin" : {
+
+    },
+    "Bill of Materials" : {
+
+    },
     "Build with\nprecision." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -88,6 +378,701 @@
           }
         }
       }
+    },
+    "Build with precision." : {
+
+    },
+    "Cam Lock Fastener" : {
+
+    },
+    "Camera & Viewfinder" : {
+
+    },
+    "Camera Access Required" : {
+
+    },
+    "Camera frames and Vision OCR extractions are processed entirely on your device and never uploaded to external servers." : {
+
+    },
+    "Camera Observation" : {
+
+    },
+    "Camera unavailable or waiting for permission" : {
+
+    },
+    "Cancel" : {
+
+    },
+    "Cancel assembly session" : {
+
+    },
+    "Check My Assembly" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check My Assembly"
+          }
+        }
+      }
+    },
+    "Check Polarity" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check Polarity"
+          }
+        }
+      }
+    },
+    "Check Your Email" : {
+
+    },
+    "Check Your Inbox" : {
+
+    },
+    "Checking %@. Your active step is %lld: %@. Follow the camera guidance." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Checking %1$@. Your active step is %2$lld: %3$@. Follow the camera guidance."
+          }
+        }
+      }
+    },
+    "Checks whether polarized components (LED, electrolytic capacitor, diode) are oriented correctly." : {
+
+    },
+    "Choose Avatar Icon" : {
+
+    },
+    "Choose how you'd like to begin your assembly." : {
+
+    },
+    "Circuit Hardware Blueprint" : {
+
+    },
+    "Circuit Workspace" : {
+
+    },
+    "Clear Local Storage" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear Local Storage"
+          }
+        }
+      }
+    },
+    "Clear Research Logs" : {
+
+    },
+    "Clear Research Telemetry?" : {
+
+    },
+    "Clear Telemetry" : {
+
+    },
+    "Clear text" : {
+
+    },
+    "Cloud Telemetry" : {
+
+    },
+    "Color %@" : {
+
+    },
+    "Completed" : {
+
+    },
+    "Completed Step %lld" : {
+
+    },
+    "Completed step %lld of %@, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Completed step %1$lld of %2$@, %3$@"
+          }
+        }
+      }
+    },
+    "Completed Workflows" : {
+
+    },
+    "Component name" : {
+
+    },
+    "Component Name" : {
+
+    },
+    "Concise" : {
+
+    },
+    "Connect" : {
+
+    },
+    "Continue on iPhone" : {
+
+    },
+    "Continue without account" : {
+
+    },
+    "Continue without an account" : {
+
+    },
+    "Create account" : {
+
+    },
+    "Create Account" : {
+
+    },
+    "Create an account to track your hardware assembly progress." : {
+
+    },
+    "Current" : {
+
+    },
+    "Currently generating export." : {
+
+    },
+    "Daily Building Streak" : {
+
+    },
+    "Daily prompt to learn electronics assembly." : {
+
+    },
+    "Data & Diagnostics" : {
+
+    },
+    "Data & Privacy" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Data & Privacy"
+          }
+        }
+      }
+    },
+    "Data, Cache & Telemetry" : {
+
+    },
+    "Delete Account & All Data?" : {
+
+    },
+    "Delete Account & Cloud Data" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete Account & Cloud Data"
+          }
+        }
+      }
+    },
+    "Delete Account & Data" : {
+
+    },
+    "Delete Permanently" : {
+
+    },
+    "Demo Mock" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demo Mock"
+          }
+        }
+      }
+    },
+    "Detail (optional)" : {
+
+    },
+    "Detailed" : {
+
+    },
+    "Detected State" : {
+
+    },
+    "DETECTED TEXT MARKINGS (%lld)" : {
+
+    },
+    "Difficulty" : {
+
+    },
+    "Difficulty: %@" : {
+
+    },
+    "Disconnect Webhook" : {
+
+    },
+    "Dismiss" : {
+
+    },
+    "Display Name" : {
+
+    },
+    "Domain" : {
+
+    },
+    "Don't have an account?" : {
+
+    },
+    "Don't have an account? Create account" : {
+
+    },
+    "Done" : {
+
+    },
+    "Double tap to export data." : {
+
+    },
+    "Double tap to open project details." : {
+
+    },
+    "Double tap to view project details and continue assembly." : {
+
+    },
+    "Edit" : {
+
+    },
+    "Edit Profile" : {
+
+    },
+    "Enable camera access in Settings → Privacy → Camera to observe physical hardware assembly tasks." : {
+
+    },
+    "Enter your email and password to access your account." : {
+
+    },
+    "Enter your email and we'll send instructions to reset your password." : {
+
+    },
+    "Enter your name" : {
+
+    },
+    "Error: %@" : {
+
+    },
+    "Estimated Time: %lld min" : {
+
+    },
+    "Expected" : {
+
+    },
+    "Expected Result" : {
+
+    },
+    "Expected State" : {
+
+    },
+    "Expected: %@. Observed: %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Expected: %1$@. Observed: %2$@."
+          }
+        }
+      }
+    },
+    "Export All Data (JSON)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export All Data (JSON)"
+          }
+        }
+      }
+    },
+    "Export anonymized pseudonymous CSV log records for statistical evaluation." : {
+
+    },
+    "Export Research Metrics (CSV)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export Research Metrics (CSV)"
+          }
+        }
+      }
+    },
+    "Extracting physical observations and text markings locally on-device…" : {
+
+    },
+    "Extraction Complete" : {
+
+    },
+    "Fast, secure, and private authentication. Synchronize your assembly workflows automatically." : {
+
+    },
+    "Filter" : {
+
+    },
+    "For the %@, ensure the longer lead, the anode, connects to positive voltage, and the shorter lead connects to ground." : {
+
+    },
+    "Forgot password" : {
+
+    },
+    "Forgot password?" : {
+
+    },
+    "Format" : {
+
+    },
+    "Frequently Asked Questions" : {
+
+    },
+    "Get Started" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Get Started"
+          }
+        }
+      }
+    },
+    "Go to Sign In" : {
+
+    },
+    "Google Sheets / Cloud Sync" : {
+
+    },
+    "Great work." : {
+
+    },
+    "Guidance & Inspection" : {
+
+    },
+    "Guidance Detail" : {
+
+    },
+    "Guidance Level" : {
+
+    },
+    "Haptic Guidance Feedback" : {
+
+    },
+    "Haptics & Sensory" : {
+
+    },
+    "Hardware Assembly Reference" : {
+
+    },
+    "Hardware inspection preview showing breadboard with resistor placement step." : {
+
+    },
+    "HDF Back Panel" : {
+
+    },
+    "Hide password" : {
+
+    },
+    "History" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "History"
+          }
+        }
+      }
+    },
+    "Home" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home"
+          }
+        }
+      }
+    },
+    "How would you like to start?" : {
+
+    },
+    "https://script.google.com/macros/s/.../exec" : {
+
+    },
+    "Hybrid Engine" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hybrid Engine"
+          }
+        }
+      }
+    },
+    "If an account exists for %@, you'll receive reset instructions shortly." : {
+
+    },
+    "Import Guide" : {
+
+    },
+    "Important terms and physical safety advisory for AssembleAI." : {
+
+    },
+    "In Progress" : {
+
+    },
+    "INPUT CONTEXT (GROUNDED)" : {
+
+    },
+    "Inspect Assembly" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inspect Assembly"
+          }
+        }
+      }
+    },
+    "Instruction details..." : {
+
+    },
+    "iOS Notification Status" : {
+
+    },
+    "Issue:" : {
+
+    },
+    "Let's fix this" : {
+
+    },
+    "Listening..." : {
+
+    },
+    "Live camera feed" : {
+
+    },
+    "Loading" : {
+
+    },
+    "Loading projects…" : {
+
+    },
+    "Make sure your components are visible and your workspace has enough light. The visual assistant will guide you step by step." : {
+
+    },
+    "Manage" : {
+
+    },
+    "Manage local storage, clear cache, or export logs" : {
+
+    },
+    "Manual snapshot analysis" : {
+
+    },
+    "Model Session Inspector" : {
+
+    },
+    "Move Here" : {
+
+    },
+    "New Project" : {
+
+    },
+    "Next Step" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next Step"
+          }
+        }
+      }
+    },
+    "Next:" : {
+
+    },
+    "No active assembly project was found. Open AssembleAI to start assembling." : {
+
+    },
+    "No Assembly History Yet" : {
+
+    },
+    "No assembly projects found. Open AssembleAI to browse projects." : {
+
+    },
+    "No component text markings detected in frame." : {
+
+    },
+    "No other projects available." : {
+
+    },
+    "Notification Preferences" : {
+
+    },
+    "Notifications" : {
+
+    },
+    "Nudges to resume incomplete assembly projects." : {
+
+    },
+    "Observed" : {
+
+    },
+    "Observed State" : {
+
+    },
+    "OK" : {
+
+    },
+    "On-Device Privacy Guaranteed" : {
+
+    },
+    "Open Settings" : {
+
+    },
+    "Opens iOS Settings to enable camera access" : {
+
+    },
+    "Optical Only" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Optical Only"
+          }
+        }
+      }
+    },
+    "Optical Verification" : {
+
+    },
+    "Optional" : {
+
+    },
+    "Paste Guide Content" : {
+
+    },
+    "Paste your Google Apps Script Web App URL or Airtable webhook. Each completed assembly run automatically appends a row with all 25+ benchmark columns (latency, memory, tokens, accuracy) ready for LaTeX/Word tables." : {
+
+    },
+    "Pause Live Tutor" : {
+
+    },
+    "Physical Assembly Blueprint" : {
+
+    },
+    "Physical Inspection" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Physical Inspection"
+          }
+        }
+      }
+    },
+    "Physical Rationale" : {
+
+    },
+    "Pin Header" : {
+
+    },
+    "Please keep your phone steady." : {
+
+    },
+    "Point your camera at the circuit board to track pin connections, orientation, and placement in real time." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Point your camera at the circuit board to track pin connections, orientation, and placement in real time."
+          }
+        }
+      }
+    },
+    "Pre-Scan Setup" : {
+
+    },
+    "Precision Hardware Assembly & Optical Inspection" : {
+
+    },
+    "Preferences & Tools" : {
+
+    },
+    "Preparation Check" : {
+
+    },
+    "Preparing explanation…" : {
+
+    },
+    "Privacy Policy" : {
+
+    },
+    "Profile" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profile"
+          }
+        }
+      }
+    },
+    "Progress" : {
+
+    },
+    "Project Saved" : {
+
+    },
+    "Project Summary" : {
+
+    },
+    "Projects" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Projects"
+          }
+        }
+      }
+    },
+    "Reads the next physical assembly step instruction hands-free." : {
+
+    },
+    "Ready for your next physical assembly task." : {
+
+    },
+    "Ready to assemble?" : {
+
+    },
+    "Ready to build?" : {
+
     },
     "Real-time camera verification for physical hardware assembly. Point your iPhone at your workspace and verify each step as you build." : {
       "extractionState" : "manual",
@@ -100,16 +1085,134 @@
         }
       }
     },
-    "Get Started" : {
+    "Recent Activity" : {
+
+    },
+    "Required" : {
+
+    },
+    "RESEARCH DATA EXPORT" : {
+
+    },
+    "Reset All Local Data & Sessions" : {
+
+    },
+    "Reset All Local Data?" : {
+
+    },
+    "Reset Everything" : {
+
+    },
+    "Reset Local Data" : {
+
+    },
+    "Reset Password" : {
+
+    },
+    "Resume Live Tutor" : {
+
+    },
+    "Retry" : {
+
+    },
+    "Rotate 180° clockwise" : {
+
+    },
+    "Row 10 to 15" : {
+
+    },
+    "Save" : {
+
+    },
+    "Scan" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Get Started"
+            "value" : "Scan"
           }
         }
       }
+    },
+    "Scan Again" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan Again"
+          }
+        }
+      }
+    },
+    "Search projects or categories" : {
+
+    },
+    "See All" : {
+
+    },
+    "See all projects" : {
+
+    },
+    "Select a hardware task to begin guided step-by-step assembly." : {
+
+    },
+    "Session Evaluation Dashboard" : {
+
+    },
+    "Session runs stream live into spreadsheet rows" : {
+
+    },
+    "Settings" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings"
+          }
+        }
+      }
+    },
+    "Shelf Board" : {
+
+    },
+    "Short, quick instructions for experienced builders." : {
+
+    },
+    "Show password" : {
+
+    },
+    "Sign In" : {
+
+    },
+    "Sign in instead" : {
+
+    },
+    "Sign in to synchronize assembly projects across your Apple devices, or continue locally." : {
+
+    },
+    "Sign in with Apple" : {
+
+    },
+    "Sign Out" : {
+
+    },
+    "Sign Out of AssembleAI?" : {
+
+    },
+    "Simulated Optical Stream" : {
+
+    },
+    "Smooth side facing out" : {
+
+    },
+    "Source Format" : {
+
+    },
+    "Standard conventions, pinouts, and troubleshooting guidance." : {
+
     },
     "Start Assembly" : {
       "extractionState" : "manual",
@@ -133,38 +1236,141 @@
         }
       }
     },
-    "Scan Again" : {
-      "extractionState" : "manual",
+    "STATE COMPARISON ENGINE" : {
+
+    },
+    "Step %lld" : {
+
+    },
+    "STEP %lld" : {
+
+    },
+    "Step %lld of %lld" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "Scan Again"
+            "state" : "new",
+            "value" : "Step %1$lld of %2$lld"
           }
         }
       }
     },
-    "Physical Inspection" : {
-      "extractionState" : "manual",
+    "Step %lld of %lld complete. %@. Next step button." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "Physical Inspection"
+            "state" : "new",
+            "value" : "Step %1$lld of %2$lld complete. %3$@. Next step button."
           }
         }
       }
     },
-    "Point your camera at the circuit board to track pin connections, orientation, and placement in real time." : {
-      "extractionState" : "manual",
+    "Step %lld: %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "Point your camera at the circuit board to track pin connections, orientation, and placement in real time."
+            "state" : "new",
+            "value" : "Step %1$lld: %2$@"
           }
         }
       }
+    },
+    "Step %lld: %@. %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Step %1$lld: %2$@. %3$@"
+          }
+        }
+      }
+    },
+    "Step 1 of 4" : {
+
+    },
+    "Step Complete" : {
+
+    },
+    "Step Number" : {
+
+    },
+    "Step title" : {
+
+    },
+    "Step-by-step physical placement guidance with pinout notes." : {
+
+    },
+    "Steps" : {
+
+    },
+    "Steps overview" : {
+
+    },
+    "Steps Preview" : {
+
+    },
+    "Stop listening" : {
+
+    },
+    "Storage & Cache" : {
+
+    },
+    "Stream benchmarks into Google Sheets for papers" : {
+
+    },
+    "Sync Now" : {
+
+    },
+    "Talk to AssembleAI" : {
+
+    },
+    "Target" : {
+
+    },
+    "Target Blueprint Reference" : {
+
+    },
+    "Target Project" : {
+
+    },
+    "Target Reticle Pulse" : {
+
+    },
+    "Terms & Safety Guidelines" : {
+
+    },
+    "Terms of Service" : {
+
+    },
+    "The visual observer detected a placement mismatch. Follow the steps below to adjust your setup." : {
+
+    },
+    "This will permanently delete local research session benchmarks and event logs. Your assembly project progress and account data will not be affected." : {
+
+    },
+    "This will permanently delete your account, session records, and authentication tokens. This action cannot be undone." : {
+
+    },
+    "This will permanently delete your locally saved assembly attempts, sessions, and cached responses. This action cannot be undone." : {
+
+    },
+    "Tips for Better Scanning" : {
+
+    },
+    "Unable to load projects" : {
+
+    },
+    "Unable to Sign In" : {
+
+    },
+    "Use AssembleAI without an account. Your assembly projects and inspection history stay strictly on this device." : {
+
+    },
+    "Uses optical bounding checks against target hardware templates." : {
+
+    },
+    "Verification Details" : {
+
     },
     "Verification Engine" : {
       "extractionState" : "manual",
@@ -188,104 +1394,23 @@
         }
       }
     },
-    "Hybrid Engine" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hybrid Engine"
-          }
-        }
-      }
+    "Verifies component placement and wire connectivity automatically." : {
+
     },
-    "Optical Only" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Optical Only"
-          }
-        }
-      }
+    "Verifies the current physical assembly step using AssembleAI on-device camera vision." : {
+
     },
-    "Demo Mock" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Demo Mock"
-          }
-        }
-      }
+    "View Model Inspector" : {
+
     },
-    "Data & Privacy" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Data & Privacy"
-          }
-        }
-      }
+    "Visual Observation" : {
+
     },
-    "Export All Data (JSON)" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Export All Data (JSON)"
-          }
-        }
-      }
+    "We've sent a verification link to %@. Please confirm your email address, then sign in." : {
+
     },
-    "Export Research Metrics (CSV)" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Export Research Metrics (CSV)"
-          }
-        }
-      }
-    },
-    "Clear Local Storage" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Clear Local Storage"
-          }
-        }
-      }
-    },
-    "Delete Account & Cloud Data" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Delete Account & Cloud Data"
-          }
-        }
-      }
-    },
-    "Check My Assembly" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Check My Assembly"
-          }
-        }
-      }
+    "Webhook URL" : {
+
     },
     "What Is My Next Step" : {
       "extractionState" : "manual",
@@ -298,38 +1423,35 @@
         }
       }
     },
-    "Check Polarity" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Check Polarity"
-          }
-        }
-      }
+    "When you start building and verifying physical hardware with your camera, your session history and accuracy metrics will appear here." : {
+
     },
-    "Inspect Assembly" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Inspect Assembly"
-          }
-        }
-      }
+    "Why is this step wrong?" : {
+
     },
-    "Next Step" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Next Step"
-          }
-        }
-      }
+    "Why is this wrong?" : {
+
+    },
+    "Why?" : {
+
+    },
+    "Workbench Feed" : {
+
+    },
+    "You'll need" : {
+
+    },
+    "Your Camera, Your Data" : {
+
+    },
+    "Your data will stay on this device only" : {
+
+    },
+    "Your local progress will be saved on this device." : {
+
+    },
+    "Your Projects" : {
+
     }
   },
   "version" : "1.0"

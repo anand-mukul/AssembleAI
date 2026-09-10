@@ -26,6 +26,9 @@ struct SupabaseProjectRepository: ProjectRepository {
     }
     
     func fetchProjects() async throws -> [AssemblyProject] {
+        guard AppConfig.isSupabaseConfigured else {
+            return try await fallbackRepository.fetchProjects()
+        }
         do {
             let remote = try await supabaseService.fetchFullAssemblyProjects()
             if !remote.isEmpty {
@@ -38,6 +41,9 @@ struct SupabaseProjectRepository: ProjectRepository {
     }
     
     func fetchProject(byId id: UUID) async throws -> AssemblyProject? {
+        guard AppConfig.isSupabaseConfigured else {
+            return try await fallbackRepository.fetchProject(byId: id)
+        }
         do {
             let remote = try await supabaseService.fetchFullAssemblyProjects()
             if let match = remote.first(where: { $0.id == id }) {
