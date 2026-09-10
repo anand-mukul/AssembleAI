@@ -20,6 +20,12 @@ enum ProjectRepositoryFactory {
         return SupabaseProjectRepository(supabaseService: supabase)
     }
     
+    /// Returns a local-first project repository (alias to resolve for testing and backward compatibility).
+    @MainActor
+    static func localFirst() -> ProjectRepository {
+        resolve()
+    }
+    
     /// Returns a sample repository for preview/test injection.
     static func mock() -> ProjectRepository {
         SampleProjectRepository()

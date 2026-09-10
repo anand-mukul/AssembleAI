@@ -14,6 +14,11 @@ actor SupabaseProjectService {
         self.supabaseManager = supabaseManager
     }
     
+    @MainActor
+    init() {
+        self.supabaseManager = SupabaseManager.shared
+    }
+    
     enum ServiceError: Error {
         case invalidURL
         case networkFailure(String)

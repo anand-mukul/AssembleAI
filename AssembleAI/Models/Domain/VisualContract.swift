@@ -281,6 +281,9 @@ nonisolated struct OrientationConstraint: Codable, Hashable, Equatable, Sendable
     /// Machine-readable orientation marker type.
     let markerType: OrientationMarkerType
     
+    /// Human-readable orientation rule description (alias for rule).
+    var ruleDescription: String { rule }
+    
     init(partId: String, rule: String, markerType: OrientationMarkerType = .notApplicable) {
         self.partId = partId
         self.rule = rule

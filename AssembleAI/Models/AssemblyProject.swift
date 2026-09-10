@@ -111,9 +111,9 @@ nonisolated struct AssemblyProject: Identifiable, Hashable, Codable, Sendable {
     let difficulty: Difficulty
     let estimatedMinutes: Int
     let totalSteps: Int
-    let completedSteps: Int
+    var completedSteps: Int
     let imageName: String?
-    let isActive: Bool
+    var isActive: Bool
     let nextAction: String?
     let description: String
     let components: [ComponentRequirement]

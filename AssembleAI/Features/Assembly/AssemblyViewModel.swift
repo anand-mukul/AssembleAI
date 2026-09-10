@@ -107,9 +107,10 @@ final class AssemblyViewModel: ObservableObject {
         self.voiceOutput = voiceOutput ?? VoiceOutputService()
         self.voiceInput = voiceInput ?? VoiceInputService()
         self.intentParser = VoiceIntentParser()
+        self.researchLogger = researchLogger ?? ResearchLogger.shared
         self.sessionRepository = sessionRepository ?? LocalFirstSessionRepository(
             modelContext: PersistenceController.shared.container.mainContext,
-            supabaseService: AppConfig.isSupabaseConfigured ? SupabaseProjectService() : nil
+            supabaseService: AppConfig.isSupabaseConfigured ? SupabaseProjectService(supabaseManager: SupabaseManager.shared) : nil
         )
         
         let mainContext = PersistenceController.shared.container.mainContext
@@ -184,6 +185,17 @@ final class AssemblyViewModel: ObservableObject {
     /// Step order label (1-indexed)
     var stepOrderLabel: Int {
         currentStepIndex + 1
+    }
+    
+    /// Viewport size resolved from active window scene to support iOS 26+ without relying on deprecated UIScreen.main.
+    private var screenViewportSize: CGSize {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        if let scene = scenes.first(where: { $0.activationState == .foregroundActive }) ?? scenes.first {
+            if let window = scene.windows.first(where: { $0.isKeyWindow }) ?? scene.windows.first {
+                return window.bounds.size
+            }
+        }
+        return CGSize(width: 393, height: 852)
     }
     
     // MARK: - Telemetry Logging Helper
@@ -272,7 +284,7 @@ final class AssemblyViewModel: ObservableObject {
                     issues: verification.primaryIssue.map { [$0] } ?? [],
                     matchedComponents: []
                 )
-                let overlay = await self.guidanceProvider.guidance(for: liveComparison, step: activeStep, viewSize: UIScreen.main.bounds.size)
+                let overlay = await self.guidanceProvider.guidance(for: liveComparison, step: activeStep, viewSize: self.screenViewportSize)
                 self.activeGuidance = overlay
                 
                 // Log Verification Research Telemetry
