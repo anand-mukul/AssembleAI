@@ -241,6 +241,11 @@ nonisolated struct VisualContract: Codable, Hashable, Equatable, Sendable {
     var hasSpatialConstraints: Bool {
         !spatialPlacements.isEmpty
     }
+    
+    /// Whether this contract contains physical assembly constraints (spatial placements).
+    var hasPhysicalConstraints: Bool {
+        hasSpatialConstraints
+    }
 }
 
 // MARK: - Connection Contract

@@ -98,6 +98,7 @@ final class ProjectPackageLoaderTests: XCTestCase {
         XCTAssertNotNil(project.steps[0].visualContract)
         XCTAssertEqual(project.steps[0].visualContract?.spatialPlacements.count, 1)
         XCTAssertEqual(project.steps[0].visualContract?.spatialPlacements[0].quantity, 6)
+        XCTAssertTrue(project.steps[0].visualContract?.hasPhysicalConstraints == true)
         XCTAssertNil(project.steps[1].visualContract)
     }
     
@@ -152,6 +153,7 @@ final class ProjectPackageLoaderTests: XCTestCase {
         XCTAssertEqual(contract.orientationConstraints[0].markerType, .labelDirection)
         XCTAssertTrue(contract.hasElectronicsConstraints)
         XCTAssertFalse(contract.hasSpatialConstraints)
+        XCTAssertFalse(contract.hasPhysicalConstraints)
     }
     
     func testDecodeCommonMistakes() throws {
