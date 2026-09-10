@@ -51,6 +51,49 @@ struct ProjectDetailView: View {
                 }
                 .padding(.horizontal, AppSpacing.screenEdge)
                 
+                // Upfront Progress Tracker (In Front)
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                    HStack {
+                        HStack(spacing: 6) {
+                            Image(systemName: project.isCompleted ? "checkmark.seal.fill" : (project.completedSteps > 0 ? "bolt.fill" : "play.circle.fill"))
+                                .foregroundColor(project.isCompleted ? AppColors.success : .assembleBrandPrimary)
+                                .font(.subheadline)
+                            
+                            Text(project.isCompleted ? "Assembly Completed" : (project.completedSteps > 0 ? "In Progress" : "Ready to Assemble"))
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundColor(AppColors.primaryText)
+                        }
+                        
+                        Spacer()
+                        
+                        Text("\(project.completedSteps) of \(project.totalSteps) steps (\(project.progressText))")
+                            .font(.caption.weight(.bold))
+                            .monospacedDigit()
+                            .foregroundColor(AppColors.secondaryText)
+                    }
+                    
+                    ProgressBar(
+                        value: project.progress,
+                        height: 6,
+                        fillColor: project.isCompleted ? AppColors.success : .assembleBrandPrimary
+                    )
+                    
+                    if let next = project.nextAction, !project.isCompleted, !next.isEmpty {
+                        HStack(spacing: 4) {
+                            Text("Next:")
+                                .font(.caption.weight(.semibold))
+                                .foregroundColor(.assembleBrandPrimary)
+                            Text(next)
+                                .font(.caption)
+                                .foregroundColor(AppColors.secondaryText)
+                                .lineLimit(1)
+                        }
+                        .padding(.top, 2)
+                    }
+                }
+                .appCard()
+                .padding(.horizontal, AppSpacing.screenEdge)
+                
                 // About Description
                 if !project.description.isEmpty {
                     VStack(alignment: .leading, spacing: AppSpacing.xs) {
@@ -127,35 +170,9 @@ struct ProjectDetailView: View {
                         }
                         .appCard(padding: 0)
                         .padding(.horizontal, AppSpacing.screenEdge)
+                        .padding(.bottom, AppSpacing.md)
                     }
                 }
-                
-                // Progress Section
-                VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    HStack {
-                        Text("Progress")
-                            .font(.headline)
-                            .fontWeight(.bold)
-                            .foregroundColor(AppColors.primaryText)
-                        
-                        Spacer()
-                        
-                        Text("\(project.completedSteps) of \(project.totalSteps) steps")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .monospacedDigit()
-                            .foregroundColor(AppColors.secondaryText)
-                    }
-                    
-                    ProgressBar(
-                        value: project.progress,
-                        height: 8,
-                        fillColor: project.isCompleted ? AppColors.success : .assembleBrandPrimary
-                    )
-                }
-                .appCard()
-                .padding(.horizontal, AppSpacing.screenEdge)
-                .padding(.bottom, AppSpacing.md)
             }
             .padding(.top, AppSpacing.sm)
         }
@@ -172,37 +189,79 @@ struct ProjectDetailView: View {
     
     private var bottomActionDock: some View {
         VStack(spacing: 0) {
-            HStack(spacing: AppSpacing.md) {
-                // Step Progress & Estimation Info
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(dockTitle)
-                        .font(.headline)
-                        .fontWeight(.bold)
-                        .foregroundColor(AppColors.primaryText)
-                        .lineLimit(1)
+            // Ambient Progress Bar Track spanning top of dock
+            GeometryReader { proxy in
+                ZStack(alignment: .leading) {
+                    Rectangle()
+                        .fill(AppColors.tertiaryText.opacity(0.18))
                     
-                    Text(dockSubtitle)
-                        .font(.caption)
-                        .foregroundColor(AppColors.secondaryText)
-                        .lineLimit(1)
+                    Rectangle()
+                        .fill(project.isCompleted ? AppColors.success : Color.assembleBrandPrimary)
+                        .frame(width: max(0, proxy.size.width * CGFloat(project.progress)))
+                        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: project.progress)
+                }
+            }
+            .frame(height: 3)
+            
+            HStack(spacing: AppSpacing.md) {
+                // Circular Progress Ring + Status Info
+                HStack(spacing: AppSpacing.sm) {
+                    ZStack {
+                        Circle()
+                            .stroke(AppColors.tertiaryText.opacity(0.2), lineWidth: 3)
+                            .frame(width: 34, height: 34)
+                        
+                        Circle()
+                            .trim(from: 0, to: max(0.02, CGFloat(project.progress)))
+                            .stroke(
+                                project.isCompleted ? AppColors.success : Color.assembleBrandPrimary,
+                                style: StrokeStyle(lineWidth: 3, lineCap: .round)
+                            )
+                            .rotationEffect(.degrees(-90))
+                            .frame(width: 34, height: 34)
+                            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: project.progress)
+                        
+                        if project.isCompleted {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(AppColors.success)
+                        } else {
+                            Text("\(Int(project.progress * 100))%")
+                                .font(.system(size: 9, weight: .bold, design: .rounded))
+                                .foregroundColor(AppColors.primaryText)
+                        }
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(dockTitle)
+                            .font(.subheadline)
+                            .fontWeight(.bold)
+                            .foregroundColor(AppColors.primaryText)
+                            .lineLimit(1)
+                        
+                        Text(dockSubtitle)
+                            .font(.caption2)
+                            .foregroundColor(AppColors.secondaryText)
+                            .lineLimit(1)
+                    }
                 }
                 
-                Spacer(minLength: 12)
+                Spacer(minLength: 8)
                 
                 // Primary Action Button
                 Button(action: {
                     UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                     onStartAssembly?(project)
                 }) {
-                    HStack(spacing: 8) {
+                    HStack(spacing: 6) {
                         Image(systemName: ctaButtonIcon)
-                            .font(.system(size: 15, weight: .bold))
+                            .font(.system(size: 14, weight: .bold))
                         Text(ctaButtonTitle)
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(.system(size: 15, weight: .semibold))
                     }
                     .foregroundColor(AppColors.premiumButtonForeground)
-                    .padding(.horizontal, AppSpacing.lg)
-                    .frame(height: 50)
+                    .padding(.horizontal, AppSpacing.md)
+                    .frame(height: 46)
                     .background(
                         Capsule(style: .continuous)
                             .fill(AppColors.premiumButtonBackground)
@@ -217,9 +276,6 @@ struct ProjectDetailView: View {
             .padding(.top, 10)
             .padding(.bottom, 6)
             .background(.ultraThinMaterial)
-            .overlay(alignment: .top) {
-                Divider()
-            }
         }
     }
     

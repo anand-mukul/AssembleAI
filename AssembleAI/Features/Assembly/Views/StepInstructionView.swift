@@ -39,28 +39,27 @@ struct StepInstructionView: View {
                 
                 // Expected Result Callout
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    HStack(spacing: AppSpacing.xs) {
-                        SemanticIconBadge(systemName: "info", tintColor: AppColors.badgeBlue)
+                    HStack(spacing: 6) {
+                        Image(systemName: "info.circle.fill")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(AppColors.badgeBlue)
+                        
                         Text("Expected Result")
-                            .font(.headline)
+                            .font(.subheadline.weight(.semibold))
                             .foregroundColor(AppColors.primaryText)
                     }
                     
                     Text(expectedResultDescription)
                         .font(.subheadline)
                         .foregroundColor(AppColors.secondaryText)
+                        .lineSpacing(2)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .appCard()
                 
-                Spacer(minLength: AppSpacing.lg)
-                
-                PrimaryButton(title: "Scan Setup", iconName: "viewfinder") {
-                    onScanSetup()
-                }
-                .padding(.bottom, AppSpacing.xl)
             }
             .padding(.horizontal, AppSpacing.screenEdge)
+            .padding(.bottom, AppSpacing.xl)
         }
         .background(AppColors.groupedBackground.ignoresSafeArea())
         .safeAreaInset(edge: .top) {
@@ -85,7 +84,44 @@ struct StepInstructionView: View {
             .padding(.vertical, 4)
             .background(.ultraThinMaterial)
             .overlay(alignment: .bottom) {
-                Divider()
+                Rectangle()
+                    .fill(AppColors.borderSubtle)
+                    .frame(height: 0.5)
+            }
+        }
+        .safeAreaInset(edge: .bottom) {
+            VStack(spacing: 0) {
+                Button(action: {
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    onScanSetup()
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "viewfinder")
+                            .font(.system(size: 16, weight: .bold))
+                        Text("Scan Setup")
+                            .font(.system(size: 17, weight: .semibold))
+                    }
+                    .foregroundColor(AppColors.premiumButtonForeground)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(
+                        Capsule(style: .continuous)
+                            .fill(AppColors.premiumButtonBackground)
+                            .shadow(color: Color.black.opacity(0.18), radius: 8, x: 0, y: 3)
+                    )
+                }
+                .buttonStyle(ScaleButtonStyle())
+                .touchTarget()
+                .accessibilityLabel("Scan setup with camera")
+                .padding(.horizontal, AppSpacing.screenEdge)
+                .padding(.top, AppSpacing.sm)
+                .padding(.bottom, AppSpacing.xs)
+            }
+            .background(.ultraThinMaterial)
+            .overlay(alignment: .top) {
+                Rectangle()
+                    .fill(AppColors.borderSubtle)
+                    .frame(height: 0.5)
             }
         }
     }

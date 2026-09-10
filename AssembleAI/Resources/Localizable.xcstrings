@@ -4,6 +4,9 @@
     "" : {
 
     },
+    "·" : {
+
+    },
     "'%@' has been created and is ready for assembly." : {
 
     },
@@ -102,25 +105,18 @@
     "%lld guidance tips" : {
 
     },
-    "%lld guided steps · ~%lld minutes" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld guided steps · ~%2$lld minutes"
-          }
-        }
-      }
+    "%lld guided steps" : {
+
     },
     "%lld ms" : {
 
     },
-    "%lld of %lld steps" : {
+    "%lld of %lld steps (%@)" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%1$lld of %2$lld steps"
+            "value" : "%1$lld of %2$lld steps (%3$@)"
           }
         }
       }
@@ -204,6 +200,9 @@
 
     },
     "~%lld min" : {
+
+    },
+    "~%lld minutes" : {
 
     },
     "1. Adequate Lighting: Ensure the workspace is well-lit without harsh glare or deep cast shadows." : {
@@ -333,6 +332,9 @@
         }
       }
     },
+    "Assembly Completed" : {
+
+    },
     "Assembly Guide" : {
 
     },
@@ -378,7 +380,13 @@
     "Back to project details" : {
 
     },
-    "Before We Begin" : {
+    "BEFORE WE BEGIN" : {
+
+    },
+    "Begin" : {
+
+    },
+    "Begin assembly session" : {
 
     },
     "Bill of Materials" : {
@@ -986,6 +994,9 @@
     "Optical Verification" : {
 
     },
+    "Optimal Scanning" : {
+
+    },
     "Optional" : {
 
     },
@@ -1041,7 +1052,7 @@
     "Preferences & Tools" : {
 
     },
-    "Preparation Check" : {
+    "PREPARATION CHECK" : {
 
     },
     "Preparing explanation…" : {
@@ -1085,6 +1096,9 @@
 
     },
     "Ready for your next physical assembly task." : {
+
+    },
+    "Ready to Assemble" : {
 
     },
     "Ready to assemble?" : {
@@ -1164,6 +1178,12 @@
           }
         }
       }
+    },
+    "Scan Setup" : {
+
+    },
+    "Scan setup with camera" : {
+
     },
     "Search projects or categories" : {
 

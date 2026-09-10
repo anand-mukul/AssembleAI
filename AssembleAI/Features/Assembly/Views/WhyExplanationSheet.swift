@@ -21,8 +21,10 @@ struct WhyExplanationSheet: View {
         VStack(spacing: AppSpacing.md) {
             // Header
             VStack(spacing: AppSpacing.xs) {
-                HStack(spacing: AppSpacing.xs) {
-                    SemanticIconBadge(systemName: "questionmark", tintColor: AppColors.badgeIndigo)
+                HStack(spacing: 6) {
+                    Image(systemName: "questionmark.circle.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(AppColors.badgeIndigo)
                     Text("Physical Rationale")
                         .font(.headline)
                         .foregroundColor(AppColors.primaryText)
