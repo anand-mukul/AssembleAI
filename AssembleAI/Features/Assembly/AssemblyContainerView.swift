@@ -164,7 +164,7 @@ struct AssemblyContainerView: View {
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .tabBar)
         .animation(.easeInOut(duration: 0.3), value: viewModel.phase)
-        .onChange(of: scenePhase) { newPhase in
+        .onChange(of: scenePhase) { _, newPhase in
             switch newPhase {
             case .background, .inactive:
                 viewModel.stopLiveTutor()
