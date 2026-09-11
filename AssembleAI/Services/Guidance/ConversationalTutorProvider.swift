@@ -401,13 +401,18 @@ final class HybridTutorResponseProvider: ConversationalTutorProviding, @unchecke
     private let fallbackProvider = DeterministicTutorResponseProvider()
     
     #if canImport(FoundationModels)
-    @available(iOS 18.0, *)
-    private lazy var foundationModelProvider: FoundationModelTutorResponseProvider = {
-        FoundationModelTutorResponseProvider()
-    }()
+    private let foundationModelProvider: FoundationModelTutorResponseProvider?
     #endif
     
-    init() {}
+    init() {
+        #if canImport(FoundationModels)
+        if #available(iOS 18.0, *) {
+            self.foundationModelProvider = FoundationModelTutorResponseProvider()
+        } else {
+            self.foundationModelProvider = nil
+        }
+        #endif
+    }
     
     func generateResponse(
         for decision: InterventionDecision,
@@ -416,8 +421,8 @@ final class HybridTutorResponseProvider: ConversationalTutorProviding, @unchecke
         guard decision.shouldIntervene else { return nil }
         
         #if canImport(FoundationModels)
-        if #available(iOS 18.0, *) {
-            if let response = await foundationModelProvider.generateResponse(for: decision, context: context) {
+        if let provider = foundationModelProvider {
+            if let response = await provider.generateResponse(for: decision, context: context) {
                 return response
             }
         }
@@ -432,8 +437,8 @@ final class HybridTutorResponseProvider: ConversationalTutorProviding, @unchecke
         context: AssistantContext
     ) async -> TutorResponse {
         #if canImport(FoundationModels)
-        if #available(iOS 18.0, *) {
-            return await foundationModelProvider.answerUserQuestion(query: query, intent: intent, context: context)
+        if let provider = foundationModelProvider {
+            return await provider.answerUserQuestion(query: query, intent: intent, context: context)
         }
         #endif
         
@@ -446,8 +451,8 @@ final class HybridTutorResponseProvider: ConversationalTutorProviding, @unchecke
     
     func clearSessionContext() async {
         #if canImport(FoundationModels)
-        if #available(iOS 18.0, *) {
-            await foundationModelProvider.clearSessionContext()
+        if let provider = foundationModelProvider {
+            await provider.clearSessionContext()
         }
         #endif
     }
@@ -457,8 +462,8 @@ final class HybridTutorResponseProvider: ConversationalTutorProviding, @unchecke
         context: AssistantContext
     ) async -> StructuredTutorFeedback {
         #if canImport(FoundationModels)
-        if #available(iOS 18.0, *) {
-            return await foundationModelProvider.generateStructuredFeedback(for: decision, context: context)
+        if let provider = foundationModelProvider {
+            return await provider.generateStructuredFeedback(for: decision, context: context)
         }
         #endif
         
