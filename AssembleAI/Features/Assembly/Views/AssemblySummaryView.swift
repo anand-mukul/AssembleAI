@@ -113,7 +113,7 @@ struct AssemblySummaryView: View {
 
 #Preview("Assembly Summary View") {
     AssemblySummaryView(
-        project: MockProjectData.previewProject,
+        project: PreviewProjectFixture.previewProject,
         session: AssemblySession(projectId: UUID(), completedSteps: [0, 1, 2, 3], attempts: 5, errors: 1),
         onDone: {}
     )

@@ -13,7 +13,6 @@ struct WhyExplanationSheet: View {
     
     @State private var explanationText: String = "Loading physical rationale…"
     @State private var isLoading: Bool = true
-    @State private var showModelDebug: Bool = false
     
     private let generator: GuidanceGenerating = HybridGuidanceGenerator()
     
@@ -28,16 +27,6 @@ struct WhyExplanationSheet: View {
                     Text("Physical Rationale")
                         .font(.headline)
                         .foregroundColor(AppColors.primaryText)
-                    
-                    Button {
-                        showModelDebug = true
-                    } label: {
-                        Image(systemName: "cpu")
-                            .font(.caption)
-                            .foregroundColor(.assembleBrandPrimary.opacity(0.8))
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("View Model Inspector")
                 }
                 
                 Text(issue.title)
@@ -85,16 +74,6 @@ struct WhyExplanationSheet: View {
         .presentationDetents([.height(380)])
         .presentationDragIndicator(.visible)
         .presentationCornerRadius(28)
-        .sheet(isPresented: $showModelDebug) {
-            FoundationModelDebugView(
-                stepTitle: step.title,
-                issueType: issue.type,
-                expectedDesc: step.title,
-                observedDesc: issue.title,
-                latencyMs: 142,
-                usedFallback: false
-            )
-        }
         .task {
             do {
                 let text = try await generator.generateWhyExplanation(step: step, issue: issue)

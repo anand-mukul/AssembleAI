@@ -6,6 +6,7 @@
 import SwiftUI
 import UIKit
 
+#if DEBUG
 /// Development-only research telemetry dashboard displaying session timing metrics, error rates, latencies, and CSV export.
 struct ResearchDebugView: View {
     let sessionID: UUID
@@ -61,42 +62,42 @@ struct ResearchDebugView: View {
                                 self.isExporting = true
                             }
                         }
-                        .padding(.top, 4)
+                        .sheet(isPresented: $isExporting) {
+                            ShareSheet(activityItems: [csvContent])
+                        }
                     }
-                    .padding(AppSpacing.md)
-                    .background(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(AppColors.secondaryGroupedBackground)
-                    )
+                    .appCard()
                 } else {
-                    ProgressView()
-                        .padding(.vertical, AppSpacing.xl)
+                    HStack {
+                        Spacer()
+                        ProgressView("Loading evaluation metrics…")
+                        Spacer()
+                    }
+                    .padding(.vertical, 40)
                 }
             }
             .padding(.horizontal, AppSpacing.screenEdge)
         }
         .background(AppColors.groupedBackground.ignoresSafeArea())
-        .sheet(isPresented: $isExporting) {
-            ShareSheet(activityItems: [csvContent])
-        }
         .task {
-            let computed = await ResearchLogger.shared.calculateMetrics(for: sessionID)
-            self.metrics = computed
+            let m = await ResearchLogger.shared.sessionMetrics(for: sessionID)
+            self.metrics = m
         }
     }
     
     private func metricCard(title: String, value: String, color: Color = AppColors.primaryText) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.system(size: 9, weight: .bold, design: .monospaced))
-                .foregroundColor(AppColors.tertiaryText)
+        VStack(spacing: 4) {
             Text(value)
                 .font(.title3)
                 .fontWeight(.bold)
                 .foregroundColor(color)
+            Text(title)
+                .font(.caption2)
+                .fontWeight(.semibold)
+                .foregroundColor(AppColors.secondaryText)
         }
-        .padding(AppSpacing.md)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, AppSpacing.md)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(AppColors.secondaryGroupedBackground)
@@ -110,17 +111,7 @@ struct ResearchDebugView: View {
     }
 }
 
-/// Helper wrapper presenting native UIActivityViewController share sheet.
-struct ShareSheet: UIViewControllerRepresentable {
-    let activityItems: [Any]
-    
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
-    }
-    
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
-}
-
 #Preview("Research Debug View") {
     ResearchDebugView(sessionID: UUID())
 }
+#endif

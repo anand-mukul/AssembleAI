@@ -29,10 +29,12 @@ enum ProjectRepositoryFactory {
         resolve()
     }
     
+    #if DEBUG
     /// Returns a sample repository for preview/test injection.
     static func mock() -> ProjectRepository {
         SampleProjectRepository()
     }
+    #endif
     
     /// Returns a bundled repository with a custom directory.
     static func bundled(directory: String = "Projects") -> ProjectRepository {

@@ -318,69 +318,70 @@ actor FoundationModelTutorResponseProvider: ConversationalTutorProviding {
     
     private func buildConfirmationPrompt(step: AssemblyStep, context: AssistantContext) -> String {
         """
-        SYSTEM: You are AssembleAI, an enthusiastic, friendly workshop partner and physical task guide.
-        Produce a warm, encouraging, concise 1-sentence spoken confirmation that Step \(step.stepOrder) ("\(step.title)") is successfully verified.
-        Celebrate the user's progress naturally. Do not use bullet points, markdown, or robot jargon.
+        SYSTEM: You are AssembleAI, a warm, witty, encouraging workshop buddy building projects side-by-side with the user.
+        Produce a brief, upbeat 1-sentence spoken celebration that Step \(step.stepOrder) ("\(step.title)") is successfully locked in.
+        Add a touch of playful humor or high-five energy (e.g., "Boom, nailed it—well, fitted it, technically!" or "Look at that clean fit! You're making this look easy.").
+        Spoken natural English only. No markdown, bullet points, or robot jargon.
         """
     }
     
     private func buildCorrectionPrompt(description: String, level: InterventionLevel, context: AssistantContext) -> String {
         let historyStr = formatRecentHistory(for: context.sessionID)
         return """
-        SYSTEM: You are AssembleAI, a friendly, patient workshop companion and physical task guide.
-        The physical state comparator detected an alignment or placement issue: "\(description)".
+        SYSTEM: You are AssembleAI, a friendly, patient workshop companion with a great sense of humor. Think of yourself as that handy, good-natured friend standing beside the user in the garage or workshop.
+        The physical state comparator detected an adjustment needed: "\(description)".
         Current Step: \(context.currentStep.stepOrder) — \(context.currentStep.title).
         Escalation Level: \(level.rawValue).
         \(historyStr)
         
-        INSTRUCTION: Explain the adjustment in 1-2 spoken sentences with warm empathy and actionable physical guidance.
-        Never claim the physical assembly is complete when an issue remains. Keep the tone supportive and friendly.
+        INSTRUCTION: Explain the adjustment in 1-2 spoken sentences with warm empathy, a light touch of friendly humor to keep it fun, and clear physical guidance (e.g., "Almost had it! That piece took a little detour—nudge it over one slot."). Never sound dry or robotic. Keep it encouraging and actionable.
         """
     }
     
     private func buildInstructionPrompt(step: AssemblyStep, context: AssistantContext) -> String {
         """
-        SYSTEM: You are AssembleAI, a friendly workshop partner and physical assembly guide.
+        SYSTEM: You are AssembleAI, an upbeat, witty workshop buddy.
         Introduce Step \(step.stepOrder): "\(step.title)".
         Instruction: "\(step.instruction)".
-        Deliver a concise, welcoming 1-2 sentence spoken orientation so the user feels confident getting started.
+        Deliver a breezy, encouraging 1-2 sentence spoken intro that gets the user psyched and confident for this step. Friendly, conversational, zero robot jargon.
         """
     }
     
     private func buildCameraViewPrompt(explanation: String, context: AssistantContext) -> String {
         """
-        SYSTEM: You are AssembleAI, a friendly workshop guide.
+        SYSTEM: You are AssembleAI, a friendly workshop companion.
         Camera view condition: "\(explanation)".
-        Ask the user in 1 friendly spoken sentence to adjust camera angle, move closer, or check workspace lighting.
+        Ask the user in 1 lighthearted, friendly spoken sentence to give you a slightly better peek—tilt the phone a bit, slide closer, or shed some light on the subject.
         """
     }
     
     private func buildStuckPrompt(step: AssemblyStep, attemptCount: Int, context: AssistantContext) -> String {
         """
-        SYSTEM: You are AssembleAI, a supportive, patient workshop friend.
-        The user has spent time on Step \(step.stepOrder) ("\(step.title)") and may be hesitating.
-        Offer gentle, friendly encouragement and a helpful hint in 1 spoken sentence.
+        SYSTEM: You are AssembleAI, a supportive, witty workshop friend.
+        The user has paused on Step \(step.stepOrder) ("\(step.title)").
+        Offer gentle, friendly encouragement with a smile in 1 spoken sentence—remind them even the best builders take a breather, and give a quick helpful hint.
         """
     }
     
     private func buildUserQuestionPrompt(query: String, intent: UserVoiceIntent, context: AssistantContext) -> String {
         let historyStr = formatRecentHistory(for: context.sessionID)
         let expectedDesc = context.expectedState?.requiredComponents.map(\.name).joined(separator: ", ") ?? context.currentStep.title
-        let issueDesc = context.primaryIssue?.explanation ?? (context.verificationResult?.explanation ?? "No active errors.")
+        let issueDesc = context.primaryIssue?.explanation ?? (context.verificationResult?.explanation ?? "Everything is looking good so far.")
         
         return """
-        SYSTEM: You are AssembleAI, a friendly and expert live workshop companion for physical assembly tasks (furniture, mechanical kits, electronics, and maker projects).
-        Keep responses concise (1-2 sentences), warm, and spoken-first for natural voice output.
-        Grounded task facts:
+        SYSTEM: You are AssembleAI, an expert, incredibly friendly, and naturally witty live workshop buddy. You chat casually and warmly like a knowledgeable, funny friend in the workshop.
+        You have a great sense of humor, stay supportive, and always provide practical real-world advice.
+        Keep responses concise (1-2 spoken sentences), direct, and spoken-first so it sounds amazing read aloud.
+        Grounded task context:
         - Current Step: \(context.currentStep.stepOrder) (\(context.currentStep.title))
         - Instruction: \(context.currentStep.instruction)
         - Expected: \(expectedDesc)
-        - Current State / Issue: \(issueDesc)
-        - Intent: \(intent)
+        - Current State / Situation: \(issueDesc)
+        - User Intent: \(intent)
         \(historyStr)
         
         User question: "\(query)"
-        Respond directly, warmly, and naturally.
+        Respond directly and helpfully with friendly warmth and natural workshop charm.
         """
     }
     
@@ -395,9 +396,16 @@ actor FoundationModelTutorResponseProvider: ConversationalTutorProviding {
 // MARK: - Hybrid Conversational Tutor Provider
 
 /// Hybrid conversational tutor provider routing requests to Apple Foundation Models when available,
-/// with seamless automatic fallback to `DeterministicTutorResponseProvider`.
+/// with persistent multi-turn conversational memory and seamless automatic fallback to `DeterministicTutorResponseProvider`.
 final class HybridTutorResponseProvider: ConversationalTutorProviding, @unchecked Sendable {
     private let fallbackProvider = DeterministicTutorResponseProvider()
+    
+    #if canImport(FoundationModels)
+    @available(iOS 18.0, *)
+    private lazy var foundationModelProvider: FoundationModelTutorResponseProvider = {
+        FoundationModelTutorResponseProvider()
+    }()
+    #endif
     
     init() {}
     
@@ -409,8 +417,7 @@ final class HybridTutorResponseProvider: ConversationalTutorProviding, @unchecke
         
         #if canImport(FoundationModels)
         if #available(iOS 18.0, *) {
-            let provider = FoundationModelTutorResponseProvider()
-            if let response = await provider.generateResponse(for: decision, context: context) {
+            if let response = await foundationModelProvider.generateResponse(for: decision, context: context) {
                 return response
             }
         }
@@ -426,8 +433,7 @@ final class HybridTutorResponseProvider: ConversationalTutorProviding, @unchecke
     ) async -> TutorResponse {
         #if canImport(FoundationModels)
         if #available(iOS 18.0, *) {
-            let provider = FoundationModelTutorResponseProvider()
-            return await provider.answerUserQuestion(query: query, intent: intent, context: context)
+            return await foundationModelProvider.answerUserQuestion(query: query, intent: intent, context: context)
         }
         #endif
         
@@ -441,8 +447,7 @@ final class HybridTutorResponseProvider: ConversationalTutorProviding, @unchecke
     func clearSessionContext() async {
         #if canImport(FoundationModels)
         if #available(iOS 18.0, *) {
-            let provider = FoundationModelTutorResponseProvider()
-            await provider.clearSessionContext()
+            await foundationModelProvider.clearSessionContext()
         }
         #endif
     }
@@ -453,8 +458,7 @@ final class HybridTutorResponseProvider: ConversationalTutorProviding, @unchecke
     ) async -> StructuredTutorFeedback {
         #if canImport(FoundationModels)
         if #available(iOS 18.0, *) {
-            let provider = FoundationModelTutorResponseProvider()
-            return await provider.generateStructuredFeedback(for: decision, context: context)
+            return await foundationModelProvider.generateStructuredFeedback(for: decision, context: context)
         }
         #endif
         

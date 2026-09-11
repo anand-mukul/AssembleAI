@@ -212,16 +212,27 @@ actor AppleIntelligenceService {
     // MARK: - Hardware Helper
     
     private func isAppleIntelligenceHardware(deviceModel: String) -> Bool {
-        // iPhone 15 Pro/Max (iPhone16,1 / iPhone16,2), iPhone 16 family (iPhone17,*), iPads/Macs with M1+
-        if deviceModel.hasPrefix("iPhone16,") || deviceModel.hasPrefix("iPhone17,") {
-            return true
-        }
-        if deviceModel.hasPrefix("iPad") && !deviceModel.contains("iPad7") && !deviceModel.contains("iPad8") {
-            return true
-        }
         #if targetEnvironment(simulator)
         return true
         #else
+        // iPhone 15 Pro / A17 Pro (iPhone16,1) and all subsequent iPhone generations (iPhone17,*, iPhone18,*, etc.)
+        if deviceModel.hasPrefix("iPhone") {
+            let numberString = deviceModel.dropFirst("iPhone".count).prefix(while: { $0.isNumber })
+            if let major = Int(numberString), major >= 16 {
+                return true
+            }
+        }
+        // iPads with Apple Silicon M-series or A17 Pro+ (iPad13,4+ corresponds to M1 iPad Pro / iPad Air and later)
+        if deviceModel.hasPrefix("iPad") {
+            let numberString = deviceModel.dropFirst("iPad".count).prefix(while: { $0.isNumber })
+            if let major = Int(numberString), major >= 13 {
+                return true
+            }
+        }
+        // Apple Silicon Macs
+        if deviceModel.hasPrefix("Mac") {
+            return true
+        }
         return false
         #endif
     }

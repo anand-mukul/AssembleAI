@@ -6,6 +6,7 @@
 import SwiftUI
 import UIKit
 
+#if DEBUG
 /// Development-only debug screen rendering structured `VisualObservation`, Expected State vs Observed State, and `StateComparison` evaluation.
 struct VisionDebugView: View {
     let image: UIImage?
@@ -96,7 +97,7 @@ struct VisionDebugView: View {
                         .foregroundColor(AppColors.secondaryText)
                     
                     StateComparisonCard(
-                        expectedText: "220Ω Resistor (Row 10 → Row 15)",
+                        expectedText: "Step Contract Placement Specification",
                         observedText: observation.hasText ? observation.detectedText.map(\.text).joined(separator: ", ") : "No explicit text markers",
                         issueTitle: observation.hasText ? nil : "Insufficient evidence",
                         issueType: observation.hasText ? nil : .insufficientVisualEvidence
@@ -132,15 +133,11 @@ struct VisionDebugView: View {
         image: nil,
         observation: VisualObservation(
             imageSize: CGSize(width: 3024, height: 4032),
-            detectedText: [
-                DetectedText(text: "220 OHM", confidence: 0.94, boundingBox: .zero),
-                DetectedText(text: "R1 HEADER", confidence: 0.91, boundingBox: .zero)
-            ],
-            regions: [
-                DetectedRegion(label: "Breadboard Slot #1", confidence: 0.88, boundingBox: .zero)
-            ],
+            detectedText: [],
+            regions: [],
             processingTimeMs: 142.5
         ),
         onContinue: {}
     )
 }
+#endif

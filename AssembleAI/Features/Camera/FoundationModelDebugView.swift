@@ -5,6 +5,7 @@
 
 import SwiftUI
 
+#if DEBUG
 /// Development-only debug screen displaying Apple Foundation Models framework availability, prompt parameters, generation latency, and fallback status.
 struct FoundationModelDebugView: View {
     let stepTitle: String
@@ -114,3 +115,4 @@ struct FoundationModelDebugView: View {
         usedFallback: false
     )
 }
+#endif

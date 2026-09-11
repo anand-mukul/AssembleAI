@@ -42,22 +42,33 @@ nonisolated struct RuleBasedGuidanceGenerator: GuidanceGenerating {
     ) async throws -> GuidanceResponse {
         switch issue.type {
         case .wrongPosition:
+            let targetName = expectedState.requiredComponents.first?.name ?? "component"
             return GuidanceResponse(
-                title: "Wrong position",
+                title: issue.title.isEmpty ? "Wrong position" : issue.title,
                 explanation: issue.explanation,
-                action: "Shift the component lead over to match the target row."
+                action: "Reposition the \(targetName) to match the target placement."
             )
         case .wrongConnection:
+            let action: String
+            if let reqConn = expectedState.requiredConnections.first {
+                action = "Connect from \(reqConn.from) to \(reqConn.to)."
+            } else {
+                action = "Verify the connection matches the reference step instruction."
+            }
             return GuidanceResponse(
-                title: "Wrong connection",
+                title: issue.title.isEmpty ? "Wrong connection" : issue.title,
                 explanation: issue.explanation,
-                action: "Move the jumper wire from 5V to the GND ground rail."
+                action: action
             )
         case .missingComponent:
+            let missingName = expectedState.requiredComponents.first(where: { req in
+                !observedState.detectedComponents.contains(where: { $0.identifier == req.identifier || $0.name.localizedCaseInsensitiveContains(req.name) })
+            })?.name
+            let actionText = missingName != nil ? "Place \(missingName!) into the workspace." : "Insert the required component into the target area."
             return GuidanceResponse(
-                title: "Missing component",
+                title: issue.title.isEmpty ? "Missing component" : issue.title,
                 explanation: issue.explanation,
-                action: "Insert the required component into the highlighted slot."
+                action: actionText
             )
         case .insufficientVisualEvidence:
             return GuidanceResponse(
@@ -67,7 +78,7 @@ nonisolated struct RuleBasedGuidanceGenerator: GuidanceGenerating {
             )
         default:
             return GuidanceResponse(
-                title: issue.title,
+                title: issue.title.isEmpty ? "Needs adjustment" : issue.title,
                 explanation: issue.explanation,
                 action: "Re-check component positioning before retrying scan."
             )
@@ -124,9 +135,14 @@ nonisolated struct RuleBasedGuidanceGenerator: GuidanceGenerating {
             // Electronics circuit domain
             switch issue.type {
             case .wrongConnection:
-                return "GND provides the zero-volt reference path for electrical current flow. Connecting to 5V creates a short circuit risk or improper power bias across the active components."
+                let textLower = (issue.explanation + " " + issue.title).lowercased()
+                if textLower.contains("gnd") || textLower.contains("ground") || textLower.contains("5v") || textLower.contains("vcc") {
+                    return "GND provides the zero-volt reference path for electrical current flow. Connecting to power rails or incorrect pins creates short circuit risks or improper component bias."
+                } else {
+                    return "Correct circuit routing ensures voltage and signals flow along intended paths. An incorrect pin connection prevents proper operation or can damage sensitive nodes."
+                }
             case .wrongPosition:
-                return "Breadboard tie-points share internal metal contact clips within each 5-pin row. Misaligning by one row leaves the component node electrically open or connected to the wrong circuit branch."
+                return "Circuit and breadboard tie-points route specific signals within each pin group. Misaligning component pins leaves nodes electrically open or shorted to adjacent nets."
             case .missingComponent:
                 return "Each circuit component fulfills an essential role in the signal or power path. Omitting this component leaves the circuit loop incomplete."
             default:

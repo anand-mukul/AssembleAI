@@ -7,7 +7,6 @@ import Foundation
 
 /// Application execution environment mode.
 nonisolated enum AppEnvironment: String, CaseIterable, Codable, Hashable, Equatable, Sendable {
-    case demo = "Demo Mode"
     case development = "Development"
     case production = "Production"
 }
@@ -20,14 +19,3 @@ nonisolated enum InteractionMode: String, CaseIterable, Codable, Hashable, Equat
     case baseline = "baseline"
 }
 
-/// Reproducible deterministic demo scenario selector for presentations and evaluation.
-nonisolated enum DemoScenario: String, CaseIterable, Identifiable, Codable, Hashable, Equatable, Sendable {
-    case correctPlacement = "Correct Placement"
-    case wrongPosition = "Wrong Position (Step 2)"
-    case missingComponent = "Missing Component"
-    case wrongConnection = "Wrong Connection (Step 4)"
-    case uncertainImage = "Uncertain Image (Step 3)"
-    case completeAssembly = "Full Assembly Script"
-    
-    var id: String { rawValue }
-}

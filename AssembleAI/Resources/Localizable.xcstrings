@@ -613,17 +613,6 @@
     "Delete Permanently" : {
 
     },
-    "Demo Mock" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Demo Mock"
-          }
-        }
-      }
-    },
     "Detail (optional)" : {
 
     },
@@ -1239,9 +1228,6 @@
 
     },
     "Sign Out of AssembleAI?" : {
-
-    },
-    "Simulated Optical Stream" : {
 
     },
     "Smooth side facing out" : {

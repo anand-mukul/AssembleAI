@@ -355,11 +355,11 @@ struct AssemblyCameraView: View {
         }
     }
     
-    // MARK: - Spatial Hardware Studio Canvas (Simulator / Standby Mode)
+    // MARK: - Camera Viewfinder Backdrop (Simulator / Permission / Standby Mode)
     
     private var simulatorOrPermissionViewfinder: some View {
         ZStack {
-            if cameraService.authorizationStatus == .denied {
+            if cameraService.authorizationStatus == .denied || cameraService.authorizationStatus == .restricted {
                 // Camera Permission Required View
                 ZStack {
                     Color.black.ignoresSafeArea()
@@ -392,78 +392,42 @@ struct AssemblyCameraView: View {
                     }
                 }
             } else {
-                // Spatial Studio Inspection Backdrop
+                // Studio Viewfinder Backdrop (Initializing / Simulator Standby)
                 ZStack {
-                    // Deep Obsidian Studio Gradient
                     RadialGradient(
-                        colors: [Color(white: 0.12), Color.black],
+                        colors: [Color(white: 0.10), Color.black],
                         center: .center,
                         startRadius: 60,
                         endRadius: 420
                     )
                     .ignoresSafeArea()
                     
-                    // Hardware Workbench Schematic Simulation
-                    VStack(spacing: 16) {
-                        Spacer()
+                    #if targetEnvironment(simulator)
+                    VStack(spacing: 8) {
+                        Image(systemName: "camera.viewfinder")
+                            .font(.system(size: 36, weight: .ultraLight))
+                            .foregroundColor(.white.opacity(0.4))
                         
-                        // Holographic Circuit Alignment Canvas
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                .fill(Color.white.opacity(0.04))
-                                .frame(width: 250, height: 180)
-                            
-                            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                .strokeBorder(Color.white.opacity(0.12), lineWidth: 0.5)
-                                .frame(width: 250, height: 180)
-                            
-                            VStack(spacing: 12) {
-                                HStack(spacing: 8) {
-                                    Circle()
-                                        .fill(Color.assembleBrandPrimary.opacity(0.8))
-                                        .frame(width: 6, height: 6)
-                                    Text("Circuit Workspace")
-                                        .font(.caption2)
-                                        .fontWeight(.medium)
-                                        .foregroundColor(.white.opacity(0.7))
-                                    Spacer()
-                                    Text("Workbench Feed")
-                                        .font(.caption2)
-                                        .foregroundColor(.white.opacity(0.5))
-                                }
-                                .padding(.horizontal, 16)
-                                
-                                // Simulated Breadboard Grid Lines
-                                VStack(spacing: 6) {
-                                    ForEach(0..<4) { _ in
-                                        HStack(spacing: 8) {
-                                            ForEach(0..<10) { _ in
-                                                Circle()
-                                                    .fill(Color.white.opacity(0.20))
-                                                    .frame(width: 3, height: 3)
-                                            }
-                                        }
-                                    }
-                                }
-                                .padding(.vertical, 8)
-                                
-                                // Status indicator
-                                HStack(spacing: 5) {
-                                    Image(systemName: "sparkles")
-                                        .font(.system(size: 10))
-                                    Text("Simulated Optical Stream")
-                                        .font(.system(size: 10, weight: .medium))
-                                }
-                                .foregroundColor(Color.assembleBrandPrimary.opacity(0.85))
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 4)
-                                .background(Capsule().fill(Color.white.opacity(0.08)))
-                            }
-                            .frame(width: 250, height: 180)
-                        }
+                        Text("Camera Standby (Simulator)")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(.white.opacity(0.5))
                         
-                        Spacer()
+                        Text("Connect a physical device with a camera for live optical tracking.")
+                            .font(.caption2)
+                            .foregroundColor(.white.opacity(0.35))
                     }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(Color.white.opacity(0.04))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .strokeBorder(Color.white.opacity(0.08), lineWidth: 0.5)
+                    )
+                    #endif
                 }
                 .accessibilityHidden(true)
             }

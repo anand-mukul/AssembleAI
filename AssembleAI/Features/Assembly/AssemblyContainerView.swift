@@ -103,6 +103,7 @@ struct AssemblyContainerView: View {
                     AnalysisView()
                         .transition(.opacity)
                     
+                #if DEBUG
                 case .visionDebug(let observation):
                     VisionDebugView(
                         image: viewModel.capturedImage,
@@ -112,6 +113,10 @@ struct AssemblyContainerView: View {
                         }
                     )
                     .transition(.opacity)
+                #else
+                case .visionDebug:
+                    EmptyView()
+                #endif
                     
                 case .verification(let result):
                     VerificationResultView(
@@ -181,6 +186,6 @@ struct AssemblyContainerView: View {
 }
 
 #Preview("Assembly Container View") {
-    AssemblyContainerView(project: MockProjectData.previewProject)
+    AssemblyContainerView(project: PreviewProjectFixture.previewProject)
         .environmentObject(AppRouter())
 }

@@ -40,16 +40,16 @@ struct SampleProjectRepository: ProjectRepository {
 /// Backwards-compatible alias for unit test suites and existing callers
 typealias MockProjectRepository = SampleProjectRepository
 
-/// Dedicated sample dataset container (emptied for production database-driven architecture).
-enum SampleProjectData {
-    /// In-memory sample projects removed: all projects are fetched from the database.
+/// Dedicated preview dataset fixture container exclusively for SwiftUI Canvas previews.
+enum PreviewProjectFixture {
+    /// In-memory sample projects: all production projects are loaded via database or bundled JSON.
     static let sampleProjects: [AssemblyProject] = []
     
-    /// Sample activity history removed: real session records are loaded from SwiftData/database.
+    /// Sample activity history: real session records are loaded from SwiftData/database.
     static let sampleActivity: [ActivityItemModel] = []
     
     #if DEBUG
-    /// Isolated dummy model exclusively for SwiftUI Canvas canvas previews (never loaded by app runtime).
+    /// Isolated fixture model exclusively for SwiftUI Canvas previews (never loaded by app runtime).
     static let previewProject = AssemblyProject(
         id: UUID(uuidString: "11111111-1111-1111-1111-111111111111") ?? UUID(),
         title: "LED Circuit",
@@ -74,6 +74,11 @@ enum SampleProjectData {
     #endif
 }
 
+typealias SampleProjectData = PreviewProjectFixture
+
+#if DEBUG
 /// Backwards-compatible alias for unit test suites and preview helpers
-typealias MockProjectData = SampleProjectData
+typealias MockProjectData = PreviewProjectFixture
+#endif
+
 

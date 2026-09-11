@@ -160,7 +160,7 @@ struct ActiveProjectCard: View {
 
 #Preview("Active Project Card") {
     ActiveProjectCard(
-        project: MockProjectData.previewProject,
+        project: PreviewProjectFixture.previewProject,
         onContinue: {}
     )
     .padding()

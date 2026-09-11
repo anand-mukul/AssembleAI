@@ -285,30 +285,25 @@ final class CameraService: NSObject, ObservableObject {
         }
     }
     
-    /// Generates a synthetic test frame for Simulator testing.
+    /// Generates a neutral test frame for Simulator testing without mock breadboards or placeholder labels.
     func createSimulatorTestImage() -> UIImage {
         let size = CGSize(width: 1084, height: 812)
         let renderer = UIGraphicsImageRenderer(size: size)
         return renderer.image { ctx in
-            // Background PCB color
-            UIColor(red: 0.08, green: 0.18, blue: 0.12, alpha: 1.0).setFill()
+            // Clean dark studio backdrop
+            UIColor(red: 0.10, green: 0.10, blue: 0.12, alpha: 1.0).setFill()
             ctx.fill(CGRect(origin: .zero, size: size))
             
-            // Draw grid dots representing breadboard tie-points
-            UIColor(white: 0.85, alpha: 0.6).setFill()
-            for x in stride(from: 60, to: Int(size.width) - 60, by: 40) {
-                for y in stride(from: 60, to: Int(size.height) - 60, by: 40) {
-                    ctx.cgContext.fillEllipse(in: CGRect(x: x, y: y, width: 8, height: 8))
-                }
-            }
+            // Subtle optical center crosshair guide
+            let center = CGPoint(x: size.width / 2, y: size.height / 2)
+            UIColor(white: 1.0, alpha: 0.15).setStroke()
+            ctx.cgContext.setLineWidth(1.0)
             
-            // Draw clean workbench label representing an unpopulated assembly workspace
-            let attrs: [NSAttributedString.Key: Any] = [
-                .font: UIFont.systemFont(ofSize: 30, weight: .semibold),
-                .foregroundColor: UIColor.white.withAlphaComponent(0.6)
-            ]
-            let str = NSString(string: "AssembleAI Workbench — Awaiting Component Placement")
-            str.draw(at: CGPoint(x: 100, y: 100), withAttributes: attrs)
+            ctx.cgContext.move(to: CGPoint(x: center.x - 20, y: center.y))
+            ctx.cgContext.addLine(to: CGPoint(x: center.x + 20, y: center.y))
+            ctx.cgContext.move(to: CGPoint(x: center.x, y: center.y - 20))
+            ctx.cgContext.addLine(to: CGPoint(x: center.x, y: center.y + 20))
+            ctx.cgContext.strokePath()
         }
     }
     

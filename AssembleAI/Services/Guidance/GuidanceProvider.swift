@@ -49,56 +49,26 @@ nonisolated struct DefaultGuidanceProvider: GuidanceProviding {
             )
             
         case .incorrect:
-            let primaryIssue = comparison.issues.first
-            
-            if let issue = primaryIssue {
-                switch issue.type {
-                case .wrongPosition:
-                    // Simulated overlay coordinates for demo wrong position (e.g. Row 14 -> Row 15)
-                    let sourceRect = CGRect(x: viewSize.width * 0.35, y: viewSize.height * 0.42, width: 90, height: 60)
-                    let destRect = CGRect(x: viewSize.width * 0.55, y: viewSize.height * 0.42, width: 90, height: 60)
-                    
-                    return GuidanceOverlay(
-                        title: "Wrong position",
-                        message: "Move component lead one slot to the right (Row 15).",
-                        sourceRegion: sourceRect,
-                        destinationRegion: destRect,
-                        style: .move
-                    )
-                    
-                case .wrongConnection:
-                    let sourceRect = CGRect(x: viewSize.width * 0.30, y: viewSize.height * 0.38, width: 80, height: 50)
-                    let destRect = CGRect(x: viewSize.width * 0.50, y: viewSize.height * 0.52, width: 80, height: 50)
-                    
-                    return GuidanceOverlay(
-                        title: "Wrong connection",
-                        message: "Move wire from 5V power rail to GND ground rail.",
-                        sourceRegion: sourceRect,
-                        destinationRegion: destRect,
-                        style: .move
-                    )
-                    
-                case .missingComponent:
-                    let targetRect = CGRect(x: viewSize.width * 0.35, y: viewSize.height * 0.40, width: 120, height: 80)
-                    
-                    return GuidanceOverlay(
-                        title: "Target placement",
-                        message: "Insert \(step.title) inside highlighted target area.",
-                        targetRegion: targetRect,
-                        style: .target
-                    )
-                    
-                default:
-                    return GuidanceOverlay(
-                        title: issue.title,
-                        message: issue.explanation,
-                        style: .warning
-                    )
-                }
+            if let issue = comparison.issues.first {
+                let style: GuidanceStyle = {
+                    switch issue.type {
+                    case .wrongPosition, .wrongConnection:
+                        return .move
+                    case .missingComponent:
+                        return .target
+                    default:
+                        return .warning
+                    }
+                }()
+                return GuidanceOverlay(
+                    title: issue.title,
+                    message: issue.explanation,
+                    style: style
+                )
             } else {
                 return GuidanceOverlay(
-                    title: "Attention needed",
-                    message: "Adjust component alignment to match target blueprint.",
+                    title: "Adjustment Needed",
+                    message: "Physical assembly requires adjustment to match step requirements: \(step.title).",
                     style: .warning
                 )
             }

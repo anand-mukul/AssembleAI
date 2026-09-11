@@ -174,7 +174,7 @@ struct ProjectCard: View {
 
 #Preview("Project Card") {
     VStack(spacing: 12) {
-        ProjectCard(project: MockProjectData.previewProject, onTap: {})
+        ProjectCard(project: PreviewProjectFixture.previewProject, onTap: {})
     }
     .padding()
 }
