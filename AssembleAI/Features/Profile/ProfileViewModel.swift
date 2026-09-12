@@ -67,6 +67,9 @@ final class ProfileViewModel: ObservableObject {
     @Published var showClearResearchToast: Bool = false
     @Published var showSyncSuccessToast: Bool = false
     @Published var showWebhookEditorSheet: Bool = false
+    @Published var isTestingWebhook: Bool = false
+    @Published var webhookTestStatusMessage: String? = nil
+    @Published var webhookTestSucceeded: Bool? = nil
     
     // MARK: - App Preferences (Persisted via @AppStorage)
     @AppStorage("app_guidance_level") var guidanceLevelRaw: String = GuidanceLevel.concise.rawValue
@@ -205,6 +208,31 @@ final class ProfileViewModel: ObservableObject {
         UserDefaults.standard.set(trimmed, forKey: "research_webhook_url")
         self.researchWebhookURL = trimmed
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+    }
+    
+    /// Sends a real test payload to verify that the webhook is receiving data correctly.
+    func testWebhookConnection(_ urlString: String) {
+        let trimmed = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            webhookTestSucceeded = false
+            webhookTestStatusMessage = "Please enter a valid URL."
+            return
+        }
+        isTestingWebhook = true
+        webhookTestStatusMessage = "Sending test telemetry ping…"
+        webhookTestSucceeded = nil
+        Task { [weak self] in
+            guard let self = self else { return }
+            let result = await ResearchCloudSyncService.shared.sendTestPayload(to: trimmed)
+            self.isTestingWebhook = false
+            self.webhookTestSucceeded = result.success
+            self.webhookTestStatusMessage = result.message
+            if result.success {
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+            } else {
+                UINotificationFeedbackGenerator().notificationOccurred(.error)
+            }
+        }
     }
     
     /// Manually triggers immediate upload of any pending offline research evaluation payloads.

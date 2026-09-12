@@ -80,7 +80,7 @@ struct ResearchDebugView: View {
         }
         .background(AppColors.groupedBackground.ignoresSafeArea())
         .task {
-            let m = await ResearchLogger.shared.sessionMetrics(for: sessionID)
+            let m = await ResearchLogger.shared.calculateMetrics(for: sessionID)
             self.metrics = m
         }
     }

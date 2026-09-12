@@ -14,6 +14,10 @@ import Foundation
 actor ResearchCloudSyncService {
     static let shared = ResearchCloudSyncService()
     
+    // Deduplication tracking
+    private var lastSyncedSessionID: UUID? = nil
+    private var lastSyncedTimestamp: Date? = nil
+    
     // Status tracking for UI indicators
     private(set) var isSyncing: Bool = false
     private(set) var lastSyncDate: Date? = nil
@@ -41,8 +45,42 @@ actor ResearchCloudSyncService {
         metrics: ResearchSessionMetrics,
         config: ResearchSessionConfig?
     ) async {
+        // Debounce rapid duplicate dispatches for the exact same session within 2 seconds
+        if lastSyncedSessionID == metrics.sessionID,
+           let lastTime = lastSyncedTimestamp,
+           abs(Date().timeIntervalSince(lastTime)) < 2.0 {
+            return
+        }
+        lastSyncedSessionID = metrics.sessionID
+        lastSyncedTimestamp = Date()
+        
         let payload = buildTabularPayload(metrics: metrics, config: config)
         await dispatchPayload(payload)
+    }
+    
+    /// Sends a verified test telemetry ping to confirm endpoint connectivity (e.g. Google Apps Script).
+    func sendTestPayload(to urlString: String) async -> (success: Bool, message: String) {
+        guard let url = URL(string: urlString),
+              url.scheme == "https" || url.scheme == "http" else {
+            return (false, "Invalid URL schema. Must start with https:// or http://")
+        }
+        
+        let testPayload: [String: Any] = [
+            "event": "webhook_connection_test",
+            "timestamp": ISO8601DateFormatter().string(from: Date()),
+            "message": "AssembleAI Research Telemetry Webhook Connection Verified",
+            "app_version": AppConfig.appVersion,
+            "device_model": ResearchLogger.getDeviceModelIdentifier(),
+            "status": "ready"
+        ]
+        
+        let success = await postJSON(url: url, payload: testPayload)
+        if success {
+            return (true, "Webhook verified! Successfully connected to cloud endpoint.")
+        } else {
+            let err = self.lastSyncError ?? "Endpoint returned HTTP error status or timed out."
+            return (false, "Connection failed: \(err)")
+        }
     }
     
     /// Flushes any pending offline payloads that failed to sync during previous runs.
@@ -86,6 +124,7 @@ actor ResearchCloudSyncService {
         let endStr = metrics.endedAt.map { isoFormatter.string(from: $0) } ?? isoFormatter.string(from: now)
         
         var row: [String: Any] = [
+            "event": "research_session_completed",
             "schema_version": metrics.schemaVersion,
             "session_id": metrics.sessionID.uuidString,
             "project_id": metrics.projectID,
@@ -107,6 +146,13 @@ actor ResearchCloudSyncService {
             "total_correction_seconds": round(metrics.totalCorrectionTimeSeconds * 100) / 100,
             "intervention_count": metrics.interventionCount,
             "user_question_count": metrics.userQuestionCount,
+            
+            // Error Taxonomy Breakdown (Paper Section V-B & Figure 1)
+            "nominal_count": metrics.nominalCount,
+            "e_pol_count": metrics.ePolCount,
+            "e_sub_count": metrics.eSubCount,
+            "e_off_count": metrics.eOffCount,
+            "e_seat_count": metrics.eSeatCount,
             
             // Empirical Accuracy & Error Rates
             "verification_accuracy_pct": metrics.verificationAccuracy != nil ? round(metrics.verificationAccuracy! * 1000) / 10 : 0.0,
@@ -143,6 +189,61 @@ actor ResearchCloudSyncService {
         if let battery = metrics.batteryCost {
             row["battery_cost_pct"] = round(battery * 1000) / 10
         }
+        
+        // Convenience structures for Google Sheets / Excel auto-append scripts
+        let headers = ResearchSessionMetrics.summaryCSVHeader.components(separatedBy: ",")
+        row["column_headers"] = headers
+        row["csv_row"] = metrics.summaryCSVLine
+        row["csv_header"] = ResearchSessionMetrics.summaryCSVHeader
+        
+        // Format row_values array in exact matching order of column_headers
+        row["row_values"] = [
+            metrics.schemaVersion,
+            metrics.sessionID.uuidString,
+            metrics.projectID,
+            metrics.mode.rawValue,
+            metrics.strategy.rawValue,
+            metrics.lastNFrames.map { "\($0)" } ?? "",
+            startStr,
+            endStr,
+            metrics.deviceModel,
+            metrics.iosVersion,
+            round(metrics.taskCompletionTimeSeconds * 100) / 100,
+            metrics.completedStepsCount,
+            metrics.totalVerificationAttempts,
+            metrics.errorCount,
+            metrics.uncertainCount,
+            metrics.nominalCount,
+            metrics.ePolCount,
+            metrics.eSubCount,
+            metrics.eOffCount,
+            metrics.eSeatCount,
+            round(metrics.totalCorrectionTimeSeconds * 100) / 100,
+            metrics.interventionCount,
+            metrics.userQuestionCount,
+            metrics.verificationAccuracy != nil ? round(metrics.verificationAccuracy! * 10000) / 10000 : "",
+            metrics.falseCompletionRate != nil ? round(metrics.falseCompletionRate! * 10000) / 10000 : "",
+            metrics.missedCompletionRate != nil ? round(metrics.missedCompletionRate! * 10000) / 10000 : "",
+            metrics.temporalConsistency != nil ? round(metrics.temporalConsistency! * 10000) / 10000 : "",
+            metrics.totalTokens ?? "",
+            metrics.totalInputTokens ?? "",
+            metrics.totalOutputTokens ?? "",
+            metrics.avgLatencyMs,
+            metrics.totalLatencyMs,
+            metrics.avgVerificationLatencyMs,
+            metrics.avgModelLatencyMs,
+            metrics.avgSpeechLatencyMs,
+            metrics.avgProgressionLatencyMs,
+            metrics.avgInterventionLatencyMs,
+            metrics.memoryBeforeMB != nil ? round(metrics.memoryBeforeMB! * 100) / 100 : "",
+            metrics.memoryAfterMB != nil ? round(metrics.memoryAfterMB! * 100) / 100 : "",
+            metrics.peakMemoryMB != nil ? round(metrics.peakMemoryMB! * 100) / 100 : "",
+            metrics.batteryCost != nil ? round(metrics.batteryCost! * 10000) / 10000 : "",
+            metrics.framesReceived,
+            metrics.framesProcessed,
+            metrics.framesIncludedInModelContext,
+            metrics.framesDropped
+        ]
         
         return row
     }

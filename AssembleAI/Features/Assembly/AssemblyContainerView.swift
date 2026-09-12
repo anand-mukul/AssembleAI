@@ -44,6 +44,7 @@ struct AssemblyContainerView: View {
                             viewModel.openCamera()
                         },
                         onClose: {
+                            viewModel.finishOrCancelSession()
                             dismiss()
                         }
                     )
@@ -86,7 +87,7 @@ struct AssemblyContainerView: View {
                             viewModel.triggerAnalysis(capturedImage: capturedPhoto, viewSize: geo.size)
                         },
                         onClose: {
-                            viewModel.stopLiveTutor()
+                            viewModel.finishOrCancelSession()
                             dismiss()
                         },
                         onSelectStep: { step in

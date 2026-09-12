@@ -230,6 +230,13 @@ nonisolated struct ResearchSessionMetrics: Codable, Sendable, Equatable {
     let framesIncludedInModelContext: Int
     let framesDropped: Int
     
+    // Error Taxonomy Breakdown (Alignd with Paper Section V-B & Figure 1)
+    let nominalCount: Int
+    let ePolCount: Int
+    let eSubCount: Int
+    let eOffCount: Int
+    let eSeatCount: Int
+    
     // Legacy Convenience Computed Properties
     var durationSeconds: Int { Int(taskCompletionTimeSeconds) }
     var totalAttempts: Int { totalVerificationAttempts }
@@ -296,7 +303,12 @@ nonisolated struct ResearchSessionMetrics: Codable, Sendable, Equatable {
         framesReceived: Int = 0,
         framesProcessed: Int = 0,
         framesIncludedInModelContext: Int = 0,
-        framesDropped: Int = 0
+        framesDropped: Int = 0,
+        nominalCount: Int = 0,
+        ePolCount: Int = 0,
+        eSubCount: Int = 0,
+        eOffCount: Int = 0,
+        eSeatCount: Int = 0
     ) {
         self.sessionID = sessionID
         self.projectID = projectID
@@ -352,6 +364,12 @@ nonisolated struct ResearchSessionMetrics: Codable, Sendable, Equatable {
         self.framesProcessed = framesProcessed
         self.framesIncludedInModelContext = framesIncludedInModelContext
         self.framesDropped = framesDropped
+        
+        self.nominalCount = nominalCount
+        self.ePolCount = ePolCount
+        self.eSubCount = eSubCount
+        self.eOffCount = eOffCount
+        self.eSeatCount = eSeatCount
     }
     
     // MARK: - Summary CSV Serialization (RFC 4180 Compliant)
@@ -374,6 +392,11 @@ nonisolated struct ResearchSessionMetrics: Codable, Sendable, Equatable {
             "verification_attempts",
             "error_count",
             "uncertain_count",
+            "nominal_count",
+            "e_pol_count",
+            "e_sub_count",
+            "e_off_count",
+            "e_seat_count",
             "correction_time_sec",
             "intervention_count",
             "user_question_count",
@@ -424,6 +447,11 @@ nonisolated struct ResearchSessionMetrics: Codable, Sendable, Equatable {
             "\(totalVerificationAttempts)",
             "\(errorCount)",
             "\(uncertainCount)",
+            "\(nominalCount)",
+            "\(ePolCount)",
+            "\(eSubCount)",
+            "\(eOffCount)",
+            "\(eSeatCount)",
             String(format: "%.2f", totalCorrectionTimeSeconds),
             "\(interventionCount)",
             "\(userQuestionCount)",
@@ -510,6 +538,11 @@ extension ResearchLogging {
     
     func endResearchSession(sessionID: UUID) async -> ResearchSessionMetrics {
         await endResearchSession(sessionID: sessionID, externalBatteryCost: nil)
+    }
+    
+    /// Returns calculated metrics for a session (alias for `calculateMetrics(for:)`).
+    func sessionMetrics(for sessionID: UUID) async -> ResearchSessionMetrics {
+        await calculateMetrics(for: sessionID)
     }
 }
 
@@ -805,6 +838,13 @@ actor ResearchLogger: ResearchLogging {
             }
             sessions[event.sessionID] = config
             persistSessions()
+            
+            // Automatically stream session metrics to cloud telemetry (Google Sheets / Webhook)
+            let completedMetrics = calculateMetrics(for: event.sessionID)
+            let finalConfig = config
+            Task {
+                await ResearchCloudSyncService.shared.syncSessionMetrics(metrics: completedMetrics, config: finalConfig)
+            }
         }
         
         // Synchronize frame counts if present in event metadata
@@ -842,7 +882,12 @@ actor ResearchLogger: ResearchLogging {
     /// - Latency profile (average, total, min, max) for verification, model, speech, and progression.
     /// - Physical resident memory (MB) before, after, and peak.
     /// - Energy / battery cost (external instrumented or nil).
-    /// - Visual frame throughput (received, processed, in-context, dropped).
+    /// Alias for `calculateMetrics(for:)`.
+    func sessionMetrics(for sessionID: UUID) -> ResearchSessionMetrics {
+        calculateMetrics(for: sessionID)
+    }
+    
+    /// Returns aggregate metrics for an evaluation session.
     func calculateMetrics(for sessionID: UUID) -> ResearchSessionMetrics {
         let sessionEvents = fetchEvents(for: sessionID)
         let config = sessions[sessionID]
@@ -878,6 +923,30 @@ actor ResearchLogger: ResearchLogging {
         let uncertainEvents = sessionEvents.filter { $0.eventType == .verificationUncertain || ($0.eventType == .verificationCompleted && $0.verificationStatus == "uncertain") }
         let otherVerEvents = sessionEvents.filter { $0.eventType == .verificationCompleted && $0.verificationStatus != "correct" && $0.verificationStatus != "incorrect" && $0.verificationStatus != "uncertain" }
         let totalVerifications = correctEvents.count + incorrectEvents.count + uncertainEvents.count + otherVerEvents.count
+        
+        // 3b. Error Taxonomy Breakdown (Aligned with Paper Section V-B & Figure 1)
+        let nominalCount = correctEvents.count
+        var ePolCount = 0
+        var eSubCount = 0
+        var eOffCount = 0
+        var eSeatCount = 0
+        
+        for ev in incorrectEvents {
+            let cls = ev.metadata["error_class"] ?? ""
+            let issueType = ev.metadata["issue_type"] ?? ""
+            
+            if cls == "E_pol" || issueType == "wrongConnection" {
+                ePolCount += 1
+            } else if cls == "E_sub" || issueType == "unexpectedComponent" || issueType == "missingComponent" {
+                eSubCount += 1
+            } else if cls == "E_off" || issueType == "wrongPosition" {
+                eOffCount += 1
+            } else if cls == "E_seat" || issueType == "missingConnection" || issueType == "uncertainDetection" || issueType == "insufficientVisualEvidence" {
+                eSeatCount += 1
+            } else {
+                eOffCount += 1
+            }
+        }
         
         let allVerEvents = correctEvents + incorrectEvents + uncertainEvents + otherVerEvents
         let verLatencies = allVerEvents.compactMap(\.durationMilliseconds)
@@ -1091,7 +1160,12 @@ actor ResearchLogger: ResearchLogging {
             framesReceived: framesRec,
             framesProcessed: framesProc,
             framesIncludedInModelContext: framesCtx,
-            framesDropped: framesDrop
+            framesDropped: framesDrop,
+            nominalCount: nominalCount,
+            ePolCount: ePolCount,
+            eSubCount: eSubCount,
+            eOffCount: eOffCount,
+            eSeatCount: eSeatCount
         )
     }
     

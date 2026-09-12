@@ -524,6 +524,44 @@ struct WebhookConfigurationSheet: View {
                         .foregroundColor(AppColors.secondaryText)
                 }
                 
+                Section {
+                    Button(action: {
+                        viewModel.testWebhookConnection(webhookURLInput)
+                    }) {
+                        HStack {
+                            if viewModel.isTestingWebhook {
+                                ProgressView()
+                                    .padding(.trailing, 6)
+                                Text("Testing Webhook Endpoint…")
+                                    .foregroundColor(AppColors.secondaryText)
+                            } else {
+                                Image(systemName: "network")
+                                    .foregroundColor(.assembleBrandPrimary)
+                                Text("Test Webhook Connection")
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.assembleBrandPrimary)
+                            }
+                            Spacer()
+                        }
+                    }
+                    .disabled(webhookURLInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isTestingWebhook)
+                    
+                    if let msg = viewModel.webhookTestStatusMessage {
+                        HStack(spacing: 8) {
+                            Image(systemName: viewModel.webhookTestSucceeded == true ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                                .foregroundColor(viewModel.webhookTestSucceeded == true ? AppColors.badgeGreen : AppColors.error)
+                            Text(msg)
+                                .font(.caption)
+                                .foregroundColor(viewModel.webhookTestSucceeded == true ? AppColors.badgeGreen : AppColors.error)
+                        }
+                        .padding(.vertical, 2)
+                    }
+                } footer: {
+                    Text("Sends a lightweight verification ping to confirm your Google Apps Script or cloud webhook accepts JSON POST requests.")
+                        .font(.caption)
+                        .foregroundColor(AppColors.secondaryText)
+                }
+                
                 if !viewModel.researchWebhookURL.isEmpty {
                     Section {
                         Button(role: .destructive, action: {

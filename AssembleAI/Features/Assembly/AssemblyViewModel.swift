@@ -293,7 +293,25 @@ final class AssemblyViewModel: ObservableObject {
                 // Log Verification Research Telemetry
                 let verDurationMs = Int(Date().timeIntervalSince(startTime) * 1000)
                 let verType: ResearchEventType = verification.isCorrect ? .verificationCorrect : (verification.status == .uncertain ? .verificationUncertain : .verificationIncorrect)
-                self.logResearchEvent(verType, durationMs: verDurationMs, status: verification.status.rawValue)
+                var verMeta: [String: String] = [:]
+                if let issue = verification.primaryIssue {
+                    verMeta["issue_type"] = issue.type.rawValue
+                    verMeta["issue_title"] = issue.title
+                    verMeta["issue_severity"] = issue.severity.rawValue
+                    switch issue.type {
+                    case .wrongPosition:
+                        verMeta["error_class"] = "E_off"
+                    case .unexpectedComponent, .missingComponent:
+                        verMeta["error_class"] = "E_sub"
+                    case .wrongConnection:
+                        verMeta["error_class"] = "E_pol"
+                    case .missingConnection, .uncertainDetection, .insufficientVisualEvidence:
+                        verMeta["error_class"] = "E_seat"
+                    }
+                } else if verification.isCorrect {
+                    verMeta["error_class"] = "Nominal"
+                }
+                self.logResearchEvent(verType, durationMs: verDurationMs, status: verification.status.rawValue, metadata: verMeta)
                 
                 // 3. Evaluate Assistant Intervention Policy with Situational Timing and Hand Awareness
                 let timeSinceStart = Date().timeIntervalSince(self.stepStartTime)
@@ -434,6 +452,16 @@ final class AssemblyViewModel: ObservableObject {
         Task { [voiceOutput, voiceInput] in
             await voiceOutput.stop()
             await voiceInput.stopListening()
+        }
+    }
+    
+    /// Finishes the active session or marks early exit before dismissal to ensure telemetry is safely logged and synced.
+    func finishOrCancelSession() {
+        stopLiveTutor()
+        if session.status != .completed {
+            session.endedAt = Date()
+            persistSessionState()
+            logResearchEvent(.sessionCompleted, metadata: ["earlyExit": "true"])
         }
     }
     
@@ -614,14 +642,32 @@ final class AssemblyViewModel: ObservableObject {
                 )
             }
             
-            let verType: ResearchEventType = result.isCorrect ? .verificationCorrect : (result.status == .uncertain ? .verificationUncertain : .verificationIncorrect)
-            self.logResearchEvent(verType, status: result.status.rawValue)
-            
             let resolvedIssue: StateIssue? = result.primaryIssue ?? (result.isCorrect ? nil : StateIssue(
                 type: result.status == .uncertain ? .insufficientVisualEvidence : .wrongPosition,
                 title: result.status == .uncertain ? "Need a clearer view" : "Placement Mismatch",
                 explanation: result.explanation
             ))
+            
+            let verType: ResearchEventType = result.isCorrect ? .verificationCorrect : (result.status == .uncertain ? .verificationUncertain : .verificationIncorrect)
+            var analysisMeta: [String: String] = ["attempt": "\(session.attempts)"]
+            if let issue = resolvedIssue {
+                analysisMeta["issue_type"] = issue.type.rawValue
+                analysisMeta["issue_title"] = issue.title
+                analysisMeta["issue_severity"] = issue.severity.rawValue
+                switch issue.type {
+                case .wrongPosition:
+                    analysisMeta["error_class"] = "E_off"
+                case .unexpectedComponent, .missingComponent:
+                    analysisMeta["error_class"] = "E_sub"
+                case .wrongConnection:
+                    analysisMeta["error_class"] = "E_pol"
+                case .missingConnection, .uncertainDetection, .insufficientVisualEvidence:
+                    analysisMeta["error_class"] = "E_seat"
+                }
+            } else if result.isCorrect {
+                analysisMeta["error_class"] = "Nominal"
+            }
+            self.logResearchEvent(verType, status: result.status.rawValue, metadata: analysisMeta)
             
             let comparison = StateComparison(
                 status: result.isCorrect ? .correct : (result.status == .uncertain ? .uncertain : .incorrect),
