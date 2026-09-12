@@ -123,127 +123,78 @@ actor ResearchCloudSyncService {
         let startStr = metrics.startedAt.map { isoFormatter.string(from: $0) } ?? isoFormatter.string(from: now)
         let endStr = metrics.endedAt.map { isoFormatter.string(from: $0) } ?? isoFormatter.string(from: now)
         
-        var row: [String: Any] = [
-            "event": "research_session_completed",
-            "schema_version": metrics.schemaVersion,
-            "session_id": metrics.sessionID.uuidString,
-            "project_id": metrics.projectID,
-            "mode": metrics.mode.rawValue,
-            "visual_strategy": metrics.strategy.rawValue,
-            "strategy_name": metrics.strategy.displayName,
-            "last_n_frames": metrics.lastNFrames ?? 0,
-            "timestamp": startStr,
-            "ended_at": endStr,
-            "device_model": metrics.deviceModel,
-            "os_version": metrics.iosVersion,
-            
-            // Progression & Temporal Duration
-            "task_completion_seconds": round(metrics.taskCompletionTimeSeconds * 100) / 100,
-            "completed_steps_count": metrics.completedStepsCount,
-            "total_verification_attempts": metrics.totalVerificationAttempts,
-            "error_count": metrics.errorCount,
-            "uncertain_count": metrics.uncertainCount,
-            "total_correction_seconds": round(metrics.totalCorrectionTimeSeconds * 100) / 100,
-            "intervention_count": metrics.interventionCount,
-            "user_question_count": metrics.userQuestionCount,
-            
-            // Error Taxonomy Breakdown (Paper Section V-B & Figure 1)
-            "nominal_count": metrics.nominalCount,
-            "e_pol_count": metrics.ePolCount,
-            "e_sub_count": metrics.eSubCount,
-            "e_off_count": metrics.eOffCount,
-            "e_seat_count": metrics.eSeatCount,
-            
-            // Empirical Accuracy & Error Rates
-            "verification_accuracy_pct": metrics.verificationAccuracy != nil ? round(metrics.verificationAccuracy! * 1000) / 10 : 0.0,
-            "false_completion_rate": metrics.falseCompletionRate != nil ? round(metrics.falseCompletionRate! * 1000) / 1000 : 0.0,
-            "missed_completion_rate": metrics.missedCompletionRate != nil ? round(metrics.missedCompletionRate! * 1000) / 1000 : 0.0,
-            "temporal_consistency": metrics.temporalConsistency != nil ? round(metrics.temporalConsistency! * 1000) / 1000 : 0.0,
-            
-            // Token Consumption
-            "total_tokens": metrics.totalTokens ?? 0,
-            "total_input_tokens": metrics.totalInputTokens ?? 0,
-            "total_output_tokens": metrics.totalOutputTokens ?? 0,
-            
-            // Latency Benchmarks (Milliseconds)
-            "avg_latency_ms": metrics.avgLatencyMs,
-            "total_latency_ms": metrics.totalLatencyMs,
-            "avg_verification_latency_ms": metrics.avgVerificationLatencyMs,
-            "avg_model_latency_ms": metrics.avgModelLatencyMs,
-            "avg_speech_latency_ms": metrics.avgSpeechLatencyMs,
-            "avg_progression_latency_ms": metrics.avgProgressionLatencyMs,
-            "avg_intervention_latency_ms": metrics.avgInterventionLatencyMs,
-            
-            // Computational & Resident Memory (MB)
-            "memory_before_mb": metrics.memoryBeforeMB != nil ? round(metrics.memoryBeforeMB! * 10) / 10 : 0.0,
-            "memory_after_mb": metrics.memoryAfterMB != nil ? round(metrics.memoryAfterMB! * 10) / 10 : 0.0,
-            "peak_memory_mb": metrics.peakMemoryMB != nil ? round(metrics.peakMemoryMB! * 10) / 10 : 0.0,
-            
-            // Visual Frame Processing Pipeline
-            "frames_received": metrics.framesReceived,
-            "frames_processed": metrics.framesProcessed,
-            "frames_included_in_context": metrics.framesIncludedInModelContext,
-            "frames_dropped": metrics.framesDropped
-        ]
+        var row: [String: Any] = [:]
         
+        // 1. Session Metadata & Configuration
+        row["event"] = "research_session_completed"
+        row["schema_version"] = metrics.schemaVersion
+        row["session_id"] = metrics.sessionID.uuidString
+        row["project_id"] = metrics.projectID
+        row["mode"] = metrics.mode.rawValue
+        row["visual_strategy"] = metrics.strategy.rawValue
+        row["strategy_name"] = metrics.strategy.displayName
+        row["last_n_frames"] = metrics.lastNFrames ?? 0
+        row["timestamp"] = startStr
+        row["ended_at"] = endStr
+        row["device_model"] = metrics.deviceModel
+        row["os_version"] = metrics.iosVersion
+        
+        // 2. Progression & Temporal Duration
+        row["task_completion_seconds"] = round(metrics.taskCompletionTimeSeconds * 100) / 100
+        row["completed_steps_count"] = metrics.completedStepsCount
+        row["total_verification_attempts"] = metrics.totalVerificationAttempts
+        row["error_count"] = metrics.errorCount
+        row["uncertain_count"] = metrics.uncertainCount
+        row["total_correction_seconds"] = round(metrics.totalCorrectionTimeSeconds * 100) / 100
+        row["intervention_count"] = metrics.interventionCount
+        row["user_question_count"] = metrics.userQuestionCount
+        
+        // 3. Error Taxonomy Breakdown (Paper Section V-B & Figure 1)
+        row["nominal_count"] = metrics.nominalCount
+        row["e_pol_count"] = metrics.ePolCount
+        row["e_sub_count"] = metrics.eSubCount
+        row["e_off_count"] = metrics.eOffCount
+        row["e_seat_count"] = metrics.eSeatCount
+        
+        // 4. Empirical Accuracy & Error Rates
+        row["verification_accuracy_pct"] = metrics.verificationAccuracy.map { round($0 * 1000) / 10 } ?? 0.0
+        row["false_completion_rate"] = metrics.falseCompletionRate.map { round($0 * 1000) / 1000 } ?? 0.0
+        row["missed_completion_rate"] = metrics.missedCompletionRate.map { round($0 * 1000) / 1000 } ?? 0.0
+        row["temporal_consistency"] = metrics.temporalConsistency.map { round($0 * 1000) / 1000 } ?? 0.0
+        
+        // 5. Token Consumption
+        row["total_tokens"] = metrics.totalTokens ?? 0
+        row["total_input_tokens"] = metrics.totalInputTokens ?? 0
+        row["total_output_tokens"] = metrics.totalOutputTokens ?? 0
+        
+        // 6. Latency Benchmarks (Milliseconds)
+        row["avg_latency_ms"] = metrics.avgLatencyMs
+        row["total_latency_ms"] = metrics.totalLatencyMs
+        row["avg_verification_latency_ms"] = metrics.avgVerificationLatencyMs
+        row["avg_model_latency_ms"] = metrics.avgModelLatencyMs
+        row["avg_speech_latency_ms"] = metrics.avgSpeechLatencyMs
+        row["avg_progression_latency_ms"] = metrics.avgProgressionLatencyMs
+        row["avg_intervention_latency_ms"] = metrics.avgInterventionLatencyMs
+        
+        // 7. Computational & Resident Memory (MB)
+        row["memory_before_mb"] = metrics.memoryBeforeMB.map { round($0 * 10) / 10 } ?? 0.0
+        row["memory_after_mb"] = metrics.memoryAfterMB.map { round($0 * 10) / 10 } ?? 0.0
+        row["peak_memory_mb"] = metrics.peakMemoryMB.map { round($0 * 10) / 10 } ?? 0.0
         if let battery = metrics.batteryCost {
             row["battery_cost_pct"] = round(battery * 1000) / 10
         }
         
-        // Convenience structures for Google Sheets / Excel auto-append scripts
-        let headers = ResearchSessionMetrics.summaryCSVHeader.components(separatedBy: ",")
-        row["column_headers"] = headers
+        // 8. Visual Frame Processing Pipeline
+        row["frames_received"] = metrics.framesReceived
+        row["frames_processed"] = metrics.framesProcessed
+        row["frames_included_in_context"] = metrics.framesIncludedInModelContext
+        row["frames_dropped"] = metrics.framesDropped
+        
+        // 9. Convenience structures for Google Sheets / Excel auto-append scripts
+        row["column_headers"] = ResearchSessionMetrics.summaryCSVHeader.components(separatedBy: ",")
         row["csv_row"] = metrics.summaryCSVLine
         row["csv_header"] = ResearchSessionMetrics.summaryCSVHeader
-        
-        // Format row_values array in exact matching order of column_headers
-        row["row_values"] = [
-            metrics.schemaVersion,
-            metrics.sessionID.uuidString,
-            metrics.projectID,
-            metrics.mode.rawValue,
-            metrics.strategy.rawValue,
-            metrics.lastNFrames.map { "\($0)" } ?? "",
-            startStr,
-            endStr,
-            metrics.deviceModel,
-            metrics.iosVersion,
-            round(metrics.taskCompletionTimeSeconds * 100) / 100,
-            metrics.completedStepsCount,
-            metrics.totalVerificationAttempts,
-            metrics.errorCount,
-            metrics.uncertainCount,
-            metrics.nominalCount,
-            metrics.ePolCount,
-            metrics.eSubCount,
-            metrics.eOffCount,
-            metrics.eSeatCount,
-            round(metrics.totalCorrectionTimeSeconds * 100) / 100,
-            metrics.interventionCount,
-            metrics.userQuestionCount,
-            metrics.verificationAccuracy != nil ? round(metrics.verificationAccuracy! * 10000) / 10000 : "",
-            metrics.falseCompletionRate != nil ? round(metrics.falseCompletionRate! * 10000) / 10000 : "",
-            metrics.missedCompletionRate != nil ? round(metrics.missedCompletionRate! * 10000) / 10000 : "",
-            metrics.temporalConsistency != nil ? round(metrics.temporalConsistency! * 10000) / 10000 : "",
-            metrics.totalTokens ?? "",
-            metrics.totalInputTokens ?? "",
-            metrics.totalOutputTokens ?? "",
-            metrics.avgLatencyMs,
-            metrics.totalLatencyMs,
-            metrics.avgVerificationLatencyMs,
-            metrics.avgModelLatencyMs,
-            metrics.avgSpeechLatencyMs,
-            metrics.avgProgressionLatencyMs,
-            metrics.avgInterventionLatencyMs,
-            metrics.memoryBeforeMB != nil ? round(metrics.memoryBeforeMB! * 100) / 100 : "",
-            metrics.memoryAfterMB != nil ? round(metrics.memoryAfterMB! * 100) / 100 : "",
-            metrics.peakMemoryMB != nil ? round(metrics.peakMemoryMB! * 100) / 100 : "",
-            metrics.batteryCost != nil ? round(metrics.batteryCost! * 10000) / 10000 : "",
-            metrics.framesReceived,
-            metrics.framesProcessed,
-            metrics.framesIncludedInModelContext,
-            metrics.framesDropped
-        ]
+        row["row_values"] = metrics.tabularRowValues
         
         return row
     }

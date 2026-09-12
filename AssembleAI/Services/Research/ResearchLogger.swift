@@ -425,61 +425,151 @@ nonisolated struct ResearchSessionMetrics: Codable, Sendable, Equatable {
         ].joined(separator: ",")
     }
     
-    /// RFC 4180 row formatting for statistical analysis in Excel, Python/pandas, R, and SPSS.
-    var summaryCSVLine: String {
+    /// RFC 4180 column values for spreadsheet and webhook integration.
+    var summaryCSVValues: [String] {
         let isoFormatter = ISO8601DateFormatter()
         let startStr = startedAt.map { isoFormatter.string(from: $0) } ?? ""
         let endStr = endedAt.map { isoFormatter.string(from: $0) } ?? ""
         
-        let cols: [String] = [
-            "\(schemaVersion)",
-            sessionID.uuidString,
-            ResearchLogger.escapeCSV(projectID),
-            mode.rawValue,
-            strategy.rawValue,
-            lastNFrames.map { "\($0)" } ?? "",
-            startStr,
-            endStr,
-            ResearchLogger.escapeCSV(deviceModel),
-            ResearchLogger.escapeCSV(iosVersion),
-            String(format: "%.2f", taskCompletionTimeSeconds),
-            "\(completedStepsCount)",
-            "\(totalVerificationAttempts)",
-            "\(errorCount)",
-            "\(uncertainCount)",
-            "\(nominalCount)",
-            "\(ePolCount)",
-            "\(eSubCount)",
-            "\(eOffCount)",
-            "\(eSeatCount)",
-            String(format: "%.2f", totalCorrectionTimeSeconds),
-            "\(interventionCount)",
-            "\(userQuestionCount)",
-            verificationAccuracy.map { String(format: "%.4f", $0) } ?? "",
-            falseCompletionRate.map { String(format: "%.4f", $0) } ?? "",
-            missedCompletionRate.map { String(format: "%.4f", $0) } ?? "",
-            temporalConsistency.map { String(format: "%.4f", $0) } ?? "",
-            totalTokens.map { "\($0)" } ?? "",
-            totalInputTokens.map { "\($0)" } ?? "",
-            totalOutputTokens.map { "\($0)" } ?? "",
-            "\(avgLatencyMs)",
-            "\(totalLatencyMs)",
-            "\(avgVerificationLatencyMs)",
-            "\(avgModelLatencyMs)",
-            "\(avgSpeechLatencyMs)",
-            "\(avgProgressionLatencyMs)",
-            "\(avgInterventionLatencyMs)",
-            memoryBeforeMB.map { String(format: "%.2f", $0) } ?? "",
-            memoryAfterMB.map { String(format: "%.2f", $0) } ?? "",
-            peakMemoryMB.map { String(format: "%.2f", $0) } ?? "",
-            batteryCost.map { String(format: "%.4f", $0) } ?? "",
-            "\(framesReceived)",
-            "\(framesProcessed)",
-            "\(framesIncludedInModelContext)",
-            "\(framesDropped)"
-        ]
+        var values: [String] = []
+        values.reserveCapacity(45)
         
-        return cols.joined(separator: ",")
+        // 1. Session Metadata
+        values.append("\(schemaVersion)")
+        values.append(sessionID.uuidString)
+        values.append(ResearchLogger.escapeCSV(projectID))
+        values.append(mode.rawValue)
+        values.append(strategy.rawValue)
+        values.append(lastNFrames.map { "\($0)" } ?? "")
+        values.append(startStr)
+        values.append(endStr)
+        values.append(ResearchLogger.escapeCSV(deviceModel))
+        values.append(ResearchLogger.escapeCSV(iosVersion))
+        
+        // 2. Progression & Error Taxonomy
+        values.append(String(format: "%.2f", taskCompletionTimeSeconds))
+        values.append("\(completedStepsCount)")
+        values.append("\(totalVerificationAttempts)")
+        values.append("\(errorCount)")
+        values.append("\(uncertainCount)")
+        values.append("\(nominalCount)")
+        values.append("\(ePolCount)")
+        values.append("\(eSubCount)")
+        values.append("\(eOffCount)")
+        values.append("\(eSeatCount)")
+        values.append(String(format: "%.2f", totalCorrectionTimeSeconds))
+        values.append("\(interventionCount)")
+        values.append("\(userQuestionCount)")
+        
+        // 3. Empirical Accuracy & Error Rates
+        values.append(verificationAccuracy.map { String(format: "%.4f", $0) } ?? "")
+        values.append(falseCompletionRate.map { String(format: "%.4f", $0) } ?? "")
+        values.append(missedCompletionRate.map { String(format: "%.4f", $0) } ?? "")
+        values.append(temporalConsistency.map { String(format: "%.4f", $0) } ?? "")
+        
+        // 4. Token Metrics
+        values.append(totalTokens.map { "\($0)" } ?? "")
+        values.append(totalInputTokens.map { "\($0)" } ?? "")
+        values.append(totalOutputTokens.map { "\($0)" } ?? "")
+        
+        // 5. Latency Benchmarks
+        values.append("\(avgLatencyMs)")
+        values.append("\(totalLatencyMs)")
+        values.append("\(avgVerificationLatencyMs)")
+        values.append("\(avgModelLatencyMs)")
+        values.append("\(avgSpeechLatencyMs)")
+        values.append("\(avgProgressionLatencyMs)")
+        values.append("\(avgInterventionLatencyMs)")
+        
+        // 6. Physical Memory & Battery
+        values.append(memoryBeforeMB.map { String(format: "%.2f", $0) } ?? "")
+        values.append(memoryAfterMB.map { String(format: "%.2f", $0) } ?? "")
+        values.append(peakMemoryMB.map { String(format: "%.2f", $0) } ?? "")
+        values.append(batteryCost.map { String(format: "%.4f", $0) } ?? "")
+        
+        // 7. Visual Frame Pipeline
+        values.append("\(framesReceived)")
+        values.append("\(framesProcessed)")
+        values.append("\(framesIncludedInModelContext)")
+        values.append("\(framesDropped)")
+        
+        return values
+    }
+    
+    /// RFC 4180 row formatting for statistical analysis in Excel, Python/pandas, R, and SPSS.
+    var summaryCSVLine: String {
+        summaryCSVValues.joined(separator: ",")
+    }
+    
+    /// Structured heterogeneous row values (typed numbers, strings) matching column headers for Webhooks/Google Sheets.
+    var tabularRowValues: [Any] {
+        let isoFormatter = ISO8601DateFormatter()
+        let startStr = startedAt.map { isoFormatter.string(from: $0) } ?? ""
+        let endStr = endedAt.map { isoFormatter.string(from: $0) } ?? ""
+        
+        var values: [Any] = []
+        values.reserveCapacity(45)
+        
+        // 1. Session Metadata (Cols 1-10)
+        values.append(schemaVersion)
+        values.append(sessionID.uuidString)
+        values.append(projectID)
+        values.append(mode.rawValue)
+        values.append(strategy.rawValue)
+        values.append(lastNFrames ?? 0)
+        values.append(startStr)
+        values.append(endStr)
+        values.append(deviceModel)
+        values.append(iosVersion)
+        
+        // 2. Progression & Error Taxonomy (Cols 11-23)
+        values.append(round(taskCompletionTimeSeconds * 100) / 100)
+        values.append(completedStepsCount)
+        values.append(totalVerificationAttempts)
+        values.append(errorCount)
+        values.append(uncertainCount)
+        values.append(nominalCount)
+        values.append(ePolCount)
+        values.append(eSubCount)
+        values.append(eOffCount)
+        values.append(eSeatCount)
+        values.append(round(totalCorrectionTimeSeconds * 100) / 100)
+        values.append(interventionCount)
+        values.append(userQuestionCount)
+        
+        // 3. Empirical Accuracy & Error Rates (Cols 24-27)
+        values.append(verificationAccuracy.map { round($0 * 10000) / 10000 } ?? 0.0)
+        values.append(falseCompletionRate.map { round($0 * 10000) / 10000 } ?? 0.0)
+        values.append(missedCompletionRate.map { round($0 * 10000) / 10000 } ?? 0.0)
+        values.append(temporalConsistency.map { round($0 * 10000) / 10000 } ?? 0.0)
+        
+        // 4. Token Metrics (Cols 28-30)
+        values.append(totalTokens ?? 0)
+        values.append(totalInputTokens ?? 0)
+        values.append(totalOutputTokens ?? 0)
+        
+        // 5. Latencies in ms (Cols 31-37)
+        values.append(avgLatencyMs)
+        values.append(totalLatencyMs)
+        values.append(avgVerificationLatencyMs)
+        values.append(avgModelLatencyMs)
+        values.append(avgSpeechLatencyMs)
+        values.append(avgProgressionLatencyMs)
+        values.append(avgInterventionLatencyMs)
+        
+        // 6. Memory & Energy (Cols 38-41)
+        values.append(memoryBeforeMB.map { round($0 * 100) / 100 } ?? 0.0)
+        values.append(memoryAfterMB.map { round($0 * 100) / 100 } ?? 0.0)
+        values.append(peakMemoryMB.map { round($0 * 100) / 100 } ?? 0.0)
+        values.append(batteryCost.map { round($0 * 10000) / 10000 } ?? 0.0)
+        
+        // 7. Visual Frame Pipeline (Cols 42-45)
+        values.append(framesReceived)
+        values.append(framesProcessed)
+        values.append(framesIncludedInModelContext)
+        values.append(framesDropped)
+        
+        return values
     }
 }
 
