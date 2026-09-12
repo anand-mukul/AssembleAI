@@ -26,6 +26,8 @@ enum AppColors {
     // Precision Industrial Titanium Surfaces
     static let titaniumSurface = Color(uiColor: .tertiarySystemGroupedBackground)
     static let obsidianCard = Color(uiColor: .secondarySystemGroupedBackground)
+    static let cardBackground = Color(uiColor: .secondarySystemGroupedBackground)
+    static let cardBorder = borderSubtle
     
     // Typography Colors (Strict Apple Dynamic Type Contrast)
     static let primaryText = Color(uiColor: .label)

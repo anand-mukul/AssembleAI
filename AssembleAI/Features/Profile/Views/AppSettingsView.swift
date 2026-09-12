@@ -74,7 +74,7 @@ struct AppSettingsView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .overlay(
                         RoundedRectangle(cornerRadius: 8)
-                            .stroke(AppColors.cardBorder, lineWidth: 1)
+                            .stroke(AppColors.borderSubtle, lineWidth: 1)
                     )
                     .onChange(of: viewModel.visualHistoryStrategyRaw) {
                         UISelectionFeedbackGenerator().selectionChanged()
@@ -137,12 +137,12 @@ struct AppSettingsView: View {
                                         .font(.caption.weight(.medium))
                                         .padding(.horizontal, 10)
                                         .padding(.vertical, 4)
-                                        .background(viewModel.lastNFramesValue == preset ? AppColors.brandPrimary : AppColors.cardBackground)
+                                        .background(viewModel.lastNFramesValue == preset ? AppColors.brandPrimary : AppColors.secondaryGroupedBackground)
                                         .foregroundColor(viewModel.lastNFramesValue == preset ? .white : AppColors.primaryText)
                                         .clipShape(Capsule())
                                         .overlay(
                                             Capsule()
-                                                .stroke(viewModel.lastNFramesValue == preset ? Color.clear : AppColors.cardBorder, lineWidth: 1)
+                                                .stroke(viewModel.lastNFramesValue == preset ? Color.clear : AppColors.borderSubtle, lineWidth: 1)
                                         )
                                 }
                                 .buttonStyle(.plain)
