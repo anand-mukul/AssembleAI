@@ -305,16 +305,20 @@ struct LiveTutorHUDView: View {
     
     private func componentIcon(for title: String) -> String {
         let lower = title.lowercased()
-        if lower.contains("resistor") {
-            return "resistor"
-        } else if lower.contains("capacitor") {
+        if lower.contains("resistor") || lower.contains("220") || lower.contains("10k") || lower.contains("ohm") || lower.contains("Ω") {
+            return "waveform.path.ecg"
+        } else if lower.contains("capacitor") || lower.contains("µf") || lower.contains("uf") || lower.contains("pf") {
             return "batteryblock.fill"
-        } else if lower.contains("led") || lower.contains("diode") {
+        } else if lower.contains("led") || lower.contains("diode") || lower.contains("light") {
             return "lightbulb.fill"
-        } else if lower.contains("ic") || lower.contains("chip") || lower.contains("555") {
+        } else if lower.contains("ic") || lower.contains("chip") || lower.contains("555") || lower.contains("cpu") || lower.contains("processor") || lower.contains("sensor") || lower.contains("board") {
             return "cpu"
-        } else if lower.contains("wire") || lower.contains("jumper") {
+        } else if lower.contains("wire") || lower.contains("jumper") || lower.contains("cable") || lower.contains("lead") {
             return "waveform.path"
+        } else if lower.contains("screw") || lower.contains("bolt") || lower.contains("nut") || lower.contains("dowel") || lower.contains("fastener") {
+            return "wrench.and.screwdriver.fill"
+        } else if lower.contains("shelf") || lower.contains("panel") || lower.contains("bracket") || lower.contains("frame") {
+            return "square.split.diagonal.2x2"
         } else {
             return "wrench.and.screwdriver.fill"
         }

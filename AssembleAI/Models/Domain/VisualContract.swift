@@ -214,8 +214,90 @@ nonisolated struct VisualContract: Codable, Hashable, Equatable, Sendable {
     /// Polarity/orientation constraints (e.g., "cathode stripe faces GND rail").
     let orientationConstraints: [OrientationConstraint]
     
-    /// Global placement tolerance override in millimeters.
-    let toleranceMm: Double
+    /// Dynamically maps internal BOM part IDs (e.g. "part_res_220", "part_cap_10u", "part_servo_sg90")
+    /// to clean, human-readable display names, with pattern-based dynamic parsing for arbitrary new components.
+    static func friendlyName(for partId: String, knownBOM: [String: String]? = nil) -> String {
+        // 1. Direct BOM Registry Match (if provided by project metadata)
+        if let directMatch = knownBOM?[partId], !directMatch.isEmpty {
+            return directMatch
+        }
+        
+        let trimmed = partId.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "Component" }
+        
+        // 2. Common Fast-Path Mappings
+        switch trimmed {
+        case "part_dowel_8mm": return "Wooden Dowel Pins"
+        case "part_cam_bolt": return "Cam Lock Bolts"
+        case "part_cam_disc": return "Cam Lock Discs"
+        case "part_shelf": return "Shelf Board"
+        case "part_side_panel": return "Side Panel"
+        case "part_back_panel": return "HDF Back Panel"
+        case "part_nail_15mm": return "15mm Panel Pins"
+        case "part_breadboard": return "Breadboard"
+        default: break
+        }
+        
+        let lower = trimmed.lowercased()
+        
+        // 3. Dynamic Resistor Parsing (e.g. part_res_220 -> 220Ω Resistor, part_res_10k -> 10kΩ Resistor, part_res_4k7 -> 4.7kΩ Resistor)
+        if lower.hasPrefix("part_res_") || lower.hasPrefix("res_") {
+            var val = lower.replacingOccurrences(of: "part_res_", with: "").replacingOccurrences(of: "res_", with: "")
+            if val.contains("k") {
+                val = val.replacingOccurrences(of: "k", with: "kΩ")
+            } else if val.contains("m") {
+                val = val.replacingOccurrences(of: "m", with: "MΩ")
+            }
+            if !val.contains("Ω") {
+                val = "\(val)Ω"
+            }
+            return "\(val) Resistor"
+        }
+        
+        // 4. Dynamic Capacitor Parsing (e.g. part_cap_100u -> 100µF Capacitor, part_cap_22p -> 22pF Capacitor)
+        if lower.hasPrefix("part_cap_") || lower.hasPrefix("cap_") {
+            var val = lower.replacingOccurrences(of: "part_cap_", with: "").replacingOccurrences(of: "cap_", with: "")
+            val = val.replacingOccurrences(of: "u", with: "µF")
+            val = val.replacingOccurrences(of: "n", with: "nF")
+            val = val.replacingOccurrences(of: "p", with: "pF")
+            if !val.contains("F") {
+                val = "\(val)µF"
+            }
+            return "\(val) Capacitor"
+        }
+        
+        // 5. Dynamic LED Parsing (e.g. part_led_red -> Red LED, part_led_rgb -> RGB LED)
+        if lower.hasPrefix("part_led_") || lower.hasPrefix("led_") {
+            let color = lower.replacingOccurrences(of: "part_led_", with: "").replacingOccurrences(of: "led_", with: "")
+            return "\(color.capitalized) LED"
+        }
+        
+        // 6. Dynamic Wire Parsing (e.g. part_wire_black -> Black Jumper Wire)
+        if lower.hasPrefix("part_wire_") || lower.hasPrefix("wire_") {
+            let color = lower.replacingOccurrences(of: "part_wire_", with: "").replacingOccurrences(of: "wire_", with: "")
+            return "\(color.capitalized) Jumper Wire"
+        }
+        
+        // 7. Dynamic Screw / Fastener Parsing (e.g. part_screw_m3_10 -> M3 10mm Screw)
+        if lower.hasPrefix("part_screw_") || lower.hasPrefix("screw_") {
+            let spec = lower.replacingOccurrences(of: "part_screw_", with: "").replacingOccurrences(of: "screw_", with: "")
+            let parts = spec.components(separatedBy: "_")
+            if parts.count == 2 {
+                return "\(parts[0].uppercased()) \(parts[1])mm Screw"
+            }
+            return "\(spec.replacingOccurrences(of: "_", with: " ").capitalized) Screw"
+        }
+        
+        // 8. Universal Dynamic Fallback: Clean prefix, split underscores, and Title Case
+        let cleaned = trimmed
+            .replacingOccurrences(of: "part_", with: "")
+            .replacingOccurrences(of: "comp_", with: "")
+            .replacingOccurrences(of: "_", with: " ")
+            .replacingOccurrences(of: "-", with: " ")
+            .capitalized
+        
+        return cleaned.isEmpty ? "Component" : cleaned
+    }
     
     init(
         requiredComponentIds: [String] = [],

@@ -120,21 +120,21 @@ extension ExpectedAssemblyState {
         let resolvedStepID = stepID ?? step?.id ?? UUID()
         let resolvedStepOrder = stepOrder ?? step?.stepOrder ?? 0
         
-        // Map required component IDs to ExpectedComponent
+        // Map required component IDs to ExpectedComponent with human-readable display names
         var components = contract.requiredComponentIds.map { partId in
-            ExpectedComponent(identifier: partId, name: partId)
+            ExpectedComponent(identifier: partId, name: VisualContract.friendlyName(for: partId))
         }
         
         // If requiredComponentIds was empty, infer from pin and spatial placements
         if components.isEmpty {
             for placement in contract.pinPlacements {
                 if !components.contains(where: { $0.identifier == placement.partId }) {
-                    components.append(ExpectedComponent(identifier: placement.partId, name: placement.partId))
+                    components.append(ExpectedComponent(identifier: placement.partId, name: VisualContract.friendlyName(for: placement.partId)))
                 }
             }
             for spatial in contract.spatialPlacements {
                 if !components.contains(where: { $0.identifier == spatial.partId }) {
-                    components.append(ExpectedComponent(identifier: spatial.partId, name: spatial.partId))
+                    components.append(ExpectedComponent(identifier: spatial.partId, name: VisualContract.friendlyName(for: spatial.partId)))
                 }
             }
         }
