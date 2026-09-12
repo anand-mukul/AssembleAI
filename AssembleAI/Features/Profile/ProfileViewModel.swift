@@ -207,7 +207,7 @@ final class ProfileViewModel: ObservableObject {
         let trimmed = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
         UserDefaults.standard.set(trimmed, forKey: "research_webhook_url")
         self.researchWebhookURL = trimmed
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        AppHaptics.impact(.medium)
     }
     
     /// Sends a real test payload to verify that the webhook is receiving data correctly.
@@ -227,11 +227,7 @@ final class ProfileViewModel: ObservableObject {
             self.isTestingWebhook = false
             self.webhookTestSucceeded = result.success
             self.webhookTestStatusMessage = result.message
-            if result.success {
-                UINotificationFeedbackGenerator().notificationOccurred(.success)
-            } else {
-                UINotificationFeedbackGenerator().notificationOccurred(.error)
-            }
+            AppHaptics.notification(result.success ? .success : .error)
         }
     }
     
