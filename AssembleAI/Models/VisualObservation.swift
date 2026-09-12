@@ -52,7 +52,7 @@ nonisolated struct VisualObservation: Identifiable, Hashable, Codable, Sendable 
     nonisolated init(
         id: UUID = UUID(),
         imageSize: CGSize,
-        detectedText: [DetectedText],
+        detectedText: [DetectedText] = [],
         regions: [DetectedRegion] = [],
         timestamp: Date = Date(),
         processingTimeMs: Double
@@ -68,14 +68,14 @@ nonisolated struct VisualObservation: Identifiable, Hashable, Codable, Sendable 
     nonisolated init(
         id: UUID = UUID(),
         imageSize: CGSize,
-        detectedText: [String],
+        detectedStrings: [String],
         regions: [DetectedRegion] = [],
         timestamp: Date = Date(),
         processingTimeMs: Double
     ) {
         self.id = id
         self.imageSize = imageSize
-        self.detectedText = detectedText.map { DetectedText(text: $0, confidence: 1.0, boundingBox: .zero) }
+        self.detectedText = detectedStrings.map { DetectedText(text: $0, confidence: 1.0, boundingBox: .zero) }
         self.regions = regions
         self.timestamp = timestamp
         self.processingTimeMs = processingTimeMs

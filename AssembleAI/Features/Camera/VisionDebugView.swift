@@ -100,7 +100,7 @@ struct VisionDebugView: View {
                         expectedText: "Step Contract Placement Specification",
                         observedText: observation.hasText ? observation.detectedText.map(\.text).joined(separator: ", ") : "No explicit text markers",
                         issueTitle: observation.hasText ? nil : "Insufficient evidence",
-                        issueType: observation.hasText ? nil : .insufficientVisualEvidence
+                        issueType: observation.hasText ? nil : StateIssueType.insufficientVisualEvidence
                     )
                 }
                 
@@ -133,7 +133,7 @@ struct VisionDebugView: View {
         image: nil,
         observation: VisualObservation(
             imageSize: CGSize(width: 3024, height: 4032),
-            detectedText: [],
+            detectedText: [DetectedText](),
             regions: [],
             processingTimeMs: 142.5
         ),
