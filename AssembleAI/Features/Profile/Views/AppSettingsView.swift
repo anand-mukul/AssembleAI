@@ -18,13 +18,16 @@ struct AppSettingsView: View {
                 // Section 1: Guidance & Verification
                 guidanceAndVerificationSection
                 
-                // Section 2: Camera & Viewfinder Experience
+                // Section 2: Research & Visual History Strategy
+                researchStrategySection
+                
+                // Section 3: Camera & Viewfinder Experience
                 cameraViewfinderSection
                 
-                // Section 3: Haptics & Sensory Feedback
+                // Section 4: Haptics & Sensory Feedback
                 tactileSection
                 
-                // Section 4: Data & Diagnostics Link
+                // Section 5: Data & Diagnostics Link
                 diagnosticsSection
             }
             .padding(.horizontal, AppSpacing.screenEdge)
@@ -37,6 +40,136 @@ struct AppSettingsView: View {
     }
     
     // MARK: - Sections
+    
+    private var researchStrategySection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            Text("Research & Visual History")
+                .standardSectionHeader()
+            
+            VStack(spacing: 0) {
+                // Strategy Selector
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    HStack(spacing: AppSpacing.sm) {
+                        SemanticIconBadge(iconName: "clock.arrow.circlepath", size: 30, iconSize: 15, color: AppColors.badgeIndigo)
+                        
+                        Text("Temporal History Strategy")
+                            .font(.body)
+                            .fontWeight(.medium)
+                            .foregroundColor(AppColors.primaryText)
+                        
+                        Spacer()
+                    }
+                    
+                    Picker("Strategy", selection: $viewModel.visualHistoryStrategyRaw) {
+                        Text("Strategy A: Current Frame").tag(VisualHistoryStrategy.currentFrame.rawValue)
+                        Text("Strategy B: Last N Frames").tag(VisualHistoryStrategy.lastNFrames.rawValue)
+                        Text("Strategy C: Full History").tag(VisualHistoryStrategy.fullVisualHistory.rawValue)
+                        Text("Strategy D: Compressed").tag(VisualHistoryStrategy.compressedStateHistory.rawValue)
+                    }
+                    .pickerStyle(.menu)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(AppColors.groupedBackground)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(AppColors.cardBorder, lineWidth: 1)
+                    )
+                    .onChange(of: viewModel.visualHistoryStrategyRaw) {
+                        UISelectionFeedbackGenerator().selectionChanged()
+                    }
+                    
+                    Text(strategyDescription(for: viewModel.visualHistoryStrategyRaw))
+                        .font(.caption)
+                        .foregroundColor(AppColors.secondaryText)
+                        .adaptiveMultiline()
+                }
+                .padding(AppSpacing.md)
+                
+                // Sliding Window N Frames (Visible when Strategy B is active)
+                if viewModel.visualHistoryStrategyRaw == VisualHistoryStrategy.lastNFrames.rawValue {
+                    Divider().padding(.leading, AppSpacing.dividerLeadingInset)
+                    
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        HStack {
+                            SemanticIconBadge(iconName: "square.stack.3d.forward.dottedline.fill", size: 30, iconSize: 15, color: AppColors.badgeOrange)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Window Size (N Frames)")
+                                    .font(.body)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(AppColors.primaryText)
+                                Text("Recent visual frames retained in model context")
+                                    .font(.caption)
+                                    .foregroundColor(AppColors.secondaryText)
+                            }
+                            
+                            Spacer()
+                            
+                            HStack(spacing: 8) {
+                                Stepper("", value: $viewModel.lastNFramesValue, in: 2...15)
+                                    .labelsHidden()
+                                    .onChange(of: viewModel.lastNFramesValue) {
+                                        UISelectionFeedbackGenerator().selectionChanged()
+                                    }
+                                
+                                Text("\(viewModel.lastNFramesValue)")
+                                    .font(.headline)
+                                    .monospacedDigit()
+                                    .foregroundColor(AppColors.primaryText)
+                                    .frame(minWidth: 28, alignment: .trailing)
+                            }
+                        }
+                        
+                        // Preset Quick Selectors (N = 3, 5, 10)
+                        HStack(spacing: AppSpacing.sm) {
+                            Text("Presets:")
+                                .font(.caption)
+                                .foregroundColor(AppColors.secondaryText)
+                            
+                            ForEach([3, 5, 10], id: \.self) { preset in
+                                Button {
+                                    viewModel.lastNFramesValue = preset
+                                    UISelectionFeedbackGenerator().selectionChanged()
+                                } label: {
+                                    Text("N = \(preset)")
+                                        .font(.caption.weight(.medium))
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 4)
+                                        .background(viewModel.lastNFramesValue == preset ? AppColors.brandPrimary : AppColors.cardBackground)
+                                        .foregroundColor(viewModel.lastNFramesValue == preset ? .white : AppColors.primaryText)
+                                        .clipShape(Capsule())
+                                        .overlay(
+                                            Capsule()
+                                                .stroke(viewModel.lastNFramesValue == preset ? Color.clear : AppColors.cardBorder, lineWidth: 1)
+                                        )
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                    .padding(AppSpacing.md)
+                }
+            }
+            .appCard(padding: 0)
+        }
+    }
+    
+    private func strategyDescription(for rawValue: String) -> String {
+        switch rawValue {
+        case VisualHistoryStrategy.currentFrame.rawValue:
+            return "Strategy A: Single current frame upon hand retraction. Baseline single-frame reasoning (~188 MB peak RAM)."
+        case VisualHistoryStrategy.lastNFrames.rawValue:
+            return "Strategy B: Sliding FIFO window of the last \(viewModel.lastNFramesValue) frames. Evaluates temporal smoothing vs. token scaling."
+        case VisualHistoryStrategy.fullVisualHistory.rawValue:
+            return "Strategy C: Unbounded chronological frame accumulation. Evaluates memory limits (triggers Jetsam OOM crash at Step 7 in benchmarks)."
+        case VisualHistoryStrategy.compressedStateHistory.rawValue:
+            return "Strategy D (AssembleAI Default): State-aware semantic keyframes with structural graph summary (~215 MB bounded RAM)."
+        default:
+            return "Select temporal visual history architecture for research logging."
+        }
+    }
     
     private var guidanceAndVerificationSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {

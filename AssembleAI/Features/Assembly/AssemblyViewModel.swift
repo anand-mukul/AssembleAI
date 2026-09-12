@@ -208,6 +208,10 @@ final class AssemblyViewModel: ObservableObject {
             let strategy = UserDefaults.standard.string(forKey: "app_visual_history_strategy") ?? VisualHistoryStrategy.currentFrame.rawValue
             enrichedMetadata["strategy"] = strategy
         }
+        if enrichedMetadata["lastNFrames"] == nil {
+            let n = UserDefaults.standard.integer(forKey: "app_last_n_frames")
+            enrichedMetadata["lastNFrames"] = String(n > 0 ? n : 5)
+        }
         let event = ResearchEvent(
             sessionID: session.id,
             projectID: project.id,
