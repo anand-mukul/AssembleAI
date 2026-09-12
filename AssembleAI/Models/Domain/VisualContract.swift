@@ -214,6 +214,9 @@ nonisolated struct VisualContract: Codable, Hashable, Equatable, Sendable {
     /// Polarity/orientation constraints (e.g., "cathode stripe faces GND rail").
     let orientationConstraints: [OrientationConstraint]
     
+    /// Global placement tolerance override in millimeters.
+    let toleranceMm: Double
+    
     /// Dynamically maps internal BOM part IDs (e.g. "part_res_220", "part_cap_10u", "part_servo_sg90")
     /// to clean, human-readable display names, with pattern-based dynamic parsing for arbitrary new components.
     static func friendlyName(for partId: String, knownBOM: [String: String]? = nil) -> String {
