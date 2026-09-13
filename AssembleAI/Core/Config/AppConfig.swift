@@ -25,6 +25,46 @@ enum AppConfig {
         return trimmed.isEmpty ? nil : trimmed
     }
     
+    /// Reads parsed key-value pairs from the bundled Config.xcconfig file (if present in Resources)
+    private nonisolated static let bundledXcconfig: [String: String] = {
+        let possibleUrls = [
+            Bundle.main.url(forResource: "Config", withExtension: "xcconfig"),
+            Bundle.main.bundleURL.appendingPathComponent("Config.xcconfig"),
+            Bundle.main.url(forResource: "Config.xcconfig", withExtension: nil)
+        ]
+        
+        for case let url? in possibleUrls {
+            if let content = try? String(contentsOf: url, encoding: .utf8), !content.isEmpty {
+                var dict: [String: String] = [:]
+                for line in content.components(separatedBy: .newlines) {
+                    let trimmed = line.trimmingCharacters(in: .whitespaces)
+                    if trimmed.hasPrefix("//") || trimmed.hasPrefix("#") || trimmed.isEmpty { continue }
+                    let parts = trimmed.split(separator: "=", maxSplits: 1).map { String($0).trimmingCharacters(in: .whitespaces) }
+                    if parts.count == 2 {
+                        let key = parts[0]
+                        var val = parts[1]
+                        // Strip trailing inline comment if present (e.g. "value // comment", but not "https://...")
+                        if let commentIdx = val.range(of: "//") {
+                            let prefix = val[..<commentIdx.lowerBound]
+                            if !prefix.hasSuffix(":") {
+                                val = String(prefix).trimmingCharacters(in: .whitespaces)
+                            }
+                        }
+                        if (val.hasPrefix("\"") && val.hasSuffix("\"")) || (val.hasPrefix("'") && val.hasSuffix("'")) {
+                            val = String(val.dropFirst().dropLast()).trimmingCharacters(in: .whitespaces)
+                        }
+                        val = val.replacingOccurrences(of: "$(SLASH)", with: "/")
+                        dict[key] = val
+                    }
+                }
+                if !dict.isEmpty {
+                    return dict
+                }
+            }
+        }
+        return [:]
+    }()
+    
     /// Supabase Project URL
     nonisolated static var supabaseUrl: String {
         let rawUrl: String? = {
@@ -33,6 +73,12 @@ enum AppConfig {
             }
             if let plistUrl = sanitizeConfigValue(Bundle.main.object(forInfoDictionaryKey: "SUPABASE_URL") as? String), !plistUrl.isEmpty, !plistUrl.contains("$") {
                 return plistUrl
+            }
+            if let storedUrl = sanitizeConfigValue(UserDefaults.standard.string(forKey: "supabase_project_url")), !storedUrl.isEmpty, !storedUrl.contains("$") {
+                return storedUrl
+            }
+            if let bundledUrl = sanitizeConfigValue(bundledXcconfig["SUPABASE_URL"]), !bundledUrl.isEmpty, !bundledUrl.contains("$") {
+                return bundledUrl
             }
             return nil  // No fallback — credentials must come from Config.xcconfig
         }()
@@ -57,6 +103,12 @@ enum AppConfig {
             }
             if let plistKey = sanitizeConfigValue(Bundle.main.object(forInfoDictionaryKey: key) as? String), !plistKey.isEmpty, !plistKey.contains("$"), !plistKey.contains("NOT_FOUND") {
                 return plistKey
+            }
+            if let storedKey = sanitizeConfigValue(UserDefaults.standard.string(forKey: "supabase_anon_key")), !storedKey.isEmpty, !storedKey.contains("$"), !storedKey.contains("NOT_FOUND") {
+                return storedKey
+            }
+            if let bundledKey = sanitizeConfigValue(bundledXcconfig[key]), !bundledKey.isEmpty, !bundledKey.contains("$"), !bundledKey.contains("NOT_FOUND") {
+                return bundledKey
             }
         }
         return "SUPABASE_KEY_NOT_FOUND"
@@ -85,6 +137,9 @@ enum AppConfig {
         if let stored = UserDefaults.standard.string(forKey: "research_webhook_url"),
            let sanitizedStored = sanitizeConfigValue(stored) {
             return sanitizedStored
+        }
+        if let bundledUrl = sanitizeConfigValue(bundledXcconfig["RESEARCH_WEBHOOK_URL"]), !bundledUrl.isEmpty, !bundledUrl.contains("$") {
+            return bundledUrl
         }
         // No default webhook — set RESEARCH_WEBHOOK_URL in Config.xcconfig or UserDefaults
         return nil
