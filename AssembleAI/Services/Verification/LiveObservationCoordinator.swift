@@ -7,6 +7,7 @@ import Foundation
 import CoreGraphics
 import CoreVideo
 import ImageIO
+import os
 
 // MARK: - Live Observation Configuration
 
@@ -71,6 +72,23 @@ protocol LiveObservationCoordinating: Sendable {
     
     /// Evaluates hand pose in the frame to determine if user is actively manipulating components.
     func evaluateHandActivity(in pixelBuffer: CVPixelBuffer) async -> WorkbenchHandActivity
+    
+    /// Updates the active physical breadboard calibration.
+    func updateCalibration(_ calibration: BreadboardCalibration?) async
+}
+
+/// Thread-safe calibration holder enabling dynamic updates to SpatialAssemblyStateEstimator.
+final class LiveCalibrationHolder: @unchecked Sendable {
+    private let lock = OSAllocatedUnfairLock<BreadboardCalibration?>(initialState: nil)
+    
+    var calibration: BreadboardCalibration? {
+        get {
+            lock.withLock { $0 }
+        }
+        set {
+            lock.withLock { $0 = newValue }
+        }
+    }
 }
 
 extension LiveObservationCoordinating {
@@ -88,6 +106,9 @@ extension LiveObservationCoordinating {
     func evaluateHandActivity(in pixelBuffer: CVPixelBuffer) async -> WorkbenchHandActivity {
         .clear
     }
+    
+    /// Default fallback for calibration updates.
+    func updateCalibration(_ calibration: BreadboardCalibration?) async {}
 }
 
 // MARK: - Live Observation Coordinator Implementation
@@ -100,6 +121,7 @@ actor LiveObservationCoordinator: LiveObservationCoordinating {
     private let comparator: AssemblyStateComparator
     private let acousticDetector: AcousticInsertionDetector?
     private let handPoseDetector: HandPoseActivityDetecting?
+    private let calibrationHolder = LiveCalibrationHolder()
     private var configuration: LiveObservationConfiguration
     
     private var metrics = LiveObservationMetrics()
@@ -116,13 +138,16 @@ actor LiveObservationCoordinator: LiveObservationCoordinating {
     private var lastHandActivity: WorkbenchHandActivity = .clear
     
     init(
-        estimator: AssemblyStateEstimating = SpatialAssemblyStateEstimator(),
+        estimator: AssemblyStateEstimating? = nil,
         comparator: AssemblyStateComparator? = nil,
         acousticDetector: AcousticInsertionDetector? = nil,
         handPoseDetector: HandPoseActivityDetecting? = nil,
         configuration: LiveObservationConfiguration = .default
     ) {
-        self.estimator = estimator
+        let holder = self.calibrationHolder
+        self.estimator = estimator ?? SpatialAssemblyStateEstimator(calibrationProvider: { [holder] in
+            holder.calibration
+        })
         self.configuration = configuration
         self.acousticDetector = acousticDetector
         self.handPoseDetector = handPoseDetector ?? HandPoseActivityDetector()
@@ -131,6 +156,11 @@ actor LiveObservationCoordinator: LiveObservationCoordinating {
                 minimumEvidenceConfidence: configuration.minimumEvidenceConfidence
             )
         )
+    }
+    
+    /// Updates the active breadboard calibration for spatial estimation.
+    func updateCalibration(_ calibration: BreadboardCalibration?) async {
+        calibrationHolder.calibration = calibration
     }
     
     // MARK: - Hand Activity Evaluation
@@ -177,8 +207,15 @@ actor LiveObservationCoordinator: LiveObservationCoordinating {
         // 2. Expected State: Obtain step contract
         let expectedState = ExpectedAssemblyState.forStep(step)
         
+        // 2b. Multimodal Acoustic Corroboration
+        let hasAcousticSnap = (await acousticDetector?.eventsInLast(seconds: 1.5).isEmpty == false)
+        
         // 3. State Comparison: Run deterministic invariant checks
-        let comparison = comparator.compare(expected: expectedState, observed: observedState)
+        let comparison = comparator.compare(
+            expected: expectedState,
+            observed: observedState,
+            hasAcousticCorroboration: hasAcousticSnap
+        )
         metrics.comparisonsPerformed += 1
         
         let currentTime = CFAbsoluteTimeGetCurrent()
@@ -348,7 +385,8 @@ actor LiveObservationCoordinator: LiveObservationCoordinating {
             detectedDescription: detectedDesc,
             expectedDescription: expectedDesc,
             explanation: explanationText,
-            primaryIssue: comparison.issues.first
+            primaryIssue: comparison.issues.first,
+            observedState: observedState
         )
     }
 }

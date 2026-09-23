@@ -69,15 +69,69 @@ struct VerificationResultView: View {
                     }
                 }
                 
-                // Assessment Card
-                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                // Assessment Card (Structured Layout)
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
                     Text("Assessment")
                         .standardSectionHeader()
                     
-                    Text(result.explanation)
-                        .font(.body)
-                        .foregroundColor(AppColors.primaryText)
-                        .fixedSize(horizontal: false, vertical: true)
+                    if let issue = result.primaryIssue {
+                        // Issue Header
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(AppColors.error)
+                                .font(.body)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Issue Detected")
+                                    .font(.caption.weight(.bold))
+                                    .foregroundColor(AppColors.error)
+                                    .textCase(.uppercase)
+                                Text(issue.title)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundColor(AppColors.primaryText)
+                            }
+                        }
+                        
+                        Divider()
+                            .padding(.vertical, 2)
+                        
+                        // Remediation / Action
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: "wrench.and.screwdriver.fill")
+                                .foregroundColor(AppColors.warning)
+                                .font(.body)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Recommended Correction")
+                                    .font(.caption.weight(.bold))
+                                    .foregroundColor(AppColors.warning)
+                                    .textCase(.uppercase)
+                                Text(result.explanation)
+                                    .font(.body)
+                                    .foregroundColor(AppColors.primaryText)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                    } else if result.status == .correct {
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(AppColors.success)
+                                .font(.body)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Step Verified")
+                                    .font(.caption.weight(.bold))
+                                    .foregroundColor(AppColors.success)
+                                    .textCase(.uppercase)
+                                Text(result.explanation)
+                                    .font(.body)
+                                    .foregroundColor(AppColors.primaryText)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                    } else {
+                        Text(result.explanation)
+                            .font(.body)
+                            .foregroundColor(AppColors.primaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .appCard()

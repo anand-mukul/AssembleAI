@@ -262,12 +262,12 @@ nonisolated final class BreadboardHomographyService: BreadboardHomographyServici
                     return
                 }
                 
-                // Select most rectangular, portrait-oriented candidate consistent with breadboard aspect ratio (~1.5:1)
+                // Select most rectangular candidate consistent with breadboard dimensions (half-size ~1.5:1, full-size ~3.0:1)
                 let bestMatch = observations.max(by: { a, b in
-                    let aspectA = a.boundingBox.height / max(0.01, a.boundingBox.width)
-                    let aspectB = b.boundingBox.height / max(0.01, b.boundingBox.width)
-                    let scoreA = a.confidence * Float(aspectA > 1.1 && aspectA < 2.2 ? 1.5 : 0.8)
-                    let scoreB = b.confidence * Float(aspectB > 1.1 && aspectB < 2.2 ? 1.5 : 0.8)
+                    let ratioA = max(a.boundingBox.height, a.boundingBox.width) / max(0.01, min(a.boundingBox.height, a.boundingBox.width))
+                    let ratioB = max(b.boundingBox.height, b.boundingBox.width) / max(0.01, min(b.boundingBox.height, b.boundingBox.width))
+                    let scoreA = a.confidence * Float(ratioA >= 1.2 && ratioA <= 3.5 ? 2.0 : 0.5)
+                    let scoreB = b.confidence * Float(ratioB >= 1.2 && ratioB <= 3.5 ? 2.0 : 0.5)
                     return scoreA < scoreB
                 })
                 
@@ -275,6 +275,16 @@ nonisolated final class BreadboardHomographyService: BreadboardHomographyServici
                     continuation.resume(returning: nil)
                     return
                 }
+                
+                // Determine breadboard variant from physical aspect ratio
+                let longerSide = max(rect.boundingBox.width, rect.boundingBox.height)
+                let shorterSide = max(0.01, min(rect.boundingBox.width, rect.boundingBox.height))
+                let observedAspectRatio = longerSide / shorterSide
+                
+                // Full-size 830 tie-point breadboard is ~165mm x 55mm (ratio ~3.0).
+                // Half-size 400 tie-point breadboard is ~85mm x 55mm (ratio ~1.54).
+                let variant: BreadboardGeometry.Variant = observedAspectRatio >= 2.2 ? .fullSize : .halfSize
+                let resolvedGeometry = BreadboardGeometry(variant: variant)
                 
                 // Note: VNRectangleObservation uses Vision coordinates (origin bottom-left).
                 // Convert to UIKit / Camera standard coordinates (origin top-left): y -> 1 - y
@@ -289,17 +299,17 @@ nonisolated final class BreadboardHomographyService: BreadboardHomographyServici
                     bottomRight: br,
                     bottomLeft: bl,
                     confidence: Double(rect.confidence),
-                    geometry: self.geometry
+                    geometry: resolvedGeometry
                 )
                 
                 continuation.resume(returning: calibration)
             }
             
-            request.minimumAspectRatio = 0.4
-            request.maximumAspectRatio = 2.5
-            request.minimumSize = 0.20
-            request.maximumObservations = 4
-            request.minimumConfidence = 0.35
+            request.minimumAspectRatio = 0.25
+            request.maximumAspectRatio = 4.0
+            request.minimumSize = 0.12
+            request.maximumObservations = 8
+            request.minimumConfidence = 0.30
             
             let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: orientation, options: [:])
             do {

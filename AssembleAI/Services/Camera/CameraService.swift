@@ -10,6 +10,13 @@ import CoreVideo
 import SwiftUI
 import UIKit
 
+/// Strongly typed camera zoom factor option for UI rendering with deterministic identity.
+struct CameraZoomOption: Identifiable, Sendable, Equatable {
+    let id: String
+    let factor: CGFloat
+    let label: String
+}
+
 /// Isolated camera service orchestrating `AVCaptureSession`, `AVCapturePhotoOutput`, `AVCaptureVideoDataOutput`, authorization, and torch controls.
 @MainActor
 final class CameraService: NSObject, ObservableObject {
@@ -22,6 +29,11 @@ final class CameraService: NSObject, ObservableObject {
 #endif
     @Published private(set) var isTorchSupported: Bool = false
     @Published var isTorchOn: Bool = false
+    @Published var zoomFactor: CGFloat = 1.0
+    @Published private(set) var availableZoomFactors: [CGFloat] = [0.5, 1.0, 2.0]
+    @Published private(set) var availableZoomOptions: [CameraZoomOption] = [
+        CameraZoomOption(id: "1x", factor: 1.0, label: "1×")
+    ]
     @Published var errorMessage: String? = nil
     
     #if DEBUG
@@ -129,8 +141,17 @@ final class CameraService: NSObject, ObservableObject {
             captureSession.beginConfiguration()
             captureSession.sessionPreset = .photo
             
-            // Video Input
-            guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
+            // Video Input with Macro Fusion Discovery (Triple/DualWide/Wide)
+            let discoverySession = AVCaptureDevice.DiscoverySession(
+                deviceTypes: [
+                    .builtInTripleCamera,
+                    .builtInDualWideCamera,
+                    .builtInWideAngleCamera
+                ],
+                mediaType: .video,
+                position: .back
+            )
+            guard let videoDevice = discoverySession.devices.first ?? AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
                   let videoInput = try? AVCaptureDeviceInput(device: videoDevice),
                   captureSession.canAddInput(videoInput) else {
                 
@@ -141,6 +162,20 @@ final class CameraService: NSObject, ObservableObject {
                 }
                 captureSession.commitConfiguration()
                 return
+            }
+            
+            // Enable macro auto-focus optimizations
+            do {
+                try videoDevice.lockForConfiguration()
+                if videoDevice.isFocusModeSupported(.continuousAutoFocus) {
+                    videoDevice.focusMode = .continuousAutoFocus
+                }
+                if videoDevice.isSmoothAutoFocusSupported {
+                    videoDevice.isSmoothAutoFocusEnabled = true
+                }
+                videoDevice.unlockForConfiguration()
+            } catch {
+                // Focus configuration fallback
             }
             
             captureSession.addInput(videoInput)
@@ -180,6 +215,38 @@ final class CameraService: NSObject, ObservableObject {
             DispatchQueue.main.async {
                 self.isConfigured = true
                 self.isTorchSupported = videoDevice.hasTorch
+                
+                // Dynamic lens discovery and zoom capabilities (C-3)
+                var options: [CameraZoomOption] = []
+                var factors: [CGFloat] = []
+                
+                let minZoom = videoDevice.minAvailableVideoZoomFactor
+                let maxZoom = videoDevice.maxAvailableVideoZoomFactor
+                
+                if minZoom <= 0.5 {
+                    options.append(CameraZoomOption(id: "0.5x", factor: 0.5, label: "0.5×"))
+                    factors.append(0.5)
+                }
+                if minZoom <= 1.0 && maxZoom >= 1.0 {
+                    options.append(CameraZoomOption(id: "1x", factor: 1.0, label: "1×"))
+                    factors.append(1.0)
+                }
+                if maxZoom >= 2.0 {
+                    options.append(CameraZoomOption(id: "2x", factor: 2.0, label: "2×"))
+                    factors.append(2.0)
+                }
+                if maxZoom >= 5.0 {
+                    options.append(CameraZoomOption(id: "5x", factor: 5.0, label: "5×"))
+                    factors.append(5.0)
+                }
+                
+                if options.isEmpty {
+                    options = [CameraZoomOption(id: "1x", factor: 1.0, label: "1×")]
+                    factors = [1.0]
+                }
+                
+                self.availableZoomOptions = options
+                self.availableZoomFactors = factors
             }
         }
     }
@@ -257,6 +324,29 @@ final class CameraService: NSObject, ObservableObject {
             self.isTorchOn = nextState
         } catch {
             self.errorMessage = "Could not toggle torch mode"
+        }
+    }
+    
+    /// Sets camera optical zoom factor smoothly.
+    func setZoomFactor(_ factor: CGFloat) {
+        guard isCameraAvailable else {
+            self.zoomFactor = factor
+            return
+        }
+        
+        guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else {
+            self.zoomFactor = factor
+            return
+        }
+        
+        do {
+            try device.lockForConfiguration()
+            let clampedFactor = max(device.minAvailableVideoZoomFactor, min(factor, min(device.maxAvailableVideoZoomFactor, 5.0)))
+            device.videoZoomFactor = clampedFactor
+            device.unlockForConfiguration()
+            self.zoomFactor = clampedFactor
+        } catch {
+            self.errorMessage = "Could not set camera zoom factor"
         }
     }
     

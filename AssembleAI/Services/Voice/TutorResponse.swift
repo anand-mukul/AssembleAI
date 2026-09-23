@@ -26,25 +26,66 @@ nonisolated enum ResponsePriority: Int, Sendable, Comparable, Codable {
 // MARK: - Tutor Response Model
 
 /// Spoken tutor utterance with metadata for speech synthesis and telemetry.
+///
+/// `text` is the clean spoken-track string fed to `AVSpeechSynthesizer` (emoji-free).
+/// `displayText` is the rich visual-track string shown in the HUD (may contain emojis).
 nonisolated struct TutorResponse: Sendable, Equatable, Identifiable {
     let id: UUID
     let text: String
+    let displayText: String?
     let priority: ResponsePriority
     let category: String
     let timestamp: Date
     
+    /// Rich text for on-screen HUD display. Falls back to `text` if `displayText` is nil.
+    var textForDisplay: String { displayText ?? text }
+    
     nonisolated init(
         id: UUID = UUID(),
         text: String,
+        displayText: String? = nil,
         priority: ResponsePriority = .normal,
         category: String = "general",
         timestamp: Date = Date()
     ) {
         self.id = id
         self.text = text
+        self.displayText = displayText
         self.priority = priority
         self.category = category
         self.timestamp = timestamp
+    }
+}
+
+// MARK: - Emoji Utilities
+
+extension TutorResponse {
+    /// Creates a TutorResponse from raw LLM output, automatically splitting display and spoken tracks.
+    /// Emojis are preserved in `displayText` for HUD rendering but stripped from `text` for speech synthesis.
+    nonisolated static func fromModelOutput(
+        _ rawText: String,
+        priority: ResponsePriority = .normal,
+        category: String = "general"
+    ) -> TutorResponse {
+        let cleaned = rawText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let spokenText = Self.stripEmojis(cleaned)
+        return TutorResponse(
+            text: spokenText,
+            displayText: cleaned,
+            priority: priority,
+            category: category
+        )
+    }
+    
+    /// Strips emoji characters from text so AVSpeechSynthesizer doesn't read emoji names aloud.
+    nonisolated static func stripEmojis(_ text: String) -> String {
+        text.unicodeScalars.filter { scalar in
+            // Keep everything that is NOT an emoji presentation or symbol
+            !scalar.properties.isEmojiPresentation &&
+            !(scalar.properties.isEmoji && scalar.value > 0x23F && !scalar.properties.isASCIIHexDigit)
+        }.map(String.init).joined()
+         .replacingOccurrences(of: "  ", with: " ")
+         .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 

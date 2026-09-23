@@ -71,6 +71,11 @@ struct AssemblyContainerView: View {
                         userTranscript: viewModel.liveUserTranscript,
                         isListening: viewModel.isListening,
                         isPaused: viewModel.isLivePaused,
+                        workspaceMap: viewModel.workspaceMap,
+                        isCalibratingWorkspace: viewModel.isCalibratingWorkspace,
+                        onRecalibrateWorkspace: {
+                            viewModel.recalibrateWorkspace()
+                        },
                         onStartLiveStream: { stream in
                             viewModel.startLiveTutor(frameStream: stream)
                         },

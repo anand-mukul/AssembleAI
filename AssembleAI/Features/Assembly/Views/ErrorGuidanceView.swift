@@ -58,7 +58,7 @@ struct ErrorGuidanceView: View {
                     )
                 }
                 
-                // Remediation Instructions Card
+                // Remediation Instructions Card — Structured Layout
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
                     HStack(spacing: AppSpacing.xs) {
                         SemanticIconBadge(systemName: "wrench.and.screwdriver.fill", tintColor: AppColors.badgeOrange)
@@ -67,10 +67,42 @@ struct ErrorGuidanceView: View {
                             .foregroundColor(AppColors.primaryText)
                     }
                     
-                    Text(result.explanation)
-                        .font(.body)
-                        .foregroundColor(AppColors.primaryText)
-                        .fixedSize(horizontal: false, vertical: true)
+                    // Issue Detected Section
+                    HStack(alignment: .top, spacing: 8) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(AppColors.error)
+                            .font(.body)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Issue Detected")
+                                .font(.caption.weight(.semibold))
+                                .foregroundColor(AppColors.error)
+                                .textCase(.uppercase)
+                            Text(result.primaryIssue?.title ?? "Placement Mismatch")
+                                .font(.body.weight(.medium))
+                                .foregroundColor(AppColors.primaryText)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    
+                    Divider()
+                        .padding(.vertical, 2)
+                    
+                    // How to Fix Section
+                    HStack(alignment: .top, spacing: 8) {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .foregroundColor(AppColors.warning)
+                            .font(.body)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Correction")
+                                .font(.caption.weight(.semibold))
+                                .foregroundColor(AppColors.warning)
+                                .textCase(.uppercase)
+                            Text(result.explanation)
+                                .font(.body)
+                                .foregroundColor(AppColors.primaryText)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
                 }
                 .appCard()
                 

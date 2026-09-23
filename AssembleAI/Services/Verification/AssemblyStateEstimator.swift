@@ -11,7 +11,9 @@ protocol AssemblyStateEstimating: Sendable {
     func estimate(observation: VisualObservation) async throws -> ObservedAssemblyState
 }
 
-/// Concrete estimator converting Vision OCR text markings and region bounding boxes into structured observed state.
+/// Legacy naive OCR-based state estimator.
+/// - Note: Superseded by `SpatialAssemblyStateEstimator` which supports sub-millimeter homography and universal physical shapes.
+@available(*, deprecated, renamed: "SpatialAssemblyStateEstimator", message: "Use SpatialAssemblyStateEstimator for sub-millimeter coordinate geometry and physical component classification.")
 nonisolated struct VisionAssemblyStateEstimator: AssemblyStateEstimating {
     
     func estimate(observation: VisualObservation) async throws -> ObservedAssemblyState {

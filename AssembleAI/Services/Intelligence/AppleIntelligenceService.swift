@@ -24,8 +24,11 @@ import FoundationModels
 struct AppleIntelligenceCapabilities: Sendable, Equatable {
     let isAppleIntelligenceSupported: Bool
     let supportsFoundationModels: Bool
+    let supportsMultimodalAttachments: Bool
     let supportsNaturalLanguageEmbedding: Bool
+    let neuralEngineTOPS: Int
     let neuralEngineGeneration: String
+    let hasMacroFusion: Bool
     let deviceModel: String
     let osVersion: String
     
@@ -33,8 +36,10 @@ struct AppleIntelligenceCapabilities: Sendable, Equatable {
         """
         Apple Intelligence: \(isAppleIntelligenceSupported ? "Available" : "Standard Engine")
         Foundation Models: \(supportsFoundationModels ? "Active" : "NLP Fallback")
+        Multimodal Visual AI: \(supportsMultimodalAttachments ? "Active (iOS 26+)" : "Standard CV")
         Device: \(deviceModel) (\(osVersion))
-        Neural Engine: \(neuralEngineGeneration)
+        Neural Engine: \(neuralEngineGeneration) (\(neuralEngineTOPS) TOPS)
+        Macro Fusion: \(hasMacroFusion ? "Supported" : "Standard")
         """
     }
 }
@@ -56,22 +61,33 @@ actor AppleIntelligenceService {
         let deviceModel = getDeviceIdentifier()
         
         var supportsFoundation = false
+        var supportsMultimodal = false
         #if canImport(FoundationModels)
         if #available(iOS 18.0, *) {
             supportsFoundation = true
+            supportsMultimodal = true
         }
         #endif
         
         let hasA17OrMSeries = isAppleIntelligenceHardware(deviceModel: deviceModel)
+        let tops = hasA17OrMSeries ? 35 : 16
         
         return AppleIntelligenceCapabilities(
             isAppleIntelligenceSupported: hasA17OrMSeries || supportsFoundation,
             supportsFoundationModels: supportsFoundation,
+            supportsMultimodalAttachments: supportsMultimodal,
             supportsNaturalLanguageEmbedding: true,
+            neuralEngineTOPS: tops,
             neuralEngineGeneration: hasA17OrMSeries ? "16-core Apple Neural Engine (35+ TOPS)" : "Apple Neural Engine",
+            hasMacroFusion: hasA17OrMSeries,
             deviceModel: deviceModel,
             osVersion: osVersion
         )
+    }
+    
+    /// Returns the singleton MultimodalVisionVerifier instance.
+    func getMultimodalVerifier() -> MultimodalVisionVerifier {
+        MultimodalVisionVerifier.shared
     }
     
     // MARK: - NaturalLanguage Entity Extraction

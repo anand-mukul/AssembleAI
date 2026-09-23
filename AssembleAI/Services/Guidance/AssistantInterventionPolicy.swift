@@ -161,7 +161,7 @@ nonisolated struct InterventionPolicyConfiguration: Sendable, Equatable {
     var allowInitialInstruction: Bool
     
     nonisolated init(
-        minimumCooldownSeconds: Double = 4.0,
+        minimumCooldownSeconds: Double = 8.0,
         stuckDetectionThresholdSeconds: Double = 15.0,
         uncertainThresholdCount: Int = 3,
         allowInitialInstruction: Bool = true
@@ -211,6 +211,7 @@ final class AssistantInterventionPolicy: AssistantInterventionPolicing, @uncheck
     private var consecutiveMistakes: Int = 0
     private var consecutiveUncertainties: Int = 0
     private var lastCorrectedExplanation: String? = nil
+    private var sameIssueRepeatCount: Int = 0
     private var lastInterventionTimestamp: Date? = nil
     
     init(configuration: InterventionPolicyConfiguration = .default) {
@@ -320,10 +321,30 @@ final class AssistantInterventionPolicy: AssistantInterventionPolicing, @uncheck
                 return InterventionDecision.silent(reason: "Intervention suppressed by cooldown period.")
             }
             
-            // Duplicate Mistake Suppression (do not repeat identical correction if state hasn't changed)
-            if let lastExpl = lastCorrectedExplanation, lastExpl == result.explanation,
-               context.timeSinceLastInterventionSeconds < configuration.minimumCooldownSeconds * 2.0 {
-                return InterventionDecision.silent(reason: "Identical mistake already corrected recently.")
+            // Duplicate Mistake Suppression (adaptive escalation backoff instead of annoying repeats)
+            if let lastExpl = lastCorrectedExplanation, isSemanticallyDuplicate(result.explanation, lastExpl) {
+                sameIssueRepeatCount += 1
+                let dynamicCooldown: Double = {
+                    switch sameIssueRepeatCount {
+                    case 1: return max(configuration.minimumCooldownSeconds * 2.0, 16.0)
+                    case 2: return 30.0
+                    default: return 60.0
+                    }
+                }()
+                
+                if context.timeSinceLastInterventionSeconds < dynamicCooldown {
+                    return InterventionDecision.silent(reason: "Semantically identical mistake already corrected; waiting for user action (cooldown: \(Int(dynamicCooldown))s, repeat #\(sameIssueRepeatCount)).")
+                }
+                
+                if sameIssueRepeatCount >= 3 {
+                    recordIntervention()
+                    return InterventionDecision(
+                        action: .offerHelp(step: context.currentStep, attemptCount: sameIssueRepeatCount),
+                        reason: "Repeated mistake threshold reached; offering gentle assistance instead of nagging."
+                    )
+                }
+            } else {
+                sameIssueRepeatCount = 0
             }
             
             // Determine Escalation Level
@@ -408,6 +429,7 @@ final class AssistantInterventionPolicy: AssistantInterventionPolicing, @uncheck
         consecutiveMistakes = 0
         consecutiveUncertainties = 0
         lastCorrectedExplanation = nil
+        sameIssueRepeatCount = 0
     }
     
     private func performFullReset() {
@@ -416,10 +438,24 @@ final class AssistantInterventionPolicy: AssistantInterventionPolicing, @uncheck
         consecutiveMistakes = 0
         consecutiveUncertainties = 0
         lastCorrectedExplanation = nil
+        sameIssueRepeatCount = 0
         lastInterventionTimestamp = nil
     }
     
     private func recordIntervention() {
         lastInterventionTimestamp = Date()
+    }
+    
+    // MARK: - Semantic Duplicate Detection
+    
+    /// Checks if two correction strings describe semantically the same issue using word-overlap similarity.
+    /// This prevents the tutor from repeating the same correction in different words.
+    private func isSemanticallyDuplicate(_ new: String, _ old: String) -> Bool {
+        let stopWords: Set<String> = ["the", "a", "an", "is", "to", "in", "of", "and", "or", "it", "that", "this", "for"]
+        let newWords = Set(new.lowercased().split(separator: " ").map(String.init)).subtracting(stopWords)
+        let oldWords = Set(old.lowercased().split(separator: " ").map(String.init)).subtracting(stopWords)
+        guard !newWords.isEmpty, !oldWords.isEmpty else { return false }
+        let overlap = Double(newWords.intersection(oldWords).count) / Double(max(newWords.count, oldWords.count))
+        return overlap > 0.6  // 60% word overlap = same issue
     }
 }

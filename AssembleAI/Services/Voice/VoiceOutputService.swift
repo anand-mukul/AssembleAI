@@ -47,11 +47,11 @@ final class VoiceOutputService: NSObject, ObservableObject, VoiceOutputServicePr
     // MARK: - VoiceOutputServiceProtocol
     
     func speak(_ response: TutorResponse) async {
-        let text = response.text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { return }
+        let cleanSpokenText = TutorResponse.stripEmojis(response.text)
+        guard !cleanSpokenText.isEmpty else { return }
         
         // 1. Duplicate Speech Suppression
-        if let lastText = lastSpokenText, lastText == text,
+        if let lastText = lastSpokenText, lastText == cleanSpokenText,
            let lastTime = lastSpokenTimestamp, Date().timeIntervalSince(lastTime) < 3.0 {
             return
         }
@@ -71,7 +71,7 @@ final class VoiceOutputService: NSObject, ObservableObject, VoiceOutputServicePr
         }
         
         // 3. Prepare AVSpeechUtterance with natural cadence
-        let utterance = AVSpeechUtterance(string: text)
+        let utterance = AVSpeechUtterance(string: cleanSpokenText)
         utterance.rate = min(configuration.rate, 0.49)
         utterance.pitchMultiplier = configuration.pitchMultiplier
         utterance.volume = configuration.volume
@@ -92,9 +92,9 @@ final class VoiceOutputService: NSObject, ObservableObject, VoiceOutputServicePr
         #endif
         
         currentResponse = response
-        lastSpokenText = text
+        lastSpokenText = cleanSpokenText
         lastSpokenTimestamp = Date()
-        currentUtteranceText = text
+        currentUtteranceText = response.textForDisplay
         state = .speaking
         
         await withTaskCancellationHandler {

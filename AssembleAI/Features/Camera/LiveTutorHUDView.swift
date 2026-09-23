@@ -281,7 +281,7 @@ struct LiveTutorHUDView: View {
                     .padding(.top, 2)
             }
             
-            Text(message.text)
+            Text(message.textForDisplay)
                 .font(.subheadline)
                 .fontWeight(.medium)
                 .foregroundColor(.white)

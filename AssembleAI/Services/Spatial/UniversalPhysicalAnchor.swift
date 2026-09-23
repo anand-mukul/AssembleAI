@@ -49,11 +49,19 @@ nonisolated struct GridAnchorDefinition: Sendable, Equatable, Hashable {
         self.centerDividerWidthMm = centerDividerWidthMm
     }
     
-    /// Standard electronics breadboard preset (2.54mm pitch).
+    /// Standard electronics half-size breadboard preset (2.54mm pitch, 30 rows).
     static let standardBreadboard = GridAnchorDefinition(
         identifier: "breadboard_half",
         pitchMm: 2.54,
         rows: 30,
+        columns: ["-", "+", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "+", "-"]
+    )
+    
+    /// Full-size electronics breadboard preset (2.54mm pitch, 63 rows).
+    static let fullBreadboard = GridAnchorDefinition(
+        identifier: "breadboard_full",
+        pitchMm: 2.54,
+        rows: 63,
         columns: ["-", "+", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "+", "-"]
     )
     
@@ -152,5 +160,98 @@ nonisolated struct ConnectorAnchorDefinition: Sendable, Equatable, Hashable {
         self.toNode = toNode
         self.medium = medium
         self.polaritySensitive = polaritySensitive
+    }
+}
+
+// MARK: - VisualContract Integration
+
+extension VisualContract {
+    /// Synthesizes the set of universal physical anchors required to verify this assembly step.
+    /// Canonicalizes circuits, furniture, engines, and aerospace assemblies into the 4 physical primitives.
+    var universalAnchors: [UniversalPhysicalAnchor] {
+        var anchors: [UniversalPhysicalAnchor] = []
+        
+        // 1. Grid Anchors (Breadboards, Lego plates, PCB headers - H-4)
+        if !pinPlacements.isEmpty {
+            let maxRow = pinPlacements.map(\.coordinate.row).max() ?? 30
+            let gridDef = maxRow > 35 ? GridAnchorDefinition.fullBreadboard : GridAnchorDefinition.standardBreadboard
+            anchors.append(.grid(gridDef))
+        }
+        
+        // 2. Fastener & Plane Anchors (Furniture, mechanics, engines, rockets)
+        for spatial in spatialPlacements {
+            let partLower = spatial.partId.lowercased()
+            
+            if partLower.contains("dowel") {
+                anchors.append(.fastener(
+                    FastenerAnchorDefinition(
+                        fastenerType: .dowel,
+                        requiredCount: spatial.quantity,
+                        locationDescription: spatial.locationDescription,
+                        requiresFlushSeating: true
+                    )
+                ))
+            } else if partLower.contains("cam") {
+                anchors.append(.fastener(
+                    FastenerAnchorDefinition(
+                        fastenerType: .camLock,
+                        requiredCount: spatial.quantity,
+                        locationDescription: spatial.locationDescription,
+                        requiresFlushSeating: true
+                    )
+                ))
+            } else if partLower.contains("screw") || partLower.contains("bolt") || partLower.contains("nail") {
+                anchors.append(.fastener(
+                    FastenerAnchorDefinition(
+                        fastenerType: partLower.contains("bolt") ? .bolt : .screw,
+                        requiredCount: spatial.quantity,
+                        locationDescription: spatial.locationDescription,
+                        requiresFlushSeating: true
+                    )
+                ))
+            } else {
+                // Plane Anchor (Side panels, shelves, engine block deck, chassis plate)
+                anchors.append(.plane(
+                    PlaneAnchorDefinition(
+                        surfaceId: spatial.partId,
+                        description: spatial.locationDescription,
+                        targetPlaneBounds: spatial.targetRegion,
+                        requiredAngleDegrees: 90.0,
+                        toleranceDegrees: 5.0
+                    )
+                ))
+            }
+        }
+        
+        // 3. Connector Anchors (Wires, cables, pipes, hoses)
+        for conn in expectedConnections {
+            let medium: ConnectorAnchorDefinition.ConnectorMedium
+            let nodeLower = (conn.fromNode + " " + conn.toNode).lowercased()
+            if nodeLower.contains("pipe") || nodeLower.contains("hose") || nodeLower.contains("fluid") {
+                medium = .pipe
+            } else if nodeLower.contains("ribbon") || nodeLower.contains("bus") {
+                medium = .ribbonCable
+            } else if nodeLower.contains("rod") || nodeLower.contains("link") {
+                medium = .mechanicalLinkage
+            } else {
+                medium = .electricalWire
+            }
+            
+            let isPolarity = orientationConstraints.contains { constraint in
+                constraint.componentId.localizedCaseInsensitiveContains(conn.fromNode) ||
+                constraint.componentId.localizedCaseInsensitiveContains(conn.toNode)
+            } || nodeLower.contains("anode") || nodeLower.contains("cathode") || nodeLower.contains("led") || nodeLower.contains("diode") || nodeLower.contains("polar") || nodeLower.contains("vcc") || nodeLower.contains("gnd")
+            
+            anchors.append(.connector(
+                ConnectorAnchorDefinition(
+                    fromNode: conn.fromNode,
+                    toNode: conn.toNode,
+                    medium: medium,
+                    polaritySensitive: isPolarity
+                )
+            ))
+        }
+        
+        return anchors
     }
 }

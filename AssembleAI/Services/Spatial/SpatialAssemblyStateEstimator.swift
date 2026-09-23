@@ -27,8 +27,8 @@ nonisolated struct SpatialAssemblyStateEstimator: AssemblyStateEstimating {
     }
     
     func estimate(observation: VisualObservation) async throws -> ObservedAssemblyState {
-        // Resolve active calibration (or fall back to default centered workbench pose)
-        let calibration = calibrationProvider?() ?? BreadboardCalibration.defaultCentered()
+        // Resolve active calibration if provided (do not force phantom breadboard for non-electronics)
+        let calibration = calibrationProvider?()
         
         // 1. Detect spatial components
         let spatialComponents = spatialDetector.detectComponents(in: observation, calibration: calibration)

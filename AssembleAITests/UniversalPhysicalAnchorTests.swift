@@ -94,4 +94,58 @@ final class UniversalPhysicalAnchorTests: XCTestCase {
         
         XCTAssertEqual(ribbon.medium, .ribbonCable)
     }
+    
+    // MARK: - VisualContract Synthesis Tests
+    
+    func testVisualContractUniversalAnchorSynthesis() {
+        let contract = VisualContract(
+            requiredComponentIds: ["part_dowel_8mm", "part_side_panel"],
+            pinPlacements: [],
+            spatialPlacements: [
+                SpatialPlacement(
+                    partId: "part_dowel_8mm",
+                    locationDescription: "Inner face of side panel",
+                    quantity: 6
+                ),
+                SpatialPlacement(
+                    partId: "part_side_panel",
+                    locationDescription: "Main workbench alignment",
+                    quantity: 1
+                )
+            ],
+            expectedConnections: [
+                ExpectedStepConnection(fromNode: "fuel_pipe_in", toNode: "fuel_rail")
+            ]
+        )
+        
+        let anchors = contract.universalAnchors
+        XCTAssertEqual(anchors.count, 3)
+        
+        // Check Fastener Anchor for dowels
+        let hasFastener = anchors.contains {
+            if case .fastener(let f) = $0 {
+                return f.fastenerType == .dowel && f.requiredCount == 6
+            }
+            return false
+        }
+        XCTAssertTrue(hasFastener)
+        
+        // Check Plane Anchor for panel
+        let hasPlane = anchors.contains {
+            if case .plane(let p) = $0 {
+                return p.surfaceId == "part_side_panel"
+            }
+            return false
+        }
+        XCTAssertTrue(hasPlane)
+        
+        // Check Connector Anchor for pipe
+        let hasConnector = anchors.contains {
+            if case .connector(let c) = $0 {
+                return c.medium == .pipe && c.fromNode == "fuel_pipe_in"
+            }
+            return false
+        }
+        XCTAssertTrue(hasConnector)
+    }
 }

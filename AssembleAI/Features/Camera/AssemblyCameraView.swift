@@ -30,6 +30,11 @@ struct AssemblyCameraView: View {
     var isListening: Bool = false
     var isPaused: Bool = false
     
+    // Jarvis Workspace Calibration
+    var workspaceMap: WorkspaceMap? = nil
+    var isCalibratingWorkspace: Bool = false
+    var onRecalibrateWorkspace: (() -> Void)? = nil
+    
     var onStartLiveStream: ((AsyncStream<CVPixelBuffer>) -> Void)? = nil
     var onStopLiveStream: (() -> Void)? = nil
     var onToggleVoice: (() -> Void)? = nil
@@ -47,6 +52,7 @@ struct AssemblyCameraView: View {
     @State private var overlayVisible = false
     @State private var showStepsSheet = false
     @State private var showWhySheet = false
+    @State private var showDimLightPrompt = false
     @State private var pulseScale: CGFloat = 1.0
     
     var body: some View {
@@ -71,6 +77,16 @@ struct AssemblyCameraView: View {
                 // Alignment Grid Overlay (Configurable via Settings)
                 if showCameraGrid {
                     cameraGridOverlay
+                }
+                
+                // Jarvis Holographic Workspace Calibration & Mapping Layer
+                if isCalibratingWorkspace || (workspaceMap != nil && activeGuidance == nil) {
+                    WorkspaceCalibrationView(
+                        workspaceMap: workspaceMap,
+                        isCalibrating: isCalibratingWorkspace,
+                        onRecalibrate: onRecalibrateWorkspace
+                    )
+                    .transition(.opacity)
                 }
                 
                 // Visual Guidance Overlay Layer (Target / Move / Warning / Success)
@@ -105,15 +121,27 @@ struct AssemblyCameraView: View {
                         .opacity(overlayVisible ? 1 : 0)
                         .offset(y: overlayVisible ? 0 : -16)
                     
+                    if showDimLightPrompt && !cameraService.isTorchOn {
+                        dimLightConsentBanner
+                            .padding(.horizontal, 16)
+                            .padding(.top, 8)
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                    }
+                    
                     Spacer()
                     
                     // Floating Apple Intelligence Thinking Orb
                     if liveTutorEnabled {
                         ThinkingOrbView(status: liveStatus, diameter: 52)
                             .shadow(color: AppColors.glassShadow, radius: 16, x: 0, y: 6)
-                            .padding(.bottom, 12)
+                            .padding(.bottom, 6)
                             .opacity(overlayVisible ? 1 : 0)
                             .scaleEffect(overlayVisible ? 1 : 0.85)
+                        
+                        // Camera Optical Zoom Switcher (0.5× wide for furniture/engines, 2× macro for circuits)
+                        cameraZoomSelector
+                            .padding(.bottom, 8)
+                            .opacity(overlayVisible ? 1 : 0)
                     }
                     
                     // Bottom Area: Unified Dynamic Island Glass HUD
@@ -198,7 +226,7 @@ struct AssemblyCameraView: View {
             }
             cameraService.stopSession()
         }
-        .onChange(of: activeGuidance) { newGuidance in
+        .onChange(of: activeGuidance) { _, newGuidance in
             guard let g = newGuidance, g.style == .warning else { return }
             Task {
                 try? await Task.sleep(nanoseconds: 6_000_000_000)
@@ -206,6 +234,17 @@ struct AssemblyCameraView: View {
                     withAnimation(.easeOut(duration: 0.3)) {
                         onDismissGuidance?()
                     }
+                }
+            }
+        }
+        .onChange(of: workspaceMap?.lightingQuality) { _, newLighting in
+            if newLighting == .dim && !cameraService.isTorchOn && cameraService.isTorchSupported {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    showDimLightPrompt = true
+                }
+            } else if newLighting != .dim {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    showDimLightPrompt = false
                 }
             }
         }
@@ -246,6 +285,31 @@ struct AssemblyCameraView: View {
             .buttonStyle(ScaleButtonStyle())
             .accessibilityLabel("Back")
             
+            // Hardware Torch / Flashlight Button
+            if cameraService.isTorchSupported {
+                Button(action: {
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    cameraService.toggleTorch()
+                }) {
+                    ZStack {
+                        Circle()
+                            .fill(cameraService.isTorchOn ? Color.yellow.opacity(0.3) : Color.black.opacity(0.35))
+                        Circle()
+                            .fill(.ultraThinMaterial)
+                        Circle()
+                            .strokeBorder(cameraService.isTorchOn ? Color.yellow.opacity(0.8) : Color.white.opacity(0.20), lineWidth: 0.5)
+                        
+                        Image(systemName: cameraService.isTorchOn ? "flashlight.on.fill" : "flashlight.off.fill")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(cameraService.isTorchOn ? .yellow : .white)
+                    }
+                    .frame(width: 44, height: 44)
+                    .shadow(color: cameraService.isTorchOn ? Color.yellow.opacity(0.35) : Color.black.opacity(0.25), radius: 8, x: 0, y: 3)
+                }
+                .buttonStyle(ScaleButtonStyle())
+                .accessibilityLabel("Toggle flashlight")
+            }
+            
             Spacer()
             
             // Steps Capsule Glass Pill Button
@@ -284,6 +348,94 @@ struct AssemblyCameraView: View {
             .buttonStyle(ScaleButtonStyle())
             .accessibilityLabel("Steps overview")
         }
+    }
+    
+    // MARK: - Optical Zoom Switcher
+    
+    private var cameraZoomSelector: some View {
+        HStack(spacing: 3) {
+            ForEach(cameraService.availableZoomOptions) { option in
+                Button(action: {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                        cameraService.setZoomFactor(option.factor)
+                    }
+                }) {
+                    Text(option.label)
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .foregroundColor(abs(cameraService.zoomFactor - option.factor) < 0.05 ? .black : .white)
+                        .frame(width: 34, height: 26)
+                        .background(
+                            Capsule()
+                                .fill(abs(cameraService.zoomFactor - option.factor) < 0.05 ? Color.white : Color.clear)
+                        )
+                }
+                .buttonStyle(ScaleButtonStyle())
+                .accessibilityLabel("Zoom \(option.label)")
+            }
+        }
+        .padding(3)
+        .background(
+            Capsule()
+                .fill(Color.black.opacity(0.40))
+                .background(Capsule().fill(.ultraThinMaterial))
+                .overlay(Capsule().strokeBorder(Color.white.opacity(0.20), lineWidth: 0.5))
+        )
+        .shadow(color: Color.black.opacity(0.3), radius: 8, x: 0, y: 3)
+    }
+    
+    // MARK: - Dim Light Consent Banner (Apple HIG)
+    
+    private var dimLightConsentBanner: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "flashlight.on.fill")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundColor(.yellow)
+            
+            Text("Workspace is dim.")
+                .font(.caption.weight(.medium))
+                .foregroundColor(.white)
+            
+            Spacer()
+            
+            Button(action: {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                cameraService.toggleTorch()
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    showDimLightPrompt = false
+                }
+            }) {
+                Text("Turn On")
+                    .font(.caption2.weight(.bold))
+                    .foregroundColor(.black)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(Capsule().fill(Color.yellow))
+            }
+            .buttonStyle(ScaleButtonStyle())
+            
+            Button(action: {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    showDimLightPrompt = false
+                }
+            }) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.white.opacity(0.7))
+                    .padding(4)
+            }
+            .buttonStyle(ScaleButtonStyle())
+            .accessibilityLabel("Dismiss flashlight suggestion")
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.black.opacity(0.75))
+                .background(RoundedRectangle(cornerRadius: 12).fill(.ultraThinMaterial))
+                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.yellow.opacity(0.4), lineWidth: 1))
+        )
+        .shadow(color: Color.black.opacity(0.4), radius: 10, x: 0, y: 4)
     }
     
     // MARK: - Spatial AR Center Reticle

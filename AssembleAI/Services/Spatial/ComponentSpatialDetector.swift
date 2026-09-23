@@ -180,9 +180,33 @@ nonisolated struct ComponentSpatialDetector: Sendable {
                     name = "Panel Component"
                     partId = "part_side_panel"
                 } else {
-                    compType = .custom
-                    name = region.label
-                    partId = nil
+                    // Geometric Shape & Aspect Ratio Component Classification
+                    let w = region.boundingBox.width
+                    let h = region.boundingBox.height
+                    let aspectRatio = max(w, h) / max(0.001, min(w, h))
+                    let area = w * h
+                    
+                    if aspectRatio >= 2.0 {
+                        // Elongated two-lead profile: Resistor or Jumper Wire
+                        compType = .resistor
+                        name = "Resistor"
+                        partId = "part_resistor"
+                    } else if aspectRatio < 1.6 && area < 0.04 {
+                        // Compact dome/button profile: LED or Tactile Switch
+                        compType = .led
+                        name = "LED"
+                        partId = "part_led"
+                    } else if aspectRatio >= 1.5 && aspectRatio <= 3.2 && area >= 0.02 {
+                        // Dual in-line package profile: Integrated Circuit
+                        compType = .integratedCircuit
+                        name = "Integrated Circuit"
+                        partId = "part_ic"
+                    } else {
+                        // General circuit component
+                        compType = .custom
+                        name = "Circuit Component"
+                        partId = "part_component"
+                    }
                 }
                 
                 detected.append(
@@ -190,7 +214,7 @@ nonisolated struct ComponentSpatialDetector: Sendable {
                         partId: partId,
                         componentType: compType,
                         name: name,
-                        confidence: Double(region.confidence),
+                        confidence: max(0.60, Double(region.confidence)),
                         cameraBoundingBox: region.boundingBox,
                         fromPin: pinInfo?.pin
                     )

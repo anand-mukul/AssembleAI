@@ -200,7 +200,7 @@ actor FoundationModelTutorResponseProvider: ConversationalTutorProviding {
             let prompt = buildConfirmationPrompt(step: step, context: context)
             if let responseText = await queryLanguageModel(prompt: prompt), !responseText.isEmpty {
                 recordTurn(sessionID: context.sessionID, assistantText: responseText)
-                return TutorResponse(text: responseText, priority: .normal, category: "confirmation")
+                return TutorResponse.fromModelOutput(responseText, priority: .normal, category: "confirmation")
             }
             return fallbackProvider.response(for: decision)
             
@@ -210,7 +210,7 @@ actor FoundationModelTutorResponseProvider: ConversationalTutorProviding {
             let priority: ResponsePriority = (level == .detailed || level == .explicit) ? .high : .normal
             if let responseText = await queryLanguageModel(prompt: prompt), !responseText.isEmpty {
                 recordTurn(sessionID: context.sessionID, assistantText: responseText)
-                return TutorResponse(text: responseText, priority: priority, category: "correction")
+                return TutorResponse.fromModelOutput(responseText, priority: priority, category: "correction")
             }
             return fallbackProvider.response(for: decision)
             
@@ -218,7 +218,7 @@ actor FoundationModelTutorResponseProvider: ConversationalTutorProviding {
             let prompt = buildInstructionPrompt(step: step, context: context)
             if let responseText = await queryLanguageModel(prompt: prompt), !responseText.isEmpty {
                 recordTurn(sessionID: context.sessionID, assistantText: responseText)
-                return TutorResponse(text: responseText, priority: .normal, category: "instruction")
+                return TutorResponse.fromModelOutput(responseText, priority: .normal, category: "instruction")
             }
             return fallbackProvider.response(for: decision)
             
@@ -226,7 +226,7 @@ actor FoundationModelTutorResponseProvider: ConversationalTutorProviding {
             let prompt = buildCameraViewPrompt(explanation: explanation, context: context)
             if let responseText = await queryLanguageModel(prompt: prompt), !responseText.isEmpty {
                 recordTurn(sessionID: context.sessionID, assistantText: responseText)
-                return TutorResponse(text: responseText, priority: .normal, category: "camera_guidance")
+                return TutorResponse.fromModelOutput(responseText, priority: .normal, category: "camera_guidance")
             }
             return fallbackProvider.response(for: decision)
             
@@ -234,7 +234,7 @@ actor FoundationModelTutorResponseProvider: ConversationalTutorProviding {
             let prompt = buildStuckPrompt(step: step, attemptCount: attemptCount, context: context)
             if let responseText = await queryLanguageModel(prompt: prompt), !responseText.isEmpty {
                 recordTurn(sessionID: context.sessionID, assistantText: responseText)
-                return TutorResponse(text: responseText, priority: .normal, category: "stuck_help")
+                return TutorResponse.fromModelOutput(responseText, priority: .normal, category: "stuck_help")
             }
             return fallbackProvider.response(for: decision)
             
@@ -254,7 +254,7 @@ actor FoundationModelTutorResponseProvider: ConversationalTutorProviding {
         let prompt = buildUserQuestionPrompt(query: query, intent: intent, context: context)
         if let responseText = await queryLanguageModel(prompt: prompt), !responseText.isEmpty {
             recordTurn(sessionID: context.sessionID, assistantText: responseText)
-            return TutorResponse(text: responseText, priority: .immediate, category: "user_query_response")
+            return TutorResponse.fromModelOutput(responseText, priority: .immediate, category: "user_query_response")
         }
         
         // Fallback response
@@ -309,9 +309,9 @@ actor FoundationModelTutorResponseProvider: ConversationalTutorProviding {
         if let a = assistantText {
             turns.append(ConversationMessage(sender: .assistant, text: a))
         }
-        // Bound conversation memory to last 4 turns
-        if turns.count > 4 {
-            turns = Array(turns.suffix(4))
+        // Bound conversation memory to last 10 turns for richer context awareness
+        if turns.count > 10 {
+            turns = Array(turns.suffix(10))
         }
         sessionMemory[sessionID] = turns
     }
@@ -321,7 +321,7 @@ actor FoundationModelTutorResponseProvider: ConversationalTutorProviding {
         SYSTEM: You are AssembleAI, a warm, witty, encouraging workshop buddy building projects side-by-side with the user.
         Produce a brief, upbeat 1-sentence spoken celebration that Step \(step.stepOrder) ("\(step.title)") is successfully locked in.
         Add a touch of playful humor or high-five energy (e.g., "Boom, nailed it—well, fitted it, technically!" or "Look at that clean fit! You're making this look easy.").
-        Spoken natural English only. No markdown, bullet points, or robot jargon.
+        Include a relevant celebratory emoji (e.g., ✅, 🎉, 💪, 🔥). Spoken natural English only. No markdown, bullet points, or robot jargon.
         """
     }
     
@@ -334,7 +334,8 @@ actor FoundationModelTutorResponseProvider: ConversationalTutorProviding {
         Escalation Level: \(level.rawValue).
         \(historyStr)
         
-        INSTRUCTION: Explain the adjustment in 1-2 spoken sentences with warm empathy, a light touch of friendly humor to keep it fun, and clear physical guidance (e.g., "Almost had it! That piece took a little detour—nudge it over one slot."). Never sound dry or robotic. Keep it encouraging and actionable.
+        IMPORTANT: Do NOT repeat what you already told the user. If you see the same issue in the conversation history, vary your response significantly — try a different angle, analogy, or level of detail.
+        INSTRUCTION: Explain the adjustment in 1-2 spoken sentences with warm empathy, a light touch of friendly humor to keep it fun, and clear physical guidance (e.g., "Almost had it! That piece took a little detour—nudge it over one slot."). Never sound dry or robotic. Keep it encouraging and actionable. Include a relevant emoji (e.g., ⚠️, 🔧, 👆).
         """
     }
     
@@ -343,7 +344,7 @@ actor FoundationModelTutorResponseProvider: ConversationalTutorProviding {
         SYSTEM: You are AssembleAI, an upbeat, witty workshop buddy.
         Introduce Step \(step.stepOrder): "\(step.title)".
         Instruction: "\(step.instruction)".
-        Deliver a breezy, encouraging 1-2 sentence spoken intro that gets the user psyched and confident for this step. Friendly, conversational, zero robot jargon.
+        Deliver a breezy, encouraging 1-2 sentence spoken intro that gets the user psyched and confident for this step. Friendly, conversational, zero robot jargon. Include a relevant emoji (e.g., 🔌, 🛠️, ⚡).
         """
     }
     
@@ -372,6 +373,7 @@ actor FoundationModelTutorResponseProvider: ConversationalTutorProviding {
         SYSTEM: You are AssembleAI, an expert, incredibly friendly, and naturally witty live workshop buddy. You chat casually and warmly like a knowledgeable, funny friend in the workshop.
         You have a great sense of humor, stay supportive, and always provide practical real-world advice.
         Keep responses concise (1-2 spoken sentences), direct, and spoken-first so it sounds amazing read aloud.
+        CRITICAL: Listen carefully to the user's ACTUAL question. Do NOT repeat previous answers. If the user is asking something new, respond to THAT specific question. Check conversation history to avoid repeating yourself.
         Grounded task context:
         - Current Step: \(context.currentStep.stepOrder) (\(context.currentStep.title))
         - Instruction: \(context.currentStep.instruction)
@@ -381,7 +383,7 @@ actor FoundationModelTutorResponseProvider: ConversationalTutorProviding {
         \(historyStr)
         
         User question: "\(query)"
-        Respond directly and helpfully with friendly warmth and natural workshop charm.
+        Respond directly and helpfully with friendly warmth and natural workshop charm. Include a relevant emoji.
         """
     }
     

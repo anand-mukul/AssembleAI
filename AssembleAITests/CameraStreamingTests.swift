@@ -110,4 +110,17 @@ final class CameraStreamingTests: XCTestCase {
         cameraService.stopSession()
         XCTAssertFalse(cameraService.isSessionRunning)
     }
+    
+    // MARK: - Test 7: Optical Zoom Factor Control (Multi-Scale Assembly)
+    @MainActor
+    func testZoomFactorControlAndAvailableFactors() {
+        XCTAssertEqual(cameraService.zoomFactor, 1.0)
+        XCTAssertEqual(cameraService.availableZoomFactors, [0.5, 1.0, 2.0])
+        
+        cameraService.setZoomFactor(2.0)
+        XCTAssertEqual(cameraService.zoomFactor, 2.0)
+        
+        cameraService.setZoomFactor(0.5)
+        XCTAssertEqual(cameraService.zoomFactor, 0.5)
+    }
 }

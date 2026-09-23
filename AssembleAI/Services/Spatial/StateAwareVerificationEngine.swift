@@ -50,7 +50,7 @@ nonisolated struct StateAwareVerificationEngine: Sendable {
         if observedState.overallConfidence < configuration.minimumEvidenceConfidence {
             let overlay = GuidanceOverlay(
                 title: "Need Clearer View",
-                message: "Position the camera directly above the breadboard with good lighting.",
+                message: "Position the camera directly facing the assembly workspace with good lighting.",
                 style: .warning
             )
             return SpatialVerificationOutcome(
@@ -227,6 +227,49 @@ nonisolated struct StateAwareVerificationEngine: Sendable {
                         severity: .high
                     )
                 )
+            }
+        }
+        
+        // 4b. Evaluate Expected Connections (Wires, Harnesses, Hoses, and Short-Circuit Hazards)
+        let tracedWires: [TracedWire] = observedState.detectedConnections.compactMap { conn in
+            guard let fp = PinCoordinate(pinString: conn.from),
+                  let tp = PinCoordinate(pinString: conn.to) else { return nil }
+            return TracedWire(color: .unknown, fromPin: fp, toPin: tp, confidence: conn.confidence)
+        }
+        
+        for conn in contract.expectedConnections {
+            expectedComponentsList.append("\(conn.fromNode) to \(conn.toNode)")
+            
+            // Safety check for self-shorts
+            let eval = WireContinuityTracer.evaluateConnection(
+                expectedFrom: conn.fromNode,
+                expectedTo: conn.toNode,
+                tracedWires: tracedWires
+            )
+            
+            if eval.isSelfShort {
+                issues.append(
+                    StateIssue(
+                        type: .wrongConnection,
+                        title: "Short Circuit Hazard",
+                        explanation: eval.explanation,
+                        severity: .critical
+                    )
+                )
+            } else if !eval.isConnected {
+                let matching = observedState.detectedConnections.first { obs in
+                    obs.from.localizedCaseInsensitiveContains(conn.fromNode) && obs.to.localizedCaseInsensitiveContains(conn.toNode)
+                }
+                if matching == nil {
+                    issues.append(
+                        StateIssue(
+                            type: .missingConnection,
+                            title: "Connect \(conn.fromNode) to \(conn.toNode)",
+                            explanation: "A continuous connection between \(conn.fromNode) and \(conn.toNode) is required.",
+                            severity: .high
+                        )
+                    )
+                }
             }
         }
         

@@ -144,7 +144,8 @@ final class StateAwareVerificationService: VerificationServiceProtocol {
             detectedDescription: detectedDesc,
             expectedDescription: expectedDesc,
             explanation: explanationText,
-            primaryIssue: primaryIssue
+            primaryIssue: primaryIssue,
+            observedState: observedState
         )
     }
     

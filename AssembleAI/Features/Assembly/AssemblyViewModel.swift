@@ -54,6 +54,10 @@ final class AssemblyViewModel: ObservableObject {
     @Published var isListening: Bool = false
     @Published var liveUserTranscript: String = ""
     
+    // Workspace Calibration & Spatial Grid State
+    @Published var workspaceMap: WorkspaceMap? = nil
+    @Published var isCalibratingWorkspace: Bool = false
+    
     // Situational Awareness State
     @Published var handActivity: WorkbenchHandActivity = .clear
     private var stepStartTime: Date = Date()
@@ -66,6 +70,7 @@ final class AssemblyViewModel: ObservableObject {
     private let verificationService: VerificationServiceProtocol
     private let visionAnalyzer: VisionAnalyzing
     private let guidanceProvider: GuidanceProviding
+    private let workspaceCalibrationService: WorkspaceCalibrationServicing
     
     // Live Tutor Services
     private let frameSampler: FrameSamplingServiceProtocol
@@ -81,12 +86,15 @@ final class AssemblyViewModel: ObservableObject {
     private var liveObservationTask: Task<Void, Never>?
     private var voiceInputTask: Task<Void, Never>?
     private var autoProgressTask: Task<Void, Never>?
+    private var speechTask: Task<Void, Never>?
+    private var isCalibrationInFlight: Bool = false
     
     init(
         project: AssemblyProject,
         verificationService: VerificationServiceProtocol? = nil,
         visionAnalyzer: VisionAnalyzing? = nil,
         guidanceProvider: GuidanceProviding? = nil,
+        workspaceCalibrationService: WorkspaceCalibrationServicing? = nil,
         frameSampler: FrameSamplingServiceProtocol? = nil,
         observationCoordinator: LiveObservationCoordinating? = nil,
         interventionPolicy: AssistantInterventionPolicing? = nil,
@@ -100,6 +108,7 @@ final class AssemblyViewModel: ObservableObject {
         self.verificationService = verificationService ?? StateAwareVerificationService()
         self.visionAnalyzer = visionAnalyzer ?? VisionService()
         self.guidanceProvider = guidanceProvider ?? DefaultGuidanceProvider()
+        self.workspaceCalibrationService = workspaceCalibrationService ?? WorkspaceCalibrationService()
         self.frameSampler = frameSampler ?? FrameSamplingService()
         self.observationCoordinator = observationCoordinator ?? LiveObservationCoordinator()
         self.interventionPolicy = interventionPolicy ?? AssistantInterventionPolicy()
@@ -154,6 +163,7 @@ final class AssemblyViewModel: ObservableObject {
         voiceInputTask?.cancel()
         autoProgressTask?.cancel()
         hesitationTask?.cancel()
+        speechTask?.cancel()
     }
     
     /// Current assembly step or fallback step
@@ -257,7 +267,35 @@ final class AssemblyViewModel: ObservableObject {
                 if self.isLivePaused { continue }
                 if self.transitioningStepID != nil { continue }
                 
-                // 0. Situational Awareness: Evaluate user's hand activity on the workpiece
+                // 0. Jarvis Workspace Mapping: First map workspace, breadboard/workpiece size & components
+                if (self.workspaceMap == nil || self.isCalibratingWorkspace) && !self.isCalibrationInFlight {
+                    self.isCalibrationInFlight = true
+                    self.isCalibratingWorkspace = true
+                    let map = await self.workspaceCalibrationService.calibrateWorkspace(
+                        from: frame,
+                        orientation: .up,
+                        domain: self.project.domain
+                    )
+                    self.workspaceMap = map
+                    self.isCalibratingWorkspace = false
+                    self.isCalibrationInFlight = false
+                    
+                    if let calib = map.breadboardCalibration {
+                        await self.observationCoordinator.updateCalibration(calib)
+                    }
+                    
+                    // Jarvis voice announcement (played asynchronously without freezing vision loop)
+                    let announcement = TutorResponse(
+                        text: map.summaryAnnouncement,
+                        displayText: "🤖 " + map.summaryAnnouncement,
+                        priority: .normal,
+                        category: "workspace_calibration"
+                    )
+                    self.currentTutorMessage = announcement
+                    self.speakAsynchronously(announcement)
+                }
+                
+                // 0b. Situational Awareness: Evaluate user's hand activity on the workpiece
                 let activity = await self.observationCoordinator.evaluateHandActivity(in: frame)
                 self.handActivity = activity
                 if activity == .handsWorking && self.liveStatus != .listening && self.liveStatus != .speaking && !self.isLivePaused {
@@ -291,7 +329,12 @@ final class AssemblyViewModel: ObservableObject {
                     issues: verification.primaryIssue.map { [$0] } ?? [],
                     matchedComponents: []
                 )
-                let overlay = await self.guidanceProvider.guidance(for: liveComparison, step: activeStep, viewSize: self.screenViewportSize)
+                let overlay = await self.guidanceProvider.guidance(
+                    for: liveComparison,
+                    step: activeStep,
+                    viewSize: self.screenViewportSize,
+                    observedState: verification.observedState
+                )
                 self.activeGuidance = overlay
                 
                 // Log Verification Research Telemetry
@@ -350,13 +393,7 @@ final class AssemblyViewModel: ObservableObject {
                         self.currentTutorMessage = response
                         
                         if self.liveStatus != .listening {
-                            self.liveStatus = .speaking
-                            self.logResearchEvent(.assistantSpeechStarted)
-                            await self.voiceOutput.speak(response)
-                            self.logResearchEvent(.assistantSpeechCompleted)
-                            if self.liveStatus == .speaking {
-                                self.liveStatus = self.isLivePaused ? .paused : .live
-                            }
+                            self.speakAsynchronously(response)
                         }
                     }
                     
@@ -413,13 +450,15 @@ final class AssemblyViewModel: ObservableObject {
                 let introResponse = TutorResponse(text: introText, priority: .normal, category: "instruction")
                 self.currentTutorMessage = introResponse
                 
+                // Cancel any pending speech or voice queries from the previous step
+                self.speechTask?.cancel()
+                self.voiceInputTask?.cancel()
+                self.voiceInputTask = nil
+                self.isListening = false
+                
                 if self.liveStatus != .listening && !self.isLivePaused {
-                    self.liveStatus = .speaking
                     self.lastInterventionTime = Date()
-                    await self.voiceOutput.speak(introResponse)
-                    if self.liveStatus == .speaking {
-                        self.liveStatus = self.isLivePaused ? .paused : .live
-                    }
+                    self.speakAsynchronously(introResponse)
                 }
             } else {
                 self.session.status = .completed
@@ -433,7 +472,7 @@ final class AssemblyViewModel: ObservableObject {
                 
                 let completionText = "Congratulations! You have successfully completed all assembly steps."
                 let completionResponse = TutorResponse(text: completionText, priority: .high, category: "completion")
-                await self.voiceOutput.speak(completionResponse)
+                self.speakAsynchronously(completionResponse)
                 
                 withAnimation(.easeInOut(duration: 0.4)) {
                     self.phase = .completed
@@ -442,8 +481,27 @@ final class AssemblyViewModel: ObservableObject {
         }
     }
     
+    /// Speaks assistant guidance asynchronously without blocking the camera frame observation loop.
+    private func speakAsynchronously(_ response: TutorResponse) {
+        speechTask?.cancel()
+        speechTask = Task { [weak self] in
+            guard let self = self else { return }
+            if self.liveStatus != .listening {
+                self.liveStatus = .speaking
+                self.logResearchEvent(.assistantSpeechStarted)
+                await self.voiceOutput.speak(response)
+                self.logResearchEvent(.assistantSpeechCompleted)
+                if self.liveStatus == .speaking {
+                    self.liveStatus = self.isLivePaused ? .paused : .live
+                }
+            }
+        }
+    }
+    
     /// Stops all live observation, speech generation, and voice input tasks.
     func stopLiveTutor() {
+        speechTask?.cancel()
+        speechTask = nil
         liveObservationTask?.cancel()
         liveObservationTask = nil
         voiceInputTask?.cancel()
@@ -495,6 +553,13 @@ final class AssemblyViewModel: ObservableObject {
         }
     }
     
+    /// Triggers an immediate re-scan and calibration of workbench geometry, workpiece boundaries, and components.
+    func recalibrateWorkspace() {
+        workspaceMap = nil
+        isCalibratingWorkspace = true
+        activeGuidance = nil
+    }
+    
     /// Toggles microphone listening state for user voice questions.
     func toggleVoiceInput() {
         if isListening {
@@ -506,6 +571,8 @@ final class AssemblyViewModel: ObservableObject {
             voiceInputTask?.cancel()
             voiceInputTask = nil
         } else {
+            speechTask?.cancel()
+            speechTask = nil
             isListening = true
             liveStatus = .listening
             liveUserTranscript = ""
@@ -564,12 +631,7 @@ final class AssemblyViewModel: ObservableObject {
                             }
                             
                             self.currentTutorMessage = response
-                            self.logResearchEvent(.assistantSpeechStarted)
-                            await self.voiceOutput.speak(response)
-                            self.logResearchEvent(.assistantSpeechCompleted)
-                            if self.liveStatus == .speaking {
-                                self.liveStatus = self.isLivePaused ? .paused : .live
-                            }
+                            self.speakAsynchronously(response)
                             break
                         }
                     }
@@ -680,7 +742,12 @@ final class AssemblyViewModel: ObservableObject {
                 matchedComponents: []
             )
             
-            self.activeGuidance = await guidanceProvider.guidance(for: comparison, step: currentStep, viewSize: viewSize)
+            self.activeGuidance = await guidanceProvider.guidance(
+                for: comparison,
+                step: currentStep,
+                viewSize: viewSize,
+                observedState: result.observedState
+            )
             
             #if DEBUG
             if self.showVisionDebugInDev {
@@ -830,16 +897,9 @@ final class AssemblyViewModel: ObservableObject {
         let introResponse = TutorResponse(text: introText, priority: .normal, category: "instruction")
         self.currentTutorMessage = introResponse
         
-        Task { [weak self] in
-            guard let self = self else { return }
-            if self.liveStatus != .listening && !self.isLivePaused {
-                self.liveStatus = .speaking
-                self.lastInterventionTime = Date()
-                await self.voiceOutput.speak(introResponse)
-                if self.liveStatus == .speaking {
-                    self.liveStatus = self.isLivePaused ? .paused : .live
-                }
-            }
+        if !self.isLivePaused {
+            self.lastInterventionTime = Date()
+            self.speakAsynchronously(introResponse)
         }
     }
     
@@ -880,12 +940,8 @@ final class AssemblyViewModel: ObservableObject {
                     guard self.currentStep.id == step.id else { return }
                     self.currentTutorMessage = response
                     if self.liveStatus != .listening && !self.isLivePaused {
-                        self.liveStatus = .speaking
                         self.lastInterventionTime = Date()
-                        await self.voiceOutput.speak(response)
-                        if self.liveStatus == .speaking {
-                            self.liveStatus = self.isLivePaused ? .paused : .live
-                        }
+                        self.speakAsynchronously(response)
                     }
                 }
             }

@@ -214,9 +214,11 @@ actor VisionService: VisionAnalyzing {
                     )
                 }
             }
-            rectRequest.minimumSize = 0.05
-            rectRequest.maximumObservations = 16
-            rectRequest.minimumConfidence = 0.35
+            rectRequest.minimumSize = 0.08
+            rectRequest.maximumObservations = 10
+            rectRequest.minimumConfidence = 0.50
+            rectRequest.minimumAspectRatio = 0.15
+            rectRequest.maximumAspectRatio = 1.0
             
             let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: orientation, options: [:])
             do {
@@ -264,9 +266,11 @@ actor VisionService: VisionAnalyzing {
                     )
                 }
             }
-            rectRequest.minimumSize = 0.05
-            rectRequest.maximumObservations = 16
-            rectRequest.minimumConfidence = 0.35
+            rectRequest.minimumSize = 0.08
+            rectRequest.maximumObservations = 10
+            rectRequest.minimumConfidence = 0.50
+            rectRequest.minimumAspectRatio = 0.15
+            rectRequest.maximumAspectRatio = 1.0
             
             let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
             do {
