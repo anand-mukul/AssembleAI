@@ -332,6 +332,11 @@ nonisolated struct VisualContract: Codable, Hashable, Equatable, Sendable {
     var hasPhysicalConstraints: Bool {
         hasSpatialConstraints
     }
+    
+    /// Flattened pin coordinates referenced across all pin placements in this contract.
+    var requiredPins: [PinCoordinate] {
+        pinPlacements.flatMap { [$0.fromPin, $0.toPin] }
+    }
 }
 
 // MARK: - Connection Contract
