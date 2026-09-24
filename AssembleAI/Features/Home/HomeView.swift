@@ -33,7 +33,7 @@ struct HomeView: View {
                         .font(.subheadline)
                         .foregroundColor(AppColors.secondaryText)
                 }
-                .padding(.top, AppSpacing.sm)
+                .padding(.top, AppSpacing.md)
                 .padding(.horizontal, AppSpacing.screenEdge)
                 .opacity(hasAppeared ? 1 : 0)
                 .offset(y: hasAppeared ? 0 : 6)
@@ -180,20 +180,7 @@ struct HomeView: View {
             .padding(.bottom, 100)
         }
         .background(AppColors.groupedBackground.ignoresSafeArea())
-        .navigationTitle("AssembleAI")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                HStack(spacing: 6) {
-                    Image(systemName: "cube.transparent.fill")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.assembleBrandPrimary)
-                    Text("AssembleAI")
-                        .font(.headline.weight(.bold))
-                        .foregroundColor(AppColors.primaryText)
-                }
-            }
-        }
+        .toolbar(.hidden, for: .navigationBar)
         .onAppear {
             withAnimation(reduceMotion ? .none : AppAnimation.entranceSpring) {
                 hasAppeared = true

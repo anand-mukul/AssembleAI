@@ -1,4 +1,4 @@
-﻿//
+//
 //  MockLiDARSpatialMeshCoordinator.swift
 //  AssembleAITests
 //
@@ -58,5 +58,9 @@ actor MockLiDARSpatialMeshCoordinator: LiDARSpatialMeshCoordinating {
     ) -> Spatial3DPoint? {
         unprojectCallCount += 1
         return stubbedPoint
+    }
+    
+    func setStubbedPoint(_ point: Spatial3DPoint?) {
+        self.stubbedPoint = point
     }
 }

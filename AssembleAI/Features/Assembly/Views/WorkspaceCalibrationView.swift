@@ -6,12 +6,10 @@
 import SwiftUI
 
 /// Jarvis-style futuristic holographic workspace scanning overlay.
-/// Sweeps across the camera feed to calibrate breadboard grid, detect size, and map existing components.
+/// Sweeps across the camera feed to calibrate breadboard grid, detect size, and map existing components in 3D camera space.
 struct WorkspaceCalibrationView: View {
     let workspaceMap: WorkspaceMap?
     let isCalibrating: Bool
-    var onRecalibrate: (() -> Void)? = nil
-    var onDismiss: (() -> Void)? = nil
     
     @State private var scanlineOffset: CGFloat = -1.0
     @State private var radarRotation: Double = 0.0
@@ -33,15 +31,6 @@ struct WorkspaceCalibrationView: View {
                 } else {
                     detectedWorkbenchHighlight(area: map.estimatedWorkingArea)
                 }
-            }
-            
-            // 3. Top Floating Glass Island with Jarvis Diagnostics
-            VStack {
-                jarvisStatusCard
-                    .padding(.top, 50)
-                    .padding(.horizontal, 16)
-                
-                Spacer()
             }
         }
         .onAppear {
@@ -189,11 +178,21 @@ struct WorkspaceCalibrationView: View {
             .position(point)
     }
     
-    // MARK: - Jarvis Status Glass Card
+}
+
+// MARK: - Jarvis Workspace Calibration Card
+
+/// Floating Glass Island displaying Jarvis workspace calibration telemetry and status.
+/// Intentionally decoupled from the AR overlay and placed below the top navigation bar to prevent UI overlapping.
+struct WorkspaceCalibrationCard: View {
+    let workspaceMap: WorkspaceMap?
+    let isCalibrating: Bool
+    var onRecalibrate: (() -> Void)? = nil
+    var onDismiss: (() -> Void)? = nil
     
-    private var jarvisStatusCard: some View {
+    var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            // Header
+            // Header Row
             HStack(spacing: 8) {
                 ThinkingOrbView(status: isCalibrating ? .verifying : .live, diameter: 12)
                 
@@ -204,12 +203,35 @@ struct WorkspaceCalibrationView: View {
                 
                 Spacer()
                 
-                if let onRecalibrate = onRecalibrate, !isCalibrating {
-                    Button(action: onRecalibrate) {
-                        Image(systemName: "arrow.triangle.2.circlepath")
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.85))
-                            .padding(4)
+                HStack(spacing: 6) {
+                    if let onRecalibrate = onRecalibrate, !isCalibrating {
+                        Button(action: {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            onRecalibrate()
+                        }) {
+                            Image(systemName: "arrow.triangle.2.circlepath")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(.white.opacity(0.85))
+                                .frame(width: 28, height: 28)
+                                .background(Circle().fill(Color.white.opacity(0.12)))
+                        }
+                        .buttonStyle(ScaleButtonStyle())
+                        .accessibilityLabel("Recalibrate workspace")
+                    }
+                    
+                    if let onDismiss = onDismiss {
+                        Button(action: {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            onDismiss()
+                        }) {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(.white.opacity(0.85))
+                                .frame(width: 28, height: 28)
+                                .background(Circle().fill(Color.white.opacity(0.12)))
+                        }
+                        .buttonStyle(ScaleButtonStyle())
+                        .accessibilityLabel("Dismiss calibration card")
                     }
                 }
             }

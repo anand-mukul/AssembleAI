@@ -35,6 +35,7 @@ struct MainTabView: View {
                             homePath.append(AppRouteAssembly(project: project))
                         }
                     )
+                    .toolbar(.visible, for: .navigationBar)
                     .toolbar(.hidden, for: .tabBar)
                 }
                 .navigationDestination(for: AppRouteAssembly.self) { assembly in

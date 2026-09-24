@@ -173,7 +173,11 @@ extension VisualContract {
         
         // 1. Grid Anchors (Breadboards, Lego plates, PCB headers - H-4)
         if !pinPlacements.isEmpty {
-            let maxRow = pinPlacements.map(\.coordinate.row).max() ?? 30
+            let maxRow = pinPlacements.compactMap { placement -> Int? in
+                let from = Int(placement.fromPin.row)
+                let to = Int(placement.toPin.row)
+                return [from, to].compactMap { $0 }.max()
+            }.max() ?? 30
             let gridDef = maxRow > 35 ? GridAnchorDefinition.fullBreadboard : GridAnchorDefinition.standardBreadboard
             anchors.append(.grid(gridDef))
         }
@@ -237,9 +241,9 @@ extension VisualContract {
                 medium = .electricalWire
             }
             
-            let isPolarity = orientationConstraints.contains { constraint in
-                constraint.componentId.localizedCaseInsensitiveContains(conn.fromNode) ||
-                constraint.componentId.localizedCaseInsensitiveContains(conn.toNode)
+            let isPolarity = orientationConstraints.contains { (constraint: OrientationConstraint) in
+                constraint.partId.localizedCaseInsensitiveContains(conn.fromNode) ||
+                constraint.partId.localizedCaseInsensitiveContains(conn.toNode)
             } || nodeLower.contains("anode") || nodeLower.contains("cathode") || nodeLower.contains("led") || nodeLower.contains("diode") || nodeLower.contains("polar") || nodeLower.contains("vcc") || nodeLower.contains("gnd")
             
             anchors.append(.connector(

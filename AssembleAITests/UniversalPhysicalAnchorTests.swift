@@ -114,7 +114,7 @@ final class UniversalPhysicalAnchorTests: XCTestCase {
                 )
             ],
             expectedConnections: [
-                ExpectedStepConnection(fromNode: "fuel_pipe_in", toNode: "fuel_rail")
+                ConnectionContract(fromNode: "fuel_pipe_in", toNode: "fuel_rail")
             ]
         )
         

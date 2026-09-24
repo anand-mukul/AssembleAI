@@ -134,6 +134,7 @@ final class WorkspaceCalibrationService: WorkspaceCalibrationServicing, @uncheck
         var catalogedComponents: [ObservedComponent] = []
         var detectedWorkingBounds: CGRect? = nil
         
+        if let observation = try? await visionService.analyze(frame: pixelBuffer, orientation: orientation) {
             // For electronics, use calibrated breadboard or default centered; for physical domains, do not force breadboard homography (H-3)
             let activeCalib = (domain == .electronics) ? (calibration ?? BreadboardCalibration.defaultCentered()) : calibration
             let spatialComps = spatialDetector.detectComponents(in: observation, calibration: activeCalib)

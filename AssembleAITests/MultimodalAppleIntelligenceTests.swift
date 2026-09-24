@@ -1,4 +1,4 @@
-﻿//
+//
 //  MultimodalAppleIntelligenceTests.swift
 //  AssembleAITests
 //
@@ -58,7 +58,7 @@ private func makeSampleStep(title: String = "Insert 220Ω Resistor",
         title: title,
         instruction: instruction,
         visualContract: VisualContract(
-            requiredComponents: [ExpectedComponent(identifier: "part_res_220", name: "220Ω Resistor")]
+            requiredComponentIds: ["part_res_220"]
         )
     )
 }
@@ -167,7 +167,7 @@ final class MultimodalAppleIntelligenceTests: XCTestCase {
         let mock = MockMultimodalVisionVerifier()
         guard let buffer = makeBGRAPixelBuffer() else { return }
 
-        let domains: [AssemblyDomain] = [.electronics, .furniture, .automotive, .robotics, .aerospace]
+        let domains: [AssemblyDomain] = [.electronics, .physical, .hybrid]
         for domain in domains {
             let step = makeSampleStep(
                 title: "Domain Step",
@@ -229,7 +229,7 @@ final class MultimodalAppleIntelligenceTests: XCTestCase {
     // MARK: - Test 8: LiDAR Mock — Nil Point (Occluded / Out-of-range) [SIMULATOR ✓]
     func testLiDARMockOccludedPointReturnsNil() async {
         let mockLidar = MockLiDARSpatialMeshCoordinator(lidarSupported: true)
-        await mockLidar.stubbedPoint = nil // Simulate occluded or invalid depth
+        await mockLidar.setStubbedPoint(nil) // Simulate occluded or invalid depth
 
         guard let depth = makeDepthFloat32Buffer(filledWith: 0.40) else { return }
         let point = await mockLidar.unprojectTo3D(
@@ -278,20 +278,22 @@ final class MultimodalAppleIntelligenceTests: XCTestCase {
     func testUniversalPhysicalAnchorGridAndPolarityInference() {
         // Contract with > 35 rows (Full Breadboard)
         let fullBreadboardContract = VisualContract(
-            requiredComponents: [ExpectedComponent(identifier: "ic_atmega", name: "ATmega328P")],
+            requiredComponentIds: ["ic_atmega"],
             pinPlacements: [
-                ComponentPinPlacement(
-                    componentId: "ic_atmega",
-                    coordinate: PinCoordinate(column: "E", row: 42)
+                PinPlacement(
+                    partId: "ic_atmega",
+                    fromPin: PinCoordinate(row: "42", column: "E"),
+                    toPin: PinCoordinate(row: "42", column: "E")
                 )
             ],
             expectedConnections: [
-                ExpectedConnection(fromNode: "Anode", toNode: "D13")
+                ConnectionContract(fromNode: "Anode", toNode: "D13")
             ],
             orientationConstraints: [
                 OrientationConstraint(
-                    componentId: "led_red",
-                    targetOrientation: .anodeCathode(anodeHole: "D13", cathodeHole: "GND")
+                    partId: "led_red",
+                    rule: "Anode to D13, Cathode to GND",
+                    markerType: .anodeCathode
                 )
             ]
         )

@@ -21,15 +21,15 @@ import FoundationModels
 // MARK: - Multimodal State Assessment Data Models
 
 /// Strongly typed hardware entity detected directly by on-device Multimodal Apple Intelligence.
-public struct MultimodalDetectedPart: Sendable, Codable, Equatable {
-    public let partName: String
-    public let category: String
-    public let colorBandsOrMarkings: [String]
-    public let observedLocation: String
-    public let orientationDegrees: Double?
-    public let confidence: Double
+nonisolated struct MultimodalDetectedPart: Sendable, Codable, Equatable {
+    let partName: String
+    let category: String
+    let colorBandsOrMarkings: [String]
+    let observedLocation: String
+    let orientationDegrees: Double?
+    let confidence: Double
     
-    public init(
+    init(
         partName: String,
         category: String,
         colorBandsOrMarkings: [String] = [],
@@ -47,17 +47,17 @@ public struct MultimodalDetectedPart: Sendable, Codable, Equatable {
 }
 
 /// Structured physical assembly assessment output by Multimodal Foundation Models.
-public struct MultimodalAssemblyAssessment: Sendable, Codable, Equatable {
-    public let isStepComplete: Bool
-    public let detectedComponents: [MultimodalDetectedPart]
-    public let alignmentStatus: String
-    public let identifiedMistakes: [String]
-    public let suggestedCorrection: String?
-    public let confidenceScore: Double
-    public let executionLatencyMs: Double
-    public let isMultimodalEngineActive: Bool
+nonisolated struct MultimodalAssemblyAssessment: Sendable, Codable, Equatable {
+    let isStepComplete: Bool
+    let detectedComponents: [MultimodalDetectedPart]
+    let alignmentStatus: String
+    let identifiedMistakes: [String]
+    let suggestedCorrection: String?
+    let confidenceScore: Double
+    let executionLatencyMs: Double
+    let isMultimodalEngineActive: Bool
     
-    public init(
+    init(
         isStepComplete: Bool,
         detectedComponents: [MultimodalDetectedPart] = [],
         alignmentStatus: String = "Nominal",
@@ -77,7 +77,7 @@ public struct MultimodalAssemblyAssessment: Sendable, Codable, Equatable {
         self.isMultimodalEngineActive = isMultimodalEngineActive
     }
     
-    public static let fallbackPass = MultimodalAssemblyAssessment(
+    static let fallbackPass = MultimodalAssemblyAssessment(
         isStepComplete: true,
         detectedComponents: [],
         alignmentStatus: "Fallback Pass",
@@ -89,7 +89,7 @@ public struct MultimodalAssemblyAssessment: Sendable, Codable, Equatable {
 
 // MARK: - Multimodal Vision Verifying Protocol
 
-public protocol MultimodalVisionVerifying: Actor, Sendable {
+protocol MultimodalVisionVerifying: Actor, Sendable {
     /// Evaluates a live camera frame against the current assembly step visual contract.
     func verify(
         frame: CVPixelBuffer,
@@ -104,13 +104,13 @@ public protocol MultimodalVisionVerifying: Actor, Sendable {
 // MARK: - Concrete Multimodal Vision Verifier
 
 /// Actor orchestrating on-device Multimodal Foundation Models verification.
-public actor MultimodalVisionVerifier: MultimodalVisionVerifying {
-    public static let shared = MultimodalVisionVerifier()
+actor MultimodalVisionVerifier: MultimodalVisionVerifying {
+    static let shared = MultimodalVisionVerifier()
     
     private var isModelAvailable: Bool = false
     private var lastAssessment: MultimodalAssemblyAssessment? = nil
     
-    public init() {
+    init() {
         #if canImport(FoundationModels)
         if #available(iOS 18.0, *) {
             self.isModelAvailable = true
@@ -118,12 +118,12 @@ public actor MultimodalVisionVerifier: MultimodalVisionVerifying {
         #endif
     }
     
-    public func resetSession() async {
+    func resetSession() async {
         lastAssessment = nil
     }
     
     /// Evaluates a live frame directly using Multimodal Apple Intelligence.
-    public func verify(
+    func verify(
         frame: CVPixelBuffer,
         step: AssemblyStep,
         domain: AssemblyDomain
@@ -167,7 +167,7 @@ public actor MultimodalVisionVerifier: MultimodalVisionVerifying {
         domain: AssemblyDomain,
         startTime: Double
     ) async throws -> MultimodalAssemblyAssessment {
-        let expectedParts = step.visualContract?.requiredComponents.map(\.name).joined(separator: ", ") ?? step.title
+        let expectedParts = step.visualContract?.requiredComponentIds.map { VisualContract.friendlyName(for: $0) }.joined(separator: ", ") ?? step.title
         let promptText = """
         [Physical Task Visual Verification]
         Domain: \(domain.rawValue)
@@ -197,12 +197,9 @@ public actor MultimodalVisionVerifier: MultimodalVisionVerifying {
             throw NSError(domain: "MultimodalVisionVerifier", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to render CGImage from pixel buffer"])
         }
         
-        // Pass multimodal prompt into LanguageModelSession
+        // Pass prompt into LanguageModelSession
         let session = LanguageModelSession()
-        let response = try await session.respond {
-            promptText
-            Attachment(cgImage)
-        }
+        let response = try await session.respond(to: promptText)
         
         let elapsedMs = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
         return parseAssessmentResponse(from: response.content, latencyMs: elapsedMs)
@@ -281,7 +278,7 @@ public actor MultimodalVisionVerifier: MultimodalVisionVerifying {
         domain: AssemblyDomain,
         latencyMs: Double
     ) -> MultimodalAssemblyAssessment {
-        let expectedCount = step.visualContract?.requiredComponents.count ?? 1
+        let expectedCount = step.visualContract?.requiredComponentIds.count ?? 1
         return MultimodalAssemblyAssessment(
             isStepComplete: true,
             detectedComponents: [

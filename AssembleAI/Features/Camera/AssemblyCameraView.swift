@@ -54,6 +54,8 @@ struct AssemblyCameraView: View {
     @State private var showWhySheet = false
     @State private var showDimLightPrompt = false
     @State private var pulseScale: CGFloat = 1.0
+    @State private var showCalibrationCard = true
+    @State private var autoDismissTask: Task<Void, Never>? = nil
     
     var body: some View {
         GeometryReader { proxy in
@@ -79,12 +81,11 @@ struct AssemblyCameraView: View {
                     cameraGridOverlay
                 }
                 
-                // Jarvis Holographic Workspace Calibration & Mapping Layer
+                // Jarvis Holographic Workspace Calibration & Mapping Layer (AR highlight in 3D camera space)
                 if isCalibratingWorkspace || (workspaceMap != nil && activeGuidance == nil) {
                     WorkspaceCalibrationView(
                         workspaceMap: workspaceMap,
-                        isCalibrating: isCalibratingWorkspace,
-                        onRecalibrate: onRecalibrateWorkspace
+                        isCalibrating: isCalibratingWorkspace
                     )
                     .transition(.opacity)
                 }
@@ -128,13 +129,36 @@ struct AssemblyCameraView: View {
                             .transition(.move(edge: .top).combined(with: .opacity))
                     }
                     
+                    // Jarvis Workspace Calibration Banner: Cleanly placed BELOW the top navigation bar!
+                    if showCalibrationCard && (isCalibratingWorkspace || (workspaceMap != nil && activeGuidance == nil)) {
+                        WorkspaceCalibrationCard(
+                            workspaceMap: workspaceMap,
+                            isCalibrating: isCalibratingWorkspace,
+                            onRecalibrate: {
+                                showCalibrationCard = true
+                                onRecalibrateWorkspace?()
+                            },
+                            onDismiss: {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                    showCalibrationCard = false
+                                }
+                            }
+                        )
+                        .padding(.horizontal, 16)
+                        .padding(.top, 8)
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .top).combined(with: .opacity),
+                            removal: .move(edge: .top).combined(with: .opacity)
+                        ))
+                    }
+                    
                     Spacer()
                     
                     // Floating Apple Intelligence Thinking Orb
                     if liveTutorEnabled {
-                        ThinkingOrbView(status: liveStatus, diameter: 52)
-                            .shadow(color: AppColors.glassShadow, radius: 16, x: 0, y: 6)
-                            .padding(.bottom, 6)
+                        ThinkingOrbView(status: liveStatus, diameter: 42)
+                            .shadow(color: AppColors.glassShadow, radius: 12, x: 0, y: 4)
+                            .padding(.bottom, 4)
                             .opacity(overlayVisible ? 1 : 0)
                             .scaleEffect(overlayVisible ? 1 : 0.85)
                         
@@ -218,6 +242,22 @@ struct AssemblyCameraView: View {
             }
             withAnimation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.3)) {
                 reticleVisible = true
+            }
+            if workspaceMap != nil && !isCalibratingWorkspace {
+                scheduleCalibrationCardDismiss()
+            }
+        }
+        .onChange(of: isCalibratingWorkspace) { _, isCalibrating in
+            if isCalibrating {
+                autoDismissTask?.cancel()
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    showCalibrationCard = true
+                }
+            } else if workspaceMap != nil {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    showCalibrationCard = true
+                }
+                scheduleCalibrationCardDismiss()
             }
         }
         .onDisappear {
@@ -311,6 +351,42 @@ struct AssemblyCameraView: View {
             }
             
             Spacer()
+            
+            // Compact Workspace Calibration Pill in top bar when banner is dismissed
+            if let map = workspaceMap, !showCalibrationCard {
+                Button(action: {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        showCalibrationCard = true
+                    }
+                }) {
+                    HStack(spacing: 5) {
+                        Image(systemName: "checkmark.seal.fill")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(AppColors.aiCyan)
+                        Text(map.domain == .electronics ? (map.breadboardVariant == .fullSize ? "830-Pt" : "400-Pt") : map.domain.displayName)
+                            .font(.system(size: 11, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white)
+                    }
+                    .padding(.horizontal, 9)
+                    .frame(height: 32)
+                    .background(
+                        ZStack {
+                            Capsule().fill(Color.black.opacity(0.35))
+                            Capsule().fill(.ultraThinMaterial)
+                        }
+                    )
+                    .overlay(
+                        Capsule().strokeBorder(AppColors.aiCyan.opacity(0.4), lineWidth: 0.5)
+                    )
+                    .shadow(color: Color.black.opacity(0.2), radius: 6, x: 0, y: 2)
+                }
+                .buttonStyle(ScaleButtonStyle())
+                .accessibilityLabel("Show workspace calibration details")
+                .transition(.scale.combined(with: .opacity))
+                
+                Spacer()
+            }
             
             // Steps Capsule Glass Pill Button
             Button(action: {
@@ -503,6 +579,20 @@ struct AssemblyCameraView: View {
                 onAnalyze(photo)
             } else {
                 router.navigateToAnalyzing(step: currentStep)
+            }
+        }
+    }
+    
+    private func scheduleCalibrationCardDismiss() {
+        autoDismissTask?.cancel()
+        autoDismissTask = Task {
+            try? await Task.sleep(nanoseconds: 6_000_000_000)
+            if !Task.isCancelled {
+                await MainActor.run {
+                    withAnimation(.easeInOut(duration: 0.4)) {
+                        showCalibrationCard = false
+                    }
+                }
             }
         }
     }
