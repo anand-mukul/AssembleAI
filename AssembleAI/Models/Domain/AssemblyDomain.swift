@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 /// The physical domain category of an assembly project.
 /// Drives which verification strategies and visual contract schemas are applicable.
@@ -28,6 +29,16 @@ nonisolated enum AssemblyDomain: String, CaseIterable, Codable, Hashable, Equata
         case .electronics: return "cpu"
         case .physical: return "wrench.and.screwdriver"
         case .hybrid: return "square.stack.3d.up"
+        }
+    }
+    
+    /// Semantic tint color for Apple HIG icon squircle badges.
+    @MainActor
+    var badgeColor: Color {
+        switch self {
+        case .electronics: return AppColors.badgeBlue
+        case .physical: return AppColors.badgeOrange
+        case .hybrid: return AppColors.badgePurple
         }
     }
 }

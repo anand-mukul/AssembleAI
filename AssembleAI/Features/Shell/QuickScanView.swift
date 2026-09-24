@@ -17,6 +17,7 @@ struct QuickScanView: View {
     @State private var selectedProjectID: UUID? = nil
     @State private var pulseScale: CGFloat = 0.98
     @State private var isCameraReady: Bool = true
+    @State private var showProjectPickerSheet: Bool = false
     
     private let repository = ProjectRepositoryFactory.resolve()
     
@@ -64,6 +65,12 @@ struct QuickScanView: View {
         .background(AppColors.groupedBackground.ignoresSafeArea())
         .navigationTitle("Scan")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showProjectPickerSheet) {
+            TargetProjectPickerSheet(
+                projects: availableProjects,
+                selectedProjectID: $selectedProjectID
+            )
+        }
         .onAppear {
             Task {
                 await loadProjects()
@@ -127,48 +134,77 @@ struct QuickScanView: View {
                         .font(.caption)
                         .foregroundColor(AppColors.secondaryText)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(AppSpacing.md)
-                .appCard()
+                .appCard(padding: 0)
             } else {
-                Menu {
-                    ForEach(availableProjects) { project in
-                        Button {
-                            selectedProjectID = project.id
-                        } label: {
-                            HStack {
-                                Text(project.title)
-                                if project.id == selectedProjectID {
-                                    Image(systemName: "checkmark")
-                                }
-                            }
-                        }
-                    }
+                Button {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    showProjectPickerSheet = true
                 } label: {
                     HStack(spacing: AppSpacing.mdSm) {
                         SemanticIconBadge(
-                            iconName: selectedProject?.imageName ?? "cpu",
-                            size: 32,
-                            iconSize: 16,
-                            color: AppColors.badgeBlue
+                            iconName: selectedProject?.domain.iconName ?? selectedProject?.imageName ?? "cpu",
+                            size: 38,
+                            iconSize: 18,
+                            color: selectedProject?.domain.badgeColor ?? AppColors.badgeBlue
                         )
                         
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: 3) {
                             Text(selectedProject?.title ?? "Select Project")
                                 .font(.headline)
+                                .fontWeight(.semibold)
                                 .foregroundColor(AppColors.primaryText)
-                            Text(selectedProject?.subtitle ?? "Tap to choose target project")
-                                .font(.caption)
-                                .foregroundColor(AppColors.secondaryText)
+                                .lineLimit(1)
+                            
+                            if let project = selectedProject {
+                                HStack(spacing: 6) {
+                                    Text(project.domain.displayName)
+                                        .font(.caption)
+                                        .foregroundColor(AppColors.secondaryText)
+                                    
+                                    Text("•")
+                                        .font(.caption2)
+                                        .foregroundColor(AppColors.tertiaryText)
+                                    
+                                    Text("\(project.totalSteps) steps")
+                                        .font(.caption)
+                                        .foregroundColor(AppColors.secondaryText)
+                                    
+                                    Text("•")
+                                        .font(.caption2)
+                                        .foregroundColor(AppColors.tertiaryText)
+                                    
+                                    DifficultyBadge(difficulty: project.difficulty)
+                                }
+                                .lineLimit(1)
+                            } else {
+                                Text("Choose target project (\(availableProjects.count) available)")
+                                    .font(.caption)
+                                    .foregroundColor(AppColors.secondaryText)
+                                    .lineLimit(1)
+                            }
                         }
                         
                         Spacer()
                         
-                        Image(systemName: "chevron.up.chevron.down")
-                            .font(.caption.weight(.semibold))
-                            .foregroundColor(AppColors.secondaryText)
+                        // Apple HIG circular selector accessory
+                        ZStack {
+                            Circle()
+                                .fill(AppColors.tertiaryBackground)
+                                .frame(width: 28, height: 28)
+                            
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(AppColors.secondaryText)
+                        }
                     }
-                    .appCard()
+                    .padding(AppSpacing.md)
+                    .appCard(padding: 0)
                 }
+                .buttonStyle(ScaleButtonStyle(enableHaptic: false))
+                .accessibilityLabel(selectedProject != nil ? "Target Project: \(selectedProject!.title), \(selectedProject!.category), double tap to change" : "Select Target Project")
+                .accessibilityHint("Opens project selector sheet")
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -285,6 +321,294 @@ struct QuickScanView: View {
                 )
                 router.navigateToCamera(step: step)
             }
+        }
+    }
+}
+
+// MARK: - Target Project Picker Sheet (Apple HIG Standard)
+
+/// Dedicated, scalable project picker sheet adhering strictly to Apple HIG modal presentation patterns.
+/// Gracefully scales to 60+ projects with responsive instant search, domain segmentation, and tactile haptic feedback.
+struct TargetProjectPickerSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let projects: [AssemblyProject]
+    @Binding var selectedProjectID: UUID?
+    
+    @State private var searchText: String = ""
+    @State private var selectedDomainFilter: DomainFilterOption = .all
+    
+    enum DomainFilterOption: String, CaseIterable, Identifiable {
+        case all = "All"
+        case electronics = "Electronics"
+        case physical = "Physical"
+        case hybrid = "Hybrid"
+        
+        var id: String { rawValue }
+        
+        var domain: AssemblyDomain? {
+            switch self {
+            case .all: return nil
+            case .electronics: return .electronics
+            case .physical: return .physical
+            case .hybrid: return .hybrid
+            }
+        }
+    }
+    
+    private var filteredProjects: [AssemblyProject] {
+        projects.filter { project in
+            let matchesSearch: Bool
+            let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            if query.isEmpty {
+                matchesSearch = true
+            } else {
+                matchesSearch = project.title.lowercased().contains(query) ||
+                                project.category.lowercased().contains(query) ||
+                                project.subtitle.lowercased().contains(query)
+            }
+            
+            let matchesDomain: Bool
+            if let targetDomain = selectedDomainFilter.domain {
+                matchesDomain = project.domain == targetDomain
+            } else {
+                matchesDomain = true
+            }
+            
+            return matchesSearch && matchesDomain
+        }
+    }
+    
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                // Domain Segmented Filter
+                Picker("Domain", selection: $selectedDomainFilter) {
+                    ForEach(DomainFilterOption.allCases) { option in
+                        Text(option.rawValue).tag(option)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, AppSpacing.screenEdge)
+                .padding(.top, AppSpacing.sm)
+                .padding(.bottom, AppSpacing.xs)
+                .onChange(of: selectedDomainFilter) {
+                    UISelectionFeedbackGenerator().selectionChanged()
+                }
+                
+                // Active count header
+                HStack {
+                    Text("\(filteredProjects.count) \(filteredProjects.count == 1 ? "project" : "projects")")
+                        .font(.footnote)
+                        .fontWeight(.medium)
+                        .foregroundColor(AppColors.secondaryText)
+                    
+                    Spacer()
+                    
+                    if selectedDomainFilter != .all || !searchText.isEmpty {
+                        Button("Reset") {
+                            withAnimation(.spring(response: 0.25, dampingFraction: 0.78)) {
+                                selectedDomainFilter = .all
+                                searchText = ""
+                            }
+                        }
+                        .font(.footnote.weight(.semibold))
+                        .foregroundColor(.assembleBrandPrimary)
+                    }
+                }
+                .padding(.horizontal, AppSpacing.screenEdge)
+                .padding(.vertical, AppSpacing.xs)
+                
+                // Content: Scrollable List or Empty State
+                if filteredProjects.isEmpty {
+                    emptySearchState
+                } else {
+                    projectsList
+                }
+            }
+            .background(AppColors.groupedBackground.ignoresSafeArea())
+            .navigationTitle("Select Project")
+            .navigationBarTitleDisplayMode(.inline)
+            .searchable(
+                text: $searchText,
+                placement: .navigationBarDrawer(displayMode: .always),
+                prompt: "Search \(projects.count) projects…"
+            )
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .fontWeight(.semibold)
+                    .foregroundColor(.assembleBrandPrimary)
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+    
+    private var projectsList: some View {
+        ScrollView {
+            LazyVStack(spacing: AppSpacing.sm) {
+                ForEach(filteredProjects) { project in
+                    projectRow(project)
+                }
+            }
+            .padding(.horizontal, AppSpacing.screenEdge)
+            .padding(.top, AppSpacing.xs)
+            .padding(.bottom, AppSpacing.xl)
+        }
+    }
+    
+    private func projectRow(_ project: AssemblyProject) -> some View {
+        let isSelected = project.id == selectedProjectID
+        
+        return Button {
+            UISelectionFeedbackGenerator().selectionChanged()
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.78)) {
+                selectedProjectID = project.id
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                dismiss()
+            }
+        } label: {
+            HStack(spacing: AppSpacing.mdSm) {
+                // Semantic Icon Badge
+                SemanticIconBadge(
+                    iconName: project.domain.iconName,
+                    size: 38,
+                    iconSize: 18,
+                    color: project.domain.badgeColor
+                )
+                
+                // Project Details
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 6) {
+                        Text(project.title)
+                            .font(.headline)
+                            .foregroundColor(AppColors.primaryText)
+                            .lineLimit(1)
+                        
+                        if project.isActive {
+                            Text("ACTIVE")
+                                .font(.system(size: 9, weight: .bold))
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.assembleBrandPrimary.opacity(0.12))
+                                .foregroundColor(.assembleBrandPrimary)
+                                .clipShape(Capsule())
+                        }
+                    }
+                    
+                    HStack(spacing: 6) {
+                        Text(project.domain.displayName)
+                            .font(.caption)
+                            .foregroundColor(AppColors.secondaryText)
+                        
+                        Text("•")
+                            .font(.caption2)
+                            .foregroundColor(AppColors.tertiaryText)
+                        
+                        Text("\(project.totalSteps) steps")
+                            .font(.caption)
+                            .foregroundColor(AppColors.secondaryText)
+                        
+                        Text("•")
+                            .font(.caption2)
+                            .foregroundColor(AppColors.tertiaryText)
+                        
+                        DifficultyBadge(difficulty: project.difficulty)
+                        
+                        if project.completedSteps > 0 {
+                            Text("•")
+                                .font(.caption2)
+                                .foregroundColor(AppColors.tertiaryText)
+                            
+                            Text(project.progressText)
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .monospacedDigit()
+                                .foregroundColor(project.isCompleted ? AppColors.success : AppColors.secondaryText)
+                        }
+                    }
+                    .lineLimit(1)
+                }
+                
+                Spacer()
+                
+                // Selection Radio/Check Indicator
+                ZStack {
+                    if isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 22, weight: .semibold))
+                            .foregroundColor(.assembleBrandPrimary)
+                            .transition(.scale.combined(with: .opacity))
+                    } else {
+                        Circle()
+                            .strokeBorder(AppColors.borderStrong, lineWidth: 1.5)
+                            .frame(width: 22, height: 22)
+                    }
+                }
+            }
+            .padding(AppSpacing.md)
+            .background(
+                RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                    .fill(isSelected ? Color.assembleBrandPrimary.opacity(0.08) : AppColors.secondaryGroupedBackground)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                    .strokeBorder(
+                        isSelected ? Color.assembleBrandPrimary.opacity(0.45) : AppColors.borderSubtle,
+                        lineWidth: isSelected ? 1.5 : 0.5
+                    )
+            )
+        }
+        .buttonStyle(ScaleButtonStyle(enableHaptic: false))
+    }
+    
+    private var emptySearchState: some View {
+        VStack(spacing: AppSpacing.sm) {
+            Spacer()
+            
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 44))
+                .foregroundColor(AppColors.secondaryText.opacity(0.6))
+                .padding(.bottom, AppSpacing.xs)
+            
+            Text("No Projects Found")
+                .font(.headline)
+                .foregroundColor(AppColors.primaryText)
+            
+            Text(emptyMessage)
+                .font(.subheadline)
+                .foregroundColor(AppColors.secondaryText)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, AppSpacing.xl)
+            
+            if !searchText.isEmpty || selectedDomainFilter != .all {
+                Button("Reset Filters") {
+                    withAnimation(.spring(response: 0.25, dampingFraction: 0.78)) {
+                        searchText = ""
+                        selectedDomainFilter = .all
+                    }
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundColor(.assembleBrandPrimary)
+                .padding(.top, AppSpacing.xs)
+            }
+            
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+    
+    private var emptyMessage: String {
+        if !searchText.isEmpty && selectedDomainFilter != .all {
+            return "No projects match \"\(searchText)\" under \(selectedDomainFilter.rawValue)."
+        } else if !searchText.isEmpty {
+            return "No projects match \"\(searchText)\"."
+        } else {
+            return "No projects available in \(selectedDomainFilter.rawValue)."
         }
     }
 }
