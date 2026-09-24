@@ -42,6 +42,10 @@ final class AppRouter: ObservableObject {
     @Published var navigationPath = NavigationPath()
     @Published var showGuestConfirmationSheet: Bool = false
     
+    // Global Inspection Presentation (Universal across all tabs and child views)
+    @Published var activeInspectionStep: AssemblyStep? = nil
+    @Published var activeInspectionProject: AssemblyProject? = nil
+    
     func completeLaunch(isAuthenticated: Bool) {
         withAnimation(.easeInOut(duration: 0.35)) {
             if isAuthenticated {
@@ -88,8 +92,18 @@ final class AppRouter: ObservableObject {
         navigationPath.append(AppRoute.forgotPassword)
     }
     
-    func navigateToCamera(step: AssemblyStep) {
-        navigationPath.append(AppRoute.camera(step))
+    func navigateToCamera(step: AssemblyStep, project: AssemblyProject? = nil) {
+        if rootRoute == .home {
+            self.activeInspectionProject = project
+            self.activeInspectionStep = step
+        } else {
+            navigationPath.append(AppRoute.camera(step))
+        }
+    }
+    
+    func dismissInspection() {
+        self.activeInspectionStep = nil
+        self.activeInspectionProject = nil
     }
     
     func navigateToAnalyzing(step: AssemblyStep) {

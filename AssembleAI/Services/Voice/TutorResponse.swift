@@ -176,11 +176,32 @@ nonisolated struct DeterministicTutorResponseProvider: TutorResponseProviding {
             )
             
         case .respondToUser(let query):
-            return TutorResponse(
-                text: "I hear you! Regarding \(query), let's keep working through this together.",
-                priority: .immediate,
-                category: "user_query_response"
-            )
+            let lower = query.lowercased()
+            if lower.contains("look") || lower.contains("connect") || lower.contains("already") || lower.contains("check") {
+                return TutorResponse(
+                    text: "I'm focusing the camera directly on your workpiece right now! Keep your hands clear for just a moment with good lighting so I can inspect the pins and confirm the connection. 🔍",
+                    priority: .immediate,
+                    category: "user_query_response"
+                )
+            } else if lower.contains("where") || lower.contains("hole") || lower.contains("put") || lower.contains("slot") {
+                return TutorResponse(
+                    text: "Take a look at the green spatial target rings illuminated on your camera viewfinder—they show the exact coordinate sockets to plug into! 📍",
+                    priority: .immediate,
+                    category: "user_query_response"
+                )
+            } else if lower.contains("why") || lower.contains("reason") {
+                return TutorResponse(
+                    text: "This component is critical to complete the circuit path and ensure safe voltage levels so the board operates reliably. 💡",
+                    priority: .immediate,
+                    category: "user_query_response"
+                )
+            } else {
+                return TutorResponse(
+                    text: "I'm right here with you! Let's make sure this step is seated properly. Let me know if you'd like me to highlight the pins or verify your placement. 🛠️",
+                    priority: .immediate,
+                    category: "user_query_response"
+                )
+            }
         }
     }
 }

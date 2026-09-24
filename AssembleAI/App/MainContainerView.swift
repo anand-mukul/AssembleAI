@@ -83,6 +83,19 @@ struct MainContainerView: View {
                 .presentationCornerRadius(28)
             }
         }
+        // Universal Full-Screen Inspection Camera
+        .fullScreenCover(item: $router.activeInspectionStep) { step in
+            if let project = router.activeInspectionProject {
+                AssemblyContainerView(project: project)
+            } else {
+                AssemblyCameraView(
+                    currentStep: step,
+                    onClose: {
+                        router.dismissInspection()
+                    }
+                )
+            }
+        }
         .animation(.easeInOut(duration: 0.3), value: router.rootRoute)
         .animation(.easeInOut(duration: 0.25), value: authService.isLoading)
     }

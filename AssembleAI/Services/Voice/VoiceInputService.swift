@@ -73,6 +73,9 @@ final class VoiceInputService: NSObject, ObservableObject, VoiceInputServiceProt
         }
         #endif
         
+        // 2b. Ensure workbench audio session is primed
+        try? AudioSessionCoordinator.shared.activateWorkbenchAudioSession()
+        
         // 3. Setup Recognition Request & Audio Engine
         let engine = AVAudioEngine()
         self.audioEngine = engine
@@ -83,7 +86,15 @@ final class VoiceInputService: NSObject, ObservableObject, VoiceInputServiceProt
         self.recognitionRequest = request
         
         let inputNode = engine.inputNode
-        let recordingFormat = inputNode.outputFormat(forBus: 0)
+        var recordingFormat = inputNode.outputFormat(forBus: 0)
+        if recordingFormat.sampleRate <= 0 || recordingFormat.channelCount <= 0 {
+            recordingFormat = inputNode.inputFormat(forBus: 0)
+        }
+        if recordingFormat.sampleRate <= 0 || recordingFormat.channelCount <= 0 {
+            if let standard = AVAudioFormat(standardFormatWithSampleRate: 44100, channels: 1) {
+                recordingFormat = standard
+            }
+        }
         
         guard recordingFormat.sampleRate > 0, recordingFormat.channelCount > 0 else {
             self.audioEngine = nil

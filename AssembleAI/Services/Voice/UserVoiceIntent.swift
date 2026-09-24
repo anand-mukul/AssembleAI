@@ -37,6 +37,9 @@ nonisolated enum UserVoiceIntent: Sendable, Equatable {
     /// Confirm and continue the assembly session ("continue", "let's go").
     case continueTask
     
+    /// User asserts or requests verification of a placement or connection ("look carefully", "i already connected", "check this again").
+    case verifyPlacement
+    
     /// Pause or stop the active session ("stop", "pause").
     case stopTask
     
@@ -106,7 +109,7 @@ nonisolated struct VoiceIntentParser: Sendable {
         }
         
         // 3. Ask What Next Patterns
-        if text.contains("next") || text.contains("what now") || (tokenSet.contains("what") && tokenSet.contains("do")) {
+        if text.contains("what's next") || text.contains("what next") || text.contains("what now") || (tokenSet.contains("what") && tokenSet.contains("do")) {
             return .askWhatNext
         }
         
@@ -138,18 +141,28 @@ nonisolated struct VoiceIntentParser: Sendable {
             return .askIsCorrect
         }
         
-        // 9. Continue Task Patterns
+        // 9. Verify Placement / Assert Connection Patterns ("look carefully i already connected this", etc.)
+        if text.contains("look carefully") || text.contains("already connected") ||
+           text.contains("already did") || text.contains("already inserted") ||
+           text.contains("already put") || text.contains("check again") ||
+           text.contains("look at this") || text.contains("look at my") ||
+           text.contains("i connected") || text.contains("i have connected") ||
+           text.contains("i plugged") || text.contains("see if it's connected") {
+            return .verifyPlacement
+        }
+        
+        // 10. Continue Task Patterns
         if tokenSet.contains("continue") || tokenSet.contains("proceed") || tokenSet.contains("done") ||
-           text == "next step" || text == "let's go" {
+           text == "next" || text == "next step" || text == "let's go" {
             return .continueTask
         }
         
-        // 10. Stop Task Patterns
+        // 11. Stop Task Patterns
         if tokenSet.contains("stop") || tokenSet.contains("pause") || tokenSet.contains("cancel") || tokenSet.contains("exit") {
             return .stopTask
         }
         
-        // 11. Unknown Fallback
+        // 12. Unknown Fallback
         return .unknown(transcript: rawTranscript)
     }
 }

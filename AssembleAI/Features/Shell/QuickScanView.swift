@@ -16,7 +16,6 @@ struct QuickScanView: View {
     @State private var availableProjects: [AssemblyProject] = []
     @State private var selectedProjectID: UUID? = nil
     @State private var pulseScale: CGFloat = 0.98
-    @State private var isCameraReady: Bool = true
     @State private var showProjectPickerSheet: Bool = false
     
     private let repository = ProjectRepositoryFactory.resolve()
@@ -319,7 +318,7 @@ struct QuickScanView: View {
                     title: "Inspect Component Placement",
                     instruction: "Position camera over workpiece."
                 )
-                router.navigateToCamera(step: step)
+                router.navigateToCamera(step: step, project: fullProject)
             }
         }
     }

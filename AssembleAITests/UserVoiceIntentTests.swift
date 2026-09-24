@@ -64,4 +64,11 @@ final class UserVoiceIntentTests: XCTestCase {
         XCTAssertEqual(parser.parse("pause"), .stopTask)
         XCTAssertEqual(parser.parse("stop"), .stopTask)
     }
+    
+    func testParseVerifyPlacement() {
+        XCTAssertEqual(parser.parse("look carefully i already connected this to this"), .verifyPlacement)
+        XCTAssertEqual(parser.parse("already connected"), .verifyPlacement)
+        XCTAssertEqual(parser.parse("check again"), .verifyPlacement)
+        XCTAssertEqual(parser.parse("look at this"), .verifyPlacement)
+    }
 }

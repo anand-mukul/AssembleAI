@@ -174,6 +174,12 @@ struct AssemblyContainerView: View {
                     .transition(.opacity)
                 }
             }
+            .onAppear {
+                viewModel.updateViewportSize(geo.size)
+            }
+            .onChange(of: geo.size) { _, newSize in
+                viewModel.updateViewportSize(newSize)
+            }
         }
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .tabBar)

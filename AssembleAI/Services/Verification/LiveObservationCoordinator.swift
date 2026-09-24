@@ -148,9 +148,11 @@ actor LiveObservationCoordinator: LiveObservationCoordinating {
         self.estimator = estimator ?? SpatialAssemblyStateEstimator(calibrationProvider: { [holder] in
             holder.calibration
         })
-        self.configuration = configuration
-        self.acousticDetector = acousticDetector
-        self.handPoseDetector = handPoseDetector ?? HandPoseActivityDetector()
+        let detector = acousticDetector ?? AcousticInsertionDetector()
+        self.acousticDetector = detector
+        Task { [detector] in
+            await detector.startMonitoring()
+        }
         self.comparator = comparator ?? AssemblyStateComparator(
             configuration: VerificationConfiguration(
                 minimumEvidenceConfidence: configuration.minimumEvidenceConfidence

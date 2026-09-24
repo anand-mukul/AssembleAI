@@ -82,6 +82,7 @@ final class AssemblyViewModel: ObservableObject {
     private let intentParser: VoiceIntentParser
     private let researchLogger: ResearchLogging
     private let sessionRepository: SessionRepository?
+    private let mistakeAnalyticsService: MistakeAnalyticsService
     
     private var liveObservationTask: Task<Void, Never>?
     private var voiceInputTask: Task<Void, Never>?
@@ -102,7 +103,8 @@ final class AssemblyViewModel: ObservableObject {
         voiceOutput: VoiceOutputServiceProtocol? = nil,
         voiceInput: VoiceInputServiceProtocol? = nil,
         researchLogger: ResearchLogging? = nil,
-        sessionRepository: SessionRepository? = nil
+        sessionRepository: SessionRepository? = nil,
+        mistakeAnalyticsService: MistakeAnalyticsService? = nil
     ) {
         self.project = project
         self.verificationService = verificationService ?? StateAwareVerificationService()
@@ -117,6 +119,7 @@ final class AssemblyViewModel: ObservableObject {
         self.voiceInput = voiceInput ?? VoiceInputService()
         self.intentParser = VoiceIntentParser()
         self.researchLogger = researchLogger ?? ResearchLogger.shared
+        self.mistakeAnalyticsService = mistakeAnalyticsService ?? MistakeAnalyticsService()
         self.sessionRepository = sessionRepository ?? LocalFirstSessionRepository(
             modelContext: PersistenceController.shared.container.mainContext,
             supabaseService: AppConfig.isSupabaseConfigured ? SupabaseProjectService(supabaseManager: SupabaseManager.shared) : nil
@@ -199,8 +202,19 @@ final class AssemblyViewModel: ObservableObject {
         currentStepIndex + 1
     }
     
-    /// Viewport size resolved from active window scene to support iOS 26+ without relying on deprecated UIScreen.main.
+    private var customViewportSize: CGSize? = nil
+    
+    /// Updates dynamic viewport size from active UI container geometry.
+    func updateViewportSize(_ size: CGSize) {
+        guard size.width > 0, size.height > 0 else { return }
+        self.customViewportSize = size
+    }
+    
+    /// Viewport size resolved from active UI geometry or foreground window scene.
     private var screenViewportSize: CGSize {
+        if let custom = customViewportSize, custom.width > 0, custom.height > 0 {
+            return custom
+        }
         let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
         if let scene = scenes.first(where: { $0.activationState == .foregroundActive }) ?? scenes.first {
             if let window = scene.windows.first(where: { $0.isKeyWindow }) ?? scene.windows.first {
@@ -422,6 +436,20 @@ final class AssemblyViewModel: ObservableObject {
         persistSessionState()
         logResearchEvent(.stepCompleted, metadata: ["stepOrder": "\(completedStep.stepOrder)"])
         
+        let stepDuration = Date().timeIntervalSince(stepStartTime)
+        let stepMistakes = currentVerificationResult?.primaryIssue.map { [$0.explanation] } ?? []
+        Task { [analytics = self.mistakeAnalyticsService, sId = session.id, ord = completedStep.stepOrder, ttl = completedStep.title] in
+            await analytics.recordStep(
+                sessionId: sId,
+                stepOrder: ord,
+                stepTitle: ttl,
+                durationSeconds: stepDuration,
+                attemptsCount: 1,
+                encounteredMistakes: stepMistakes,
+                wasSuccessful: true
+            )
+        }
+        
         autoProgressTask?.cancel()
         autoProgressTask = Task { [weak self] in
             guard let self = self else { return }
@@ -595,26 +623,99 @@ final class AssemblyViewModel: ObservableObject {
                             
                             let response: TutorResponse
                             switch intent {
+                            case .verifyPlacement, .askIsCorrect:
+                                if let result = self.currentVerificationResult, result.isCorrect {
+                                    response = TutorResponse(
+                                        text: "Aha! You're totally right, I see that solid connection now! Step \(self.currentStep.stepOrder) is verified and locked in. Let's move to the next step. ✅",
+                                        priority: .immediate,
+                                        category: "confirmation"
+                                    )
+                                    self.triggerAutomaticStepProgression(for: self.currentStep)
+                                } else if let issue = self.currentVerificationResult?.primaryIssue {
+                                    response = TutorResponse(
+                                        text: "I'm looking closely at your workpiece! It looks like \(issue.explanation). Make sure the pins are seated firmly according to the onscreen guide. 🔍",
+                                        priority: .immediate,
+                                        category: "correction"
+                                    )
+                                } else {
+                                    let compName = self.currentStep.visualContract?.requiredComponentIds.first.map { VisualContract.friendlyName(for: $0) } ?? "component"
+                                    response = TutorResponse(
+                                        text: "I'm focusing the camera on your board right now! Hold steady for a second with clear lighting on the \(compName) so I can verify the connection. ⚡",
+                                        priority: .immediate,
+                                        category: "inspection"
+                                    )
+                                }
                             case .repeatInstruction:
+                                let compName = self.currentStep.visualContract?.requiredComponentIds.first.map { VisualContract.friendlyName(for: $0) } ?? "component"
+                                let variations = [
+                                    "Sure thing! For Step \(self.currentStep.stepOrder), we're placing the \(compName). \(self.currentStep.instruction) 🛠️",
+                                    "Got you covered! Here's Step \(self.currentStep.stepOrder): \(self.currentStep.instruction) 🔌",
+                                    "No problem, partner! Take your \(compName) and \(self.currentStep.instruction) ⚡"
+                                ]
+                                let chosen = variations[abs(self.currentStep.stepOrder.hashValue) % variations.count]
                                 response = TutorResponse(
-                                    text: "Step \(self.currentStep.stepOrder): \(self.currentStep.title). \(self.currentStep.instruction)",
+                                    text: chosen,
                                     priority: .immediate,
                                     category: "instruction"
                                 )
                             case .askWhatNext:
-                                if self.currentStepIndex < self.totalStepsCount {
+                                if self.currentStepIndex < self.totalStepsCount - 1 {
+                                    let nextStep = self.project.steps[self.currentStepIndex + 1]
                                     response = TutorResponse(
-                                        text: "You are on Step \(self.currentStep.stepOrder): \(self.currentStep.title). \(self.currentStep.instruction)",
+                                        text: "Right now we're finishing Step \(self.currentStep.stepOrder): \(self.currentStep.title). Once this is verified, our next move is Step \(nextStep.stepOrder): \(nextStep.title)! 🛠️",
                                         priority: .immediate,
                                         category: "instruction"
                                     )
                                 } else {
                                     response = TutorResponse(
-                                        text: "The assembly is complete! Great work.",
+                                        text: "You are on the final step! Let's lock in \(self.currentStep.title) and our build will be complete. 🎉",
                                         priority: .immediate,
                                         category: "completion"
                                     )
                                 }
+                            case .askWhere:
+                                let pins = self.currentStep.visualContract?.requiredPins.map(\.label).joined(separator: " and ")
+                                if let p = pins, !p.isEmpty {
+                                    response = TutorResponse(
+                                        text: "For Step \(self.currentStep.stepOrder), plug it into \(p) on your board. Follow the green highlight on screen! 📍",
+                                        priority: .immediate,
+                                        category: "spatial_guidance"
+                                    )
+                                } else {
+                                    response = TutorResponse(
+                                        text: "Place it in the designated target zone highlighted on your camera view: \(self.currentStep.instruction) 📍",
+                                        priority: .immediate,
+                                        category: "spatial_guidance"
+                                    )
+                                }
+                            case .askPolarity:
+                                let titleLow = self.currentStep.title.lowercased()
+                                let instrLow = self.currentStep.instruction.lowercased()
+                                if titleLow.contains("led") || instrLow.contains("led") {
+                                    response = TutorResponse(
+                                        text: "For the LED, remember the longer leg is the anode (positive)! Connect that toward the signal rail, and the shorter flat leg to ground. 💡",
+                                        priority: .immediate,
+                                        category: "polarity"
+                                    )
+                                } else if titleLow.contains("diode") || instrLow.contains("diode") {
+                                    response = TutorResponse(
+                                        text: "Notice the silver or black band on the diode—that marks the cathode (negative side). Align it with the circuit diagram! ⚡",
+                                        priority: .immediate,
+                                        category: "polarity"
+                                    )
+                                } else {
+                                    response = TutorResponse(
+                                        text: "Good check! Resistors aren't polarized so either direction works, but make sure IC chips have their notch or dot facing pin 1! 🔌",
+                                        priority: .immediate,
+                                        category: "polarity"
+                                    )
+                                }
+                            case .askWhy:
+                                response = TutorResponse(
+                                    text: "We're adding \(self.currentStep.title) to complete the circuit path and ensure safe voltage regulation so the board functions properly. 🧠",
+                                    priority: .immediate,
+                                    category: "explanation"
+                                )
                             default:
                                 let assistantContext = AssistantContext(
                                     currentStep: self.currentStep,
