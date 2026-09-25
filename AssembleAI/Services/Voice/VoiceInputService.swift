@@ -124,7 +124,8 @@ final class VoiceInputService: NSObject, ObservableObject, VoiceInputServiceProt
                 let text = result.bestTranscription.formattedString
                 let isFinal = result.isFinal
                 
-                Task { @MainActor in
+                Task { @MainActor [weak self] in
+                    guard let self = self else { return }
                     self.latestTranscript = text
                     self.broadcaster.broadcast(UserVoiceMessage(transcript: text, isFinal: isFinal))
                     
@@ -149,10 +150,10 @@ final class VoiceInputService: NSObject, ObservableObject, VoiceInputServiceProt
             }
             
             if error != nil {
-                Task { @MainActor in
-                    self.silenceWatchdogTask?.cancel()
-                    self.silenceWatchdogTask = nil
-                    await self.stopListening()
+                Task { @MainActor [weak self] in
+                    self?.silenceWatchdogTask?.cancel()
+                    self?.silenceWatchdogTask = nil
+                    await self?.stopListening()
                 }
             }
         }

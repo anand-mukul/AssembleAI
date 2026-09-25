@@ -78,10 +78,10 @@ protocol LiveObservationCoordinating: Sendable {
 }
 
 /// Thread-safe calibration holder enabling dynamic updates to SpatialAssemblyStateEstimator.
-final class LiveCalibrationHolder: @unchecked Sendable {
+nonisolated final class LiveCalibrationHolder: @unchecked Sendable {
     private let lock = OSAllocatedUnfairLock<BreadboardCalibration?>(initialState: nil)
     
-    var calibration: BreadboardCalibration? {
+    nonisolated var calibration: BreadboardCalibration? {
         get {
             lock.withLock { $0 }
         }
@@ -144,6 +144,8 @@ actor LiveObservationCoordinator: LiveObservationCoordinating {
         handPoseDetector: HandPoseActivityDetecting? = nil,
         configuration: LiveObservationConfiguration = .default
     ) {
+        self.configuration = configuration
+        self.handPoseDetector = handPoseDetector
         let holder = self.calibrationHolder
         self.estimator = estimator ?? SpatialAssemblyStateEstimator(calibrationProvider: { [holder] in
             holder.calibration
