@@ -126,7 +126,12 @@ final class RealityKitSpatialGuideService: SpatialGuidanceProviding, @unchecked 
         for primitive in primitives {
             switch primitive {
             case .pinBeacon(let position, let radius, _):
-                let mesh = MeshResource.generateCylinder(height: 0.02, radius: radius)
+                let mesh: MeshResource
+                if #available(iOS 18.0, visionOS 2.0, *) {
+                    mesh = MeshResource.generateCylinder(height: 0.02, radius: radius)
+                } else {
+                    mesh = MeshResource.generateSphere(radius: radius)
+                }
                 let material = SimpleMaterial(color: .systemCyan, isMetallic: false)
                 let model = ModelEntity(mesh: mesh, materials: [material])
                 model.position = position
@@ -149,7 +154,12 @@ final class RealityKitSpatialGuideService: SpatialGuidanceProviding, @unchecked 
                 entities.append(model)
                 
             case .successConfirmation(let position):
-                let mesh = MeshResource.generateCylinder(height: 0.005, radius: 0.05)
+                let mesh: MeshResource
+                if #available(iOS 18.0, visionOS 2.0, *) {
+                    mesh = MeshResource.generateCylinder(height: 0.005, radius: 0.05)
+                } else {
+                    mesh = MeshResource.generatePlane(width: 0.1, depth: 0.1)
+                }
                 let material = SimpleMaterial(color: .systemGreen, isMetallic: false)
                 let model = ModelEntity(mesh: mesh, materials: [material])
                 model.position = position
