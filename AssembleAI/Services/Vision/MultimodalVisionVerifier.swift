@@ -112,7 +112,7 @@ actor MultimodalVisionVerifier: MultimodalVisionVerifying {
     
     init() {
         #if canImport(FoundationModels)
-        if #available(iOS 18.0, *) {
+        if #available(iOS 26.0, *) {
             let availability = SystemLanguageModel.default.availability
             switch availability {
             case .available:
@@ -141,7 +141,7 @@ actor MultimodalVisionVerifier: MultimodalVisionVerifying {
         let startTime = CFAbsoluteTimeGetCurrent()
         
         #if canImport(FoundationModels)
-        if #available(iOS 18.0, *), isModelAvailable {
+        if #available(iOS 26.0, *), isModelAvailable {
             do {
                 let assessment = try await executeFoundationModelsPrompt(
                     frame: frame,
@@ -170,7 +170,7 @@ actor MultimodalVisionVerifier: MultimodalVisionVerifying {
     }
     
     #if canImport(FoundationModels)
-    @available(iOS 18.0, *)
+    @available(iOS 26.0, *)
     private func executeFoundationModelsPrompt(
         frame: CVPixelBuffer,
         step: AssemblyStep,

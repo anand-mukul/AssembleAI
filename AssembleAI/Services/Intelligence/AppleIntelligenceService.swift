@@ -63,7 +63,7 @@ actor AppleIntelligenceService {
         var supportsFoundation = false
         var supportsMultimodal = false
         #if canImport(FoundationModels)
-        if #available(iOS 18.0, *) {
+        if #available(iOS 26.0, *) {
             supportsFoundation = true
             supportsMultimodal = true
             // Verify actual model readiness at runtime for diagnostics

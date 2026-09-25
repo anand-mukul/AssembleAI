@@ -178,7 +178,7 @@ extension ConversationalTutorProviding {
 /// HARD ARCHITECTURAL RULE:
 /// The language model is used ONLY for generating natural-language explanations and spoken dialogue.
 /// It NEVER decides correctness — correctness is determined deterministically by `AssemblyStateComparator`.
-@available(iOS 18.0, *)
+@available(iOS 26.0, *)
 actor FoundationModelTutorResponseProvider: ConversationalTutorProviding {
     private let fallbackProvider = DeterministicTutorResponseProvider()
     private var sessionMemory: [UUID: [ConversationMessage]] = [:]
@@ -403,12 +403,12 @@ final class HybridTutorResponseProvider: ConversationalTutorProviding, @unchecke
     private let fallbackProvider = DeterministicTutorResponseProvider()
     
     #if canImport(FoundationModels)
-    private let foundationModelProvider: FoundationModelTutorResponseProvider?
+    private let foundationModelProvider: (any ConversationalTutorProviding)?
     #endif
     
     init() {
         #if canImport(FoundationModels)
-        if #available(iOS 18.0, *) {
+        if #available(iOS 26.0, *) {
             self.foundationModelProvider = FoundationModelTutorResponseProvider()
         } else {
             self.foundationModelProvider = nil

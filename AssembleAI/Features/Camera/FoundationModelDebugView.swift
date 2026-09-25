@@ -60,7 +60,7 @@ struct FoundationModelDebugView: View {
     
     private var isFrameworkAvailable: Bool {
         #if canImport(FoundationModels)
-        if #available(iOS 18.0, *) {
+        if #available(iOS 26.0, *) {
             return true
         }
         #endif

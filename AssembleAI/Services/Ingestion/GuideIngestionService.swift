@@ -63,7 +63,7 @@ enum GuideIngestionError: LocalizedError {
 ///
 /// Sends the raw guide text to the on-device language model with a structured extraction prompt.
 /// The model returns a JSON representation of the project that is decoded into an `AssemblyProject`.
-@available(iOS 18.0, *)
+@available(iOS 26.0, *)
 actor FoundationModelIngestionService: GuideIngestionServiceProtocol {
     
     func ingest(
@@ -303,7 +303,7 @@ struct DeterministicIngestionFallback: GuideIngestionServiceProtocol {
 enum GuideIngestionServiceFactory {
     static func resolve() -> GuideIngestionServiceProtocol {
         #if canImport(FoundationModels)
-        if #available(iOS 18.0, *) {
+        if #available(iOS 26.0, *) {
             return FoundationModelIngestionService()
         }
         #endif
