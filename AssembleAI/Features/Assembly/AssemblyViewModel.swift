@@ -92,6 +92,7 @@ final class AssemblyViewModel: ObservableObject {
     
     init(
         project: AssemblyProject,
+        initialPhase: AssemblyPhase = .intro,
         verificationService: VerificationServiceProtocol? = nil,
         visionAnalyzer: VisionAnalyzing? = nil,
         guidanceProvider: GuidanceProviding? = nil,
@@ -107,6 +108,7 @@ final class AssemblyViewModel: ObservableObject {
         mistakeAnalyticsService: MistakeAnalyticsService? = nil
     ) {
         self.project = project
+        self.phase = initialPhase
         self.verificationService = verificationService ?? StateAwareVerificationService()
         self.visionAnalyzer = visionAnalyzer ?? VisionService()
         self.guidanceProvider = guidanceProvider ?? DefaultGuidanceProvider()

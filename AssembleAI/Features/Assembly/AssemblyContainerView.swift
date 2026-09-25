@@ -13,8 +13,8 @@ struct AssemblyContainerView: View {
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var viewModel: AssemblyViewModel
     
-    init(project: AssemblyProject) {
-        _viewModel = StateObject(wrappedValue: AssemblyViewModel(project: project))
+    init(project: AssemblyProject, startInCamera: Bool = false) {
+        _viewModel = StateObject(wrappedValue: AssemblyViewModel(project: project, initialPhase: startInCamera ? .camera : .intro))
     }
     
     var body: some View {

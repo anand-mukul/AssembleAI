@@ -61,8 +61,12 @@ nonisolated struct WorkspaceMap: Sendable, Equatable {
         
         switch domain {
         case .electronics:
-            let boardName = breadboardVariant == .fullSize ? "full-size 830-point breadboard" : "half-size 400-point breadboard"
-            return "I've mapped your \(boardName). Lighting is \(lightingQuality.displayName). \(compDesc)"
+            if breadboardDetected {
+                let boardName = breadboardVariant == .fullSize ? "full-size 830-point breadboard" : "half-size 400-point breadboard"
+                return "I've mapped your \(boardName). Lighting is \(lightingQuality.displayName). \(compDesc)"
+            } else {
+                return "Scanning workbench. Lighting is \(lightingQuality.displayName). Align breadboard within camera view to calibrate."
+            }
         case .physical:
             return "I've mapped your assembly workbench. Lighting is \(lightingQuality.displayName). \(compDesc)"
         case .hybrid:

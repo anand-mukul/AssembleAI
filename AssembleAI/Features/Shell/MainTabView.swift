@@ -78,11 +78,11 @@ struct MainTabView: View {
             NavigationStack(path: $scanPath) {
                 QuickScanView(
                     onLaunchInspection: { project in
-                        scanPath.append(AppRouteAssembly(project: project))
+                        scanPath.append(AppRouteAssembly(project: project, startInCamera: true))
                     }
                 )
                 .navigationDestination(for: AppRouteAssembly.self) { assembly in
-                    AssemblyContainerView(project: assembly.project)
+                    AssemblyContainerView(project: assembly.project, startInCamera: assembly.startInCamera)
                         .toolbar(.hidden, for: .tabBar)
                 }
             }
@@ -137,6 +137,7 @@ struct AppRouteDetail: Hashable, Sendable {
 
 struct AppRouteAssembly: Hashable, Sendable {
     let project: AssemblyProject
+    var startInCamera: Bool = false
 }
 
 #Preview("Main Tab View") {

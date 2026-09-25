@@ -253,7 +253,7 @@ nonisolated struct AssemblyStateComparator: Sendable {
 
 // MARK: - Hardware Category Token Matching (H-2)
 
-private enum HardwareCategory: CaseIterable {
+private nonisolated enum HardwareCategory: CaseIterable {
     case resistor
     case led
     case capacitor
@@ -266,7 +266,7 @@ private enum HardwareCategory: CaseIterable {
     case bracket
     case conduit
     
-    var keywords: [String] {
+    nonisolated var keywords: [String] {
         switch self {
         case .resistor: return ["resistor", "res", "ohm", "220", "10k", "1k"]
         case .led: return ["led", "diode", "anode", "cathode"]
@@ -283,7 +283,7 @@ private enum HardwareCategory: CaseIterable {
     }
 }
 
-private func matchesComponentCategory(text: String, identifier: String, keywords: [String]) -> Bool {
+private nonisolated func matchesComponentCategory(text: String, identifier: String, keywords: [String]) -> Bool {
     let lowerText = text.lowercased()
     let lowerId = identifier.lowercased()
     

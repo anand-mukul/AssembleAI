@@ -139,13 +139,22 @@ final class CameraService: NSObject, ObservableObject {
             guard let self = self else { return }
             
             captureSession.beginConfiguration()
-            captureSession.sessionPreset = .photo
             
-            // Video Input with Macro Fusion Discovery (Triple/DualWide/Wide)
+            // Prioritize high-performance 1080p stream for Vision/ML observation with photo support
+            if captureSession.canSetSessionPreset(.hd1920x1080) {
+                captureSession.sessionPreset = .hd1920x1080
+            } else if captureSession.canSetSessionPreset(.high) {
+                captureSession.sessionPreset = .high
+            } else {
+                captureSession.sessionPreset = .photo
+            }
+            
+            // Video Input with Macro Fusion Discovery (Triple/DualWide/Dual/Wide)
             let discoverySession = AVCaptureDevice.DiscoverySession(
                 deviceTypes: [
                     .builtInTripleCamera,
                     .builtInDualWideCamera,
+                    .builtInDualCamera,
                     .builtInWideAngleCamera
                 ],
                 mediaType: .video,
@@ -156,9 +165,14 @@ final class CameraService: NSObject, ObservableObject {
                   captureSession.canAddInput(videoInput) else {
                 
                 DispatchQueue.main.async {
+                    #if targetEnvironment(simulator)
                     self.isCameraAvailable = false
-                    self.errorMessage = "Camera unavailable (Simulator or hardware restriction)"
+                    self.errorMessage = "Simulator mode (optical simulation active)"
                     self.startSimulatorStreamIfNeeded()
+                    #else
+                    self.isCameraAvailable = false
+                    self.errorMessage = "Unable to access optical hardware camera input. Check privacy settings."
+                    #endif
                 }
                 captureSession.commitConfiguration()
                 return
@@ -180,11 +194,13 @@ final class CameraService: NSObject, ObservableObject {
             
             captureSession.addInput(videoInput)
             
-            // Photo Output (for existing manual capture workflow)
+            // Photo Output (for manual capture workflow)
             if captureSession.canAddOutput(photoOutput) {
                 captureSession.addOutput(photoOutput)
-                if let maxDimensions = videoDevice.activeFormat.supportedMaxPhotoDimensions.last {
-                    photoOutput.maxPhotoDimensions = maxDimensions
+                if #available(iOS 16.0, *) {
+                    if let maxDimensions = videoDevice.activeFormat.supportedMaxPhotoDimensions.last {
+                        photoOutput.maxPhotoDimensions = maxDimensions
+                    }
                 }
             }
             
@@ -214,6 +230,8 @@ final class CameraService: NSObject, ObservableObject {
             
             DispatchQueue.main.async {
                 self.isConfigured = true
+                self.isCameraAvailable = true
+                self.errorMessage = nil
                 self.isTorchSupported = videoDevice.hasTorch
                 
                 // Dynamic lens discovery and zoom capabilities (C-3)
@@ -267,18 +285,27 @@ final class CameraService: NSObject, ObservableObject {
     
     /// Starts AVCaptureSession running asynchronously.
     func startSession() {
-        guard authorizationStatus == .authorized else { return }
+        guard authorizationStatus == .authorized else {
+            checkPermission()
+            if authorizationStatus == .notDetermined {
+                Task {
+                    await requestPermission()
+                }
+            }
+            return
+        }
         
         if !isConfigured {
             configureSession()
         }
         
-        // Handle simulator fallback optical stream
+        #if targetEnvironment(simulator)
         if !isCameraAvailable {
             self.isSessionRunning = true
             startSimulatorStreamIfNeeded()
             return
         }
+        #endif
         
         cameraQueue.async { [weak self, captureSession] in
             guard let self = self, !captureSession.isRunning else { return }

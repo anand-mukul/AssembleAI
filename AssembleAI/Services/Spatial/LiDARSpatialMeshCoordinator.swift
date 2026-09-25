@@ -18,13 +18,13 @@ import ARKit
 // MARK: - 3D Spatial Types
 
 /// Millimeter-accurate 3D coordinate point in real-world camera space.
-public struct Spatial3DPoint: Sendable, Equatable, Hashable {
+nonisolated public struct Spatial3DPoint: Sendable, Equatable, Hashable {
     public let x: Float // meters (left/right)
     public let y: Float // meters (up/down)
     public let z: Float // meters (depth from camera)
     public let confidence: Float // 0.0 - 1.0
     
-    public init(x: Float, y: Float, z: Float, confidence: Float = 1.0) {
+    nonisolated public init(x: Float, y: Float, z: Float, confidence: Float = 1.0) {
         self.x = x
         self.y = y
         self.z = z
@@ -45,7 +45,7 @@ public struct Spatial3DPoint: Sendable, Equatable, Hashable {
 }
 
 /// 3D Spatial mesh assessment capturing real-world workbench geometry.
-public struct SpatialMeshAssessment: Sendable, Equatable {
+nonisolated public struct SpatialMeshAssessment: Sendable, Equatable {
     public let isLiDARAvailable: Bool
     public let surfacePlaneNormal: SIMD3<Float>?
     public let estimatedWorkpieceDimensionsMm: SIMD3<Float>?
@@ -53,7 +53,7 @@ public struct SpatialMeshAssessment: Sendable, Equatable {
     public let nearestDepthMeters: Float?
     public let averageDepthMeters: Float?
     
-    public init(
+    nonisolated public init(
         isLiDARAvailable: Bool = false,
         surfacePlaneNormal: SIMD3<Float>? = nil,
         estimatedWorkpieceDimensionsMm: SIMD3<Float>? = nil,
@@ -69,7 +69,7 @@ public struct SpatialMeshAssessment: Sendable, Equatable {
         self.averageDepthMeters = averageDepthMeters
     }
     
-    public static let fallback = SpatialMeshAssessment(
+    nonisolated public static let fallback = SpatialMeshAssessment(
         isLiDARAvailable: false,
         surfacePlaneNormal: SIMD3<Float>(0, 1, 0),
         estimatedWorkpieceDimensionsMm: SIMD3<Float>(165, 55, 10),

@@ -254,8 +254,8 @@ nonisolated final class BreadboardHomographyService: BreadboardHomographyServici
         orientation: CGImagePropertyOrientation = .up
     ) async -> BreadboardCalibration? {
         await withCheckedContinuation { continuation in
-            let request = VNDetectRectanglesRequest { [weak self] req, error in
-                guard let self = self, error == nil,
+            let request = VNDetectRectanglesRequest { req, error in
+                guard error == nil,
                       let observations = req.results as? [VNRectangleObservation],
                       !observations.isEmpty else {
                     continuation.resume(returning: nil)

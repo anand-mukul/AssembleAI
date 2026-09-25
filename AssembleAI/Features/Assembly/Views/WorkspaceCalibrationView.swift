@@ -26,9 +26,9 @@ struct WorkspaceCalibrationView: View {
             
             // 2. Calibrated Workspace Bounds Box
             if let map = workspaceMap {
-                if let calib = map.breadboardCalibration {
+                if map.breadboardDetected, let calib = map.breadboardCalibration {
                     detectedBreadboardHighlight(calib: calib)
-                } else {
+                } else if map.domain != .electronics {
                     detectedWorkbenchHighlight(area: map.estimatedWorkingArea)
                 }
             }
@@ -196,7 +196,7 @@ struct WorkspaceCalibrationCard: View {
             HStack(spacing: 8) {
                 ThinkingOrbView(status: isCalibrating ? .verifying : .live, diameter: 12)
                 
-                Text(isCalibrating ? "JARVIS WORKBENCH SCANNING" : "WORKSPACE CALIBRATED")
+                Text(isCalibrating ? "JARVIS WORKBENCH SCANNING" : ((workspaceMap?.breadboardDetected == true || workspaceMap?.domain != .electronics) ? "WORKSPACE CALIBRATED" : "ALIGN WORKPIECE"))
                     .font(.caption2.weight(.bold))
                     .foregroundColor(AppColors.aiCyan)
                     .tracking(1.2)
@@ -250,11 +250,19 @@ struct WorkspaceCalibrationCard: View {
                 // Telemetry Pills
                 HStack(spacing: 6) {
                     if map.domain == .electronics {
-                        telemetryPill(
-                            icon: "square.grid.3x3.fill",
-                            title: map.breadboardVariant == .fullSize ? "830-Point Full" : "400-Point Half",
-                            color: AppColors.badgeBlue
-                        )
+                        if map.breadboardDetected {
+                            telemetryPill(
+                                icon: "square.grid.3x3.fill",
+                                title: map.breadboardVariant == .fullSize ? "830-Point Full" : "400-Point Half",
+                                color: AppColors.badgeBlue
+                            )
+                        } else {
+                            telemetryPill(
+                                icon: "viewfinder",
+                                title: "Searching...",
+                                color: AppColors.badgeOrange
+                            )
+                        }
                     } else {
                         telemetryPill(
                             icon: map.domain.iconName,

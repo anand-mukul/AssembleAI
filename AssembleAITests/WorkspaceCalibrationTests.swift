@@ -64,4 +64,21 @@ final class WorkspaceCalibrationTests: XCTestCase {
         XCTAssertTrue(map.summaryAnnouncement.contains("integrated workspace"))
         XCTAssertTrue(map.summaryAnnouncement.contains("a bit dim"))
     }
+    
+    // MARK: - Test 4: Electronics Domain Undetected Breadboard Announcement
+    func testElectronicsDomainUndetectedBreadboardAnnouncement() {
+        let map = WorkspaceMap(
+            domain: .electronics,
+            breadboardDetected: false,
+            breadboardVariant: .halfSize,
+            breadboardCalibration: nil,
+            existingComponents: [],
+            lightingQuality: .optimal,
+            estimatedWorkingArea: CGRect(x: 0.1, y: 0.1, width: 0.8, height: 0.8)
+        )
+        
+        XCTAssertEqual(map.domain, .electronics)
+        XCTAssertFalse(map.summaryAnnouncement.contains("400-point breadboard"))
+        XCTAssertTrue(map.summaryAnnouncement.contains("Align breadboard within camera view"))
+    }
 }
