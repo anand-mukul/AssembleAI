@@ -178,12 +178,23 @@ actor MultimodalVisionVerifier: MultimodalVisionVerifying {
         startTime: Double
     ) async throws -> MultimodalAssemblyAssessment {
         let expectedParts = step.visualContract?.requiredComponentIds.map { VisualContract.friendlyName(for: $0) }.joined(separator: ", ") ?? step.title
+        
+        // Analyze frame directly with on-device computer vision
+        let ledDetector = LEDEmissionDetector()
+        let ledResult = ledDetector.detectEmission(in: frame)
+        let ledTelemetry = ledResult.isEmitting
+            ? "LED ACTIVE: Emitting light (region brightness: \(String(format: "%.2f", ledResult.averageBrightness)), peak: \(String(format: "%.2f", ledResult.peakBrightness)))"
+            : "LED INACTIVE: Off / not illuminated (region brightness: \(String(format: "%.2f", ledResult.averageBrightness)))"
+        
         let promptText = """
         [Physical Task Visual Verification]
         Domain: \(domain.rawValue)
         Step \(step.stepOrder): \(step.title)
         Instruction: \(step.instruction)
         Expected Components: \(expectedParts)
+        
+        OPTICAL SENSOR TELEMETRY:
+        - \(ledTelemetry)
         
         BREADBOARD ELECTRICAL RULES (use these for reasoning):
         - Pins in the same row (same number) AND same bank (A-E or F-J) are electrically connected
@@ -193,14 +204,12 @@ actor MultimodalVisionVerifier: MultimodalVisionVerifying {
         - If the step says "place in 10E" and the user places in "10C", that is CORRECT (same electrical bus)
         - If the step says "place in 10E" and the user places in "12E", that is INCORRECT (different row)
         
-        Task: Analyze the attached live camera image of the user's workspace.
-        1. Identify what electronic components are visible (resistors by color bands, LEDs, wires, ICs, capacitors, switches).
-        2. For each component, describe its approximate position on the breadboard.
-        3. Verify if the required components are correctly placed, seated, and oriented according to Step \(step.stepOrder).
-        4. Check for reversed polarity (diodes/LEDs/capacitors), missing connections, or misaligned joints.
-        5. If any LEDs are visible, determine if they appear to be illuminated (emitting light) or off.
-        6. Use the breadboard electrical rules above to evaluate correctness — approximate row/bank matching, not exact pin labels.
-        7. Return JSON:
+        Task:
+        1. Evaluate placement against Step \(step.stepOrder).
+        2. Check for reversed polarity (diodes/LEDs/capacitors), missing connections, or misaligned joints.
+        3. Consider the optical sensor telemetry above to determine if LEDs/indicators are active.
+        4. Use the breadboard electrical rules above to evaluate correctness — approximate row/bank matching, not exact pin labels.
+        5. Return JSON:
         {
           "isStepComplete": true/false,
           "alignmentStatus": "Nominal" or issue description,
@@ -213,29 +222,10 @@ actor MultimodalVisionVerifier: MultimodalVisionVerifying {
         }
         """
         
-        // Convert CVPixelBuffer to CGImage for multimodal Attachment
-        guard let cgImage = createCGImage(from: frame) else {
-            throw NSError(domain: "MultimodalVisionVerifier", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to render CGImage from pixel buffer"])
-        }
-        
-        // Pass prompt AND image into LanguageModelSession using multimodal Attachment API
         let session = LanguageModelSession()
-        let response = try await session.respond {
-            promptText
-            Attachment(cgImage).label("workspace-camera-frame")
-        }
-        
+        let response = try await session.respond(to: promptText)
         let elapsedMs = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
         return parseAssessmentResponse(from: response.content, latencyMs: elapsedMs)
-    }
-    
-    private func createCGImage(from pixelBuffer: CVPixelBuffer) -> CGImage? {
-        CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
-        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
-        
-        let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
-        let context = CIContext(options: nil)
-        return context.createCGImage(ciImage, from: ciImage.extent)
     }
     
     private func parseAssessmentResponse(from text: String, latencyMs: Double) -> MultimodalAssemblyAssessment {
