@@ -113,7 +113,17 @@ actor MultimodalVisionVerifier: MultimodalVisionVerifying {
     init() {
         #if canImport(FoundationModels)
         if #available(iOS 18.0, *) {
-            self.isModelAvailable = true
+            let availability = SystemLanguageModel.default.availability
+            switch availability {
+            case .available:
+                self.isModelAvailable = true
+                print("[AssembleAI] ✅ Foundation Model available and ready")
+            case .unavailable(let reason):
+                self.isModelAvailable = false
+                print("[AssembleAI] ⚠️ Foundation Model unavailable: \(reason)")
+            @unknown default:
+                self.isModelAvailable = false
+            }
         }
         #endif
     }
@@ -175,11 +185,22 @@ actor MultimodalVisionVerifier: MultimodalVisionVerifying {
         Instruction: \(step.instruction)
         Expected Components: \(expectedParts)
         
+        BREADBOARD ELECTRICAL RULES (use these for reasoning):
+        - Pins in the same row (same number) AND same bank (A-E or F-J) are electrically connected
+        - The center trough separates bank A-E from bank F-J
+        - Power rails (+/-) run the full length of the board
+        - A component in Row 10 Column A is electrically equivalent to Row 10 Column D (same row, same bank)
+        - If the step says "place in 10E" and the user places in "10C", that is CORRECT (same electrical bus)
+        - If the step says "place in 10E" and the user places in "12E", that is INCORRECT (different row)
+        
         Task: Analyze the attached live camera image of the user's workspace.
-        1. Identify physical components present (electronic components, color bands, IC chips, screws, panels, bolts).
-        2. Verify if the required components are correctly placed, seated, and oriented according to Step \(step.stepOrder).
-        3. Check for reversed polarity (diodes/LEDs/capacitors), missing connections, or misaligned joints.
-        4. Return JSON:
+        1. Identify what electronic components are visible (resistors by color bands, LEDs, wires, ICs, capacitors, switches).
+        2. For each component, describe its approximate position on the breadboard.
+        3. Verify if the required components are correctly placed, seated, and oriented according to Step \(step.stepOrder).
+        4. Check for reversed polarity (diodes/LEDs/capacitors), missing connections, or misaligned joints.
+        5. If any LEDs are visible, determine if they appear to be illuminated (emitting light) or off.
+        6. Use the breadboard electrical rules above to evaluate correctness — approximate row/bank matching, not exact pin labels.
+        7. Return JSON:
         {
           "isStepComplete": true/false,
           "alignmentStatus": "Nominal" or issue description,
@@ -187,19 +208,22 @@ actor MultimodalVisionVerifier: MultimodalVisionVerifying {
           "suggestedCorrection": "Actionable correction tip",
           "confidenceScore": 0.0 to 1.0,
           "detectedComponents": [
-            {"partName": "...", "category": "...", "colorBandsOrMarkings": ["red", "red", "brown"], "observedLocation": "...", "confidence": 0.95}
+            {"partName": "...", "category": "...", "colorBandsOrMarkings": ["red", "red", "brown"], "observedLocation": "approximate area on breadboard", "confidence": 0.95}
           ]
         }
         """
         
-        // Convert CVPixelBuffer to CGImage for Attachment
+        // Convert CVPixelBuffer to CGImage for multimodal Attachment
         guard let cgImage = createCGImage(from: frame) else {
             throw NSError(domain: "MultimodalVisionVerifier", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to render CGImage from pixel buffer"])
         }
         
-        // Pass prompt into LanguageModelSession
+        // Pass prompt AND image into LanguageModelSession using multimodal Attachment API
         let session = LanguageModelSession()
-        let response = try await session.respond(to: promptText)
+        let response = try await session.respond {
+            promptText
+            Attachment(cgImage).label("workspace-camera-frame")
+        }
         
         let elapsedMs = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
         return parseAssessmentResponse(from: response.content, latencyMs: elapsedMs)

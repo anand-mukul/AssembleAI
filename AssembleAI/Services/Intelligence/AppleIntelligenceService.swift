@@ -66,6 +66,11 @@ actor AppleIntelligenceService {
         if #available(iOS 18.0, *) {
             supportsFoundation = true
             supportsMultimodal = true
+            // Verify actual model readiness at runtime for diagnostics
+            let availability = SystemLanguageModel.default.availability
+            if case .unavailable(let reason) = availability {
+                print("[AssembleAI] ⚠️ Foundation Model framework present but model not active: \(reason)")
+            }
         }
         #endif
         

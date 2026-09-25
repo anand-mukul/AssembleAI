@@ -334,28 +334,54 @@ final class AssemblyViewModel: ObservableObject {
                 
                 // Stale step check
                 guard self.currentStep.id == activeStep.id else { continue }
-                self.currentVerificationResult = verification
+                
+                // 2b. Foundation Model Visual Cross-Check (Fix #4)
+                // When deterministic pipeline reports incorrect/uncertain,
+                // query the Foundation Model (which now actually sees the image) for a second opinion
+                var finalVerification = verification
+                if !verification.isCorrect {
+                    let fmAssessment = await MultimodalVisionVerifier.shared.verify(
+                        frame: frame,
+                        step: activeStep,
+                        domain: self.project.domain
+                    )
+                    if fmAssessment.isMultimodalEngineActive && fmAssessment.isStepComplete && fmAssessment.confidenceScore > 0.75 {
+                        // FM confidently sees step as complete — soften to uncertain (safe upgrade)
+                        finalVerification = VerificationResult(
+                            status: .uncertain,
+                            confidence: max(verification.confidence, fmAssessment.confidenceScore * 0.9),
+                            detectedDescription: fmAssessment.detectedComponents.map(\.partName).joined(separator: ", "),
+                            expectedDescription: verification.expectedDescription,
+                            explanation: fmAssessment.identifiedMistakes.isEmpty
+                                ? "Components appear correctly placed. Confirming precise alignment..."
+                                : fmAssessment.identifiedMistakes.joined(separator: ". "),
+                            primaryIssue: nil,
+                            observedState: verification.observedState
+                        )
+                    }
+                }
+                self.currentVerificationResult = finalVerification
                 
                 // Real-time dynamic overlay update in Live Tutor
                 let liveComparison = StateComparison(
-                    status: verification.isCorrect ? .correct : (verification.status == .uncertain ? .uncertain : .incorrect),
-                    confidence: verification.confidence,
-                    issues: verification.primaryIssue.map { [$0] } ?? [],
+                    status: finalVerification.isCorrect ? .correct : (finalVerification.status == .uncertain ? .uncertain : .incorrect),
+                    confidence: finalVerification.confidence,
+                    issues: finalVerification.primaryIssue.map { [$0] } ?? [],
                     matchedComponents: []
                 )
                 let overlay = await self.guidanceProvider.guidance(
                     for: liveComparison,
                     step: activeStep,
                     viewSize: self.screenViewportSize,
-                    observedState: verification.observedState
+                    observedState: finalVerification.observedState
                 )
                 self.activeGuidance = overlay
                 
                 // Log Verification Research Telemetry
                 let verDurationMs = Int(Date().timeIntervalSince(startTime) * 1000)
-                let verType: ResearchEventType = verification.isCorrect ? .verificationCorrect : (verification.status == .uncertain ? .verificationUncertain : .verificationIncorrect)
+                let verType: ResearchEventType = finalVerification.isCorrect ? .verificationCorrect : (finalVerification.status == .uncertain ? .verificationUncertain : .verificationIncorrect)
                 var verMeta: [String: String] = [:]
-                if let issue = verification.primaryIssue {
+                if let issue = finalVerification.primaryIssue {
                     verMeta["issue_type"] = issue.type.rawValue
                     verMeta["issue_title"] = issue.title
                     verMeta["issue_severity"] = issue.severity.rawValue
@@ -369,10 +395,10 @@ final class AssemblyViewModel: ObservableObject {
                     case .missingConnection, .uncertainDetection, .insufficientVisualEvidence:
                         verMeta["error_class"] = "E_seat"
                     }
-                } else if verification.isCorrect {
+                } else if finalVerification.isCorrect {
                     verMeta["error_class"] = "Nominal"
                 }
-                self.logResearchEvent(verType, durationMs: verDurationMs, status: verification.status.rawValue, metadata: verMeta)
+                self.logResearchEvent(verType, durationMs: verDurationMs, status: finalVerification.status.rawValue, metadata: verMeta)
                 
                 // 3. Evaluate Assistant Intervention Policy with Situational Timing and Hand Awareness
                 let timeSinceStart = Date().timeIntervalSince(self.stepStartTime)
@@ -382,10 +408,10 @@ final class AssemblyViewModel: ObservableObject {
                     sessionID: self.session.id,
                     timeSinceStepStartedSeconds: timeSinceStart,
                     timeSinceLastInterventionSeconds: timeSinceLastIntervention,
-                    lastVerificationResult: verification,
+                    lastVerificationResult: finalVerification,
                     handActivity: activity
                 )
-                let decision = self.interventionPolicy.evaluate(event: .verificationUpdated(result: verification), context: context)
+                let decision = self.interventionPolicy.evaluate(event: .verificationUpdated(result: finalVerification), context: context)
                 
                 // 4. Handle Spoken Guidance & Automatic Step Progression
                 if decision.shouldIntervene {
@@ -395,7 +421,7 @@ final class AssemblyViewModel: ObservableObject {
                     let assistantContext = AssistantContext(
                         currentStep: activeStep,
                         sessionID: self.session.id,
-                        verificationResult: verification
+                        verificationResult: finalVerification
                     )
                     
                     let modelStartTime = Date()
@@ -412,7 +438,7 @@ final class AssemblyViewModel: ObservableObject {
                     }
                     
                     // 5. Automatic Progression Trigger on Confirmed Completion
-                    if case .confirm = decision.action, verification.isCorrect {
+                    if case .confirm = decision.action, finalVerification.isCorrect {
                         self.triggerAutomaticStepProgression(for: activeStep)
                     }
                 } else {
