@@ -38,7 +38,7 @@ nonisolated struct WorkspaceMap: Sendable, Equatable {
     init(
         domain: AssemblyDomain = .electronics,
         breadboardDetected: Bool,
-        breadboardVariant: BreadboardGeometry.Variant = .halfSize,
+        breadboardVariant: BreadboardGeometry.Variant = .fullSize,
         breadboardCalibration: BreadboardCalibration? = nil,
         existingComponents: [ObservedComponent] = [],
         lightingQuality: WorkspaceLightingQuality = .optimal,
@@ -123,12 +123,12 @@ final class WorkspaceCalibrationService: WorkspaceCalibrationServicing, @uncheck
         if domain == .electronics {
             calibration = await homographyService.detectCalibration(in: pixelBuffer, orientation: orientation)
             detected = calibration != nil
-            variant = calibration?.geometry.variant ?? .halfSize
+            variant = calibration?.geometry.variant ?? .fullSize
         } else {
             // Physical / Hybrid domains: no breadboard constraint
             calibration = nil
             detected = false
-            variant = .halfSize
+            variant = .fullSize
         }
         
         // 2. Assess lighting quality from frame luminance

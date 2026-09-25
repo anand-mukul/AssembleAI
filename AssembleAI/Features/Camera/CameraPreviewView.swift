@@ -9,6 +9,7 @@ import AVFoundation
 /// UIKit bridge wrapping `AVCaptureVideoPreviewLayer` for full-screen SwiftUI camera rendering.
 struct CameraPreviewView: UIViewRepresentable {
     let session: AVCaptureSession
+    var isRunning: Bool = false
     
     class VideoPreviewUIView: UIView {
         override class var layerClass: AnyClass {
@@ -19,32 +20,63 @@ struct CameraPreviewView: UIViewRepresentable {
             return layer as! AVCaptureVideoPreviewLayer
         }
         
-        override func layoutSubviews() {
-            super.layoutSubviews()
-            videoPreviewLayer.frame = bounds
-            updateOrientation()
+        private var startObserver: NSObjectProtocol?
+        
+        override init(frame: CGRect) {
+            super.init(frame: frame)
+            setupLayer()
         }
         
-        func updateOrientation() {
-            guard let connection = videoPreviewLayer.connection else { return }
-            if #available(iOS 17.0, *) {
-                if connection.isVideoRotationAngleSupported(90) {
-                    connection.videoRotationAngle = 90
-                } else if connection.isVideoOrientationSupported {
+        required init?(coder: NSCoder) {
+            super.init(coder: coder)
+            setupLayer()
+        }
+        
+        deinit {
+            if let observer = startObserver {
+                NotificationCenter.default.removeObserver(observer)
+            }
+        }
+        
+        private func setupLayer() {
+            backgroundColor = .clear
+            videoPreviewLayer.videoGravity = .resizeAspectFill
+            
+            // Listen for session running notification to ensure preview layer connection is configured as soon as hardware streams
+            startObserver = NotificationCenter.default.addObserver(
+                forName: .AVCaptureSessionDidStartRunning,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                self?.refreshPreview()
+            }
+        }
+        
+        override func layoutSubviews() {
+            super.layoutSubviews()
+            refreshPreview()
+        }
+        
+        func refreshPreview() {
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            videoPreviewLayer.frame = bounds
+            if let connection = videoPreviewLayer.connection {
+                if connection.isVideoOrientationSupported {
                     connection.videoOrientation = .portrait
                 }
-            } else if connection.isVideoOrientationSupported {
-                connection.videoOrientation = .portrait
+                if !connection.isEnabled {
+                    connection.isEnabled = true
+                }
             }
+            CATransaction.commit()
         }
     }
     
     func makeUIView(context: Context) -> VideoPreviewUIView {
         let view = VideoPreviewUIView()
-        view.backgroundColor = .black
         view.videoPreviewLayer.session = session
-        view.videoPreviewLayer.videoGravity = .resizeAspectFill
-        view.updateOrientation()
+        view.refreshPreview()
         return view
     }
     
@@ -52,6 +84,6 @@ struct CameraPreviewView: UIViewRepresentable {
         if uiView.videoPreviewLayer.session !== session {
             uiView.videoPreviewLayer.session = session
         }
-        uiView.updateOrientation()
+        uiView.refreshPreview()
     }
 }

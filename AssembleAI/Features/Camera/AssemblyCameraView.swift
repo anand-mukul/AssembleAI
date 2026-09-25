@@ -65,7 +65,7 @@ struct AssemblyCameraView: View {
             ZStack {
                 // Full-Screen Live Camera Preview / Spatial Hardware Studio Canvas
                 if cameraService.authorizationStatus == .authorized && cameraService.isCameraAvailable {
-                    CameraPreviewView(session: cameraService.captureSession)
+                    CameraPreviewView(session: cameraService.captureSession, isRunning: cameraService.isSessionRunning)
                         .ignoresSafeArea()
                         .accessibilityElement(children: .ignore)
                         .accessibilityLabel("Live camera feed")
@@ -361,10 +361,10 @@ struct AssemblyCameraView: View {
                     }
                 }) {
                     HStack(spacing: 5) {
-                        Image(systemName: "checkmark.seal.fill")
+                        Image(systemName: (map.breadboardDetected || map.domain != .electronics) ? "checkmark.seal.fill" : "viewfinder")
                             .font(.system(size: 11, weight: .bold))
                             .foregroundColor(AppColors.aiCyan)
-                        Text(map.domain == .electronics ? (map.breadboardVariant == .fullSize ? "830-Pt" : "400-Pt") : map.domain.displayName)
+                        Text(map.domain == .electronics ? (map.breadboardDetected ? (map.breadboardVariant == .fullSize ? "830-Pt" : "400-Pt") : "Detecting...") : map.domain.displayName)
                             .font(.system(size: 11, weight: .semibold, design: .rounded))
                             .foregroundColor(.white)
                     }
@@ -634,7 +634,7 @@ struct AssemblyCameraView: View {
                     }
                 }
             } else {
-                // Studio Viewfinder Backdrop (Initializing / Simulator Standby)
+                // Studio Viewfinder Backdrop (Initializing / Hardware Standby)
                 ZStack {
                     RadialGradient(
                         colors: [Color(white: 0.10), Color.black],
@@ -644,32 +644,68 @@ struct AssemblyCameraView: View {
                     )
                     .ignoresSafeArea()
                     
-                    #if targetEnvironment(simulator)
-                    VStack(spacing: 8) {
-                        Image(systemName: "camera.viewfinder")
-                            .font(.system(size: 36, weight: .ultraLight))
-                            .foregroundColor(.white.opacity(0.4))
-                        
-                        Text("Camera Standby (Simulator)")
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundColor(.white.opacity(0.5))
-                        
-                        Text("Connect a physical device with a camera for live optical tracking.")
-                            .font(.caption2)
-                            .foregroundColor(.white.opacity(0.35))
+                    if let error = cameraService.errorMessage {
+                        VStack(spacing: AppSpacing.md) {
+                            Image(systemName: "camera.badge.ellipsis")
+                                .font(.system(size: 44, weight: .ultraLight))
+                                .foregroundColor(.yellow)
+                            
+                            VStack(spacing: 6) {
+                                Text("Camera Hardware Initialization")
+                                    .font(.headline)
+                                    .foregroundColor(.white)
+                                
+                                Text(error)
+                                    .font(.caption)
+                                    .foregroundColor(.white.opacity(0.7))
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, AppSpacing.xl)
+                            }
+                            
+                            Button("Retry Camera") {
+                                cameraService.configureSession()
+                                cameraService.startSession()
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(AppColors.brandPrimary)
+                        }
+                    } else if !cameraService.isSessionRunning {
+                        #if targetEnvironment(simulator)
+                        VStack(spacing: 8) {
+                            Image(systemName: "camera.viewfinder")
+                                .font(.system(size: 36, weight: .ultraLight))
+                                .foregroundColor(.white.opacity(0.4))
+                            
+                            Text("Camera Standby (Simulator)")
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .foregroundColor(.white.opacity(0.5))
+                            
+                            Text("Connect a physical device with a camera for live optical tracking.")
+                                .font(.caption2)
+                                .foregroundColor(.white.opacity(0.35))
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(Color.white.opacity(0.04))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .strokeBorder(Color.white.opacity(0.08), lineWidth: 0.5)
+                        )
+                        #else
+                        VStack(spacing: 12) {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                .scaleEffect(1.2)
+                            Text("Starting optical camera...")
+                                .font(.caption)
+                                .foregroundColor(.white.opacity(0.65))
+                        }
+                        #endif
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(Color.white.opacity(0.04))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .strokeBorder(Color.white.opacity(0.08), lineWidth: 0.5)
-                    )
-                    #endif
                 }
                 .accessibilityHidden(true)
             }

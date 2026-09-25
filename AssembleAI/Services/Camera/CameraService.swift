@@ -140,28 +140,21 @@ final class CameraService: NSObject, ObservableObject {
             
             captureSession.beginConfiguration()
             
-            // Prioritize high-performance 1080p stream for Vision/ML observation with photo support
-            if captureSession.canSetSessionPreset(.hd1920x1080) {
-                captureSession.sessionPreset = .hd1920x1080
-            } else if captureSession.canSetSessionPreset(.high) {
-                captureSession.sessionPreset = .high
-            } else {
-                captureSession.sessionPreset = .photo
-            }
+            // Primary 48MP Wide Angle camera (standard 1x with macro autofocus across all iPhone Pro models)
+            let videoDevice: AVCaptureDevice? = {
+                if let wide = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) {
+                    return wide
+                }
+                let discovery = AVCaptureDevice.DiscoverySession(
+                    deviceTypes: [.builtInWideAngleCamera, .builtInDualWideCamera, .builtInDualCamera, .builtInTripleCamera],
+                    mediaType: .video,
+                    position: .back
+                )
+                return discovery.devices.first
+            }()
             
-            // Video Input with Macro Fusion Discovery (Triple/DualWide/Dual/Wide)
-            let discoverySession = AVCaptureDevice.DiscoverySession(
-                deviceTypes: [
-                    .builtInTripleCamera,
-                    .builtInDualWideCamera,
-                    .builtInDualCamera,
-                    .builtInWideAngleCamera
-                ],
-                mediaType: .video,
-                position: .back
-            )
-            guard let videoDevice = discoverySession.devices.first ?? AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
-                  let videoInput = try? AVCaptureDeviceInput(device: videoDevice),
+            guard let device = videoDevice,
+                  let videoInput = try? AVCaptureDeviceInput(device: device),
                   captureSession.canAddInput(videoInput) else {
                 
                 DispatchQueue.main.async {
@@ -180,28 +173,32 @@ final class CameraService: NSObject, ObservableObject {
             
             // Enable macro auto-focus optimizations
             do {
-                try videoDevice.lockForConfiguration()
-                if videoDevice.isFocusModeSupported(.continuousAutoFocus) {
-                    videoDevice.focusMode = .continuousAutoFocus
+                try device.lockForConfiguration()
+                if device.isFocusModeSupported(.continuousAutoFocus) {
+                    device.focusMode = .continuousAutoFocus
                 }
-                if videoDevice.isSmoothAutoFocusSupported {
-                    videoDevice.isSmoothAutoFocusEnabled = true
+                if device.isSmoothAutoFocusSupported {
+                    device.isSmoothAutoFocusEnabled = true
                 }
-                videoDevice.unlockForConfiguration()
+                device.unlockForConfiguration()
             } catch {
                 // Focus configuration fallback
             }
             
             captureSession.addInput(videoInput)
             
-            // Photo Output (for manual capture workflow)
+            // Set session preset after adding device input to ensure format compatibility
+            if captureSession.canSetSessionPreset(.hd1920x1080) {
+                captureSession.sessionPreset = .hd1920x1080
+            } else if captureSession.canSetSessionPreset(.high) {
+                captureSession.sessionPreset = .high
+            } else {
+                captureSession.sessionPreset = .photo
+            }
+            
+            // Photo Output (for manual capture workflow — native resolution without setting maxPhotoDimensions)
             if captureSession.canAddOutput(photoOutput) {
                 captureSession.addOutput(photoOutput)
-                if #available(iOS 16.0, *) {
-                    if let maxDimensions = videoDevice.activeFormat.supportedMaxPhotoDimensions.last {
-                        photoOutput.maxPhotoDimensions = maxDimensions
-                    }
-                }
             }
             
             // Video Data Output (for continuous Live Tutor observation stream)
@@ -214,14 +211,8 @@ final class CameraService: NSObject, ObservableObject {
                 captureSession.addOutput(videoOutput)
                 
                 if let connection = videoOutput.connection(with: .video) {
-                    if #available(iOS 17.0, *) {
-                        if connection.isVideoRotationAngleSupported(90) {
-                            connection.videoRotationAngle = 90
-                        }
-                    } else {
-                        if connection.isVideoOrientationSupported {
-                            connection.videoOrientation = .portrait
-                        }
+                    if connection.isVideoOrientationSupported {
+                        connection.videoOrientation = .portrait
                     }
                 }
             }
@@ -232,14 +223,14 @@ final class CameraService: NSObject, ObservableObject {
                 self.isConfigured = true
                 self.isCameraAvailable = true
                 self.errorMessage = nil
-                self.isTorchSupported = videoDevice.hasTorch
+                self.isTorchSupported = device.hasTorch
                 
                 // Dynamic lens discovery and zoom capabilities (C-3)
                 var options: [CameraZoomOption] = []
                 var factors: [CGFloat] = []
                 
-                let minZoom = videoDevice.minAvailableVideoZoomFactor
-                let maxZoom = videoDevice.maxAvailableVideoZoomFactor
+                let minZoom = device.minAvailableVideoZoomFactor
+                let maxZoom = device.maxAvailableVideoZoomFactor
                 
                 if minZoom <= 0.5 {
                     options.append(CameraZoomOption(id: "0.5x", factor: 0.5, label: "0.5×"))

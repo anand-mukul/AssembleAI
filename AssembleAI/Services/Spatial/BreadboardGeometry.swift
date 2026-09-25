@@ -47,7 +47,7 @@ nonisolated struct BreadboardGeometry: Sendable, Equatable, Hashable {
     /// Physical length/height in millimeters along rows.
     let heightMm: Double
     
-    init(variant: Variant = .halfSize) {
+    init(variant: Variant = .fullSize) {
         self.variant = variant
         switch variant {
         case .halfSize:
