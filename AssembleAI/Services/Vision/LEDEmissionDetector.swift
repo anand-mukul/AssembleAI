@@ -10,6 +10,7 @@
 import Foundation
 import CoreGraphics
 import CoreImage
+import CoreVideo
 import UIKit
 
 // MARK: - LED Emission Result
@@ -57,13 +58,56 @@ nonisolated struct LEDEmissionDetector: Sendable {
         self.peakThreshold = peakThreshold
     }
     
+    /// Analyzes a CVPixelBuffer camera frame directly for LED emission.
+    ///
+    /// - Parameters:
+    ///   - pixelBuffer: The raw camera frame.
+    ///   - region: Normalized bounding box (0.0–1.0), defaults to full frame.
+    /// - Returns: LED emission analysis result.
+    func detectEmission(
+        in pixelBuffer: CVPixelBuffer,
+        normalizedRegion region: CGRect = CGRect(x: 0, y: 0, width: 1, height: 1)
+    ) -> LEDEmissionResult {
+        let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
+        let context = CIContext(options: [.useSoftwareRenderer: false])
+        
+        let extent = ciImage.extent
+        let pixelRect = CGRect(
+            x: extent.origin.x + region.origin.x * extent.width,
+            y: extent.origin.y + region.origin.y * extent.height,
+            width: region.size.width * extent.width,
+            height: region.size.height * extent.height
+        ).integral
+        
+        let clampedRect = pixelRect.intersection(extent)
+        guard !clampedRect.isEmpty, clampedRect.width > 2, clampedRect.height > 2 else {
+            return .unknown
+        }
+        
+        let cropped = ciImage.cropped(to: clampedRect)
+        let averageBrightness = computeAverageBrightness(ciImage: cropped, context: context)
+        let peakBrightness = computePeakBrightness(ciImage: cropped, context: context)
+        
+        let isEmitting = averageBrightness > emissionThreshold || peakBrightness > peakThreshold
+        let description = isEmitting
+            ? "LED is active and illuminated (brightness: \(String(format: "%.0f", peakBrightness * 100))%)."
+            : "LED appears to be OFF (brightness: \(String(format: "%.0f", averageBrightness * 100))%)."
+        
+        return LEDEmissionResult(
+            isEmitting: isEmitting,
+            averageBrightness: averageBrightness,
+            peakBrightness: peakBrightness,
+            description: description
+        )
+    }
+    
     /// Analyzes a region of the camera frame to determine LED emission state.
     ///
     /// - Parameters:
     ///   - image: The full camera frame as CGImage.
     ///   - region: Normalized bounding box (0.0–1.0) of the detected LED component.
     /// - Returns: LED emission analysis result.
-    func detectEmission(in image: CGImage, normalizedRegion region: CGRect) -> LEDEmissionResult {
+    func detectEmission(in image: CGImage, normalizedRegion region: CGRect = CGRect(x: 0, y: 0, width: 1, height: 1)) -> LEDEmissionResult {
         let imageWidth = CGFloat(image.width)
         let imageHeight = CGFloat(image.height)
         
@@ -117,7 +161,7 @@ nonisolated struct LEDEmissionDetector: Sendable {
     }
     
     /// Analyzes a UIImage for LED emission in the given normalized region.
-    func detectEmission(in image: UIImage, normalizedRegion region: CGRect) -> LEDEmissionResult {
+    func detectEmission(in image: UIImage, normalizedRegion region: CGRect = CGRect(x: 0, y: 0, width: 1, height: 1)) -> LEDEmissionResult {
         guard let cgImage = image.cgImage else { return .unknown }
         return detectEmission(in: cgImage, normalizedRegion: region)
     }
