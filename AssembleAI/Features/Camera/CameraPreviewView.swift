@@ -62,8 +62,14 @@ struct CameraPreviewView: UIViewRepresentable {
             CATransaction.setDisableActions(true)
             videoPreviewLayer.frame = bounds
             if let connection = videoPreviewLayer.connection {
-                if connection.isVideoOrientationSupported {
-                    connection.videoOrientation = .portrait
+                if #available(iOS 17.0, *) {
+                    if connection.isVideoRotationAngleSupported(90) {
+                        connection.videoRotationAngle = 90
+                    }
+                } else {
+                    if connection.isVideoOrientationSupported {
+                        connection.videoOrientation = .portrait
+                    }
                 }
                 if !connection.isEnabled {
                     connection.isEnabled = true

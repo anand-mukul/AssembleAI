@@ -6,7 +6,7 @@
 import Foundation
 
 /// PostgREST Data Transfer Object for `public.attempts` table.
-public struct AttemptDTO: Codable, Sendable {
+nonisolated public struct AttemptDTO: Codable, Sendable {
     public let id: String
     public let session_id: String
     public let step_id: String
@@ -17,7 +17,7 @@ public struct AttemptDTO: Codable, Sendable {
     public let explanation: String?
     public let created_at: String
 
-    public init(
+    nonisolated public init(
         id: String,
         sessionId: String,
         stepId: String,
@@ -39,7 +39,7 @@ public struct AttemptDTO: Codable, Sendable {
         self.created_at = createdAt
     }
 
-    init(domain: Attempt) {
+    nonisolated init(domain: Attempt) {
         self.id = domain.id.uuidString.lowercased()
         self.session_id = domain.sessionId.uuidString.lowercased()
         self.step_id = domain.stepId.uuidString.lowercased()
@@ -51,7 +51,7 @@ public struct AttemptDTO: Codable, Sendable {
         self.created_at = ISO8601DateFormatter().string(from: domain.createdAt)
     }
 
-    func toDomain() -> Attempt {
+    nonisolated func toDomain() -> Attempt {
         let formatter = ISO8601DateFormatter()
         let createdDate = formatter.date(from: created_at) ?? Date()
         let parsedStatus = AttemptStatus(rawValue: status) ?? .uncertain

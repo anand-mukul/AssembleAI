@@ -395,7 +395,7 @@ nonisolated struct ComponentSpatialDetector: Sendable {
             let alreadyDetected = detected.contains { $0.partId == partId || $0.name == compName }
             if !alreadyDetected {
                 // Bind to the most geometrically compatible unassigned salient region detected by Apple Neural Engine
-                let usedBoxes = Set(detected.map(\.cameraBoundingBox))
+                let usedBoxes = detected.map(\.cameraBoundingBox)
                 let matchingRegion = findGeometricallyCompatibleRegion(for: compType, in: observation.regions, alreadyUsed: usedBoxes)
                 let liveBoundingBox = matchingRegion?.boundingBox ?? CGRect(x: 0.25, y: 0.25, width: 0.50, height: 0.50)
                 
@@ -840,9 +840,9 @@ nonisolated struct ComponentSpatialDetector: Sendable {
     func findGeometricallyCompatibleRegion(
         for compType: ComponentType,
         in regions: [DetectedRegion],
-        alreadyUsed: Set<CGRect>
+        alreadyUsed: [CGRect]
     ) -> DetectedRegion? {
-        let candidates = regions.filter { !alreadyUsed.contains($0.boundingBox) }
+        let candidates = regions.filter { r in !alreadyUsed.contains(r.boundingBox) }
         guard !candidates.isEmpty else { return nil }
         
         switch compType {

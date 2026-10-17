@@ -825,7 +825,6 @@ final class AssemblyViewModel: ObservableObject {
                     )
                 }
             case .repeatInstruction:
-                let compName = self.currentStep.visualContract?.requiredComponentIds.first.map { VisualContract.friendlyName(for: $0) } ?? "component"
                 let variations = [
                     "Sure thing! For Step \(self.currentStep.stepOrder): \(self.currentStep.title). \(self.currentStep.instruction) 🛠️",
                     "Got you covered! Here's Step \(self.currentStep.stepOrder) - \(self.currentStep.title): \(self.currentStep.instruction) 🔌",

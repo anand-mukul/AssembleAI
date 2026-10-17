@@ -8,7 +8,7 @@
 import Foundation
 
 /// PostgREST DTO representation of `public.assembly_sessions`.
-struct AssemblySessionDTO: Codable, Sendable {
+nonisolated struct AssemblySessionDTO: Codable, Sendable {
     let id: UUID
     var userId: UUID?
     let projectId: UUID
@@ -61,7 +61,7 @@ struct AssemblySessionDTO: Codable, Sendable {
         self.updatedAt = domain.updatedAt
     }
     
-    func toDomain() -> AssemblySession {
+    nonisolated func toDomain() -> AssemblySession {
         AssemblySession(
             id: id,
             userId: userId,

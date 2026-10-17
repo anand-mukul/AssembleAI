@@ -48,8 +48,7 @@ enum PreviewProjectFixture {
     /// Sample activity history: real session records are loaded from SwiftData/database.
     static let sampleActivity: [ActivityItemModel] = []
     
-    #if DEBUG
-    /// Isolated fixture model exclusively for SwiftUI Canvas previews (never loaded by app runtime).
+    /// Isolated fixture model exclusively for SwiftUI Canvas previews.
     static let previewProject = AssemblyProject(
         id: UUID(uuidString: "11111111-1111-1111-1111-111111111111") ?? UUID(),
         title: "LED Circuit",
@@ -71,7 +70,6 @@ enum PreviewProjectFixture {
             ProjectStepSummary(stepOrder: 2, title: "Connect Anode Lead", instruction: "Align long lead with pin.", isCompleted: false)
         ]
     )
-    #endif
 }
 
 typealias SampleProjectData = PreviewProjectFixture

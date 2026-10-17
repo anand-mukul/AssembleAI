@@ -8,7 +8,7 @@
 import Foundation
 
 /// PostgREST DTO representation of `public.research_sessions`.
-struct ResearchSessionDTO: Codable, Sendable {
+nonisolated struct ResearchSessionDTO: Codable, Sendable {
     var id: UUID?
     var userId: UUID?
     var sessionId: UUID

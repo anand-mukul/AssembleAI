@@ -8,7 +8,7 @@
 import Foundation
 
 /// PostgREST DTO representation of `public.assembly_steps`.
-struct AssemblyStepDTO: Codable, Sendable {
+nonisolated struct AssemblyStepDTO: Codable, Sendable {
     let id: UUID
     let projectId: UUID
     var stepOrder: Int
@@ -33,7 +33,7 @@ struct AssemblyStepDTO: Codable, Sendable {
         case updatedAt = "updated_at"
     }
     
-    init(from domain: AssemblyStep) {
+    nonisolated init(from domain: AssemblyStep) {
         self.id = domain.id
         self.projectId = domain.projectId
         self.stepOrder = domain.stepOrder
@@ -46,7 +46,7 @@ struct AssemblyStepDTO: Codable, Sendable {
         self.updatedAt = domain.updatedAt
     }
     
-    func toDomain() -> AssemblyStep {
+    nonisolated func toDomain() -> AssemblyStep {
         AssemblyStep(
             id: id,
             projectId: projectId,

@@ -213,8 +213,16 @@ final class CameraService: NSObject, ObservableObject {
             
             if captureSession.canAddOutput(photoOutput) {
                 captureSession.addOutput(photoOutput)
-                if let connection = photoOutput.connection(with: .video), connection.isVideoOrientationSupported {
-                    connection.videoOrientation = .portrait
+                if let connection = photoOutput.connection(with: .video) {
+                    if #available(iOS 17.0, *) {
+                        if connection.isVideoRotationAngleSupported(90) {
+                            connection.videoRotationAngle = 90
+                        }
+                    } else {
+                        if connection.isVideoOrientationSupported {
+                            connection.videoOrientation = .portrait
+                        }
+                    }
                 }
             }
             
@@ -227,8 +235,14 @@ final class CameraService: NSObject, ObservableObject {
                 captureSession.addOutput(videoOutput)
                 
                 if let connection = videoOutput.connection(with: .video) {
-                    if connection.isVideoOrientationSupported {
-                        connection.videoOrientation = .portrait
+                    if #available(iOS 17.0, *) {
+                        if connection.isVideoRotationAngleSupported(90) {
+                            connection.videoRotationAngle = 90
+                        }
+                    } else {
+                        if connection.isVideoOrientationSupported {
+                            connection.videoOrientation = .portrait
+                        }
                     }
                 }
             }
@@ -415,8 +429,16 @@ final class CameraService: NSObject, ObservableObject {
             
             self.cameraQueue.async { [weak self, photoOutput] in
                 guard let self = self else { return }
-                if let photoConnection = photoOutput.connection(with: .video), photoConnection.isVideoOrientationSupported {
-                    photoConnection.videoOrientation = .portrait
+                if let photoConnection = photoOutput.connection(with: .video) {
+                    if #available(iOS 17.0, *) {
+                        if photoConnection.isVideoRotationAngleSupported(90) {
+                            photoConnection.videoRotationAngle = 90
+                        }
+                    } else {
+                        if photoConnection.isVideoOrientationSupported {
+                            photoConnection.videoOrientation = .portrait
+                        }
+                    }
                 }
                 let settings = AVCapturePhotoSettings()
                 if photoOutput.supportedFlashModes.contains(.auto) {

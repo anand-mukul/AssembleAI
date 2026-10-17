@@ -366,7 +366,7 @@ final class ProjectCreatorViewModel: ObservableObject {
             try await supabase.saveFullAssemblyProject(project)
             
             // 2. Cache in SwiftData for instant offline-first local access
-            let currentUserId = await SupabaseManager.shared.currentUserId.flatMap { UUID(uuidString: $0) }
+            let currentUserId = SupabaseManager.shared.currentUserId.flatMap { UUID(uuidString: $0) }
             let context = PersistenceController.shared.container.mainContext
             let localProject = LocalProject(
                 id: project.id,

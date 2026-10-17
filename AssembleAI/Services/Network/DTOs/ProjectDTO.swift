@@ -8,7 +8,7 @@
 import Foundation
 
 /// PostgREST DTO representation of `public.projects`.
-struct ProjectDTO: Codable, Sendable {
+nonisolated struct ProjectDTO: Codable, Sendable {
     let id: UUID
     var ownerId: UUID?
     var title: String
@@ -37,7 +37,7 @@ struct ProjectDTO: Codable, Sendable {
         case updatedAt = "updated_at"
     }
     
-    init(from domain: Project) {
+    nonisolated init(from domain: Project) {
         self.id = domain.id
         self.ownerId = domain.ownerId
         self.title = domain.title
@@ -52,7 +52,7 @@ struct ProjectDTO: Codable, Sendable {
         self.updatedAt = domain.updatedAt
     }
     
-    func toDomain() -> Project {
+    nonisolated func toDomain() -> Project {
         Project(
             id: id,
             ownerId: ownerId,

@@ -8,7 +8,7 @@
 import Foundation
 
 /// PostgREST DTO representation of `public.components`.
-struct ComponentDTO: Codable, Sendable {
+nonisolated struct ComponentDTO: Codable, Sendable {
     let id: UUID
     let projectId: UUID
     var name: String
@@ -35,7 +35,7 @@ struct ComponentDTO: Codable, Sendable {
         case updatedAt = "updated_at"
     }
     
-    init(from domain: Component) {
+    nonisolated init(from domain: Component) {
         self.id = domain.id
         self.projectId = domain.projectId
         self.name = domain.name
@@ -49,7 +49,7 @@ struct ComponentDTO: Codable, Sendable {
         self.updatedAt = domain.updatedAt
     }
     
-    func toDomain() -> Component {
+    nonisolated func toDomain() -> Component {
         Component(
             id: id,
             projectId: projectId,

@@ -8,7 +8,7 @@
 import Foundation
 
 /// PostgREST DTO representation of `public.profiles`.
-struct ProfileDTO: Codable, Sendable {
+nonisolated struct ProfileDTO: Codable, Sendable {
     let id: String
     var fullName: String?
     var email: String?
@@ -69,7 +69,7 @@ struct ProfileDTO: Codable, Sendable {
         self.updatedAt = updatedAt
     }
     
-    func toDomain(provider: AuthProvider = .email) -> User {
+    nonisolated func toDomain(provider: AuthProvider = .email) -> User {
         User(
             id: id,
             name: fullName,
