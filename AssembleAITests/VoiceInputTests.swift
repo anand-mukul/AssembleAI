@@ -162,7 +162,7 @@ final class VoiceInputTests: XCTestCase {
         let outputState = await mockVoiceOutput.state
         XCTAssertEqual(outputState, .speaking)
         let firstSpoken = await mockVoiceOutput.spokenResponses.first?.text
-        XCTAssertTrue(firstSpoken?.contains("where does this go?") == true)
+        XCTAssertEqual(firstSpoken, response.text)
     }
     
     // MARK: - Test 6: VoiceInputService Protocol Conformance & Factory

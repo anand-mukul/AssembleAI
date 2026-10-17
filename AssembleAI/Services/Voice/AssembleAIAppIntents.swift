@@ -64,7 +64,7 @@ public struct AssemblyProjectQuery: EntityQuery {
         let stepDescriptor = FetchDescriptor<LocalAssemblyStep>()
         let allSteps = (try? context.fetch(stepDescriptor)) ?? []
         
-        return localProjects.filter { identifiers.contains($0.id) }.map { project in
+        var results = localProjects.filter { identifiers.contains($0.id) }.map { project in
             let count = allSteps.filter { $0.projectId == project.id }.count
             return AssemblyProjectEntity(
                 id: project.id,
@@ -73,6 +73,19 @@ public struct AssemblyProjectQuery: EntityQuery {
                 stepCount: count
             )
         }
+        
+        if results.isEmpty {
+            let bundled = BundledProjectRepository.bundledProjects.filter { identifiers.contains($0.id) }
+            results = bundled.map { project in
+                AssemblyProjectEntity(
+                    id: project.id,
+                    title: project.title,
+                    domain: project.domain.rawValue.capitalized,
+                    stepCount: project.steps.count
+                )
+            }
+        }
+        return results
     }
     
     @MainActor
@@ -83,7 +96,7 @@ public struct AssemblyProjectQuery: EntityQuery {
         let stepDescriptor = FetchDescriptor<LocalAssemblyStep>()
         let allSteps = (try? context.fetch(stepDescriptor)) ?? []
         
-        return localProjects.map { project in
+        var results = localProjects.map { project in
             let count = allSteps.filter { $0.projectId == project.id }.count
             return AssemblyProjectEntity(
                 id: project.id,
@@ -92,6 +105,18 @@ public struct AssemblyProjectQuery: EntityQuery {
                 stepCount: count
             )
         }
+        
+        if results.isEmpty {
+            results = BundledProjectRepository.bundledProjects.map { project in
+                AssemblyProjectEntity(
+                    id: project.id,
+                    title: project.title,
+                    domain: project.domain.rawValue.capitalized,
+                    stepCount: project.steps.count
+                )
+            }
+        }
+        return results
     }
 }
 
@@ -134,9 +159,16 @@ public struct AssemblyStepQuery: EntityQuery {
         let context = PersistenceController.shared.container.mainContext
         let descriptor = FetchDescriptor<LocalAssemblyStep>()
         let localSteps = (try? context.fetch(descriptor)) ?? []
-        return localSteps.filter { identifiers.contains($0.id) }.map {
+        var results = localSteps.filter { identifiers.contains($0.id) }.map {
             AssemblyStepEntity(id: $0.id, stepOrder: $0.stepOrder, title: $0.title, instruction: $0.instruction)
         }
+        if results.isEmpty {
+            let allSteps = BundledProjectRepository.bundledProjects.flatMap(\.steps)
+            results = allSteps.filter { identifiers.contains($0.id) }.map {
+                AssemblyStepEntity(id: $0.id, stepOrder: $0.stepOrder, title: $0.title, instruction: $0.instruction)
+            }
+        }
+        return results
     }
     
     @MainActor
@@ -144,9 +176,16 @@ public struct AssemblyStepQuery: EntityQuery {
         let context = PersistenceController.shared.container.mainContext
         let descriptor = FetchDescriptor<LocalAssemblyStep>()
         let localSteps = (try? context.fetch(descriptor)) ?? []
-        return localSteps.map {
+        var results = localSteps.map {
             AssemblyStepEntity(id: $0.id, stepOrder: $0.stepOrder, title: $0.title, instruction: $0.instruction)
         }
+        if results.isEmpty {
+            let allSteps = BundledProjectRepository.bundledProjects.flatMap(\.steps)
+            results = allSteps.map {
+                AssemblyStepEntity(id: $0.id, stepOrder: $0.stepOrder, title: $0.title, instruction: $0.instruction)
+            }
+        }
+        return results
     }
 }
 
@@ -505,7 +544,7 @@ public struct QueryJointAlignmentIntent: AppIntent {
     public func perform() async throws -> some ProvidesDialog {
         let toolService = FoundationModelsToolCallingService()
         let result = toolService.queryJointAlignment(jointDescription: jointName, expectedAngleDegrees: 90.0, observedAngleDegrees: nil)
-        let dialog = IntentDialog(result.guidance)
+        let dialog = IntentDialog("\(result.guidance)")
         return .result(dialog: dialog)
     }
 }

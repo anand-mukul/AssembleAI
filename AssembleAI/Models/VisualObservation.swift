@@ -25,6 +25,9 @@ nonisolated struct DetectedText: Identifiable, Hashable, Codable, Sendable, Expr
     }
 }
 
+/// Convenience alias for text detection element
+typealias RecognizedTextElement = DetectedText
+
 /// Detected physical component/region feature observation.
 nonisolated struct DetectedRegion: Identifiable, Hashable, Codable, Sendable {
     let id: UUID
@@ -66,19 +69,24 @@ nonisolated struct VisualObservation: Identifiable, Hashable, Codable, Sendable 
     
     nonisolated init(
         id: UUID = UUID(),
-        imageSize: CGSize,
+        imageSize: CGSize = CGSize(width: 1920, height: 1080),
         detectedText: [DetectedText] = [],
         regions: [DetectedRegion] = [],
         classifications: [DetectedClassification] = [],
+        sceneClassification: String? = nil,
         detectedHumans: [CGRect] = [],
         timestamp: Date = Date(),
-        processingTimeMs: Double
+        processingTimeMs: Double = 0.0
     ) {
         self.id = id
         self.imageSize = imageSize
         self.detectedText = detectedText
         self.regions = regions
-        self.classifications = classifications
+        var resolvedClassifications = classifications
+        if let sc = sceneClassification {
+            resolvedClassifications.append(DetectedClassification(identifier: sc, confidence: 1.0))
+        }
+        self.classifications = resolvedClassifications
         self.detectedHumans = detectedHumans
         self.timestamp = timestamp
         self.processingTimeMs = processingTimeMs

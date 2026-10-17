@@ -11,7 +11,12 @@ import Foundation
 final class SupabaseCloudSyncBackend: CloudSyncBackend, Sendable {
     private let projectService: SupabaseProjectService
     
-    init(projectService: SupabaseProjectService = SupabaseProjectService(supabaseManager: SupabaseManager.shared)) {
+    @MainActor
+    init() {
+        self.projectService = SupabaseProjectService(supabaseManager: SupabaseManager.shared)
+    }
+    
+    nonisolated init(projectService: SupabaseProjectService) {
         self.projectService = projectService
     }
     

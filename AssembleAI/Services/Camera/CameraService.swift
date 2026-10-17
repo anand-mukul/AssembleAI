@@ -427,10 +427,12 @@ final class CameraService: NSObject, ObservableObject {
         }
     }
     
-    /// Generates a neutral test frame for Simulator testing without mock breadboards or placeholder labels.
+    /// Generates a synthetic test frame for Simulator testing with clear component markings for OCR analysis.
     func createSimulatorTestImage() -> UIImage {
         let size = CGSize(width: 1084, height: 812)
-        let renderer = UIGraphicsImageRenderer(size: size)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1.0
+        let renderer = UIGraphicsImageRenderer(size: size, format: format)
         return renderer.image { ctx in
             UIColor(red: 0.10, green: 0.10, blue: 0.12, alpha: 1.0).setFill()
             ctx.fill(CGRect(origin: .zero, size: size))
@@ -444,6 +446,15 @@ final class CameraService: NSObject, ObservableObject {
             ctx.cgContext.move(to: CGPoint(x: center.x, y: center.y - 20))
             ctx.cgContext.addLine(to: CGPoint(x: center.x, y: center.y + 20))
             ctx.cgContext.strokePath()
+            
+            // Draw circuit component label for Simulator OCR analysis
+            let text = "AssembleAI RESISTOR 220 OHM R1"
+            let attributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.boldSystemFont(ofSize: 42),
+                .foregroundColor: UIColor.white
+            ]
+            let attributedText = NSAttributedString(string: text, attributes: attributes)
+            attributedText.draw(at: CGPoint(x: 100, y: 100))
         }
     }
     

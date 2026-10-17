@@ -82,8 +82,11 @@ final class FrameSamplingTests: XCTestCase {
         let metricsAfterStatic = await samplingService.getMetrics()
         XCTAssertEqual(metricsAfterStatic.framesDroppedByMotion, 1)
         
-        // Frame 3 at t = 10.6s (Changed color to black -> Accepted)
-        let changedResult = await samplingService.process(frame: blackBuffer, timestamp: CMTime(seconds: 10.6, preferredTimescale: 600))
+        // Frame 3 at t = 10.6s (Sudden change to black -> triggers stability debounce window)
+        _ = await samplingService.process(frame: blackBuffer, timestamp: CMTime(seconds: 10.6, preferredTimescale: 600))
+        
+        // Frame 4 at t = 10.85s (Settling window passed -> Accepted)
+        let changedResult = await samplingService.process(frame: blackBuffer, timestamp: CMTime(seconds: 10.85, preferredTimescale: 600))
         XCTAssertNotNil(changedResult, "Changed frame should pass motion gate")
         XCTAssertGreaterThan(changedResult?.motionDifference ?? 0, 0.5)
     }
@@ -149,8 +152,8 @@ final class FrameSamplingTests: XCTestCase {
         let (sourceStream, sourceContinuation) = AsyncStream.makeStream(of: CVPixelBuffer.self)
         let sampledStream = await samplingService.sampledStream(from: sourceStream)
         
-        let buffer1 = createTestPixelBuffer(color: .red)
-        let buffer2 = createTestPixelBuffer(color: .blue)
+        let buffer1 = createTestPixelBuffer(color: UIColor(white: 0.5, alpha: 1.0))
+        let buffer2 = createTestPixelBuffer(color: UIColor(white: 0.65, alpha: 1.0))
         
         var receivedSamples: [SampledFrame] = []
         

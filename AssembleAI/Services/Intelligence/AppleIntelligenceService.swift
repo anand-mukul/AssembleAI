@@ -63,7 +63,7 @@ actor AppleIntelligenceService {
         var supportsFoundation = false
         var supportsMultimodal = true
         #if canImport(FoundationModels)
-        if #available(iOS 18.0, *) {
+        if #available(iOS 26.0, *) {
             supportsFoundation = true
             supportsMultimodal = true
             // Verify actual model readiness at runtime for diagnostics
@@ -98,7 +98,7 @@ actor AppleIntelligenceService {
     /// Evaluates real-time availability and download readiness of on-device Apple Intelligence models.
     func checkModelReadiness() -> (isReady: Bool, statusDescription: String) {
         #if canImport(FoundationModels)
-        if #available(iOS 18.0, *) {
+        if #available(iOS 26.0, *) {
             let availability = SystemLanguageModel.default.availability
             switch availability {
             case .available:
@@ -110,7 +110,7 @@ actor AppleIntelligenceService {
             }
         }
         #endif
-        return (false, "Apple Foundation Models requires iOS 18.0 or later with Apple Silicon hardware.")
+        return (false, "Apple Foundation Models requires iOS 26.0 or later with Apple Silicon hardware.")
     }
     
     // MARK: - NaturalLanguage Entity Extraction
@@ -184,13 +184,20 @@ actor AppleIntelligenceService {
         var extractedSteps: [ProjectStepSummary] = []
         var currentStepNumber = 1
         
+        // Prioritize explicit "step" indicators when present
+        let hasExplicitSteps = lines.contains { $0.lowercased().hasPrefix("step") }
+        
         for line in lines {
             let lowerLine = line.lowercased()
-            let isStepIndicator = lowerLine.hasPrefix("step") ||
-                                  lowerLine.hasPrefix("#") ||
+            let isStepIndicator: Bool
+            if hasExplicitSteps {
+                isStepIndicator = lowerLine.hasPrefix("step")
+            } else {
+                isStepIndicator = lowerLine.hasPrefix("#") ||
                                   (line.first?.isNumber == true && (line.contains(".") || line.contains(":")))
+            }
             
-            if isStepIndicator || extractedSteps.isEmpty {
+            if isStepIndicator {
                 let cleaned = line.replacingOccurrences(of: "#", with: "")
                     .trimmingCharacters(in: .whitespaces)
                 extractedSteps.append(
@@ -213,6 +220,19 @@ actor AppleIntelligenceService {
                         expectedDurationMinutes: lastStep.expectedDurationMinutes,
                         visualContract: lastStep.visualContract,
                         commonMistakes: lastStep.commonMistakes
+                    )
+                )
+            }
+        }
+        
+        // Plain text fallback: if no explicit step markers were found, extract sequential lines after title
+        if extractedSteps.isEmpty && lines.count > 1 {
+            for (idx, line) in lines.dropFirst().enumerated() {
+                extractedSteps.append(
+                    ProjectStepSummary(
+                        stepOrder: idx + 1,
+                        title: "Step \(idx + 1)",
+                        instruction: line
                     )
                 )
             }

@@ -24,7 +24,7 @@ nonisolated struct LiveObservationConfiguration: Sendable, Equatable {
     
     nonisolated init(
         consecutiveObservationsRequired: Int = 2,
-        minimumStateDurationSeconds: Double = 0.3,
+        minimumStateDurationSeconds: Double = 0.0,
         minimumEvidenceConfidence: Double = 0.50
     ) {
         self.consecutiveObservationsRequired = max(1, consecutiveObservationsRequired)

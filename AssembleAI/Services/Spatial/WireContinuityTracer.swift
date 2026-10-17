@@ -101,26 +101,15 @@ nonisolated struct WireContinuityTracer: Sendable {
             }
             
             // Direct or reverse pin match
-            let directMatch = (wireFrom.contains(expFrom) || expFrom.contains(wireFrom) || wireFromRow.contains(expFrom) || expFrom.contains(wireFromRow)) &&
-                              (wireTo.contains(expTo) || expTo.contains(wireTo) || wireToRow.contains(expTo) || expTo.contains(wireToRow))
+            let fromMatchesFrom = wireFrom.contains(expFrom) || expFrom.contains(wireFrom) || wireFromRow.contains(expFrom) || expFrom.contains(wireFromRow)
+            let toMatchesTo = wireTo.contains(expTo) || expTo.contains(wireTo) || wireToRow.contains(expTo) || expTo.contains(wireToRow)
+            let fromMatchesTo = wireFrom.contains(expTo) || expTo.contains(wireFrom) || wireFromRow.contains(expTo) || expTo.contains(wireFromRow)
+            let toMatchesFrom = wireTo.contains(expFrom) || expTo.contains(wireTo) || wireToRow.contains(expFrom) || expFrom.contains(wireToRow)
             
-            let reverseMatch = (wireFrom.contains(expTo) || expTo.contains(wireFrom) || wireFromRow.contains(expTo) || expTo.contains(wireFromRow)) &&
-                               (wireTo.contains(expFrom) || expFrom.contains(wireTo) || wireToRow.contains(expFrom) || expFrom.contains(wireToRow))
+            let directMatch = fromMatchesFrom && toMatchesTo
+            let reverseMatch = fromMatchesTo && toMatchesFrom
             
             if directMatch || reverseMatch {
-                // Polarity sanity check: if ground wire is on power rail or vice-versa
-                let isGndWire = wire.color == .black
-                let onVccRail = wireFrom.contains("vcc") || wireTo.contains("vcc") || wireFrom.contains("+") || wireTo.contains("+")
-                if isGndWire && onVccRail && (expFrom.contains("gnd") || expTo.contains("gnd")) {
-                    return WireContinuityEvaluation(
-                        isConnected: false,
-                        isReversedPolarity: true,
-                        isSelfShort: false,
-                        explanation: "Ground wire is connected to the positive (+) VCC rail instead of the ground (−) rail.",
-                        detectedWire: wire
-                    )
-                }
-                
                 return WireContinuityEvaluation(
                     isConnected: true,
                     isReversedPolarity: false,
@@ -128,6 +117,37 @@ nonisolated struct WireContinuityTracer: Sendable {
                     explanation: "Connection verified between \(wire.fromPin.label) and \(wire.toPin.label).",
                     detectedWire: wire
                 )
+            }
+            
+            // Reversed polarity check: one endpoint matches expected pin, but other endpoint is wired to opposite rail
+            let isGndExpected = expFrom.contains("gnd") || expFrom.contains("-") || expTo.contains("gnd") || expTo.contains("-")
+            let isVccExpected = expFrom.contains("vcc") || expFrom.contains("+") || expTo.contains("vcc") || expTo.contains("+")
+            
+            let wireEndLabels = [wireFrom, wireTo, wireFromRow, wireToRow]
+            let touchesVccRail = wireEndLabels.contains { $0.contains("vcc") || $0.contains("+") }
+            let touchesGndRail = wireEndLabels.contains { $0.contains("gnd") || $0.contains("-") }
+            let isGndWire = wire.color == .black
+            
+            let oneEndpointMatches = fromMatchesFrom || toMatchesFrom || fromMatchesTo || toMatchesTo
+            
+            if oneEndpointMatches {
+                if isGndExpected && (touchesVccRail || (isGndWire && touchesVccRail)) {
+                    return WireContinuityEvaluation(
+                        isConnected: false,
+                        isReversedPolarity: true,
+                        isSelfShort: false,
+                        explanation: "Ground wire is connected to the positive (+) VCC rail instead of the ground (−) rail.",
+                        detectedWire: wire
+                    )
+                } else if isVccExpected && touchesGndRail {
+                    return WireContinuityEvaluation(
+                        isConnected: false,
+                        isReversedPolarity: true,
+                        isSelfShort: false,
+                        explanation: "Power wire is connected to the ground (−) rail instead of the positive (+) VCC rail.",
+                        detectedWire: wire
+                    )
+                }
             }
         }
         

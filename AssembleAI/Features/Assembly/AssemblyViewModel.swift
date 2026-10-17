@@ -62,6 +62,7 @@ final class AssemblyViewModel: ObservableObject {
     @Published var handActivity: WorkbenchHandActivity = .clear
     private var stepStartTime: Date = Date()
     private var lastInterventionTime: Date = Date()
+    private var lastSpokenAssistantText: String? = nil
     private var hesitationTask: Task<Void, Never>?
     
     // Double-Advancement & Stale Progression Guard
@@ -123,8 +124,7 @@ final class AssemblyViewModel: ObservableObject {
         self.researchLogger = researchLogger ?? ResearchLogger.shared
         self.mistakeAnalyticsService = mistakeAnalyticsService ?? MistakeAnalyticsService()
         self.sessionRepository = sessionRepository ?? LocalFirstSessionRepository(
-            modelContext: PersistenceController.shared.container.mainContext,
-            supabaseService: AppConfig.isSupabaseConfigured ? SupabaseProjectService(supabaseManager: SupabaseManager.shared) : nil
+            modelContext: PersistenceController.shared.container.mainContext
         )
         
         let mainContext = PersistenceController.shared.container.mainContext
@@ -400,7 +400,7 @@ final class AssemblyViewModel: ObservableObject {
                 // 2b. Multimodal Vision Assessment & Dynamic Verification
                 // When deterministic pipeline reports incorrect/uncertain, or when user's hands are clear:
                 var finalVerification = baseVerification
-                if !baseVerification.isCorrect && activity != .handsWorking {
+                if let det = deterministicVerification, !det.isCorrect, activity != .handsWorking {
                     let fmAssessment = await MultimodalVisionVerifier.shared.verify(
                         frame: frame,
                         step: activeStep,
@@ -430,7 +430,7 @@ final class AssemblyViewModel: ObservableObject {
                                     type: .wrongPosition,
                                     title: "Adjustment Needed",
                                     explanation: errorText,
-                                    severity: .warning
+                                    severity: .medium
                                 ),
                                 observedState: baseVerification.observedState
                             )
@@ -479,6 +479,11 @@ final class AssemblyViewModel: ObservableObject {
                 await self.researchLogger.samplePeakMemory(for: self.session.id)
                 
                 // 3. Evaluate Assistant Intervention Policy with Situational Timing and Hand Awareness
+                // If assistant is currently speaking or listening, suppress proactive spoken interventions
+                if (self.liveStatus == .speaking || self.liveStatus == .listening) && !finalVerification.isCorrect {
+                    continue
+                }
+                
                 let timeSinceStart = Date().timeIntervalSince(self.stepStartTime)
                 let timeSinceLastIntervention = Date().timeIntervalSince(self.lastInterventionTime)
                 let context = TutorContext(
@@ -565,7 +570,7 @@ final class AssemblyViewModel: ObservableObject {
         autoProgressTask = Task { [weak self] in
             guard let self = self else { return }
             
-            try? await Task.sleep(nanoseconds: 1_200_000_000)
+            try? await Task.sleep(nanoseconds: 400_000_000)
             if Task.isCancelled { return }
             
             if self.currentStepIndex + 1 < self.totalStepsCount {
@@ -580,6 +585,7 @@ final class AssemblyViewModel: ObservableObject {
                 await self.observationCoordinator.resetForStepChange()
                 self.interventionPolicy.resetForStepChange()
                 self.currentVerificationResult = nil
+                self.lastSpokenAssistantText = nil
                 
                 let nextStep = self.currentStep
                 self.logResearchEvent(.stepStarted, metadata: ["stepOrder": "\(nextStep.stepOrder)"])
@@ -623,6 +629,11 @@ final class AssemblyViewModel: ObservableObject {
     
     /// Speaks assistant guidance asynchronously without blocking the camera frame observation loop.
     private func speakAsynchronously(_ response: TutorResponse) {
+        let cleanText = TutorResponse.stripEmojis(response.text).trimmingCharacters(in: .whitespacesAndNewlines)
+        if let last = lastSpokenAssistantText, last == cleanText {
+            return
+        }
+        lastSpokenAssistantText = cleanText
         speechTask?.cancel()
         speechTask = Task { [weak self] in
             guard let self = self else { return }
@@ -630,6 +641,7 @@ final class AssemblyViewModel: ObservableObject {
                 self.liveStatus = .speaking
                 self.logResearchEvent(.assistantSpeechStarted)
                 await self.voiceOutput.speak(response)
+                self.lastInterventionTime = Date()
                 self.logResearchEvent(.assistantSpeechCompleted)
                 if self.liveStatus == .speaking {
                     self.liveStatus = self.isLivePaused ? .paused : .live
@@ -812,9 +824,9 @@ final class AssemblyViewModel: ObservableObject {
             case .repeatInstruction:
                 let compName = self.currentStep.visualContract?.requiredComponentIds.first.map { VisualContract.friendlyName(for: $0) } ?? "component"
                 let variations = [
-                    "Sure thing! For Step \(self.currentStep.stepOrder), we're placing the \(compName). \(self.currentStep.instruction) 🛠️",
-                    "Got you covered! Here's Step \(self.currentStep.stepOrder): \(self.currentStep.instruction) 🔌",
-                    "No problem, partner! Take your \(compName) and \(self.currentStep.instruction) ⚡"
+                    "Sure thing! For Step \(self.currentStep.stepOrder): \(self.currentStep.title). \(self.currentStep.instruction) 🛠️",
+                    "Got you covered! Here's Step \(self.currentStep.stepOrder) - \(self.currentStep.title): \(self.currentStep.instruction) 🔌",
+                    "No problem, partner! For \(self.currentStep.title): \(self.currentStep.instruction) ⚡"
                 ]
                 let chosen = variations[abs(self.currentStep.stepOrder.hashValue) % variations.count]
                 response = TutorResponse(
@@ -838,20 +850,18 @@ final class AssemblyViewModel: ObservableObject {
                     )
                 }
             case .askWhere:
-                let pins = self.currentStep.visualContract?.requiredPins.map(\.label).joined(separator: " and ")
-                if let p = pins, !p.isEmpty {
-                    response = TutorResponse(
-                        text: "For Step \(self.currentStep.stepOrder), plug it into \(p) on your board. Follow the green highlight on screen! 📍",
-                        priority: .immediate,
-                        category: "spatial_guidance"
-                    )
-                } else {
-                    response = TutorResponse(
-                        text: "Place it in the designated target zone highlighted on your camera view: \(self.currentStep.instruction) 📍",
-                        priority: .immediate,
-                        category: "spatial_guidance"
-                    )
-                }
+                let assistantContext = AssistantContext(
+                    currentStep: self.currentStep,
+                    sessionID: self.session.id,
+                    verificationResult: self.currentVerificationResult,
+                    userIntent: intent,
+                    userTranscript: query
+                )
+                response = await self.conversationalTutor.answerUserQuestion(
+                    query: query,
+                    intent: intent,
+                    context: assistantContext
+                )
             case .askPolarity:
                 let titleLow = self.currentStep.title.lowercased()
                 let instrLow = self.currentStep.instruction.lowercased()
@@ -875,10 +885,17 @@ final class AssemblyViewModel: ObservableObject {
                     )
                 }
             case .askWhy:
-                response = TutorResponse(
-                    text: "We're adding \(self.currentStep.title) to complete the circuit path and ensure safe voltage regulation so the board functions properly. 🧠",
-                    priority: .immediate,
-                    category: "explanation"
+                let assistantContext = AssistantContext(
+                    currentStep: self.currentStep,
+                    sessionID: self.session.id,
+                    verificationResult: self.currentVerificationResult,
+                    userIntent: intent,
+                    userTranscript: query
+                )
+                response = await self.conversationalTutor.answerUserQuestion(
+                    query: query,
+                    intent: intent,
+                    context: assistantContext
                 )
             default:
                 let assistantContext = AssistantContext(
@@ -898,9 +915,8 @@ final class AssemblyViewModel: ObservableObject {
         
         self.currentTutorMessage = response
         var meta: [String: String] = ["category": response.category, "inResponseTo": "voice_query"]
-        if let inTok = response.inputTokens ?? (TokenEstimator.estimate(query)) {
-            meta["input_tokens"] = String(inTok)
-        }
+        let inTok = response.inputTokens ?? TokenEstimator.estimate(query)
+        meta["input_tokens"] = String(inTok)
         if let outTok = response.outputTokens {
             meta["output_tokens"] = String(outTok)
         }
@@ -1105,6 +1121,7 @@ final class AssemblyViewModel: ObservableObject {
         currentTutorMessage = nil
         currentVerificationResult = nil
         liveUserTranscript = ""
+        lastSpokenAssistantText = nil
         
         interventionPolicy.resetForStepChange()
         Task { [observationCoordinator] in

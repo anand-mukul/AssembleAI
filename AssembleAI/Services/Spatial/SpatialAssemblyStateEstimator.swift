@@ -36,7 +36,16 @@ nonisolated struct SpatialAssemblyStateEstimator: AssemblyStateEstimating {
         
         let expectedComponents: [ComponentRequirement] = {
             if let s = step {
-                return ExpectedAssemblyState.forStep(s).requiredComponents
+                return ExpectedAssemblyState.forStep(s).requiredComponents.map { exp in
+                    ComponentRequirement(
+                        id: exp.id,
+                        name: exp.name,
+                        detail: exp.identifier,
+                        isRequired: true,
+                        partId: exp.identifier,
+                        quantity: exp.quantity
+                    )
+                }
             }
             return []
         }()

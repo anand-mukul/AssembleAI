@@ -139,10 +139,6 @@ nonisolated struct DefaultGuidanceProvider: GuidanceProviding {
         observedState: ObservedAssemblyState?,
         viewSize: CGSize
     ) -> (target: CGRect?, source: CGRect?, destination: CGRect?) {
-        guard let state = observedState else {
-            return (nil, nil, nil)
-        }
-        
         switch issue.type {
         case .missingComponent:
             // Show a target box where the missing component should be placed.
@@ -152,15 +148,15 @@ nonisolated struct DefaultGuidanceProvider: GuidanceProviding {
             return (targetRect, nil, nil)
             
         case .wrongPosition, .wrongConnection:
-            // Source = where the component IS (observed bounding box)
+            // Source = where the component IS (observed bounding box or centered fallback)
             // Destination = where it SHOULD be (offset from source based on issue)
             let sourceRect: CGRect
-            if let comp = state.detectedComponents.first(where: { $0.boundingBox != .zero }) {
+            if let comp = observedState?.detectedComponents.first(where: { $0.boundingBox != .zero }) {
                 sourceRect = visionToScreen(comp.boundingBox, viewSize: viewSize)
-            } else if let pos = state.detectedPositions.first(where: { $0.region != .zero }) {
+            } else if let pos = observedState?.detectedPositions.first(where: { $0.region != .zero }) {
                 sourceRect = visionToScreen(pos.region, viewSize: viewSize)
             } else {
-                return (nil, nil, nil)
+                sourceRect = centeredTargetRect(viewSize: viewSize)
             }
             
             // Destination is estimated as an offset from source (one breadboard pitch ~ 2.54mm visual offset)

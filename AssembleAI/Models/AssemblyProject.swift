@@ -46,21 +46,52 @@ nonisolated struct ComponentRequirement: Identifiable, Hashable, Codable, Sendab
     init(
         id: UUID = UUID(),
         name: String,
-        detail: String,
+        detail: String = "",
         isRequired: Bool = true,
         partId: String? = nil,
         componentType: ComponentType? = nil,
         physicalAttributes: ComponentPhysicalAttributes? = nil,
-        quantity: Int = 1
+        quantity: Int = 1,
+        isOptional: Bool? = nil
     ) {
         self.id = id
         self.name = name
         self.detail = detail
-        self.isRequired = isRequired
+        self.isRequired = isOptional.map { !$0 } ?? isRequired
         self.partId = partId
         self.componentType = componentType
         self.physicalAttributes = physicalAttributes
         self.quantity = quantity
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case id, name, detail, isRequired, partId, componentType, physicalAttributes, quantity, isOptional
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = (try? container.decode(UUID.self, forKey: .id)) ?? UUID()
+        self.name = try container.decode(String.self, forKey: .name)
+        self.detail = try container.decodeIfPresent(String.self, forKey: .detail) ?? ""
+        let opt = try container.decodeIfPresent(Bool.self, forKey: .isOptional)
+        let req = try container.decodeIfPresent(Bool.self, forKey: .isRequired) ?? true
+        self.isRequired = opt.map { !$0 } ?? req
+        self.partId = try container.decodeIfPresent(String.self, forKey: .partId)
+        self.componentType = try container.decodeIfPresent(ComponentType.self, forKey: .componentType)
+        self.physicalAttributes = try container.decodeIfPresent(ComponentPhysicalAttributes.self, forKey: .physicalAttributes)
+        self.quantity = try container.decodeIfPresent(Int.self, forKey: .quantity) ?? 1
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encode(detail, forKey: .detail)
+        try container.encode(isRequired, forKey: .isRequired)
+        try container.encodeIfPresent(partId, forKey: .partId)
+        try container.encodeIfPresent(componentType, forKey: .componentType)
+        try container.encodeIfPresent(physicalAttributes, forKey: .physicalAttributes)
+        try container.encode(quantity, forKey: .quantity)
     }
 }
 
@@ -219,7 +250,7 @@ nonisolated struct AssemblyProject: Identifiable, Hashable, Codable, Sendable {
     
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.id = try container.decode(UUID.self, forKey: .id)
+        self.id = (try? container.decode(UUID.self, forKey: .id)) ?? UUID()
         self.title = try container.decode(String.self, forKey: .title)
         let desc = try container.decodeIfPresent(String.self, forKey: .description) ?? ""
         self.description = desc

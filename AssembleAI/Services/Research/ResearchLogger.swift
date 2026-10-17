@@ -223,6 +223,8 @@ nonisolated struct ResearchSessionMetrics: Codable, Sendable, Equatable {
     // Energy / Battery Metrics
     let batteryCost: Double?
     let batteryLevelDelta: Float?
+    let batteryLevelStart: Float?
+    let batteryLevelEnd: Float?
     
     // Visual Frame Processing Metrics
     let framesReceived: Int
@@ -300,6 +302,8 @@ nonisolated struct ResearchSessionMetrics: Codable, Sendable, Equatable {
         peakMemoryMB: Double? = nil,
         batteryCost: Double? = nil,
         batteryLevelDelta: Float? = nil,
+        batteryLevelStart: Float? = nil,
+        batteryLevelEnd: Float? = nil,
         framesReceived: Int = 0,
         framesProcessed: Int = 0,
         framesIncludedInModelContext: Int = 0,
@@ -359,6 +363,8 @@ nonisolated struct ResearchSessionMetrics: Codable, Sendable, Equatable {
         self.peakMemoryMB = peakMemoryMB
         self.batteryCost = batteryCost
         self.batteryLevelDelta = batteryLevelDelta
+        self.batteryLevelStart = batteryLevelStart
+        self.batteryLevelEnd = batteryLevelEnd
         
         self.framesReceived = framesReceived
         self.framesProcessed = framesProcessed
@@ -581,7 +587,7 @@ nonisolated struct ResearchSessionMetrics: Codable, Sendable, Equatable {
 // MARK: - Research Logging Protocol
 
 /// Abstract interface for recording research telemetry events and managing evaluation sessions.
-protocol ResearchLogging: Sendable {
+nonisolated protocol ResearchLogging: Sendable {
     // Preserved Existing API
     func logEvent(_ event: ResearchEvent) async
     func fetchEvents(for sessionID: UUID) async -> [ResearchEvent]
@@ -655,7 +661,7 @@ extension ResearchLogging {
     func startResearchSession(
         sessionID: UUID?,
         projectID: String,
-        strategy: VisualHistoryStrategy,
+        strategy: VisualHistoryStrategy = .currentFrame,
         lastNFrames: Int? = nil,
         mode: InteractionMode = .liveTutor
     ) async -> UUID {
@@ -926,6 +932,22 @@ actor ResearchLogger: ResearchLogging {
         processed: Int = 0,
         includedInContext: Int = 0,
         dropped: Int = 0
+    ) async {
+        recordFrameProcessingSync(
+            sessionID: sessionID,
+            received: received,
+            processed: processed,
+            includedInContext: includedInContext,
+            dropped: dropped
+        )
+    }
+    
+    func recordFrameProcessingSync(
+        sessionID: UUID,
+        received: Int = 0,
+        processed: Int = 0,
+        includedInContext: Int = 0,
+        dropped: Int = 0
     ) {
         if var config = sessions[sessionID] {
             config.framesReceived += received
@@ -941,10 +963,10 @@ actor ResearchLogger: ResearchLogging {
         sessionID: UUID,
         received: Int = 0,
         processed: Int = 0,
-        inContext: Int = 0,
+        inContext: Int,
         dropped: Int = 0
-    ) {
-        recordFrameProcessing(
+    ) async {
+        await recordFrameProcessing(
             sessionID: sessionID,
             received: received,
             processed: processed,
@@ -1060,16 +1082,16 @@ actor ResearchLogger: ResearchLogging {
         
         // Synchronize frame counts if present in event metadata
         if let recStr = event.metadata["frames_received"], let rec = Int(recStr) {
-            recordFrameProcessing(sessionID: event.sessionID, received: rec)
+            recordFrameProcessingSync(sessionID: event.sessionID, received: rec)
         }
         if let procStr = event.metadata["frames_processed"], let proc = Int(procStr) {
-            recordFrameProcessing(sessionID: event.sessionID, processed: proc)
+            recordFrameProcessingSync(sessionID: event.sessionID, processed: proc)
         }
         if let ctxStr = event.metadata["frames_in_context"], let ctx = Int(ctxStr) {
-            recordFrameProcessing(sessionID: event.sessionID, includedInContext: ctx)
+            recordFrameProcessingSync(sessionID: event.sessionID, includedInContext: ctx)
         }
         if let dropStr = event.metadata["frames_dropped"], let drop = Int(dropStr) {
-            recordFrameProcessing(sessionID: event.sessionID, dropped: drop)
+            recordFrameProcessingSync(sessionID: event.sessionID, dropped: drop)
         }
     }
     
@@ -1376,6 +1398,8 @@ actor ResearchLogger: ResearchLogging {
             peakMemoryMB: peakMem,
             batteryCost: batteryCost,
             batteryLevelDelta: batteryDelta,
+            batteryLevelStart: config?.batteryLevelStart,
+            batteryLevelEnd: config?.batteryLevelEnd,
             framesReceived: framesRec,
             framesProcessed: framesProc,
             framesIncludedInModelContext: framesCtx,

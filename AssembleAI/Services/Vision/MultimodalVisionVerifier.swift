@@ -256,71 +256,69 @@ actor MultimodalVisionVerifier: MultimodalVisionVerifying {
             """
             return (telemetry, rules)
             
-        case .furniture:
-            let expectedFastenerCount = step.visualContract?.spatialPlacements.reduce(0) { $0 + $1.quantity } ?? 1
-            let telemetry = """
-            PHYSICAL TELEMETRY:
-            - Target Fastener / Part Count: \(expectedFastenerCount)
-            - Surface Inspection: Planar workpiece alignment & fastener seating
-            """
-            let rules = """
-            - Wooden dowels must be seated fully flush into corresponding pre-drilled holes
-            - Cam lock bolts must be driven perpendicular (90°) to panel face until shoulder contacts the surface
-            - Cam lock discs must be oriented with open arrow facing the incoming edge drill hole
-            - Panels meeting at 90° perpendicular joints must be square and flush without gaps
-            - Verify that the count of placed fasteners matches the step requirements (\(expectedFastenerCount) expected)
-            """
-            return (telemetry, rules)
-            
-        case .mechanical:
-            let telemetry = """
-            KINEMATIC TELEMETRY:
-            - Motion System: Shaft concentricity, gear meshing, and bearing seating inspection
-            """
-            let rules = """
-            - Interlocking gears must mesh smoothly without binding or excessive radial backlash
-            - Bearings must be seated square against internal housing retention shoulders
-            - Drive belts must have uniform tension without twisting or slack
-            - Couplers and pulleys must have set-screws tightened against shaft flats
-            """
-            return (telemetry, rules)
-            
-        case .robotics:
-            let telemetry = """
-            ROBOTIC TELEMETRY:
-            - Structural & Kinematic: Extrusion framing, motor mounts, and wiring harness clearance
-            """
-            let rules = """
-            - Aluminum extrusions (e.g. 2020 / 2040) must be squared at 90° joints using corner brackets
-            - Motor shafts, pulleys, and idlers must be coplanar to prevent belt walking
-            - Endstops and limit switches must be firmly mounted at axis origin limits
-            - Wire harnesses must have adequate strain relief and slack across dynamic travel limits
-            """
-            return (telemetry, rules)
-            
-        case .plumbing:
-            let telemetry = """
-            FLUIDIC TELEMETRY:
-            - Piping & Valve: Fitting insertion depth and directional flow alignment
-            """
-            let rules = """
-            - Pipe ends must be fully seated into fitting sockets up to the depth reference line
-            - Valves, check-valves, and regulators must align with required fluid flow direction
-            - Threaded NPT/BSP joints must have PTFE thread tape or sealing gaskets in place
-            """
-            return (telemetry, rules)
-            
-        default:
-            let telemetry = """
-            UNIVERSAL PHYSICAL TELEMETRY:
-            - Multi-part physical alignment, fastener seating, and geometric verification
-            """
-            let rules = """
-            - Verify all required components for this step are present and oriented correctly
-            - Fasteners (screws, bolts, pins) must be seated fully flush
-            - Structural mating surfaces must meet without gap or tilt
-            """
-            return (telemetry, rules)
+        case .physical, .hybrid:
+            if combinedStepText.contains("dowel") || combinedStepText.contains("cam lock") || combinedStepText.contains("panel") || combinedStepText.contains("furniture") || combinedStepText.contains("shelf") {
+                let expectedFastenerCount = step.visualContract?.spatialPlacements.reduce(0) { $0 + $1.quantity } ?? 1
+                let telemetry = """
+                PHYSICAL TELEMETRY:
+                - Target Fastener / Part Count: \(expectedFastenerCount)
+                - Surface Inspection: Planar workpiece alignment & fastener seating
+                """
+                let rules = """
+                - Wooden dowels must be seated fully flush into corresponding pre-drilled holes
+                - Cam lock bolts must be driven perpendicular (90°) to panel face until shoulder contacts the surface
+                - Cam lock discs must be oriented with open arrow facing the incoming edge drill hole
+                - Panels meeting at 90° perpendicular joints must be square and flush without gaps
+                - Verify that the count of placed fasteners matches the step requirements (\(expectedFastenerCount) expected)
+                """
+                return (telemetry, rules)
+            } else if combinedStepText.contains("gear") || combinedStepText.contains("bearing") || combinedStepText.contains("belt") || combinedStepText.contains("shaft") || combinedStepText.contains("mechanical") {
+                let telemetry = """
+                KINEMATIC TELEMETRY:
+                - Motion System: Shaft concentricity, gear meshing, and bearing seating inspection
+                """
+                let rules = """
+                - Interlocking gears must mesh smoothly without binding or excessive radial backlash
+                - Bearings must be seated square against internal housing retention shoulders
+                - Drive belts must have uniform tension without twisting or slack
+                - Couplers and pulleys must have set-screws tightened against shaft flats
+                """
+                return (telemetry, rules)
+            } else if combinedStepText.contains("extrusion") || combinedStepText.contains("motor") || combinedStepText.contains("endstop") || combinedStepText.contains("robot") {
+                let telemetry = """
+                ROBOTIC TELEMETRY:
+                - Structural & Kinematic: Extrusion framing, motor mounts, and wiring harness clearance
+                """
+                let rules = """
+                - Aluminum extrusions (e.g. 2020 / 2040) must be squared at 90° joints using corner brackets
+                - Motor shafts, pulleys, and idlers must be coplanar to prevent belt walking
+                - Endstops and limit switches must be firmly mounted at axis origin limits
+                - Wire harnesses must have adequate strain relief and slack across dynamic travel limits
+                """
+                return (telemetry, rules)
+            } else if combinedStepText.contains("pipe") || combinedStepText.contains("valve") || combinedStepText.contains("fitting") || combinedStepText.contains("plumbing") {
+                let telemetry = """
+                FLUIDIC TELEMETRY:
+                - Piping & Valve: Fitting insertion depth and directional flow alignment
+                """
+                let rules = """
+                - Pipe ends must be fully seated into fitting sockets up to the depth reference line
+                - Valves, check-valves, and regulators must align with required fluid flow direction
+                - Threaded NPT/BSP joints must have PTFE thread tape or sealing gaskets in place
+                """
+                return (telemetry, rules)
+            } else {
+                let telemetry = """
+                UNIVERSAL PHYSICAL TELEMETRY:
+                - Multi-part physical alignment, fastener seating, and geometric verification
+                """
+                let rules = """
+                - Verify all required components for this step are present and oriented correctly
+                - Fasteners (screws, bolts, pins) must be seated fully flush
+                - Structural mating surfaces must meet without gap or tilt
+                """
+                return (telemetry, rules)
+            }
         }
     }
     
@@ -400,12 +398,21 @@ actor MultimodalVisionVerifier: MultimodalVisionVerifying {
                 cat = "Workpiece / Surface"
             } else {
                 switch domain {
-                case .electronics: cat = "Electronic Part"
-                case .furniture: cat = "Furniture Component"
-                case .mechanical: cat = "Mechanical Part"
-                case .robotics: cat = "Robotic Part"
-                case .plumbing: cat = "Plumbing / Fitting"
-                default: cat = "Physical Component"
+                case .electronics:
+                    cat = "Electronic Part"
+                case .physical, .hybrid:
+                    let labelLower = obj.label.lowercased()
+                    if labelLower.contains("screw") || labelLower.contains("bolt") || labelLower.contains("dowel") || labelLower.contains("fastener") {
+                        cat = "Fastener / Hardware"
+                    } else if labelLower.contains("gear") || labelLower.contains("bearing") || labelLower.contains("shaft") || labelLower.contains("belt") {
+                        cat = "Mechanical Part"
+                    } else if labelLower.contains("motor") || labelLower.contains("extrusion") || labelLower.contains("robot") {
+                        cat = "Robotic Part"
+                    } else if labelLower.contains("pipe") || labelLower.contains("valve") || labelLower.contains("fitting") {
+                        cat = "Plumbing / Fitting"
+                    } else {
+                        cat = "Physical Component"
+                    }
                 }
             }
             
@@ -486,17 +493,15 @@ actor MultimodalVisionVerifier: MultimodalVisionVerifying {
         
         let hasRelevantPart = features.detectedObjects.contains { $0.label.contains("Part") || $0.label.contains("Lead") || $0.label.contains("Panel") || $0.label.contains("Extrusion") || $0.label.contains("Component") }
         let isComplete = hasRelevantPart && features.detectedObjects.count >= min(1, expectedCount)
-        let bestConf = features.detectedObjects.map(\.confidence).max() ?? 0.88
+        let bestConf = features.detectedObjects.map { $0.confidence }.max() ?? 0.88
         let finalConf = min(0.96, max(0.82, bestConf))
         
         let statusDescription: String = {
             if isComplete {
                 switch domain {
-                case .furniture: return "Furniture component seating confirmed"
-                case .mechanical: return "Mechanical component alignment confirmed"
-                case .robotics: return "Robotic assembly alignment confirmed"
                 case .electronics: return "Electronic component placement confirmed"
-                default: return "Physical component placement confirmed"
+                case .physical: return "Physical component placement confirmed"
+                case .hybrid: return "Hybrid assembly placement confirmed"
                 }
             } else {
                 return "Position alignment in progress"

@@ -128,6 +128,10 @@ final class SupabaseAuthService: AuthenticationService {
         try await signInWithAppleCredential(userId: userId, name: name, email: email, idToken: nil, nonce: nil)
     }
     
+    func signInWithAppleCredential(userId: String, name: String?, email: String?, idToken: String?) async throws {
+        try await signInWithAppleCredential(userId: userId, name: name, email: email, idToken: idToken, nonce: nil)
+    }
+    
     func signInWithAppleCredential(userId: String, name: String?, email: String?, idToken: String?, nonce: String? = nil) async throws {
         isLoading = true
         authError = nil

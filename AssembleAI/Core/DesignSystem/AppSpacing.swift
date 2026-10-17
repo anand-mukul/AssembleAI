@@ -23,13 +23,13 @@ enum AppSpacing {
     static let lg: CGFloat = 24
     /// 32pt extra large hero spacing
     static let xl: CGFloat = 32
-    /// 40pt section divider spacing
-    static let xxl: CGFloat = 40
-    /// 48pt top hero margin spacing
-    static let xxxl: CGFloat = 48
+    /// 48pt section divider spacing
+    static let xxl: CGFloat = 48
+    /// 64pt top hero margin spacing
+    static let xxxl: CGFloat = 64
     
-    /// Standard horizontal inset for screen-edge content (matches Apple native 16pt layout margin)
-    static let screenEdge: CGFloat = 16
+    /// Standard horizontal inset for screen-edge content (matches Apple native 20pt layout margin)
+    static let screenEdge: CGFloat = 20
     
     /// Standard internal padding for cards (16pt)
     static let cardPadding: CGFloat = 16
@@ -49,14 +49,14 @@ enum AppRadius {
     static let xs: CGFloat = 8
     /// 10pt for badges and small inputs
     static let sm: CGFloat = 10
-    /// 12pt standard Apple control radius for buttons and text fields
-    static let md: CGFloat = 12
-    /// 16pt standard Apple HIG grouped card radius (concentric to inner 8-10pt badges)
-    static let card: CGFloat = 16
-    /// 20pt for hero visual centerpieces and prominent modules
-    static let lg: CGFloat = 20
-    /// 24pt for bottom sheets and large presentation detents
-    static let sheet: CGFloat = 24
+    /// 14pt standard Apple control radius for buttons and text fields
+    static let md: CGFloat = 14
+    /// 18pt standard Apple HIG grouped card radius (concentric to inner 8-10pt badges)
+    static let card: CGFloat = 18
+    /// 22pt for hero visual centerpieces and prominent modules
+    static let lg: CGFloat = 22
+    /// 28pt for bottom sheets and large presentation detents
+    static let sheet: CGFloat = 28
 }
 
 /// Standardized elevation shadows adhering to Apple HIG subtlety.

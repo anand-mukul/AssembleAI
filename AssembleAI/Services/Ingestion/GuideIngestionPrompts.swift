@@ -107,6 +107,7 @@ nonisolated enum GuideIngestionPrompts: Sendable {
         
         SOURCE FORMAT: \(format.rawValue)
         
+        GUIDE TEXT:
         <untrusted_assembly_guide>
         \(sanitizedGuideText)
         </untrusted_assembly_guide>

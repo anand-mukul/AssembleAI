@@ -74,7 +74,7 @@ nonisolated struct WorkspaceMap: Sendable, Equatable {
                 let taxList = detectedTaxonomies.prefix(3).joined(separator: ", ")
                 return "Workbench detected with \(taxList). Lighting is \(lightingQuality.displayName). \(compDesc)"
             } else {
-                return "Scanning workbench. Lighting is \(lightingQuality.displayName). Align workpiece within camera view to calibrate."
+                return "Scanning workbench. Lighting is \(lightingQuality.displayName). Align breadboard within camera view to calibrate."
             }
         case .physical:
             let taxSnippet = detectedTaxonomies.isEmpty ? "" : " Spotted \(detectedTaxonomies.prefix(2).joined(separator: " and "))."

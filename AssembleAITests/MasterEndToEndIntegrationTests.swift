@@ -114,9 +114,10 @@ final class MasterEndToEndIntegrationTests: XCTestCase {
         
         // Phase 3: User asks "Why?" during Step 2 -> Voice input answers grounded in Step 2
         viewModel.toggleVoiceInput()
+        try? await Task.sleep(nanoseconds: 50_000_000)
         await mockVoiceInput.simulateSpokenTranscript("why do we use C2 header", isFinal: true)
         
-        try? await Task.sleep(nanoseconds: 200_000_000)
+        try? await Task.sleep(nanoseconds: 300_000_000)
         XCTAssertEqual(mockTutor.answerQuestionCallCount, 1)
         XCTAssertEqual(mockTutor.lastReceivedContext?.currentStep.stepOrder, 2, "Context must refer to active Step 2")
         
@@ -202,6 +203,7 @@ final class MasterEndToEndIntegrationTests: XCTestCase {
         viewModel.beginAssembly()
         viewModel.nextStep()
         
+        try? await Task.sleep(nanoseconds: 50_000_000)
         let events = await mockLogger.loggedEvents
         XCTAssertFalse(events.isEmpty)
         

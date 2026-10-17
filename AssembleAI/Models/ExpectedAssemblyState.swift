@@ -90,10 +90,21 @@ extension ExpectedAssemblyState {
         }
         
         // Fallback: generic component expectation from step metadata
+        var connections: [ExpectedConnection] = []
+        let fullText = "\(step.title) \(step.instruction)".lowercased()
+        if fullText.contains("gnd") || fullText.contains("ground") {
+            let toNode = (fullText.contains("header") || fullText.contains("pin")) ? "Pin Header" : "Rail"
+            connections.append(ExpectedConnection(from: "GND Rail", to: toNode))
+        } else if fullText.contains("5v") || fullText.contains("vcc") || fullText.contains("power") {
+            let toNode = (fullText.contains("header") || fullText.contains("pin")) ? "Pin Header" : "Rail"
+            connections.append(ExpectedConnection(from: "VCC Rail", to: toNode))
+        }
+        
         return ExpectedAssemblyState(
             stepID: step.id,
             stepOrder: step.stepOrder,
-            requiredComponents: [ExpectedComponent(identifier: "comp_\(step.stepOrder)", name: step.title)]
+            requiredComponents: [ExpectedComponent(identifier: "comp_\(step.stepOrder)", name: step.title)],
+            requiredConnections: connections
         )
     }
     

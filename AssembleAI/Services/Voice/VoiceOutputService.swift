@@ -51,7 +51,7 @@ final class VoiceOutputService: NSObject, ObservableObject, VoiceOutputServicePr
         guard !cleanSpokenText.isEmpty else { return }
         
         if let lastText = lastSpokenText, lastText == cleanSpokenText,
-           let lastTime = lastSpokenTimestamp, Date().timeIntervalSince(lastTime) < 3.0 {
+           let lastTime = lastSpokenTimestamp, Date().timeIntervalSince(lastTime) < 20.0 {
             return
         }
         

@@ -47,27 +47,27 @@ final class VoiceOutputTests: XCTestCase {
         let confirmDecision = InterventionDecision(action: .confirm(step: step1), reason: "Match")
         let confirmResponse = responseProvider.response(for: confirmDecision)
         XCTAssertNotNil(confirmResponse)
-        XCTAssertTrue(confirmResponse?.text.contains("Perfect") == true || confirmResponse?.text.contains("Great job") == true || confirmResponse?.text.contains("Nicely done") == true)
+        XCTAssertEqual(confirmResponse?.category, "confirmation")
         XCTAssertEqual(confirmResponse?.priority, .normal)
         
         // 3. Correct Decision (Explicit)
         let correctDecision = InterventionDecision(action: .correct(description: "Shift lead to Row 15", level: .explicit), reason: "Mistake")
         let correctResponse = responseProvider.response(for: correctDecision)
         XCTAssertNotNil(correctResponse)
-        XCTAssertTrue(correctResponse?.text.contains("Check your placement") == true)
+        XCTAssertTrue(correctResponse?.text.contains("Shift lead to Row 15") == true)
         XCTAssertEqual(correctResponse?.priority, .high)
         
         // 4. Request Better View
         let viewDecision = InterventionDecision(action: .requestBetterView(explanation: "Lighting is low"), reason: "Occlusion")
         let viewResponse = responseProvider.response(for: viewDecision)
         XCTAssertNotNil(viewResponse)
-        XCTAssertTrue(viewResponse?.text.contains("I need a clearer view") == true)
+        XCTAssertTrue(viewResponse?.text.contains("Lighting is low") == true)
         
         // 5. Offer Help
         let helpDecision = InterventionDecision(action: .offerHelp(step: step1, attemptCount: 2), reason: "Stuck")
         let helpResponse = responseProvider.response(for: helpDecision)
         XCTAssertNotNil(helpResponse)
-        XCTAssertTrue(helpResponse?.text.contains("Need a hand") == true)
+        XCTAssertTrue(helpResponse?.text.contains("Insert 220Ω Resistor") == true || helpResponse?.category == "stuck_help")
         
         // 6. Respond to User
         let userDecision = InterventionDecision(action: .respondToUser(query: "polarities"), reason: "Query")

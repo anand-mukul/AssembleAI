@@ -38,11 +38,51 @@ public struct SalientPhysicalObject: Identifiable, Sendable, Equatable {
     }
 }
 
+/// Lightweight detected object for multimodal physical verification.
+public struct DetectedVisualObject: Sendable {
+    public let label: String
+    public let boundingBox: CGRect
+    public let confidence: Double
+    
+    public init(label: String, boundingBox: CGRect, confidence: Double) {
+        self.label = label
+        self.boundingBox = boundingBox
+        self.confidence = confidence
+    }
+}
+
+/// Extracted physical assembly features fusing salient objects and color characteristics.
+public struct PhysicalAssemblyFeatures: Sendable {
+    public let detectedObjects: [DetectedVisualObject]
+    public let dominantColors: [UIColor]
+    
+    public init(detectedObjects: [DetectedVisualObject], dominantColors: [UIColor] = []) {
+        self.detectedObjects = detectedObjects
+        self.dominantColors = dominantColors
+    }
+}
+
 /// On-device visual perception engine fusing Apple Vision framework requests.
 public final class VisualFeatureExtractor: @unchecked Sendable {
     public static let shared = VisualFeatureExtractor()
     
     public init() {}
+    
+    /// Extracts composite physical assembly features including salient object bounding boxes and dominant colors.
+    public func extractPhysicalFeatures(
+        from pixelBuffer: CVPixelBuffer,
+        orientation: CGImagePropertyOrientation = .up
+    ) async -> PhysicalAssemblyFeatures {
+        let salient = await extractSalientObjects(from: pixelBuffer, orientation: orientation)
+        let objects = salient.map { obj in
+            DetectedVisualObject(
+                label: obj.categoryLabel,
+                boundingBox: obj.boundingBox,
+                confidence: Double(obj.confidence)
+            )
+        }
+        return PhysicalAssemblyFeatures(detectedObjects: objects, dominantColors: [])
+    }
     
     // MARK: - Salient Object Detection
     

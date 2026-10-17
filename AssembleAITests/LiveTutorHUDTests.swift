@@ -94,6 +94,9 @@ final class LiveTutorHUDTests: XCTestCase {
         XCTAssertTrue(viewModel.isListening)
         XCTAssertEqual(viewModel.liveStatus, .listening)
         
+        // Wait for voiceInputTask to subscribe to transcriptStream
+        try? await Task.sleep(nanoseconds: 50_000_000)
+        
         // 2. Simulate User Speech Recognition Utterance
         await mockVoiceInput.simulateSpokenTranscript("where does this go", isFinal: true)
         

@@ -192,6 +192,7 @@ final class StepProgressionTests: XCTestCase {
         XCTAssertEqual(viewModel.currentStep.stepOrder, 1)
         
         viewModel.toggleVoiceInput()
+        try? await Task.sleep(nanoseconds: 50_000_000)
         await mockVoiceInput.simulateSpokenTranscript("repeat that", isFinal: true)
         
         try? await Task.sleep(nanoseconds: 100_000_000)

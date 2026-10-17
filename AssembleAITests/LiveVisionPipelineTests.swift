@@ -58,7 +58,6 @@ final class LiveVisionPipelineTests: XCTestCase {
     // MARK: - Test 2: Observation Stream End-to-End Execution
     func testObservationStreamPipeline() async throws {
         let (sampledStream, sampledContinuation) = AsyncStream.makeStream(of: SampledFrame.self)
-        let observationStream = visionService.observationStream(from: sampledStream)
         
         let mockService = MockVisionService(simulatedLatencyMs: 10.0)
         let scriptedObs1 = VisualObservation(

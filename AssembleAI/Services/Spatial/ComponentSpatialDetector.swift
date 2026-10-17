@@ -99,8 +99,9 @@ nonisolated struct ComponentSpatialDetector: Sendable {
             
             // Priority 1: Check if text directly matches an expected component from the active project's BOM
             if let bomMatch = findMatchingBOM(forText: text, in: expectedComponents) {
-                matchedBOMPartIds.insert(bomMatch.partId)
-                let cType = inferComponentType(fromName: bomMatch.name, partId: bomMatch.partId)
+                let resolvedPid = bomMatch.partId ?? bomMatch.id.uuidString
+                matchedBOMPartIds.insert(resolvedPid)
+                let cType = inferComponentType(fromName: bomMatch.name, partId: resolvedPid)
                 let colorBands = cType == .resistor ? extractDynamicColorBands(from: bomMatch.name) : []
                 
                 detected.append(
@@ -261,7 +262,8 @@ nonisolated struct ComponentSpatialDetector: Sendable {
             
             // Attempt matching with an unmatched BOM requirement (semantic text or physical geometry)
             var unmatchedBOM = expectedComponents.first { bom in
-                !matchedBOMPartIds.contains(bom.partId) &&
+                let pid = bom.partId ?? bom.id.uuidString
+                return !matchedBOMPartIds.contains(pid) &&
                 (labelLower.contains(bom.name.lowercased()) || bom.name.lowercased().contains(labelLower))
             }
             
@@ -269,9 +271,10 @@ nonisolated struct ComponentSpatialDetector: Sendable {
             // Fasteners and physical parts have no OCR text, so correlate geometry with required BOM specs
             if unmatchedBOM == nil {
                 unmatchedBOM = expectedComponents.first { bom in
-                    guard !matchedBOMPartIds.contains(bom.partId) else { return false }
+                    let pid = bom.partId ?? bom.id.uuidString
+                    guard !matchedBOMPartIds.contains(pid) else { return false }
                     let bName = bom.name.lowercased()
-                    let bPart = bom.partId.lowercased()
+                    let bPart = (bom.partId ?? "").lowercased()
                     
                     // Large surface: panels, boards, shelves
                     if area >= 0.12 || max(w, h) >= 0.40 {
@@ -290,11 +293,12 @@ nonisolated struct ComponentSpatialDetector: Sendable {
             }
             
             if let bomMatch = unmatchedBOM {
-                matchedBOMPartIds.insert(bomMatch.partId)
-                let cType = inferComponentType(fromName: bomMatch.name, partId: bomMatch.partId)
+                let resolvedPid = bomMatch.partId ?? bomMatch.id.uuidString
+                matchedBOMPartIds.insert(resolvedPid)
+                let cType = inferComponentType(fromName: bomMatch.name, partId: resolvedPid)
                 detected.append(
                     SpatiallyDetectedComponent(
-                        partId: bomMatch.partId,
+                        partId: resolvedPid,
                         componentType: cType,
                         name: bomMatch.name,
                         confidence: max(0.70, Double(region.confidence)),
@@ -356,6 +360,10 @@ nonisolated struct ComponentSpatialDetector: Sendable {
         for classification in observation.classifications {
             guard classification.confidence >= 0.20 else { continue }
             let identifier = classification.identifier
+            let idLower = identifier.lowercased()
+            if idLower.contains("workshop") || idLower.contains("workbench") || idLower.contains("indoor") || idLower.contains("room") || idLower.contains("scene") {
+                continue
+            }
             
             // Extract leaf taxonomy title (e.g. "home > tool > screwdriver" -> "Screwdriver")
             let leaf = extractTaxonomyLeaf(from: identifier)
@@ -373,10 +381,11 @@ nonisolated struct ComponentSpatialDetector: Sendable {
             let compType: ComponentType
             
             if let bom = matchingBOM {
-                matchedBOMPartIds.insert(bom.partId)
-                partId = bom.partId
+                let resolvedPid = bom.partId ?? bom.id.uuidString
+                matchedBOMPartIds.insert(resolvedPid)
+                partId = resolvedPid
                 compName = bom.name
-                compType = inferComponentType(fromName: bom.name, partId: bom.partId)
+                compType = inferComponentType(fromName: bom.name, partId: resolvedPid)
             } else {
                 partId = "part_\(slug(leaf))"
                 compName = leaf
@@ -428,15 +437,33 @@ nonisolated struct ComponentSpatialDetector: Sendable {
     func findMatchingBOM(forText text: String, in bom: [ComponentRequirement]) -> ComponentRequirement? {
         let t = text.lowercased().trimmingCharacters(in: .whitespaces)
         let tClean = t.replacingOccurrences(of: "part_", with: "").replacingOccurrences(of: "_", with: " ")
+        let tTokens = Set(tClean.components(separatedBy: CharacterSet.alphanumerics.inverted).filter { $0.count >= 2 })
+        
         return bom.first { req in
             let rName = req.name.lowercased()
-            let rRawId = req.partId.lowercased()
+            let rRawId = (req.partId ?? "").lowercased()
             let rId = rRawId.replacingOccurrences(of: "part_", with: "").replacingOccurrences(of: "_", with: " ")
-            return t == rName || t == rRawId || t == rId || tClean == rId ||
-                   rRawId.contains(t) || t.contains(rRawId) ||
-                   (t.count >= 3 && (rName.contains(t) || t.contains(rName))) ||
-                   (tClean.count >= 3 && (rName.contains(tClean) || tClean.contains(rName))) ||
-                   (rId.count >= 3 && (rId.contains(tClean) || tClean.contains(rId)))
+            
+            if t == rName || t == rRawId || t == rId || tClean == rId ||
+               rRawId.contains(t) || t.contains(rRawId) ||
+               (t.count >= 3 && (rName.contains(t) || t.contains(rName))) ||
+               (tClean.count >= 3 && (rName.contains(tClean) || tClean.contains(rName))) ||
+               (rId.count >= 3 && (rId.contains(tClean) || tClean.contains(rId))) {
+                return true
+            }
+            
+            // Substring token match: e.g. "2020 extrusion" matching "2020 Aluminum Extrusion" or "frame_rail_2020"
+            if !tTokens.isEmpty {
+                let nameTokens = Set(rName.components(separatedBy: CharacterSet.alphanumerics.inverted).filter { $0.count >= 2 })
+                let idTokens = Set(rId.components(separatedBy: CharacterSet.alphanumerics.inverted).filter { $0.count >= 2 })
+                let combinedTokens = nameTokens.union(idTokens)
+                
+                if tTokens.isSubset(of: combinedTokens) {
+                    return true
+                }
+            }
+            
+            return false
         }
     }
     
@@ -664,8 +691,12 @@ nonisolated struct ComponentSpatialDetector: Sendable {
         if let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive),
            let match = regex.firstMatch(in: lower, options: [], range: NSRange(location: 0, length: lower.utf16.count)) {
             let matchedText = (lower as NSString).substring(with: match.range)
-            let formatted = matchedText.uppercased().replacingOccurrences(of: "U", with: "µ")
-            return (value: formatted, isElectrolytic: formatted.contains("µ") || formatted.contains("M"))
+            var formatted = matchedText.uppercased()
+            if formatted.contains("U") || matchedText.contains("µ") || formatted.contains("Μ") {
+                formatted = formatted.replacingOccurrences(of: "U", with: "µ")
+                formatted = formatted.replacingOccurrences(of: "Μ", with: "µ")
+            }
+            return (value: formatted, isElectrolytic: formatted.contains("µ") || formatted.lowercased().contains("m"))
         }
         
         if lower.contains("cap") || lower.contains("capacitor") {

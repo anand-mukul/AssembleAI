@@ -134,7 +134,7 @@ struct ProjectsView: View {
             }
         }
         .refreshable {
-            await viewModel.loadContent()
+            await viewModel.loadProjects()
         }
     }
     

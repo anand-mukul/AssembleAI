@@ -6,8 +6,8 @@
 import Foundation
 @testable import AssembleAI
 
-/// Actor-isolated mock voice output service recording spoken responses and state transitions for unit testing.
-actor MockVoiceOutputService: VoiceOutputServiceProtocol {
+@MainActor
+final class MockVoiceOutputService: VoiceOutputServiceProtocol {
     private var _state: SpeechState = .idle
     var state: SpeechState { _state }
     

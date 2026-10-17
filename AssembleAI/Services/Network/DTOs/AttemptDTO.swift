@@ -39,7 +39,7 @@ public struct AttemptDTO: Codable, Sendable {
         self.created_at = createdAt
     }
 
-    public init(domain: Attempt) {
+    init(domain: Attempt) {
         self.id = domain.id.uuidString.lowercased()
         self.session_id = domain.sessionId.uuidString.lowercased()
         self.step_id = domain.stepId.uuidString.lowercased()
@@ -51,7 +51,7 @@ public struct AttemptDTO: Codable, Sendable {
         self.created_at = ISO8601DateFormatter().string(from: domain.createdAt)
     }
 
-    public func toDomain() -> Attempt {
+    func toDomain() -> Attempt {
         let formatter = ISO8601DateFormatter()
         let createdDate = formatter.date(from: created_at) ?? Date()
         let parsedStatus = AttemptStatus(rawValue: status) ?? .uncertain

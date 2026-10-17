@@ -185,7 +185,7 @@ nonisolated struct ResistorColorBandDecoder: Sendable {
         return nil
     }
     
-    /// Parses a human-readable resistance string (e.g. "220Ω", "10k", "4.7kΩ", "1M") to nominal Ohms.
+    /// Parses a human-readable resistance string (e.g. "220Ω", "10k", "4.7kΩ", "1M" or natural language query "can I use a 330 ohm resistor instead?") to nominal Ohms.
     static func parseNominalOhms(from text: String) -> Double? {
         let cleaned = text
             .replacingOccurrences(of: "Ω", with: "")
@@ -195,15 +195,41 @@ nonisolated struct ResistorColorBandDecoder: Sendable {
         
         if cleaned.lowercased().hasSuffix("m") {
             let numPart = String(cleaned.dropLast()).trimmingCharacters(in: .whitespaces)
-            guard let val = Double(numPart) else { return nil }
-            return val * 1_000_000.0
+            if let val = Double(numPart) { return val * 1_000_000.0 }
         } else if cleaned.lowercased().hasSuffix("k") {
             let numPart = String(cleaned.dropLast()).trimmingCharacters(in: .whitespaces)
-            guard let val = Double(numPart) else { return nil }
-            return val * 1_000.0
-        } else {
-            return Double(cleaned)
+            if let val = Double(numPart) { return val * 1_000.0 }
+        } else if let val = Double(cleaned) {
+            return val
         }
+        
+        // Regex fallback for natural language sentences containing resistance values
+        // Requires word boundary and an explicit resistance unit to avoid matching part numbers like "BC547" or "2N2222"
+        let pattern = #"(?i)\b(\d+(?:\.\d+)?)\s*(kΩ?|mΩ?|megΩ?|ohms?|Ω)\b"#
+        if let regex = try? NSRegularExpression(pattern: pattern) {
+            let nsText = text as NSString
+            let matches = regex.matches(in: text, range: NSRange(location: 0, length: nsText.length))
+            for match in matches {
+                guard match.numberOfRanges >= 3 else { continue }
+                let numRange = match.range(at: 1)
+                guard numRange.location != NSNotFound else { continue }
+                let numStr = nsText.substring(with: numRange)
+                guard let baseVal = Double(numStr) else { continue }
+                
+                let unitRange = match.range(at: 2)
+                let unitStr = unitRange.location != NSNotFound ? nsText.substring(with: unitRange).lowercased() : ""
+                
+                if unitStr.hasPrefix("m") {
+                    return baseVal * 1_000_000.0
+                } else if unitStr.hasPrefix("k") {
+                    return baseVal * 1_000.0
+                } else {
+                    return baseVal
+                }
+            }
+        }
+        
+        return nil
     }
     
     /// Verifies if detected color bands match the expected physical attributes of a component requirement.

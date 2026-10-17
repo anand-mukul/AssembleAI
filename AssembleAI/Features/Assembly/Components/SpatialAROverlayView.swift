@@ -85,8 +85,11 @@ struct SpatialAROverlayView: View {
                     Text(label)
                         .font(.caption2.weight(.semibold))
                         .foregroundColor(.white)
-                        .padding(.horizontal, 6)
+                        .padding(.horizontal, 8)
                         .padding(.vertical, 3)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .frame(maxWidth: min(180, viewSize.width - 100))
                         .background(Capsule().fill(Color.black.opacity(0.75)))
                         .offset(y: -50)
                 }
@@ -122,13 +125,30 @@ struct SpatialAROverlayView: View {
                     )
                 
                 // Floating action banner
-                Text(label)
-                    .font(.caption2.weight(.bold))
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Capsule().fill(AppColors.warning))
-                    .position(x: (startPoint.x + endPoint.x) / 2.0, y: min(startPoint.y, endPoint.y) - 65.0)
+                if !label.isEmpty {
+                    let midX = (startPoint.x + endPoint.x) / 2.0
+                    let minY = min(startPoint.y, endPoint.y) - 35.0
+                    // Clamp to strictly prevent collision with top navigation bar (under 112pt) and screen edges
+                    let clampedX = max(70.0, min(viewSize.width - 70.0, midX))
+                    let clampedY = max(112.0, min(viewSize.height - 240.0, minY))
+                    
+                    let displayLabel: String = {
+                        let trimmed = label.components(separatedBy: "—").first?.components(separatedBy: ".").first?.trimmingCharacters(in: .whitespacesAndNewlines) ?? label
+                        return trimmed.isEmpty ? label : trimmed
+                    }()
+                    
+                    Text(displayLabel)
+                        .font(.caption2.weight(.bold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .frame(maxWidth: min(200, viewSize.width - 100))
+                        .background(Capsule().fill(AppColors.warning))
+                        .shadow(color: Color.black.opacity(0.35), radius: 4, x: 0, y: 2)
+                        .position(x: clampedX, y: clampedY)
+                }
             }
             
         case .successConfirmation(let position):

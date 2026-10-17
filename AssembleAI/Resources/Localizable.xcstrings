@@ -10,9 +10,6 @@
     "'%@' has been created and is ready for assembly." : {
 
     },
-    "\"%@\"" : {
-
-    },
     "# My LED Circuit\n\n## Components\n- 220Ω Resistor — 1/4W\n- Red LED — 5mm\n\n## Step 1: Insert Resistor\nPlace the resistor into Row 10E..." : {
 
     },
@@ -102,13 +99,23 @@
         }
       }
     },
+    "%lld %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld %2$@"
+          }
+        }
+      }
+    },
+    "%lld frames" : {
+
+    },
     "%lld guidance tips" : {
 
     },
     "%lld guided steps" : {
-
-    },
-    "%lld ms" : {
 
     },
     "%lld of %lld steps (%@)" : {
@@ -166,9 +173,6 @@
     "%lld%%" : {
 
     },
-    "%lld%% conf" : {
-
-    },
     "%lld%% confidence" : {
 
     },
@@ -179,15 +183,6 @@
 
     },
     "•" : {
-
-    },
-    "• Ensure your workspace has bright, even lighting" : {
-
-    },
-    "• Keep the workpiece centered inside the viewfinder frame" : {
-
-    },
-    "• Move closer to the component area" : {
 
     },
     "• Power Rails (+ and -): Run vertically down the side columns. Red (+) is positive voltage (5V/3.3V), Blue/Black (-) is ground (GND)." : {
@@ -218,9 +213,6 @@
 
     },
     "8mm Beech Dowel" : {
-
-    },
-    "220Ω Resistor" : {
 
     },
     "About" : {
@@ -259,10 +251,7 @@
     "AI-Powered Hardware Assembly" : {
 
     },
-    "Align camera directly above your workpiece to track components, fasteners, and physical connections in real time." : {
-
-    },
-    "Aligned" : {
+    "ALIGN WORKPIECE" : {
 
     },
     "Alignment Grid Overlay" : {
@@ -278,6 +267,9 @@
 
     },
     "Already have an account? Sign In" : {
+
+    },
+    "Analyzing surface geometry, components & lighting..." : {
 
     },
     "Analyzing Visual Information" : {
@@ -392,6 +384,9 @@
     "Bill of Materials" : {
 
     },
+    "Bio" : {
+
+    },
     "Build with\nprecision." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -406,6 +401,9 @@
     "Build with precision." : {
 
     },
+    "Calculates standard 4-band EIA color codes for a resistance value." : {
+
+    },
     "Cam Lock Fastener" : {
 
     },
@@ -418,7 +416,7 @@
     "Camera frames and Vision OCR extractions are processed entirely on your device and never uploaded to external servers." : {
 
     },
-    "Camera Observation" : {
+    "Camera Hardware Initialization" : {
 
     },
     "Camera unavailable or waiting for permission" : {
@@ -431,6 +429,12 @@
 
     },
     "Cancel assembly session" : {
+
+    },
+    "Check Component Substitution" : {
+
+    },
+    "Check Joint Alignment" : {
 
     },
     "Check My Assembly" : {
@@ -454,6 +458,9 @@
           }
         }
       }
+    },
+    "Check Substitution" : {
+
     },
     "Check Your Email" : {
 
@@ -480,10 +487,10 @@
     "Choose how you'd like to begin your assembly." : {
 
     },
-    "Circuit Hardware Blueprint" : {
+    "Choose target project (%lld available)" : {
 
     },
-    "Circuit Workspace" : {
+    "Circuit Hardware Blueprint" : {
 
     },
     "Clear Local Storage" : {
@@ -543,6 +550,9 @@
     "Concise" : {
 
     },
+    "Concise: Short, quick directives for experienced builders." : {
+
+    },
     "Connect" : {
 
     },
@@ -555,6 +565,15 @@
     "Continue without an account" : {
 
     },
+    "Converts physical instruction sheets into machine-verifiable visual contracts." : {
+
+    },
+    "Correction" : {
+
+    },
+    "Could not calculate color bands for %@. Try specifying ohms or k, like 220 ohm or 10k." : {
+
+    },
     "Create account" : {
 
     },
@@ -562,6 +581,9 @@
 
     },
     "Create an account to track your hardware assembly progress." : {
+
+    },
+    "Create your first assembly project to publish to the catalog." : {
 
     },
     "Current" : {
@@ -619,10 +641,10 @@
     "Detailed" : {
 
     },
-    "Detected State" : {
+    "Detailed: Step-by-step physical placement guidance with pinout notes." : {
 
     },
-    "DETECTED TEXT MARKINGS (%lld)" : {
+    "Detected State" : {
 
     },
     "Difficulty" : {
@@ -635,6 +657,15 @@
 
     },
     "Dismiss" : {
+
+    },
+    "Dismiss calibration card" : {
+
+    },
+    "Dismiss flashlight suggestion" : {
+
+    },
+    "Dismiss notification" : {
 
     },
     "Display Name" : {
@@ -670,6 +701,9 @@
     "Enable camera access in Settings → Privacy → Camera to observe physical hardware assembly tasks." : {
 
     },
+    "Ensure your workspace has bright, even lighting" : {
+
+    },
     "Enter your email and password to access your account." : {
 
     },
@@ -683,6 +717,12 @@
 
     },
     "Estimated Time: %lld min" : {
+
+    },
+    "Evaluates if a furniture or mechanical joint is square and flush within 5° tolerance." : {
+
+    },
+    "Evaluates if an alternative resistor, transistor, or capacitor can be safely used." : {
 
     },
     "Expected" : {
@@ -704,6 +744,12 @@
         }
       }
     },
+    "Experience Level" : {
+
+    },
+    "Explore Projects" : {
+
+    },
     "Export All Data (JSON)" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -714,9 +760,6 @@
           }
         }
       }
-    },
-    "Export anonymized pseudonymous CSV log records for statistical evaluation." : {
-
     },
     "Export Research Metrics (CSV)" : {
       "extractionState" : "manual",
@@ -738,8 +781,31 @@
     "Fast, secure, and private authentication. Synchronize your assembly workflows automatically." : {
 
     },
+    "Fastener Type" : {
+
+    },
     "Filter" : {
 
+    },
+    "For %@: Use a %@ (%@). %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "For %1$@: Use a %2$@ (%3$@). %4$@"
+          }
+        }
+      }
+    },
+    "For a %@ resistor, the color bands are %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "For a %1$@ resistor, the color bands are %2$@."
+          }
+        }
+      }
     },
     "For the %@, ensure the longer lead, the anode, connects to positive voltage, and the shorter lead connects to ground." : {
 
@@ -785,6 +851,9 @@
     "Guidance Level" : {
 
     },
+    "Guide & Manual OCR" : {
+
+    },
     "Haptic Guidance Feedback" : {
 
     },
@@ -792,9 +861,6 @@
 
     },
     "Hardware Assembly Reference" : {
-
-    },
-    "Hardware inspection preview showing breadboard with resistor placement step." : {
 
     },
     "HDF Back Panel" : {
@@ -813,6 +879,9 @@
           }
         }
       }
+    },
+    "Hold any unknown screw, dowel, cam bolt, board, or tool within the viewfinder reticle. Apple Neural Engine classifies geometry, pitch, and torque guidance on-device." : {
+
     },
     "Home" : {
       "extractionState" : "manual",
@@ -854,9 +923,6 @@
     "In Progress" : {
 
     },
-    "INPUT CONTEXT (GROUNDED)" : {
-
-    },
     "Inspect Assembly" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -874,7 +940,22 @@
     "iOS Notification Status" : {
 
     },
+    "Issue Detected" : {
+
+    },
     "Issue:" : {
+
+    },
+    "JARVIS WORKBENCH SCANNING" : {
+
+    },
+    "Joint Alignment" : {
+
+    },
+    "Joint Name" : {
+
+    },
+    "Keep the workpiece centered inside the frame" : {
 
     },
     "Let's fix this" : {
@@ -904,10 +985,13 @@
     "Manual snapshot analysis" : {
 
     },
-    "Model Session Inspector" : {
+    "Move closer to the component area" : {
 
     },
     "Move Here" : {
+
+    },
+    "N = %lld" : {
 
     },
     "New Project" : {
@@ -927,6 +1011,9 @@
     "Next:" : {
 
     },
+    "No %@ Projects" : {
+
+    },
     "No active assembly project was found. Open AssembleAI to start assembling." : {
 
     },
@@ -936,10 +1023,16 @@
     "No assembly projects found. Open AssembleAI to browse projects." : {
 
     },
-    "No component text markings detected in frame." : {
+    "No other projects available." : {
 
     },
-    "No other projects available." : {
+    "No Projects Found" : {
+
+    },
+    "No Projects Yet" : {
+
+    },
+    "No Published Projects" : {
 
     },
     "Notification Preferences" : {
@@ -969,6 +1062,9 @@
     "Opens iOS Settings to enable camera access" : {
 
     },
+    "Opens project selector sheet" : {
+
+    },
     "Optical Only" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -980,13 +1076,13 @@
         }
       }
     },
-    "Optical Verification" : {
-
-    },
     "Optimal Scanning" : {
 
     },
     "Optional" : {
+
+    },
+    "Paper to Interactive AR" : {
 
     },
     "Paste Guide Content" : {
@@ -996,6 +1092,9 @@
 
     },
     "Pause Live Tutor" : {
+
+    },
+    "Permanently deletes cached frames, local benchmarks, and session records from this device." : {
 
     },
     "Physical Assembly Blueprint" : {
@@ -1047,6 +1146,9 @@
     "Preparing explanation…" : {
 
     },
+    "Presets:" : {
+
+    },
     "Privacy Policy" : {
 
     },
@@ -1081,6 +1183,15 @@
         }
       }
     },
+    "Provides subtle tactile confirmation when physical components are correctly placed and verified." : {
+
+    },
+    "Published hardware projects from the database will appear here." : {
+
+    },
+    "Query Resistor Color Bands" : {
+
+    },
     "Reads the next physical assembly step instruction hands-free." : {
 
     },
@@ -1107,13 +1218,31 @@
         }
       }
     },
+    "Real-Time Hardware Classifier" : {
+
+    },
+    "Recalibrate workspace" : {
+
+    },
     "Recent Activity" : {
+
+    },
+    "Recommended Correction" : {
+
+    },
+    "Recommends exact assembly tools, driver bits, and torque warnings for furniture or mechanical fasteners." : {
+
+    },
+    "Requested Component" : {
 
     },
     "Required" : {
 
     },
-    "RESEARCH DATA EXPORT" : {
+    "Research & Visual History" : {
+
+    },
+    "Reset" : {
 
     },
     "Reset All Local Data & Sessions" : {
@@ -1125,10 +1254,19 @@
     "Reset Everything" : {
 
     },
+    "Reset Filters" : {
+
+    },
     "Reset Local Data" : {
 
     },
     "Reset Password" : {
+
+    },
+    "Resistance" : {
+
+    },
+    "Resistor Bands" : {
 
     },
     "Resume Live Tutor" : {
@@ -1137,10 +1275,10 @@
     "Retry" : {
 
     },
-    "Rotate 180° clockwise" : {
+    "Retry Camera" : {
 
     },
-    "Row 10 to 15" : {
+    "Rotate 180° clockwise" : {
 
     },
     "Save" : {
@@ -1168,10 +1306,13 @@
         }
       }
     },
-    "Scan Setup" : {
+    "Scan any paper manual or paste tutorial text to generate sequential assembly steps with visual contracts and tool recommendations." : {
 
     },
-    "Scan setup with camera" : {
+    "Scan Mode" : {
+
+    },
+    "Search %lld projects…" : {
 
     },
     "Search projects or categories" : {
@@ -1186,7 +1327,13 @@
     "Select a hardware task to begin guided step-by-step assembly." : {
 
     },
-    "Session Evaluation Dashboard" : {
+    "Select Project" : {
+
+    },
+    "Select Target Project" : {
+
+    },
+    "Sends a lightweight verification ping to confirm your Google Apps Script or cloud webhook accepts JSON POST requests." : {
 
     },
     "Session runs stream live into spreadsheet rows" : {
@@ -1203,13 +1350,19 @@
         }
       }
     },
+    "Share a short bio or lab specialty" : {
+
+    },
     "Shelf Board" : {
 
     },
-    "Short, quick instructions for experienced builders." : {
+    "Show All Projects" : {
 
     },
     "Show password" : {
+
+    },
+    "Show workspace calibration details" : {
 
     },
     "Sign In" : {
@@ -1261,9 +1414,6 @@
         }
       }
     },
-    "STATE COMPARISON ENGINE" : {
-
-    },
     "Step %lld" : {
 
     },
@@ -1310,9 +1460,6 @@
         }
       }
     },
-    "Step 1 of 4" : {
-
-    },
     "Step Complete" : {
 
     },
@@ -1322,7 +1469,7 @@
     "Step title" : {
 
     },
-    "Step-by-step physical placement guidance with pinout notes." : {
+    "Step Verified" : {
 
     },
     "Steps" : {
@@ -1340,7 +1487,25 @@
     "Storage & Cache" : {
 
     },
+    "Strategy" : {
+
+    },
+    "Strategy A: Current Frame" : {
+
+    },
+    "Strategy B: Last N Frames" : {
+
+    },
+    "Strategy C: Full History" : {
+
+    },
+    "Strategy D: Compressed" : {
+
+    },
     "Stream benchmarks into Google Sheets for papers" : {
+
+    },
+    "Supports furniture fasteners, mechanical linkages, 3D printer components, and circuit modules." : {
 
     },
     "Sync Now" : {
@@ -1358,7 +1523,20 @@
     "Target Project" : {
 
     },
+    "Target Project: %@, %@, double tap to change" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Target Project: %1$@, %2$@, double tap to change"
+          }
+        }
+      }
+    },
     "Target Reticle Pulse" : {
+
+    },
+    "Temporal History" : {
 
     },
     "Terms & Safety Guidelines" : {
@@ -1367,7 +1545,16 @@
     "Terms of Service" : {
 
     },
+    "Test Webhook Connection" : {
+
+    },
+    "Testing Webhook Endpoint…" : {
+
+    },
     "The visual observer detected a placement mismatch. Follow the steps below to adjust your setup." : {
+
+    },
+    "There are currently no projects matching this status filter." : {
 
     },
     "This will permanently delete local research session benchmarks and event logs. Your assembly project progress and account data will not be affected." : {
@@ -1382,16 +1569,25 @@
     "Tips for Better Scanning" : {
 
     },
+    "Toggle flashlight" : {
+
+    },
+    "Tool Recommendation" : {
+
+    },
+    "Turn On" : {
+
+    },
     "Unable to load projects" : {
 
     },
     "Unable to Sign In" : {
 
     },
-    "Use AssembleAI without an account. Your assembly projects and inspection history stay strictly on this device." : {
+    "Universal Perception Engine" : {
 
     },
-    "Uses optical bounding checks against target hardware templates." : {
+    "Use AssembleAI without an account. Your assembly projects and inspection history stay strictly on this device." : {
 
     },
     "Verification Details" : {
@@ -1419,16 +1615,10 @@
         }
       }
     },
-    "Verifies component placement and wire connectivity automatically." : {
-
-    },
     "Verifies the current physical assembly step using AssembleAI on-device camera vision." : {
 
     },
-    "View Model Inspector" : {
-
-    },
-    "Visual Observation" : {
+    "Warning: %lld ohms is too low! Current will exceed 30 milliamps and risks burning out standard LEDs." : {
 
     },
     "We've sent a verification link to %@. Please confirm your email address, then sign in." : {
@@ -1448,6 +1638,12 @@
         }
       }
     },
+    "What Tool Do I Need" : {
+
+    },
+    "When substituting %@, ensure voltage ratings match and power dissipation remains safe for the circuit." : {
+
+    },
     "When you start building and verifying physical hardware with your camera, your session history and accuracy metrics will appear here." : {
 
     },
@@ -1460,8 +1656,24 @@
     "Why?" : {
 
     },
-    "Workbench Feed" : {
+    "Window Size" : {
 
+    },
+    "WORKSPACE CALIBRATED" : {
+
+    },
+    "Workspace is dim." : {
+
+    },
+    "Yes, %lld ohms is a safe substitute! Current will be approximately %@ milliamps, which is well within safe operating limits." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Yes, %1$lld ohms is a safe substitute! Current will be approximately %2$@ milliamps, which is well within safe operating limits."
+          }
+        }
+      }
     },
     "You'll need" : {
 
@@ -1476,6 +1688,9 @@
 
     },
     "Your Projects" : {
+
+    },
+    "Zoom %@" : {
 
     }
   },

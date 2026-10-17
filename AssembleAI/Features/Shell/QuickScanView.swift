@@ -452,7 +452,6 @@ struct QuickScanView: View {
                 title: "Universal Hardware Identifier",
                 subtitle: "Identify any fastener, component, or tool",
                 category: "Hardware",
-                domain: .mechanical,
                 difficulty: .beginner,
                 estimatedMinutes: 2,
                 totalSteps: 1,
@@ -470,7 +469,8 @@ struct QuickScanView: View {
                         isCompleted: false,
                         visualContract: nil
                     )
-                ]
+                ],
+                domain: .physical
             )
             let step = AssemblyStep(
                 id: UUID(),

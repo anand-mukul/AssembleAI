@@ -166,8 +166,8 @@ final class ProfileViewModel: ObservableObject {
             if !user.avatarColorHex.isEmpty {
                 self.avatarColorHex = user.avatarColorHex
             }
-            if let userBio = user.bio {
-                self.bio = userBio
+            if !user.bio.isEmpty {
+                self.bio = user.bio
             }
             if !user.experienceLevel.isEmpty {
                 self.experienceLevel = user.experienceLevel

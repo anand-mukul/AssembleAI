@@ -20,6 +20,7 @@ nonisolated enum VoiceInputState: String, Sendable, Equatable {
 // MARK: - Voice Input Service Protocol
 
 /// Abstract interface for voice input and speech recognition.
+@MainActor
 protocol VoiceInputServiceProtocol: Sendable {
     /// Current recognition operational state.
     var state: VoiceInputState { get async }

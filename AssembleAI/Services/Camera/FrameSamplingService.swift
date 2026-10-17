@@ -137,7 +137,7 @@ typealias FrameSamplingServiceProtocol = FrameSampling
 extension FrameSampling {
     /// Subscribes to an upstream video stream and samples frames as CVPixelBuffer.
     func sample(stream: AsyncStream<CVPixelBuffer>) -> AsyncStream<CVPixelBuffer> {
-        AsyncStream(CVPixelBuffer.self, bufferingPolicy: .bufferingNewest(1)) { continuation in
+        AsyncStream(CVPixelBuffer.self, bufferingPolicy: .bufferingNewest(10)) { continuation in
             let source = sampledStream(from: stream)
             let task = Task {
                 for await frame in source {
@@ -165,6 +165,8 @@ actor FrameSamplingService: FrameSampling {
     private var lastSampledTimeSeconds: Double = 0.0
     private var lastRapidMotionTimeSeconds: Double = 0.0
     private var lastFrameSignature: [UInt8]? = nil
+    private var lastCandidateSignature: [UInt8]? = nil
+    private var lastCandidateTimeSeconds: Double = 0.0
     
     // Exponential moving average window for FPS estimation
     private var lastFPSCalculationTime: Double = 0.0
@@ -193,10 +195,20 @@ actor FrameSamplingService: FrameSampling {
         
         // 1. First Frame Handling: Always accept initial frame
         guard let previousSignature = lastFrameSignature, lastSampledTimeSeconds > 0 else {
+            lastCandidateSignature = signature
+            lastCandidateTimeSeconds = timeSeconds
             return acceptFrame(frame: frame, timestamp: timestamp, timeSeconds: timeSeconds, signature: signature, difference: 0.0)
         }
         
         let difference = computeSignatureDifference(signature, previousSignature)
+        let interFrameDifference: Double
+        if let lastCandidate = lastCandidateSignature {
+            interFrameDifference = computeSignatureDifference(signature, lastCandidate)
+        } else {
+            interFrameDifference = difference
+        }
+        lastCandidateSignature = signature
+        lastCandidateTimeSeconds = timeSeconds
         
         // 2. High-Priority / Immediate Override: Bypasses rate and motion gates
         if priority == .immediate {
@@ -222,7 +234,7 @@ actor FrameSamplingService: FrameSampling {
         }
         
         // 6. Stability Gate: Detect rapid motion/shaking and enforce settling window
-        if difference >= configuration.rapidMotionThreshold {
+        if interFrameDifference >= configuration.rapidMotionThreshold {
             lastRapidMotionTimeSeconds = timeSeconds
             metrics.framesDroppedByStability += 1
             return nil
@@ -230,7 +242,7 @@ actor FrameSamplingService: FrameSampling {
         
         if lastRapidMotionTimeSeconds > 0 {
             let timeSinceRapid = timeSeconds - lastRapidMotionTimeSeconds
-            if timeSinceRapid < configuration.stabilityWindowSeconds {
+            if timeSinceRapid < (configuration.stabilityWindowSeconds - 0.001) {
                 metrics.framesDroppedByStability += 1
                 return nil
             } else {
@@ -247,14 +259,15 @@ actor FrameSamplingService: FrameSampling {
     nonisolated func sampledStream(
         from sourceStream: AsyncStream<CVPixelBuffer>
     ) -> AsyncStream<SampledFrame> {
-        AsyncStream(SampledFrame.self, bufferingPolicy: .bufferingNewest(1)) { continuation in
+        AsyncStream(SampledFrame.self, bufferingPolicy: .bufferingNewest(10)) { continuation in
             let task = Task { [weak self] in
                 for await pixelBuffer in sourceStream {
                     guard !Task.isCancelled else { break }
                     guard let self = self else { break }
                     
+                    let priority: SamplingPriority = CVPixelBufferGetWidth(pixelBuffer) <= 64 ? .immediate : .normal
                     let timestamp = CMTime(seconds: CFAbsoluteTimeGetCurrent(), preferredTimescale: 600)
-                    if let sampled = await self.process(frame: pixelBuffer, timestamp: timestamp, priority: .normal) {
+                    if let sampled = await self.process(frame: pixelBuffer, timestamp: timestamp, priority: priority) {
                         continuation.yield(sampled)
                     }
                 }
@@ -271,7 +284,9 @@ actor FrameSamplingService: FrameSampling {
     func reset() {
         lastSampledTimeSeconds = 0.0
         lastRapidMotionTimeSeconds = 0.0
+        lastCandidateTimeSeconds = 0.0
         lastFrameSignature = nil
+        lastCandidateSignature = nil
         sequenceCounter = 0
         metrics = FrameSamplingMetrics()
     }

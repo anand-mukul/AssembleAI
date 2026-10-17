@@ -167,7 +167,7 @@ final class AppleIntelligenceAppIntentsTests: XCTestCase {
     @available(iOS 16.0, *)
     func testAppShortcutsProviderDiscovery() {
         let shortcuts = AssembleAIShortcutsProvider.appShortcuts
-        XCTAssertEqual(shortcuts.count, 5)
+        XCTAssertEqual(shortcuts.count, 7)
     }
     #endif
 }

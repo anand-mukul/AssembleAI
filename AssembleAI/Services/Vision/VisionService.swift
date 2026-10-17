@@ -279,7 +279,8 @@ actor VisionService: VisionAnalyzing {
             
             let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: orientation, options: [:])
             do {
-                try handler.perform([textRequest, rectRequest, classifyRequest, humanRequest, saliencyRequest])
+                try handler.perform([textRequest, rectRequest])
+                try? handler.perform([classifyRequest, humanRequest, saliencyRequest])
                 continuation.resume(returning: (detectedTexts, detectedRegions, detectedClassifications, detectedHumans))
             } catch {
                 continuation.resume(throwing: error)
@@ -382,7 +383,8 @@ actor VisionService: VisionAnalyzing {
             
             let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
             do {
-                try handler.perform([textRequest, rectRequest, classifyRequest, humanRequest, saliencyRequest])
+                try handler.perform([textRequest, rectRequest])
+                try? handler.perform([classifyRequest, humanRequest, saliencyRequest])
                 continuation.resume(returning: (detectedTexts, detectedRegions, detectedClassifications, detectedHumans))
             } catch {
                 continuation.resume(throwing: error)

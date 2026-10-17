@@ -324,6 +324,35 @@ nonisolated struct VisualContract: Codable, Hashable, Equatable, Sendable {
         self.toleranceMm = toleranceMm
     }
     
+    enum CodingKeys: String, CodingKey {
+        case requiredComponentIds
+        case pinPlacements
+        case spatialPlacements
+        case expectedConnections
+        case orientationConstraints
+        case toleranceMm
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.requiredComponentIds = try container.decodeIfPresent([String].self, forKey: .requiredComponentIds) ?? []
+        self.pinPlacements = try container.decodeIfPresent([PinPlacement].self, forKey: .pinPlacements) ?? []
+        self.spatialPlacements = try container.decodeIfPresent([SpatialPlacement].self, forKey: .spatialPlacements) ?? []
+        self.expectedConnections = try container.decodeIfPresent([ConnectionContract].self, forKey: .expectedConnections) ?? []
+        self.orientationConstraints = try container.decodeIfPresent([OrientationConstraint].self, forKey: .orientationConstraints) ?? []
+        self.toleranceMm = try container.decodeIfPresent(Double.self, forKey: .toleranceMm) ?? 2.5
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(requiredComponentIds, forKey: .requiredComponentIds)
+        try container.encode(pinPlacements, forKey: .pinPlacements)
+        try container.encode(spatialPlacements, forKey: .spatialPlacements)
+        try container.encode(expectedConnections, forKey: .expectedConnections)
+        try container.encode(orientationConstraints, forKey: .orientationConstraints)
+        try container.encode(toleranceMm, forKey: .toleranceMm)
+    }
+    
     /// Whether this contract contains any electronics-specific constraints.
     var hasElectronicsConstraints: Bool {
         !pinPlacements.isEmpty || !expectedConnections.isEmpty

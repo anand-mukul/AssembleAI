@@ -6,12 +6,12 @@
 import Foundation
 @testable import AssembleAI
 
-/// Actor-isolated mock speech recognition service for unit testing and deterministic simulation.
-actor MockVoiceInputService: VoiceInputServiceProtocol {
+@MainActor
+final class MockVoiceInputService: VoiceInputServiceProtocol {
     private var _state: VoiceInputState = .idle
     var state: VoiceInputState { _state }
     
-    private let broadcaster = TranscriptStreamBroadcaster()
+    nonisolated private let broadcaster = TranscriptStreamBroadcaster()
     
     init() {}
     

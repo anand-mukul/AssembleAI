@@ -50,6 +50,7 @@ nonisolated struct VoiceOutputConfiguration: Sendable, Equatable {
 // MARK: - Voice Output Service Protocol
 
 /// Abstract interface for delivering spoken tutor guidance.
+@MainActor
 protocol VoiceOutputServiceProtocol: Sendable {
     /// Current speech synthesizer state.
     var state: SpeechState { get async }

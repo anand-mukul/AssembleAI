@@ -213,6 +213,8 @@ final class AssistantInterventionPolicy: AssistantInterventionPolicing, @uncheck
     private var lastCorrectedExplanation: String? = nil
     private var sameIssueRepeatCount: Int = 0
     private var lastInterventionTimestamp: Date? = nil
+    private var hasOfferedHelpForCurrentStep: Bool = false
+    private var hasOfferedHelpForCurrentIssue: Bool = false
     
     init(configuration: InterventionPolicyConfiguration = .default) {
         self.configuration = configuration
@@ -326,9 +328,9 @@ final class AssistantInterventionPolicy: AssistantInterventionPolicing, @uncheck
                 sameIssueRepeatCount += 1
                 let dynamicCooldown: Double = {
                     switch sameIssueRepeatCount {
-                    case 1: return max(configuration.minimumCooldownSeconds * 2.0, 16.0)
-                    case 2: return 30.0
-                    default: return 60.0
+                    case 1: return configuration.minimumCooldownSeconds * 1.5
+                    case 2: return configuration.minimumCooldownSeconds * 2.0
+                    default: return configuration.minimumCooldownSeconds * 3.0
                     }
                 }()
                 
@@ -337,6 +339,10 @@ final class AssistantInterventionPolicy: AssistantInterventionPolicing, @uncheck
                 }
                 
                 if sameIssueRepeatCount >= 3 {
+                    if hasOfferedHelpForCurrentIssue {
+                        return InterventionDecision.silent(reason: "Help already offered for this issue; holding speech to avoid nagging.")
+                    }
+                    hasOfferedHelpForCurrentIssue = true
                     recordIntervention()
                     return InterventionDecision(
                         action: .offerHelp(step: context.currentStep, attemptCount: sameIssueRepeatCount),
@@ -345,6 +351,7 @@ final class AssistantInterventionPolicy: AssistantInterventionPolicing, @uncheck
                 }
             } else {
                 sameIssueRepeatCount = 0
+                hasOfferedHelpForCurrentIssue = false
             }
             
             // Determine Escalation Level
@@ -399,6 +406,10 @@ final class AssistantInterventionPolicy: AssistantInterventionPolicing, @uncheck
         let isCooldownClear = context.timeSinceLastInterventionSeconds >= configuration.minimumCooldownSeconds
         
         if isDurationStuck && isCooldownClear {
+            if hasOfferedHelpForCurrentStep {
+                return InterventionDecision.silent(reason: "Help already offered for this step duration; holding speech to avoid looping.")
+            }
+            hasOfferedHelpForCurrentStep = true
             recordIntervention()
             return InterventionDecision(
                 action: .offerHelp(step: context.currentStep, attemptCount: consecutiveMistakes),
@@ -430,6 +441,8 @@ final class AssistantInterventionPolicy: AssistantInterventionPolicing, @uncheck
         consecutiveUncertainties = 0
         lastCorrectedExplanation = nil
         sameIssueRepeatCount = 0
+        hasOfferedHelpForCurrentStep = false
+        hasOfferedHelpForCurrentIssue = false
     }
     
     private func performFullReset() {
@@ -440,6 +453,8 @@ final class AssistantInterventionPolicy: AssistantInterventionPolicing, @uncheck
         lastCorrectedExplanation = nil
         sameIssueRepeatCount = 0
         lastInterventionTimestamp = nil
+        hasOfferedHelpForCurrentStep = false
+        hasOfferedHelpForCurrentIssue = false
     }
     
     private func recordIntervention() {

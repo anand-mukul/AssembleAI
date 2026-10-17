@@ -26,6 +26,11 @@ nonisolated struct LEDEmissionResult: Sendable, Equatable {
     /// Human-readable description for tutor speech.
     let description: String
     
+    /// Calculated confidence score for emission detection.
+    var confidence: Double {
+        isEmitting ? min(1.0, max(0.0, peakBrightness)) : 0.0
+    }
+    
     static let unknown = LEDEmissionResult(
         isEmitting: false,
         averageBrightness: 0.0,

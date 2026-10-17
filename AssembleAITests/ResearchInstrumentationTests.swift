@@ -236,7 +236,7 @@ final class ResearchInstrumentationTests: XCTestCase {
             stepID: step1ID,
             mode: .liveTutor,
             eventType: .verificationCorrect,
-            status: "correct"
+            verificationStatus: "correct"
         ))
         await logger.logEvent(ResearchEvent(
             sessionID: testSessionID,
@@ -281,7 +281,7 @@ final class ResearchInstrumentationTests: XCTestCase {
             stepID: step1ID,
             mode: .liveTutor,
             eventType: .verificationCorrect,
-            status: "correct"
+            verificationStatus: "correct"
         ))
         await logger.logEvent(ResearchEvent(
             sessionID: testSessionID,
@@ -289,7 +289,7 @@ final class ResearchInstrumentationTests: XCTestCase {
             stepID: step2ID,
             mode: .liveTutor,
             eventType: .verificationCorrect,
-            status: "correct"
+            verificationStatus: "correct"
         ))
         
         let metrics = await logger.calculateMetrics(for: testSessionID)
