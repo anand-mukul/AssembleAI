@@ -15,18 +15,26 @@ nonisolated enum AuthProvider: String, Codable, Hashable, Equatable, Sendable {
 /// Represents an authenticated or guest user session in AssembleAI.
 nonisolated struct User: Identifiable, Hashable, Codable, Equatable, Sendable {
     let id: String
-    let name: String?
-    let email: String?
-    let avatarUrl: String?
+    var name: String?
+    var email: String?
+    var avatarUrl: String?
+    var avatarSymbol: String
+    var avatarColorHex: String
+    var bio: String
+    var experienceLevel: String
     let provider: AuthProvider
     let createdAt: Date
-    let updatedAt: Date
+    var updatedAt: Date
     
     nonisolated init(
         id: String,
         name: String?,
         email: String?,
         avatarUrl: String? = nil,
+        avatarSymbol: String = "person.crop.circle.fill",
+        avatarColorHex: String = "#0A84FF",
+        bio: String = "",
+        experienceLevel: String = "Beginner",
         provider: AuthProvider,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
@@ -35,6 +43,10 @@ nonisolated struct User: Identifiable, Hashable, Codable, Equatable, Sendable {
         self.name = name
         self.email = email
         self.avatarUrl = avatarUrl
+        self.avatarSymbol = avatarSymbol
+        self.avatarColorHex = avatarColorHex
+        self.bio = bio
+        self.experienceLevel = experienceLevel
         self.provider = provider
         self.createdAt = createdAt
         self.updatedAt = updatedAt
@@ -53,11 +65,11 @@ nonisolated struct User: Identifiable, Hashable, Codable, Equatable, Sendable {
     }
     
     var displayName: String {
-        if isGuest {
-            return "Guest User"
-        }
         if let name = name, !name.trimmingCharacters(in: .whitespaces).isEmpty {
             return name
+        }
+        if isGuest {
+            return "Guest User"
         }
         if let email = email {
             return email.components(separatedBy: "@").first ?? "User"

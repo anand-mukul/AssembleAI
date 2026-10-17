@@ -5,7 +5,7 @@
 
 import SwiftUI
 
-/// Standard spacing grid constants adhering to Apple HIG 8pt grid layout rhythms.
+/// Standard spacing grid constants adhering to Apple HIG 4pt base grid layout rhythms.
 enum AppSpacing {
     /// 2pt micro spacing
     static let xxs: CGFloat = 2
@@ -15,7 +15,7 @@ enum AppSpacing {
     static let sm: CGFloat = 8
     /// 12pt medium-small spacing
     static let mdSm: CGFloat = 12
-    /// 16pt standard content spacing
+    /// 16pt standard content & screen edge spacing (Apple HIG standard)
     static let md: CGFloat = 16
     /// 20pt comfortable content spacing
     static let mdLg: CGFloat = 20
@@ -23,13 +23,13 @@ enum AppSpacing {
     static let lg: CGFloat = 24
     /// 32pt extra large hero spacing
     static let xl: CGFloat = 32
-    /// 48pt section divider spacing
-    static let xxl: CGFloat = 48
-    /// 64pt top hero margin spacing
-    static let xxxl: CGFloat = 64
+    /// 40pt section divider spacing
+    static let xxl: CGFloat = 40
+    /// 48pt top hero margin spacing
+    static let xxxl: CGFloat = 48
     
-    /// Standard horizontal inset for screen-edge content (matches Apple native 20pt standard margin)
-    static let screenEdge: CGFloat = 20
+    /// Standard horizontal inset for screen-edge content (matches Apple native 16pt layout margin)
+    static let screenEdge: CGFloat = 16
     
     /// Standard internal padding for cards (16pt)
     static let cardPadding: CGFloat = 16
@@ -49,14 +49,14 @@ enum AppRadius {
     static let xs: CGFloat = 8
     /// 10pt for badges and small inputs
     static let sm: CGFloat = 10
-    /// 14pt for interactive control fields and secondary buttons
-    static let md: CGFloat = 14
-    /// 18pt standard Apple HIG grouped card radius
-    static let card: CGFloat = 18
-    /// 22pt for hero visual centerpieces and prominent modules
-    static let lg: CGFloat = 22
-    /// 28pt for bottom sheets and large presentation detents
-    static let sheet: CGFloat = 28
+    /// 12pt standard Apple control radius for buttons and text fields
+    static let md: CGFloat = 12
+    /// 16pt standard Apple HIG grouped card radius (concentric to inner 8-10pt badges)
+    static let card: CGFloat = 16
+    /// 20pt for hero visual centerpieces and prominent modules
+    static let lg: CGFloat = 20
+    /// 24pt for bottom sheets and large presentation detents
+    static let sheet: CGFloat = 24
 }
 
 /// Standardized elevation shadows adhering to Apple HIG subtlety.
@@ -68,12 +68,18 @@ enum AppShadow {
 
 /// Unified animation timing tokens for consistent motion across all screens.
 enum AppAnimation {
-    /// Standard cascading delay per item in staggered lists (0.05s)
-    static let staggerDelay: Double = 0.05
-    /// Shared spring response for screen entrance animations
-    static let entranceSpring: Animation = .spring(response: 0.45, dampingFraction: 0.84)
-    /// Slower spring for hero section reveals
-    static let heroReveal: Animation = .spring(response: 0.6, dampingFraction: 0.8)
-    /// Quick spring for micro-interactions and state changes
-    static let microInteraction: Animation = .spring(response: 0.25, dampingFraction: 0.78)
+    /// Standard cascading delay per item in staggered lists (0.04s)
+    static let staggerDelay: Double = 0.04
+    /// Native iOS 17 smooth spring for standard view transitions
+    static let standard: Animation = .smooth(duration: 0.3)
+    /// Native iOS 17 snappy spring for user-initiated micro-interactions
+    static let quick: Animation = .snappy(duration: 0.25)
+    /// Native iOS 17 bouncy spring for confirmations and success cues
+    static let feedback: Animation = .bouncy(duration: 0.35)
+    /// Entrance spring for staggered card appearances
+    static let entranceSpring: Animation = .smooth(duration: 0.35)
+    /// Slower reveal for hero centerpieces
+    static let heroReveal: Animation = .smooth(duration: 0.5)
+    /// Quick spring for button taps and state changes
+    static let microInteraction: Animation = .snappy(duration: 0.2)
 }

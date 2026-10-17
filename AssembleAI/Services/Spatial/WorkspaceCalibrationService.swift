@@ -33,6 +33,8 @@ nonisolated struct WorkspaceMap: Sendable, Equatable {
     let existingComponents: [ObservedComponent]
     let lightingQuality: WorkspaceLightingQuality
     let estimatedWorkingArea: CGRect
+    let detectedTaxonomies: [String]
+    let isHumanPresent: Bool
     let timestamp: Date
     
     init(
@@ -43,6 +45,8 @@ nonisolated struct WorkspaceMap: Sendable, Equatable {
         existingComponents: [ObservedComponent] = [],
         lightingQuality: WorkspaceLightingQuality = .optimal,
         estimatedWorkingArea: CGRect = CGRect(x: 0.15, y: 0.15, width: 0.70, height: 0.70),
+        detectedTaxonomies: [String] = [],
+        isHumanPresent: Bool = false,
         timestamp: Date = Date()
     ) {
         self.domain = domain
@@ -52,6 +56,8 @@ nonisolated struct WorkspaceMap: Sendable, Equatable {
         self.existingComponents = existingComponents
         self.lightingQuality = lightingQuality
         self.estimatedWorkingArea = estimatedWorkingArea
+        self.detectedTaxonomies = detectedTaxonomies
+        self.isHumanPresent = isHumanPresent
         self.timestamp = timestamp
     }
     
@@ -64,11 +70,15 @@ nonisolated struct WorkspaceMap: Sendable, Equatable {
             if breadboardDetected {
                 let boardName = breadboardVariant == .fullSize ? "full-size 830-point breadboard" : "half-size 400-point breadboard"
                 return "I've mapped your \(boardName). Lighting is \(lightingQuality.displayName). \(compDesc)"
+            } else if !detectedTaxonomies.isEmpty {
+                let taxList = detectedTaxonomies.prefix(3).joined(separator: ", ")
+                return "Workbench detected with \(taxList). Lighting is \(lightingQuality.displayName). \(compDesc)"
             } else {
-                return "Scanning workbench. Lighting is \(lightingQuality.displayName). Align breadboard within camera view to calibrate."
+                return "Scanning workbench. Lighting is \(lightingQuality.displayName). Align workpiece within camera view to calibrate."
             }
         case .physical:
-            return "I've mapped your assembly workbench. Lighting is \(lightingQuality.displayName). \(compDesc)"
+            let taxSnippet = detectedTaxonomies.isEmpty ? "" : " Spotted \(detectedTaxonomies.prefix(2).joined(separator: " and "))."
+            return "I've mapped your assembly workbench.\(taxSnippet) Lighting is \(lightingQuality.displayName). \(compDesc)"
         case .hybrid:
             return "I've mapped your integrated workspace. Lighting is \(lightingQuality.displayName). \(compDesc)"
         }
@@ -115,7 +125,6 @@ final class WorkspaceCalibrationService: WorkspaceCalibrationServicing, @uncheck
         orientation: CGImagePropertyOrientation = .up,
         domain: AssemblyDomain = .electronics
     ) async -> WorkspaceMap {
-        // 1. Detect domain-specific physical anchor (breadboard for electronics, planar surface for physical)
         let calibration: BreadboardCalibration?
         let detected: Bool
         let variant: BreadboardGeometry.Variant
@@ -125,21 +134,23 @@ final class WorkspaceCalibrationService: WorkspaceCalibrationServicing, @uncheck
             detected = calibration != nil
             variant = calibration?.geometry.variant ?? .fullSize
         } else {
-            // Physical / Hybrid domains: no breadboard constraint
             calibration = nil
             detected = false
             variant = .fullSize
         }
         
-        // 2. Assess lighting quality from frame luminance
         let lighting = estimateLightingQuality(in: pixelBuffer)
         
-        // 3. Run Vision pass to catalog pre-existing components or hardware parts
         var catalogedComponents: [ObservedComponent] = []
         var detectedWorkingBounds: CGRect? = nil
         
+        var discoveredTaxonomies: [String] = []
+        var humanDetected: Bool = false
+        
         if let observation = try? await visionService.analyze(frame: pixelBuffer, orientation: orientation) {
-            // For electronics, use calibrated breadboard or default centered; for physical domains, do not force breadboard homography (H-3)
+            discoveredTaxonomies = observation.classifications.map(\.identifier)
+            humanDetected = observation.isHumanPresent
+            
             let activeCalib = (domain == .electronics) ? (calibration ?? BreadboardCalibration.defaultCentered()) : calibration
             let spatialComps = spatialDetector.detectComponents(in: observation, calibration: activeCalib)
             catalogedComponents = spatialComps.map { comp in
@@ -152,7 +163,6 @@ final class WorkspaceCalibrationService: WorkspaceCalibrationServicing, @uncheck
                 )
             }
             
-            // For physical/hybrid domains, derive working bounds from largest detected object/region
             if domain != .electronics, !observation.regions.isEmpty {
                 var unionRect = observation.regions[0].boundingBox
                 for r in observation.regions.dropFirst() {
@@ -162,7 +172,6 @@ final class WorkspaceCalibrationService: WorkspaceCalibrationServicing, @uncheck
             }
         }
         
-        // 4. Calculate working area bounds
         let workingArea: CGRect
         if let calib = calibration {
             let minX = min(calib.topLeft.x, calib.bottomLeft.x)
@@ -184,6 +193,8 @@ final class WorkspaceCalibrationService: WorkspaceCalibrationServicing, @uncheck
             existingComponents: catalogedComponents,
             lightingQuality: lighting,
             estimatedWorkingArea: workingArea,
+            detectedTaxonomies: discoveredTaxonomies,
+            isHumanPresent: humanDetected,
             timestamp: Date()
         )
     }
@@ -202,7 +213,6 @@ final class WorkspaceCalibrationService: WorkspaceCalibrationServicing, @uncheck
         let height = CVPixelBufferGetHeight(pixelBuffer)
         let bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
         
-        // Sample 100 points across the frame for fast O(1) lighting check
         var totalLuma: Double = 0.0
         var sampleCount: Int = 0
         let stepX = max(1, width / 10)
@@ -213,7 +223,6 @@ final class WorkspaceCalibrationService: WorkspaceCalibrationServicing, @uncheck
         for y in stride(from: stepY, to: height - stepY, by: stepY) {
             for x in stride(from: stepX, to: width - stepX, by: stepX) {
                 let offset = y * bytesPerRow + x * 4
-                // BGRA format standard in iOS camera preview
                 let b = Double(buffer[offset])
                 let g = Double(buffer[offset + 1])
                 let r = Double(buffer[offset + 2])

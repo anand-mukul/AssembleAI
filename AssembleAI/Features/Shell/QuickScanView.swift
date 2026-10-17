@@ -13,29 +13,55 @@ struct QuickScanView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var onLaunchInspection: ((AssemblyProject) -> Void)? = nil
     
+    enum QuickScanMode: String, CaseIterable, Identifiable {
+        case project = "Verify Step"
+        case identifyPart = "Identify Part"
+        case scanManual = "Scan Manual"
+        
+        var id: String { rawValue }
+        var icon: String {
+            switch self {
+            case .project: return "checklist"
+            case .identifyPart: return "sparkles.rectangle.stack"
+            case .scanManual: return "doc.viewfinder"
+            }
+        }
+    }
+    
+    @State private var scanMode: QuickScanMode = .project
     @State private var availableProjects: [AssemblyProject] = []
     @State private var selectedProjectID: UUID? = nil
     @State private var pulseScale: CGFloat = 0.98
     @State private var showProjectPickerSheet: Bool = false
+    @State private var showGuideImportSheet: Bool = false
     
     private let repository = ProjectRepositoryFactory.resolve()
     
     var body: some View {
         ScrollView {
             VStack(spacing: AppSpacing.lg) {
+                // Mode Switcher (Project vs Part vs Manual)
+                Picker("Scan Mode", selection: $scanMode) {
+                    ForEach(QuickScanMode.allCases) { mode in
+                        Label(mode.rawValue, systemImage: mode.icon).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .padding(.top, AppSpacing.xs)
+                
                 // Hero Viewfinder Centerpiece
                 viewfinderHero
-                    .padding(.top, AppSpacing.sm)
+                    .padding(.top, AppSpacing.xs)
                 
-                // Header & Value Proposition
+                // Header & Value Proposition (Dynamically Adapted to Mode)
                 VStack(spacing: AppSpacing.xs) {
-                    Text("Optical Verification")
+                    Text(headerTitle)
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(AppColors.primaryText)
                         .accessibilityAddTraits(.isHeader)
                     
-                    Text("Align camera directly above your workpiece to track components, fasteners, and physical connections in real time.")
+                    Text(headerSubtitle)
                         .font(.subheadline)
                         .foregroundColor(AppColors.secondaryText)
                         .multilineTextAlignment(.center)
@@ -43,17 +69,21 @@ struct QuickScanView: View {
                         .padding(.horizontal, AppSpacing.md)
                 }
                 
-                // Target Project Selector Card
-                projectSelectorCard
+                // Mode-Specific Card
+                switch scanMode {
+                case .project:
+                    projectSelectorCard
+                case .identifyPart:
+                    partIdentificationCard
+                case .scanManual:
+                    manualIngestionCard
+                }
                 
                 // Pre-Scan Readiness Checklist
                 readinessCard
                 
                 // Launch Action
-                let buttonTitle = (selectedProject?.isActive == true)
-                    ? "Resume Assembly Inspection"
-                    : "Start Visual Inspection"
-                PrimaryButton(title: buttonTitle, iconName: "camera.viewfinder") {
+                PrimaryButton(title: actionButtonTitle, iconName: actionButtonIcon) {
                     launchInspection()
                 }
                 .padding(.top, AppSpacing.xs)
@@ -63,12 +93,15 @@ struct QuickScanView: View {
         }
         .background(AppColors.groupedBackground.ignoresSafeArea())
         .navigationTitle("Scan")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
         .sheet(isPresented: $showProjectPickerSheet) {
             TargetProjectPickerSheet(
                 projects: availableProjects,
                 selectedProjectID: $selectedProjectID
             )
+        }
+        .sheet(isPresented: $showGuideImportSheet) {
+            ProjectCreatorView(initialMode: .importGuide)
         }
         .onAppear {
             Task {
@@ -202,7 +235,7 @@ struct QuickScanView: View {
                     .appCard(padding: 0)
                 }
                 .buttonStyle(ScaleButtonStyle(enableHaptic: false))
-                .accessibilityLabel(selectedProject != nil ? "Target Project: \(selectedProject!.title), \(selectedProject!.category), double tap to change" : "Select Target Project")
+                .accessibilityLabel(selectedProject.map { "Target Project: \($0.title), \($0.category), double tap to change" } ?? "Select Target Project")
                 .accessibilityHint("Opens project selector sheet")
             }
         }
@@ -270,6 +303,120 @@ struct QuickScanView: View {
         .padding(AppSpacing.md)
     }
     
+    // MARK: - Dynamic Headers & Actions
+    
+    private var headerTitle: String {
+        switch scanMode {
+        case .project:
+            return "Optical Verification"
+        case .identifyPart:
+            return "Universal Part Scanner"
+        case .scanManual:
+            return "Assembly Manual Ingestion"
+        }
+    }
+    
+    private var headerSubtitle: String {
+        switch scanMode {
+        case .project:
+            return "Align camera directly above your workpiece to track components, fasteners, and physical connections in real time."
+        case .identifyPart:
+            return "Point camera at any fastener, wooden panel, electronic module, gear, or tool to classify specifications and assembly guidance."
+        case .scanManual:
+            return "Scan paper manuals, diagrams, or guide sheets using Apple Foundation Models to automatically extract sequential steps."
+        }
+    }
+    
+    private var actionButtonTitle: String {
+        switch scanMode {
+        case .project:
+            return (selectedProject?.isActive == true) ? "Resume Assembly Inspection" : "Start Visual Inspection"
+        case .identifyPart:
+            return "Launch Real-Time Part Identifier"
+        case .scanManual:
+            return "Scan / Import Assembly Guide"
+        }
+    }
+    
+    private var actionButtonIcon: String {
+        switch scanMode {
+        case .project:
+            return "camera.viewfinder"
+        case .identifyPart:
+            return "sparkles.rectangle.stack"
+        case .scanManual:
+            return "doc.text.viewfinder"
+        }
+    }
+    
+    // MARK: - Mode-Specific Cards
+    
+    private var partIdentificationCard: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            Text("Real-Time Hardware Classifier")
+                .standardSectionHeader()
+            
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                HStack(spacing: AppSpacing.mdSm) {
+                    SemanticIconBadge(iconName: "sparkles", size: 36, iconSize: 18, color: AppColors.badgeBlue)
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Universal Perception Engine")
+                            .font(.headline)
+                            .foregroundColor(AppColors.primaryText)
+                        
+                        Text("Supports furniture fasteners, mechanical linkages, 3D printer components, and circuit modules.")
+                            .font(.caption)
+                            .foregroundColor(AppColors.secondaryText)
+                            .adaptiveMultiline()
+                    }
+                }
+                
+                Text("Hold any unknown screw, dowel, cam bolt, board, or tool within the viewfinder reticle. Apple Neural Engine classifies geometry, pitch, and torque guidance on-device.")
+                    .font(.caption)
+                    .foregroundColor(AppColors.secondaryText)
+                    .lineSpacing(2)
+                    .adaptiveMultiline()
+            }
+            .padding(AppSpacing.md)
+            .appCard(padding: 0)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    
+    private var manualIngestionCard: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            Text("Guide & Manual OCR")
+                .standardSectionHeader()
+            
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                HStack(spacing: AppSpacing.mdSm) {
+                    SemanticIconBadge(iconName: "doc.text.magnifyingglass", size: 36, iconSize: 18, color: AppColors.badgeOrange)
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Paper to Interactive AR")
+                            .font(.headline)
+                            .foregroundColor(AppColors.primaryText)
+                        
+                        Text("Converts physical instruction sheets into machine-verifiable visual contracts.")
+                            .font(.caption)
+                            .foregroundColor(AppColors.secondaryText)
+                            .adaptiveMultiline()
+                    }
+                }
+                
+                Text("Scan any paper manual or paste tutorial text to generate sequential assembly steps with visual contracts and tool recommendations.")
+                    .font(.caption)
+                    .foregroundColor(AppColors.secondaryText)
+                    .lineSpacing(2)
+                    .adaptiveMultiline()
+            }
+            .padding(AppSpacing.md)
+            .appCard(padding: 0)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    
     // MARK: - Helpers
     
     private var selectedProject: AssemblyProject? {
@@ -294,31 +441,76 @@ struct QuickScanView: View {
     
     private func launchInspection() {
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-        guard let project = selectedProject ?? availableProjects.first else { return }
         
-        Task {
-            let fullProject = (try? await repository.fetchProject(byId: project.id)) ?? project
-            if let onLaunch = onLaunchInspection {
-                onLaunch(fullProject)
-            } else {
-                let stepIdx = max(0, min(fullProject.completedSteps, max(0, fullProject.steps.count - 1)))
-                let currentSummary = fullProject.steps.indices.contains(stepIdx) ? fullProject.steps[stepIdx] : fullProject.steps.first
-                let step = currentSummary.map { summary in
-                    AssemblyStep(
-                        id: summary.id,
-                        projectId: fullProject.id,
-                        stepOrder: summary.stepOrder,
-                        title: summary.title,
-                        instruction: summary.instruction,
-                        visualContract: summary.visualContract
+        switch scanMode {
+        case .scanManual:
+            showGuideImportSheet = true
+            
+        case .identifyPart:
+            let dynamicProject = AssemblyProject(
+                id: UUID(uuidString: "77777777-7777-7777-7777-777777777777") ?? UUID(),
+                title: "Universal Hardware Identifier",
+                subtitle: "Identify any fastener, component, or tool",
+                category: "Hardware",
+                domain: .mechanical,
+                difficulty: .beginner,
+                estimatedMinutes: 2,
+                totalSteps: 1,
+                completedSteps: 0,
+                imageName: "sparkles.rectangle.stack",
+                isActive: true,
+                nextAction: "Center the hardware or tool in the reticle",
+                description: "Real-time on-device computer vision and multimodal intelligence to identify screws, dowels, cams, panels, wires, and assembly tools.",
+                components: [],
+                steps: [
+                    ProjectStepSummary(
+                        stepOrder: 1,
+                        title: "Scan & Identify Part",
+                        instruction: "Center the hardware, workpiece, or tool in view to inspect its geometry and specifications.",
+                        isCompleted: false,
+                        visualContract: nil
                     )
-                } ?? AssemblyStep(
-                    projectId: fullProject.id,
-                    stepOrder: stepIdx + 1,
-                    title: "Inspect Component Placement",
-                    instruction: "Position camera over workpiece."
-                )
-                router.navigateToCamera(step: step, project: fullProject)
+                ]
+            )
+            let step = AssemblyStep(
+                id: UUID(),
+                projectId: dynamicProject.id,
+                stepOrder: 1,
+                title: "Scan & Identify Part",
+                instruction: "Center the hardware, workpiece, or tool in view to inspect its geometry and specifications."
+            )
+            if let onLaunch = onLaunchInspection {
+                onLaunch(dynamicProject)
+            } else {
+                router.navigateToCamera(step: step, project: dynamicProject)
+            }
+            
+        case .project:
+            guard let project = selectedProject ?? availableProjects.first else { return }
+            Task {
+                let fullProject = (try? await repository.fetchProject(byId: project.id)) ?? project
+                if let onLaunch = onLaunchInspection {
+                    onLaunch(fullProject)
+                } else {
+                    let stepIdx = max(0, min(fullProject.completedSteps, max(0, fullProject.steps.count - 1)))
+                    let currentSummary = fullProject.steps.indices.contains(stepIdx) ? fullProject.steps[stepIdx] : fullProject.steps.first
+                    let step = currentSummary.map { summary in
+                        AssemblyStep(
+                            id: summary.id,
+                            projectId: fullProject.id,
+                            stepOrder: summary.stepOrder,
+                            title: summary.title,
+                            instruction: summary.instruction,
+                            visualContract: summary.visualContract
+                        )
+                    } ?? AssemblyStep(
+                        projectId: fullProject.id,
+                        stepOrder: stepIdx + 1,
+                        title: "Inspect Component Placement",
+                        instruction: "Position camera over workpiece."
+                    )
+                    router.navigateToCamera(step: step, project: fullProject)
+                }
             }
         }
     }

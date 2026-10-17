@@ -12,6 +12,10 @@ final class LocalUser {
     var name: String?
     var email: String?
     var avatarUrl: String?
+    var avatarSymbol: String
+    var avatarColorHex: String
+    var bio: String
+    var experienceLevel: String
     var providerRaw: String
     var createdAt: Date
     var updatedAt: Date
@@ -21,6 +25,10 @@ final class LocalUser {
         name: String?,
         email: String?,
         avatarUrl: String? = nil,
+        avatarSymbol: String = "person.crop.circle.fill",
+        avatarColorHex: String = "#0A84FF",
+        bio: String = "",
+        experienceLevel: String = "Beginner",
         providerRaw: String,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
@@ -29,6 +37,10 @@ final class LocalUser {
         self.name = name
         self.email = email
         self.avatarUrl = avatarUrl
+        self.avatarSymbol = avatarSymbol
+        self.avatarColorHex = avatarColorHex
+        self.bio = bio
+        self.experienceLevel = experienceLevel
         self.providerRaw = providerRaw
         self.createdAt = createdAt
         self.updatedAt = updatedAt
@@ -40,6 +52,10 @@ final class LocalUser {
             name: name,
             email: email,
             avatarUrl: avatarUrl,
+            avatarSymbol: avatarSymbol,
+            avatarColorHex: avatarColorHex,
+            bio: bio,
+            experienceLevel: experienceLevel,
             provider: AuthProvider(rawValue: providerRaw) ?? .guest,
             createdAt: createdAt,
             updatedAt: updatedAt
@@ -52,6 +68,10 @@ final class LocalUser {
             name: user.name,
             email: user.email,
             avatarUrl: user.avatarUrl,
+            avatarSymbol: user.avatarSymbol,
+            avatarColorHex: user.avatarColorHex,
+            bio: user.bio,
+            experienceLevel: user.experienceLevel,
             providerRaw: user.provider.rawValue,
             createdAt: user.createdAt,
             updatedAt: user.updatedAt

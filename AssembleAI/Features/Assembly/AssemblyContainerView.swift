@@ -194,6 +194,10 @@ struct AssemblyContainerView: View {
                 break
             }
         }
+        .onDisappear {
+            viewModel.stopLiveTutor()
+            viewModel.finishOrCancelSession()
+        }
     }
 }
 

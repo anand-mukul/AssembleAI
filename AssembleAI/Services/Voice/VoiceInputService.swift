@@ -21,6 +21,7 @@ final class VoiceInputService: NSObject, ObservableObject, VoiceInputServiceProt
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
     private var silenceWatchdogTask: Task<Void, Never>?
+    private var isTapInstalled: Bool = false
     
     nonisolated private let broadcaster = TranscriptStreamBroadcaster()
     
@@ -73,16 +74,15 @@ final class VoiceInputService: NSObject, ObservableObject, VoiceInputServiceProt
         }
         #endif
         
-        // 2b. Ensure workbench audio session is primed
-        try? AudioSessionCoordinator.shared.activateWorkbenchAudioSession()
-        
         // 3. Setup Recognition Request & Audio Engine
         let engine = AVAudioEngine()
         self.audioEngine = engine
         
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
-        request.requiresOnDeviceRecognition = true
+        if speechRecognizer?.supportsOnDeviceRecognition == true {
+            request.requiresOnDeviceRecognition = true
+        }
         self.recognitionRequest = request
         
         let inputNode = engine.inputNode
@@ -109,6 +109,7 @@ final class VoiceInputService: NSObject, ObservableObject, VoiceInputServiceProt
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
             self?.recognitionRequest?.append(buffer)
         }
+        self.isTapInstalled = true
         
         engine.prepare()
         try engine.start()
@@ -170,7 +171,10 @@ final class VoiceInputService: NSObject, ObservableObject, VoiceInputServiceProt
             if engine.isRunning {
                 engine.stop()
             }
-            engine.inputNode.removeTap(onBus: 0)
+            if isTapInstalled {
+                engine.inputNode.removeTap(onBus: 0)
+                isTapInstalled = false
+            }
         }
         audioEngine = nil
         
@@ -190,7 +194,10 @@ final class VoiceInputService: NSObject, ObservableObject, VoiceInputServiceProt
             if engine.isRunning {
                 engine.stop()
             }
-            engine.inputNode.removeTap(onBus: 0)
+            if isTapInstalled {
+                engine.inputNode.removeTap(onBus: 0)
+                isTapInstalled = false
+            }
         }
         audioEngine = nil
         
@@ -270,7 +277,7 @@ nonisolated final class TranscriptStreamBroadcaster: @unchecked Sendable {
 
 extension VoiceInputService {
     /// Returns a hands-free continuous streaming speech service backed by Voice Activity Detection (VAD).
-    static func continuousStreaming() -> StreamingSpeechService {
-        StreamingSpeechService()
+    static func continuousStreaming() -> VoiceInputService {
+        VoiceInputService()
     }
 }

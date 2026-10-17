@@ -46,10 +46,8 @@ final class StateAwareVerificationService: VerificationServiceProtocol {
     }
     
     func verifyStep(_ step: AssemblyStep, image: UIImage?) async throws -> VerificationResult {
-        // Build explicit expected state for this step
         let expectedState = buildExpectedState(for: step)
         
-        // Mode 2 & 3: Vision / Hybrid Pipeline
         guard let image = image else {
             return VerificationResult(
                 status: .uncertain,
@@ -60,13 +58,9 @@ final class StateAwareVerificationService: VerificationServiceProtocol {
             )
         }
 
-        // Phase 1: Extract visual observations using Apple Vision
         let observation = try await visionService.analyze(image: image)
-        
-        // Phase 2: Estimate domain observed state using spatial coordinate inference
         let observedState = try await estimator.estimate(observation: observation)
         
-        // Phase 3: Spatial Contract Verification
         var decodedContract: VisualContract? = nil
         if let contractData = step.expectedState.data(using: .utf8) {
             decodedContract = try? JSONDecoder().decode(VisualContract.self, from: contractData)
@@ -78,10 +72,8 @@ final class StateAwareVerificationService: VerificationServiceProtocol {
             step: step
         )
         
-        // Phase 4: State comparison logic (legacy and invariant checks)
         let comparison = comparator.compare(expected: expectedState, observed: observedState)
         
-        // Prioritize spatial contract evaluation if defined
         let status: VerificationStatus
         let explanationText: String
         let detectedDesc: String

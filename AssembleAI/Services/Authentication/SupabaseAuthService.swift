@@ -57,7 +57,19 @@ final class SupabaseAuthService: AuthenticationService {
         
         // 3. Restore saved user entity from local SwiftData persistence
         do {
-            if let savedUser = try await userRepository.fetchCurrentUser() {
+            if var savedUser = try await userRepository.fetchCurrentUser() {
+                // If online, check for cloud profile updates and reconcile
+                if isLiveSupabaseConfigured && !savedUser.isGuest {
+                    let projectService = SupabaseProjectService(supabaseManager: supabaseManager)
+                    if let remoteProfile = try? await projectService.fetchProfile(userId: savedUser.id) {
+                        if let name = remoteProfile.fullName, !name.isEmpty { savedUser.name = name }
+                        if let sym = remoteProfile.avatarSymbol, !sym.isEmpty { savedUser.avatarSymbol = sym }
+                        if let col = remoteProfile.avatarColorHex, !col.isEmpty { savedUser.avatarColorHex = col }
+                        if let bio = remoteProfile.bio { savedUser.bio = bio }
+                        if let exp = remoteProfile.experienceLevel { savedUser.experienceLevel = exp }
+                        try? await userRepository.saveUser(savedUser)
+                    }
+                }
                 self.currentUser = savedUser
                 self.isAuthenticated = true
             }
@@ -113,10 +125,10 @@ final class SupabaseAuthService: AuthenticationService {
     }
     
     func signInWithAppleCredential(userId: String, name: String?, email: String?) async throws {
-        try await signInWithAppleCredential(userId: userId, name: name, email: email, idToken: nil)
+        try await signInWithAppleCredential(userId: userId, name: name, email: email, idToken: nil, nonce: nil)
     }
     
-    func signInWithAppleCredential(userId: String, name: String?, email: String?, idToken: String?) async throws {
+    func signInWithAppleCredential(userId: String, name: String?, email: String?, idToken: String?, nonce: String? = nil) async throws {
         isLoading = true
         authError = nil
         defer { isLoading = false }
@@ -152,10 +164,13 @@ final class SupabaseAuthService: AuthenticationService {
                 request.setValue("application/json", forHTTPHeaderField: "Content-Type")
                 request.setValue(AppConfig.supabaseAnonKey, forHTTPHeaderField: "apikey")
                 
-                let body: [String: Any] = [
+                var body: [String: Any] = [
                     "provider": "apple",
                     "id_token": idToken
                 ]
+                if let nonce = nonce {
+                    body["nonce"] = nonce
+                }
                 request.httpBody = try JSONSerialization.data(withJSONObject: body)
                 
                 let (data, response) = try await URLSession.shared.data(for: request)
@@ -176,10 +191,30 @@ final class SupabaseAuthService: AuthenticationService {
             }
         }
         
+        var avatarSymbol = "person.crop.circle.fill"
+        var avatarColorHex = "#0A84FF"
+        var bio = ""
+        var experienceLevel = "Beginner"
+        
+        if isLiveSupabaseConfigured {
+            let projectService = SupabaseProjectService(supabaseManager: supabaseManager)
+            if let remoteProfile = try? await projectService.fetchProfile(userId: resolvedUserId) {
+                if let pName = remoteProfile.fullName, !pName.isEmpty { resolvedName = pName }
+                if let pSym = remoteProfile.avatarSymbol, !pSym.isEmpty { avatarSymbol = pSym }
+                if let pCol = remoteProfile.avatarColorHex, !pCol.isEmpty { avatarColorHex = pCol }
+                if let pBio = remoteProfile.bio { bio = pBio }
+                if let pExp = remoteProfile.experienceLevel { experienceLevel = pExp }
+            }
+        }
+        
         let user = User(
             id: resolvedUserId,
             name: resolvedName ?? "Apple User",
             email: resolvedEmail,
+            avatarSymbol: avatarSymbol,
+            avatarColorHex: avatarColorHex,
+            bio: bio,
+            experienceLevel: experienceLevel,
             provider: .apple,
             createdAt: Date(),
             updatedAt: Date()
@@ -248,12 +283,30 @@ final class SupabaseAuthService: AuthenticationService {
                         }
                         
                         let meta = userObj?["user_metadata"] as? [String: Any]
-                        let fullName = (meta?["full_name"] as? String) ?? trimmedEmail.components(separatedBy: "@").first ?? "Hardware Assembler"
+                        var fullName = (meta?["full_name"] as? String) ?? trimmedEmail.components(separatedBy: "@").first ?? "Hardware Assembler"
+                        var avatarSymbol = "person.crop.circle.fill"
+                        var avatarColorHex = "#0A84FF"
+                        var bio = ""
+                        var experienceLevel = "Beginner"
+                        
+                        // Fetch latest cloud profile metadata
+                        let projectService = SupabaseProjectService(supabaseManager: supabaseManager)
+                        if let remoteProfile = try? await projectService.fetchProfile(userId: userId) {
+                            if let pName = remoteProfile.fullName, !pName.isEmpty { fullName = pName }
+                            if let pSym = remoteProfile.avatarSymbol, !pSym.isEmpty { avatarSymbol = pSym }
+                            if let pCol = remoteProfile.avatarColorHex, !pCol.isEmpty { avatarColorHex = pCol }
+                            if let pBio = remoteProfile.bio { bio = pBio }
+                            if let pExp = remoteProfile.experienceLevel { experienceLevel = pExp }
+                        }
                         
                         let user = User(
                             id: userId,
                             name: fullName,
                             email: trimmedEmail,
+                            avatarSymbol: avatarSymbol,
+                            avatarColorHex: avatarColorHex,
+                            bio: bio,
+                            experienceLevel: experienceLevel,
                             provider: .email,
                             createdAt: Date(),
                             updatedAt: Date()
@@ -521,6 +574,67 @@ final class SupabaseAuthService: AuthenticationService {
     
     func clearError() {
         authError = nil
+    }
+    
+    // MARK: - Profile Management
+    /// Synchronously updates the in-memory user profile for instantaneous UI reactivity.
+    func updateInMemoryUser(name: String, avatarSymbol: String, avatarColorHex: String, bio: String? = nil, experienceLevel: String? = nil) {
+        guard var user = currentUser else { return }
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmedName.isEmpty {
+            user.name = trimmedName
+        }
+        user.avatarSymbol = avatarSymbol
+        user.avatarColorHex = avatarColorHex
+        if let bio = bio {
+            user.bio = bio
+        }
+        if let experienceLevel = experienceLevel, !experienceLevel.isEmpty {
+            user.experienceLevel = experienceLevel
+        }
+        user.updatedAt = Date()
+        self.currentUser = user
+    }
+    
+    /// Updates the user's display name, avatar SF Symbol, theme color, bio, and experience level locally and in Supabase.
+    func updateUserProfile(name: String, avatarSymbol: String, avatarColorHex: String, bio: String? = nil, experienceLevel: String? = nil) async throws {
+        guard var user = currentUser else { return }
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmedName.isEmpty {
+            user.name = trimmedName
+        }
+        user.avatarSymbol = avatarSymbol
+        user.avatarColorHex = avatarColorHex
+        if let bio = bio {
+            user.bio = bio
+        }
+        if let experienceLevel = experienceLevel, !experienceLevel.isEmpty {
+            user.experienceLevel = experienceLevel
+        }
+        user.updatedAt = Date()
+        
+        // 1. Update in-memory reactive state
+        self.currentUser = user
+        
+        // 2. Persist to SwiftData
+        try await userRepository.saveUser(user)
+        
+        // 3. Sync to Supabase if authenticated and backend configured
+        if isLiveSupabaseConfigured && !user.isGuest {
+            let profileDTO = ProfileDTO(
+                id: user.id,
+                fullName: user.name,
+                email: user.email,
+                avatarUrl: user.avatarUrl,
+                avatarSymbol: user.avatarSymbol,
+                avatarColorHex: user.avatarColorHex,
+                bio: user.bio,
+                experienceLevel: user.experienceLevel,
+                updatedAt: Date()
+            )
+            let projectService = SupabaseProjectService(supabaseManager: supabaseManager)
+            try await projectService.updateProfile(userId: user.id, profile: profileDTO)
+        }
     }
     
     // MARK: - Helpers

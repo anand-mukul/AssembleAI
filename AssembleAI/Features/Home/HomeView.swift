@@ -21,22 +21,20 @@ struct HomeView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                // Dynamic Greeting Header
-                VStack(alignment: .leading, spacing: 4) {
+                // Dynamic Greeting Subtitle
+                VStack(alignment: .leading, spacing: 2) {
                     Text(viewModel.greetingText)
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(AppColors.primaryText)
-                        .accessibilityAddTraits(.isHeader)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundColor(.assembleBrandPrimary)
                     
                     Text("Ready for your next physical assembly task.")
                         .font(.subheadline)
                         .foregroundColor(AppColors.secondaryText)
                 }
-                .padding(.top, AppSpacing.md)
+                .padding(.top, AppSpacing.xs)
                 .padding(.horizontal, AppSpacing.screenEdge)
                 .opacity(hasAppeared ? 1 : 0)
-                .offset(y: hasAppeared ? 0 : 6)
+                .offset(y: hasAppeared ? 0 : 4)
                 
                 // Error Alert Banner with Retry
                 if let error = viewModel.errorMessage {
@@ -180,7 +178,8 @@ struct HomeView: View {
             .padding(.bottom, 100)
         }
         .background(AppColors.groupedBackground.ignoresSafeArea())
-        .toolbar(.hidden, for: .navigationBar)
+        .navigationTitle("Home")
+        .navigationBarTitleDisplayMode(.large)
         .onAppear {
             withAnimation(reduceMotion ? .none : AppAnimation.entranceSpring) {
                 hasAppeared = true

@@ -21,6 +21,8 @@ final class ProfileViewModel: ObservableObject {
     @Published var email: String = "guest@assemble.ai"
     @Published var avatarSymbol: String = "person.crop.circle.fill"
     @Published var avatarColorHex: String = "#0A84FF"
+    @Published var bio: String = ""
+    @Published var experienceLevel: String = "Beginner"
     @Published var isGuest: Bool = true
     
     var user: User? {
@@ -31,6 +33,10 @@ final class ProfileViewModel: ObservableObject {
             id: "local_user",
             name: displayName,
             email: email,
+            avatarSymbol: avatarSymbol,
+            avatarColorHex: avatarColorHex,
+            bio: bio,
+            experienceLevel: experienceLevel,
             provider: isGuest ? .guest : .email
         )
     }
@@ -117,6 +123,14 @@ final class ProfileViewModel: ObservableObject {
         }
     }
     
+    /// Attaches or updates the active Supabase authentication service dependency.
+    func attachAuthService(_ authService: SupabaseAuthService) {
+        self.authService = authService
+        if let user = authService.currentUser {
+            updateUser(user: user)
+        }
+    }
+    
     // MARK: - Profile Persistence
     
     private func loadPersistedProfile() {
@@ -129,6 +143,12 @@ final class ProfileViewModel: ObservableObject {
         if let savedColor = UserDefaults.standard.string(forKey: "user_avatar_color_hex"), !savedColor.isEmpty {
             self.avatarColorHex = savedColor
         }
+        if let savedBio = UserDefaults.standard.string(forKey: "user_bio") {
+            self.bio = savedBio
+        }
+        if let savedExp = UserDefaults.standard.string(forKey: "user_experience_level"), !savedExp.isEmpty {
+            self.experienceLevel = savedExp
+        }
         self.researchWebhookURL = UserDefaults.standard.string(forKey: "research_webhook_url")
             ?? AppConfig.researchTelemetryWebhookURL ?? ""
     }
@@ -140,25 +160,74 @@ final class ProfileViewModel: ObservableObject {
             if let name = user.displayName as String?, !name.isEmpty {
                 self.displayName = name
             }
+            if !user.avatarSymbol.isEmpty {
+                self.avatarSymbol = user.avatarSymbol
+            }
+            if !user.avatarColorHex.isEmpty {
+                self.avatarColorHex = user.avatarColorHex
+            }
+            if let userBio = user.bio {
+                self.bio = userBio
+            }
+            if !user.experienceLevel.isEmpty {
+                self.experienceLevel = user.experienceLevel
+            }
         } else {
             self.isGuest = true
             self.email = "Guest Mode"
         }
     }
     
-    func saveProfile(newName: String, newAvatar: String, newColorHex: String) {
+    func saveProfile(
+        newName: String,
+        newAvatar: String,
+        newColorHex: String,
+        newBio: String? = nil,
+        newExperienceLevel: String? = nil
+    ) {
         let trimmed = newName.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !trimmed.isEmpty {
-            self.displayName = trimmed
-            UserDefaults.standard.set(trimmed, forKey: "user_display_name")
-        }
+        let finalName = trimmed.isEmpty ? self.displayName : trimmed
+        self.displayName = finalName
+        UserDefaults.standard.set(finalName, forKey: "user_display_name")
+        
         self.avatarSymbol = newAvatar
         UserDefaults.standard.set(newAvatar, forKey: "user_avatar_symbol")
         
         self.avatarColorHex = newColorHex
         UserDefaults.standard.set(newColorHex, forKey: "user_avatar_color_hex")
         
+        if let bioToSave = newBio {
+            self.bio = bioToSave
+            UserDefaults.standard.set(bioToSave, forKey: "user_bio")
+        }
+        
+        if let expToSave = newExperienceLevel, !expToSave.isEmpty {
+            self.experienceLevel = expToSave
+            UserDefaults.standard.set(expToSave, forKey: "user_experience_level")
+        }
+        
+        // Synchronously update in-memory auth user for immediate UI and test reactivity
+        self.authService?.updateInMemoryUser(
+            name: finalName,
+            avatarSymbol: newAvatar,
+            avatarColorHex: newColorHex,
+            bio: self.bio,
+            experienceLevel: self.experienceLevel
+        )
+        
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        
+        // Sync to Supabase PostgreSQL profiles and SwiftData local persistence
+        Task { [weak self] in
+            guard let self = self else { return }
+            try? await self.authService?.updateUserProfile(
+                name: finalName,
+                avatarSymbol: newAvatar,
+                avatarColorHex: newColorHex,
+                bio: self.bio,
+                experienceLevel: self.experienceLevel
+            )
+        }
     }
     
     // MARK: - Stats Calculation

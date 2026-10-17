@@ -119,6 +119,7 @@ extension LiveObservationCoordinating {
 actor LiveObservationCoordinator: LiveObservationCoordinating {
     private let estimator: AssemblyStateEstimating
     private let comparator: AssemblyStateComparator
+    private let spatialEngine: StateAwareVerificationEngine
     private let acousticDetector: AcousticInsertionDetector?
     private let handPoseDetector: HandPoseActivityDetecting?
     private let calibrationHolder = LiveCalibrationHolder()
@@ -140,12 +141,14 @@ actor LiveObservationCoordinator: LiveObservationCoordinating {
     init(
         estimator: AssemblyStateEstimating? = nil,
         comparator: AssemblyStateComparator? = nil,
+        spatialEngine: StateAwareVerificationEngine = StateAwareVerificationEngine(),
         acousticDetector: AcousticInsertionDetector? = nil,
         handPoseDetector: HandPoseActivityDetecting? = nil,
         configuration: LiveObservationConfiguration = .default
     ) {
         self.configuration = configuration
         self.handPoseDetector = handPoseDetector
+        self.spatialEngine = spatialEngine
         let holder = self.calibrationHolder
         self.estimator = estimator ?? SpatialAssemblyStateEstimator(calibrationProvider: { [holder] in
             holder.calibration
@@ -201,7 +204,7 @@ actor LiveObservationCoordinator: LiveObservationCoordinating {
         // 1. State Estimation: Convert low-level Vision observation into domain ObservedAssemblyState
         let observedState: ObservedAssemblyState
         do {
-            observedState = try await estimator.estimate(observation: observation)
+            observedState = try await estimator.estimate(observation: observation, for: step)
             metrics.stateEstimationsPerformed += 1
         } catch {
             // On estimation error, return safe uncertain fallback without crashing
@@ -222,10 +225,44 @@ actor LiveObservationCoordinator: LiveObservationCoordinating {
         )
         metrics.comparisonsPerformed += 1
         
+        // 3b. Precision Spatial Contract Evaluation:
+        // When step defines a visual contract (spatial placements, pins, or expected connections),
+        // verify geometry, counts, flushness, and orientation via StateAwareVerificationEngine.
+        let finalComparison: StateComparison
+        if let contract = step.visualContract, (!contract.pinPlacements.isEmpty || !contract.spatialPlacements.isEmpty || !contract.expectedConnections.isEmpty) {
+            let spatialOutcome = spatialEngine.verify(
+                contract: contract,
+                commonMistakes: step.commonMistakes,
+                observedState: observedState,
+                step: step,
+                calibration: calibrationHolder.calibration
+            )
+            
+            let combinedStatus: ComparisonStatus = {
+                switch spatialOutcome.status {
+                case .correct: return .correct
+                case .incorrect: return .incorrect
+                case .uncertain: return comparison.status
+                }
+            }()
+            
+            let combinedConfidence = spatialOutcome.status == .correct ? max(comparison.confidence, spatialOutcome.confidence) : spatialOutcome.confidence
+            let combinedIssues = spatialOutcome.status == .correct ? [] : (!spatialOutcome.issues.isEmpty ? spatialOutcome.issues : comparison.issues)
+            
+            finalComparison = StateComparison(
+                status: combinedStatus,
+                confidence: combinedConfidence,
+                issues: combinedIssues,
+                matchedComponents: comparison.matchedComponents
+            )
+        } else {
+            finalComparison = comparison
+        }
+        
         let currentTime = CFAbsoluteTimeGetCurrent()
         
         // 4. Stability Filter / Debounce: Prevent flickering during hand movement
-        let isStable = evaluateStability(status: comparison.status, currentTime: currentTime)
+        let isStable = evaluateStability(status: finalComparison.status, currentTime: currentTime)
         
         guard isStable else {
             return nil
@@ -233,7 +270,7 @@ actor LiveObservationCoordinator: LiveObservationCoordinating {
         
         // 5. Construct VerificationResult
         let result = createVerificationResult(
-            from: comparison,
+            from: finalComparison,
             expectedState: expectedState,
             observedState: observedState,
             step: step
@@ -247,8 +284,8 @@ actor LiveObservationCoordinator: LiveObservationCoordinating {
         }
         
         lastEmittedResult = result
-        lastConfirmedStatus = comparison.status
-        metrics.currentStableStatus = comparison.status
+        lastConfirmedStatus = finalComparison.status
+        metrics.currentStableStatus = finalComparison.status
         metrics.verificationsEmitted += 1
         
         return result

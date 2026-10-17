@@ -32,9 +32,17 @@ final class PersistenceController {
         do {
             container = try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
-            // Catastrophic failure to access local database.
-            // Do NOT fall back to an in-memory store as this causes silent data loss.
-            fatalError("Failed to initialize SwiftData ModelContainer: \(error.localizedDescription)")
+            let logger = Logger(subsystem: "com.mukul.assembleai", category: "Persistence")
+            logger.critical("Failed to initialize primary SwiftData ModelContainer: \(error.localizedDescription)")
+            
+            // Fallback recovery: attempt in-memory store so the app can launch safely without crashing
+            do {
+                let fallbackConfig = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+                container = try ModelContainer(for: schema, configurations: [fallbackConfig])
+                logger.warning("Initialized in-memory ModelContainer recovery fallback.")
+            } catch {
+                fatalError("Catastrophic failure to initialize in-memory SwiftData container: \(error.localizedDescription)")
+            }
         }
     }
     

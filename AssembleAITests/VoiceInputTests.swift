@@ -165,16 +165,17 @@ final class VoiceInputTests: XCTestCase {
         XCTAssertTrue(firstSpoken?.contains("where does this go?") == true)
     }
     
-    // MARK: - Test 6: StreamingSpeechService Protocol Conformance & Factory
-    func testStreamingSpeechServiceProtocolConformance() async {
-        let streamingService = StreamingSpeechService()
-        let protocolService: VoiceInputServiceProtocol = streamingService
+    // MARK: - Test 6: VoiceInputService Protocol Conformance & Factory
+    func testVoiceInputServiceProtocolConformance() async {
+        let voiceService = VoiceInputService()
+        let protocolService: VoiceInputServiceProtocol = voiceService
         let state = await protocolService.state
         XCTAssertEqual(state, .idle)
         
         let continuousService = VoiceInputService.continuousStreaming()
         XCTAssertNotNil(continuousService)
-        XCTAssertFalse(continuousService.isListening)
+        let contState = await continuousService.state
+        XCTAssertEqual(contState, .idle)
     }
     
     // MARK: - Test 7: Centralized AudioSessionCoordinator Lifecycle

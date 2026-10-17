@@ -40,12 +40,27 @@ nonisolated struct DetectedRegion: Identifiable, Hashable, Codable, Sendable {
     }
 }
 
+/// Taxonomical scene/object classification observation from Apple Vision.
+nonisolated struct DetectedClassification: Identifiable, Hashable, Codable, Sendable {
+    let id: UUID
+    let identifier: String
+    let confidence: Float
+    
+    nonisolated init(id: UUID = UUID(), identifier: String, confidence: Float) {
+        self.id = id
+        self.identifier = identifier
+        self.confidence = confidence
+    }
+}
+
 /// Structured output returned by `VisionAnalyzing` without exposing raw Vision framework types to the UI.
 nonisolated struct VisualObservation: Identifiable, Hashable, Codable, Sendable {
     let id: UUID
     let imageSize: CGSize
     let detectedText: [DetectedText]
     let regions: [DetectedRegion]
+    let classifications: [DetectedClassification]
+    let detectedHumans: [CGRect]
     let timestamp: Date
     let processingTimeMs: Double
     
@@ -54,6 +69,8 @@ nonisolated struct VisualObservation: Identifiable, Hashable, Codable, Sendable 
         imageSize: CGSize,
         detectedText: [DetectedText] = [],
         regions: [DetectedRegion] = [],
+        classifications: [DetectedClassification] = [],
+        detectedHumans: [CGRect] = [],
         timestamp: Date = Date(),
         processingTimeMs: Double
     ) {
@@ -61,6 +78,8 @@ nonisolated struct VisualObservation: Identifiable, Hashable, Codable, Sendable 
         self.imageSize = imageSize
         self.detectedText = detectedText
         self.regions = regions
+        self.classifications = classifications
+        self.detectedHumans = detectedHumans
         self.timestamp = timestamp
         self.processingTimeMs = processingTimeMs
     }
@@ -70,6 +89,8 @@ nonisolated struct VisualObservation: Identifiable, Hashable, Codable, Sendable 
         imageSize: CGSize,
         detectedStrings: [String],
         regions: [DetectedRegion] = [],
+        classifications: [DetectedClassification] = [],
+        detectedHumans: [CGRect] = [],
         timestamp: Date = Date(),
         processingTimeMs: Double
     ) {
@@ -77,10 +98,19 @@ nonisolated struct VisualObservation: Identifiable, Hashable, Codable, Sendable 
         self.imageSize = imageSize
         self.detectedText = detectedStrings.map { DetectedText(text: $0, confidence: 1.0, boundingBox: .zero) }
         self.regions = regions
+        self.classifications = classifications
+        self.detectedHumans = detectedHumans
         self.timestamp = timestamp
         self.processingTimeMs = processingTimeMs
     }
     
     var hasText: Bool { !detectedText.isEmpty }
     var regionCount: Int { regions.count }
+    var isHumanPresent: Bool { !detectedHumans.isEmpty }
+    var topClassification: String? { classifications.first?.identifier }
+    
+    func hasClassification(matching keyword: String) -> Bool {
+        let kw = keyword.lowercased()
+        return classifications.contains { $0.identifier.lowercased().contains(kw) }
+    }
 }

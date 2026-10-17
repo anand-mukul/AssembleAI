@@ -253,6 +253,38 @@ final class AssemblyViewModel: ObservableObject {
         }
     }
     
+    /// Collects final camera frame diagnostics and concludes the research session.
+    private func recordFrameMetricsAndEndSession() {
+        let currentSessionID = self.session.id
+        Task { [weak self, frameSampler, researchLogger] in
+            guard let self = self else { return }
+            let samplingMetrics = await frameSampler.getMetrics()
+            var received = Int(samplingMetrics.framesReceived)
+            var processed = Int(samplingMetrics.framesSampled)
+            var dropped = Int(samplingMetrics.framesDroppedByRate + samplingMetrics.framesDroppedByMotion + samplingMetrics.framesDroppedByStability)
+            
+            // If manual capture without streaming frames, record manual attempts
+            if received == 0 && self.session.attempts > 0 {
+                received = self.session.attempts
+                processed = self.session.attempts
+                dropped = 0
+            }
+            
+            let n = UserDefaults.standard.integer(forKey: "app_last_n_frames")
+            let lastN = n > 0 ? n : 5
+            let inContext = min(processed, lastN)
+            
+            await researchLogger.recordFrameProcessing(
+                sessionID: currentSessionID,
+                received: received,
+                processed: processed,
+                includedInContext: inContext,
+                dropped: dropped
+            )
+            _ = await researchLogger.endResearchSession(sessionID: currentSessionID)
+        }
+    }
+    
     // MARK: - Session Persistence Helper
     
     private func persistSessionState() {
@@ -269,6 +301,20 @@ final class AssemblyViewModel: ObservableObject {
     func startLiveTutor(frameStream: AsyncStream<CVPixelBuffer>) {
         guard liveTutorEnabled else { return }
         stopLiveTutor()
+        
+        let strategyRaw = UserDefaults.standard.string(forKey: "app_visual_history_strategy") ?? VisualHistoryStrategy.currentFrame.rawValue
+        let strategy = VisualHistoryStrategy(rawValue: strategyRaw) ?? .currentFrame
+        let n = UserDefaults.standard.integer(forKey: "app_last_n_frames")
+        let framesCount = n > 0 ? n : 5
+        Task { [researchLogger, sId = session.id, pId = project.id.uuidString] in
+            _ = await researchLogger.startResearchSession(
+                sessionID: sId,
+                projectID: pId,
+                strategy: strategy,
+                lastNFrames: framesCount,
+                mode: .liveTutor
+            )
+        }
         
         liveStatus = isLivePaused ? .paused : .live
         logResearchEvent(.stepStarted, metadata: ["stepOrder": "\(currentStep.stepOrder)"])
@@ -330,36 +376,65 @@ final class AssemblyViewModel: ObservableObject {
                 }
                 
                 // 2. Coordinate Observation with State Estimation & Deterministic Verification
-                guard let verification = await self.observationCoordinator.handleObservation(observation, for: activeStep) else {
-                    continue
+                let deterministicVerification = await self.observationCoordinator.handleObservation(observation, for: activeStep)
+                
+                // If deterministic verification is nil (e.g. duplicate identical debounce), reuse currentVerificationResult
+                var verification = deterministicVerification ?? self.currentVerificationResult
+                if verification == nil {
+                    verification = VerificationResult(
+                        status: .uncertain,
+                        confidence: 0.50,
+                        detectedDescription: "Scanning assembly area...",
+                        expectedDescription: activeStep.title,
+                        explanation: "Evaluating visual placement...",
+                        primaryIssue: nil,
+                        observedState: nil
+                    )
                 }
+                
+                guard let baseVerification = verification else { continue }
                 
                 // Stale step check
                 guard self.currentStep.id == activeStep.id else { continue }
                 
-                // 2b. Foundation Model Visual Cross-Check (Fix #4)
-                // When deterministic pipeline reports incorrect/uncertain,
-                // query the Foundation Model (which now actually sees the image) for a second opinion
-                var finalVerification = verification
-                if !verification.isCorrect {
+                // 2b. Multimodal Vision Assessment & Dynamic Verification
+                // When deterministic pipeline reports incorrect/uncertain, or when user's hands are clear:
+                var finalVerification = baseVerification
+                if !baseVerification.isCorrect && activity != .handsWorking {
                     let fmAssessment = await MultimodalVisionVerifier.shared.verify(
                         frame: frame,
                         step: activeStep,
                         domain: self.project.domain
                     )
-                    if fmAssessment.isMultimodalEngineActive && fmAssessment.isStepComplete && fmAssessment.confidenceScore > 0.75 {
-                        // FM confidently sees step as complete — soften to uncertain (safe upgrade)
-                        finalVerification = VerificationResult(
-                            status: .uncertain,
-                            confidence: max(verification.confidence, fmAssessment.confidenceScore * 0.9),
-                            detectedDescription: fmAssessment.detectedComponents.map(\.partName).joined(separator: ", "),
-                            expectedDescription: verification.expectedDescription,
-                            explanation: fmAssessment.identifiedMistakes.isEmpty
-                                ? "Components appear correctly placed. Confirming precise alignment..."
-                                : fmAssessment.identifiedMistakes.joined(separator: ". "),
-                            primaryIssue: nil,
-                            observedState: verification.observedState
-                        )
+                    if fmAssessment.isMultimodalEngineActive {
+                        if fmAssessment.isStepComplete && fmAssessment.confidenceScore > 0.75 {
+                            // Multimodal CV confidently recognizes physical placement as complete
+                            finalVerification = VerificationResult(
+                                status: .correct,
+                                confidence: fmAssessment.confidenceScore,
+                                detectedDescription: fmAssessment.detectedComponents.map(\.partName).joined(separator: ", "),
+                                expectedDescription: baseVerification.expectedDescription,
+                                explanation: fmAssessment.alignmentStatus.isEmpty ? "Placement verified by visual inspection." : fmAssessment.alignmentStatus,
+                                primaryIssue: nil,
+                                observedState: baseVerification.observedState
+                            )
+                        } else if !fmAssessment.identifiedMistakes.isEmpty || fmAssessment.suggestedCorrection != nil {
+                            let errorText = fmAssessment.suggestedCorrection ?? fmAssessment.identifiedMistakes.joined(separator: ". ")
+                            finalVerification = VerificationResult(
+                                status: .incorrect,
+                                confidence: fmAssessment.confidenceScore,
+                                detectedDescription: fmAssessment.detectedComponents.map(\.partName).joined(separator: ", "),
+                                expectedDescription: baseVerification.expectedDescription,
+                                explanation: errorText,
+                                primaryIssue: StateIssue(
+                                    type: .wrongPosition,
+                                    title: "Adjustment Needed",
+                                    explanation: errorText,
+                                    severity: .warning
+                                ),
+                                observedState: baseVerification.observedState
+                            )
+                        }
                     }
                 }
                 self.currentVerificationResult = finalVerification
@@ -401,6 +476,7 @@ final class AssemblyViewModel: ObservableObject {
                     verMeta["error_class"] = "Nominal"
                 }
                 self.logResearchEvent(verType, durationMs: verDurationMs, status: finalVerification.status.rawValue, metadata: verMeta)
+                await self.researchLogger.samplePeakMemory(for: self.session.id)
                 
                 // 3. Evaluate Assistant Intervention Policy with Situational Timing and Hand Awareness
                 let timeSinceStart = Date().timeIntervalSince(self.stepStartTime)
@@ -430,7 +506,14 @@ final class AssemblyViewModel: ObservableObject {
                     if let response = await self.conversationalTutor.generateResponse(for: decision, context: assistantContext) {
                         guard self.currentStep.id == activeStep.id else { continue }
                         let modelLatency = Int(Date().timeIntervalSince(modelStartTime) * 1000)
-                        self.logResearchEvent(.assistantResponseGenerated, durationMs: modelLatency, metadata: ["category": response.category])
+                        var meta: [String: String] = ["category": response.category]
+                        if let inTok = response.inputTokens {
+                            meta["input_tokens"] = String(inTok)
+                        }
+                        if let outTok = response.outputTokens {
+                            meta["output_tokens"] = String(outTok)
+                        }
+                        self.logResearchEvent(.assistantResponseGenerated, durationMs: modelLatency, metadata: meta)
                         
                         self.currentTutorMessage = response
                         
@@ -525,6 +608,7 @@ final class AssemblyViewModel: ObservableObject {
                 self.transitioningStepID = nil
                 self.stopLiveTutor()
                 self.logResearchEvent(.sessionCompleted)
+                self.recordFrameMetricsAndEndSession()
                 
                 let completionText = "Congratulations! You have successfully completed all assembly steps."
                 let completionResponse = TutorResponse(text: completionText, priority: .high, category: "completion")
@@ -580,6 +664,7 @@ final class AssemblyViewModel: ObservableObject {
             session.endedAt = Date()
             persistSessionState()
             logResearchEvent(.sessionCompleted, metadata: ["earlyExit": "true"])
+            recordFrameMetricsAndEndSession()
         }
     }
     
@@ -620,12 +705,20 @@ final class AssemblyViewModel: ObservableObject {
     func toggleVoiceInput() {
         if isListening {
             isListening = false
-            liveStatus = isLivePaused ? .paused : .live
+            let rawQuery = liveUserTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
             Task { [voiceInput] in
                 await voiceInput.stopListening()
             }
             voiceInputTask?.cancel()
             voiceInputTask = nil
+            
+            if !rawQuery.isEmpty {
+                Task { [weak self] in
+                    await self?.processUserVoiceQuery(rawQuery)
+                }
+            } else {
+                liveStatus = isLivePaused ? .paused : .live
+            }
         } else {
             speechTask?.cancel()
             speechTask = nil
@@ -643,124 +736,13 @@ final class AssemblyViewModel: ObservableObject {
                         if Task.isCancelled { break }
                         self.liveUserTranscript = message.transcript
                         if message.isFinal {
-                            let query = message.transcript
-                            let intent = self.intentParser.parse(query)
-                            self.isListening = false
-                            self.liveStatus = .speaking
-                            self.logResearchEvent(.userVoiceCompleted, metadata: ["intent": "\(intent)"])
-                            
-                            let response: TutorResponse
-                            switch intent {
-                            case .verifyPlacement, .askIsCorrect:
-                                if let result = self.currentVerificationResult, result.isCorrect {
-                                    response = TutorResponse(
-                                        text: "Aha! You're totally right, I see that solid connection now! Step \(self.currentStep.stepOrder) is verified and locked in. Let's move to the next step. ✅",
-                                        priority: .immediate,
-                                        category: "confirmation"
-                                    )
-                                    self.triggerAutomaticStepProgression(for: self.currentStep)
-                                } else if let issue = self.currentVerificationResult?.primaryIssue {
-                                    response = TutorResponse(
-                                        text: "I'm looking closely at your workpiece! It looks like \(issue.explanation). Make sure the pins are seated firmly according to the onscreen guide. 🔍",
-                                        priority: .immediate,
-                                        category: "correction"
-                                    )
-                                } else {
-                                    let compName = self.currentStep.visualContract?.requiredComponentIds.first.map { VisualContract.friendlyName(for: $0) } ?? "component"
-                                    response = TutorResponse(
-                                        text: "I'm focusing the camera on your board right now! Hold steady for a second with clear lighting on the \(compName) so I can verify the connection. ⚡",
-                                        priority: .immediate,
-                                        category: "inspection"
-                                    )
-                                }
-                            case .repeatInstruction:
-                                let compName = self.currentStep.visualContract?.requiredComponentIds.first.map { VisualContract.friendlyName(for: $0) } ?? "component"
-                                let variations = [
-                                    "Sure thing! For Step \(self.currentStep.stepOrder), we're placing the \(compName). \(self.currentStep.instruction) 🛠️",
-                                    "Got you covered! Here's Step \(self.currentStep.stepOrder): \(self.currentStep.instruction) 🔌",
-                                    "No problem, partner! Take your \(compName) and \(self.currentStep.instruction) ⚡"
-                                ]
-                                let chosen = variations[abs(self.currentStep.stepOrder.hashValue) % variations.count]
-                                response = TutorResponse(
-                                    text: chosen,
-                                    priority: .immediate,
-                                    category: "instruction"
-                                )
-                            case .askWhatNext:
-                                if self.currentStepIndex < self.totalStepsCount - 1 {
-                                    let nextStep = self.project.steps[self.currentStepIndex + 1]
-                                    response = TutorResponse(
-                                        text: "Right now we're finishing Step \(self.currentStep.stepOrder): \(self.currentStep.title). Once this is verified, our next move is Step \(nextStep.stepOrder): \(nextStep.title)! 🛠️",
-                                        priority: .immediate,
-                                        category: "instruction"
-                                    )
-                                } else {
-                                    response = TutorResponse(
-                                        text: "You are on the final step! Let's lock in \(self.currentStep.title) and our build will be complete. 🎉",
-                                        priority: .immediate,
-                                        category: "completion"
-                                    )
-                                }
-                            case .askWhere:
-                                let pins = self.currentStep.visualContract?.requiredPins.map(\.label).joined(separator: " and ")
-                                if let p = pins, !p.isEmpty {
-                                    response = TutorResponse(
-                                        text: "For Step \(self.currentStep.stepOrder), plug it into \(p) on your board. Follow the green highlight on screen! 📍",
-                                        priority: .immediate,
-                                        category: "spatial_guidance"
-                                    )
-                                } else {
-                                    response = TutorResponse(
-                                        text: "Place it in the designated target zone highlighted on your camera view: \(self.currentStep.instruction) 📍",
-                                        priority: .immediate,
-                                        category: "spatial_guidance"
-                                    )
-                                }
-                            case .askPolarity:
-                                let titleLow = self.currentStep.title.lowercased()
-                                let instrLow = self.currentStep.instruction.lowercased()
-                                if titleLow.contains("led") || instrLow.contains("led") {
-                                    response = TutorResponse(
-                                        text: "For the LED, remember the longer leg is the anode (positive)! Connect that toward the signal rail, and the shorter flat leg to ground. 💡",
-                                        priority: .immediate,
-                                        category: "polarity"
-                                    )
-                                } else if titleLow.contains("diode") || instrLow.contains("diode") {
-                                    response = TutorResponse(
-                                        text: "Notice the silver or black band on the diode—that marks the cathode (negative side). Align it with the circuit diagram! ⚡",
-                                        priority: .immediate,
-                                        category: "polarity"
-                                    )
-                                } else {
-                                    response = TutorResponse(
-                                        text: "Good check! Resistors aren't polarized so either direction works, but make sure IC chips have their notch or dot facing pin 1! 🔌",
-                                        priority: .immediate,
-                                        category: "polarity"
-                                    )
-                                }
-                            case .askWhy:
-                                response = TutorResponse(
-                                    text: "We're adding \(self.currentStep.title) to complete the circuit path and ensure safe voltage regulation so the board functions properly. 🧠",
-                                    priority: .immediate,
-                                    category: "explanation"
-                                )
-                            default:
-                                let assistantContext = AssistantContext(
-                                    currentStep: self.currentStep,
-                                    sessionID: self.session.id,
-                                    verificationResult: self.currentVerificationResult,
-                                    userIntent: intent,
-                                    userTranscript: query
-                                )
-                                response = await self.conversationalTutor.answerUserQuestion(
-                                    query: query,
-                                    intent: intent,
-                                    context: assistantContext
-                                )
+                            let query = message.transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+                            if !query.isEmpty {
+                                await self.processUserVoiceQuery(query)
+                            } else {
+                                self.isListening = false
+                                self.liveStatus = self.isLivePaused ? .paused : .live
                             }
-                            
-                            self.currentTutorMessage = response
-                            self.speakAsynchronously(response)
                             break
                         }
                     }
@@ -772,9 +754,177 @@ final class AssemblyViewModel: ObservableObject {
         }
     }
     
-    // MARK: - Legacy Manual Intent Actions
+    /// Evaluates user query with humorous, expert on-device multimodal perception and speaks the guidance.
+    func processUserVoiceQuery(_ rawQuery: String) async {
+        let query = rawQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return }
+        
+        let intent = intentParser.parse(query)
+        isListening = false
+        liveStatus = .speaking
+        logResearchEvent(.userVoiceCompleted, metadata: ["intent": "\(intent)", "query": query])
+        
+        let response: TutorResponse
+        let queryLower = query.lowercased()
+        
+        // Dynamic Multimodal Visual Queries ("what do you see?", "can you see my board/parts/tools?")
+        if queryLower.contains("what do you see") || queryLower.contains("what you see") || queryLower.contains("look at") || queryLower.contains("do you see") {
+            let lighting = workspaceMap?.lightingQuality.displayName ?? "optimal"
+            let count = workspaceMap?.existingComponents.count ?? 0
+            if count > 0, let comps = workspaceMap?.existingComponents {
+                let compNames = comps.prefix(4).map(\.name).joined(separator: ", ")
+                response = TutorResponse(
+                    text: "Looking through the lens right now, I see \(compNames) under \(lighting) lighting! Everything looks primed and ready. 🔍",
+                    priority: .immediate,
+                    category: "multimodal_perception"
+                )
+            } else {
+                response = TutorResponse(
+                    text: "I've got eyes on your workspace! The lighting is \(lighting). Point the camera right at your workpiece so we can keep building! 🛠️",
+                    priority: .immediate,
+                    category: "multimodal_perception"
+                )
+            }
+        } else {
+            switch intent {
+            case .verifyPlacement, .askIsCorrect:
+                if let result = self.currentVerificationResult, result.isCorrect {
+                    response = TutorResponse(
+                        text: "Aha! You're totally right, I see that solid connection now! Step \(self.currentStep.stepOrder) is verified and locked in. Let's move to the next step. ✅",
+                        priority: .immediate,
+                        category: "confirmation"
+                    )
+                    self.triggerAutomaticStepProgression(for: self.currentStep)
+                } else if let issue = self.currentVerificationResult?.primaryIssue {
+                    response = TutorResponse(
+                        text: "I'm looking closely at your workpiece! It looks like \(issue.explanation). Make sure the pins are seated firmly according to the onscreen guide. 🔍",
+                        priority: .immediate,
+                        category: "correction"
+                    )
+                } else {
+                    let compName = self.currentStep.visualContract?.requiredComponentIds.first.map { VisualContract.friendlyName(for: $0) } ?? "component"
+                    response = TutorResponse(
+                        text: "I'm focusing the camera on your board right now! Hold steady for a second with clear lighting on the \(compName) so I can verify the connection. No shaky coffee hands! ☕",
+                        priority: .immediate,
+                        category: "inspection"
+                    )
+                }
+            case .repeatInstruction:
+                let compName = self.currentStep.visualContract?.requiredComponentIds.first.map { VisualContract.friendlyName(for: $0) } ?? "component"
+                let variations = [
+                    "Sure thing! For Step \(self.currentStep.stepOrder), we're placing the \(compName). \(self.currentStep.instruction) 🛠️",
+                    "Got you covered! Here's Step \(self.currentStep.stepOrder): \(self.currentStep.instruction) 🔌",
+                    "No problem, partner! Take your \(compName) and \(self.currentStep.instruction) ⚡"
+                ]
+                let chosen = variations[abs(self.currentStep.stepOrder.hashValue) % variations.count]
+                response = TutorResponse(
+                    text: chosen,
+                    priority: .immediate,
+                    category: "instruction"
+                )
+            case .askWhatNext:
+                if self.currentStepIndex < self.totalStepsCount - 1 {
+                    let nextStep = self.project.steps[self.currentStepIndex + 1]
+                    response = TutorResponse(
+                        text: "Right now we're finishing Step \(self.currentStep.stepOrder): \(self.currentStep.title). Once this is verified, our next move is Step \(nextStep.stepOrder): \(nextStep.title)! 🛠️",
+                        priority: .immediate,
+                        category: "instruction"
+                    )
+                } else {
+                    response = TutorResponse(
+                        text: "You are on the final step! Let's lock in \(self.currentStep.title) and our build will be complete. 🎉",
+                        priority: .immediate,
+                        category: "completion"
+                    )
+                }
+            case .askWhere:
+                let pins = self.currentStep.visualContract?.requiredPins.map(\.label).joined(separator: " and ")
+                if let p = pins, !p.isEmpty {
+                    response = TutorResponse(
+                        text: "For Step \(self.currentStep.stepOrder), plug it into \(p) on your board. Follow the green highlight on screen! 📍",
+                        priority: .immediate,
+                        category: "spatial_guidance"
+                    )
+                } else {
+                    response = TutorResponse(
+                        text: "Place it in the designated target zone highlighted on your camera view: \(self.currentStep.instruction) 📍",
+                        priority: .immediate,
+                        category: "spatial_guidance"
+                    )
+                }
+            case .askPolarity:
+                let titleLow = self.currentStep.title.lowercased()
+                let instrLow = self.currentStep.instruction.lowercased()
+                if titleLow.contains("led") || instrLow.contains("led") {
+                    response = TutorResponse(
+                        text: "For the LED, remember the longer leg is the anode (positive)! Connect that toward the signal rail, and the shorter flat leg to ground. 💡",
+                        priority: .immediate,
+                        category: "polarity"
+                    )
+                } else if titleLow.contains("diode") || instrLow.contains("diode") {
+                    response = TutorResponse(
+                        text: "Notice the silver or black band on the diode—that marks the cathode (negative side). Align it with the circuit diagram! ⚡",
+                        priority: .immediate,
+                        category: "polarity"
+                    )
+                } else {
+                    response = TutorResponse(
+                        text: "Good check! Resistors aren't polarized so either direction works, but make sure IC chips have their notch or dot facing pin 1! 🔌",
+                        priority: .immediate,
+                        category: "polarity"
+                    )
+                }
+            case .askWhy:
+                response = TutorResponse(
+                    text: "We're adding \(self.currentStep.title) to complete the circuit path and ensure safe voltage regulation so the board functions properly. 🧠",
+                    priority: .immediate,
+                    category: "explanation"
+                )
+            default:
+                let assistantContext = AssistantContext(
+                    currentStep: self.currentStep,
+                    sessionID: self.session.id,
+                    verificationResult: self.currentVerificationResult,
+                    userIntent: intent,
+                    userTranscript: query
+                )
+                response = await self.conversationalTutor.answerUserQuestion(
+                    query: query,
+                    intent: intent,
+                    context: assistantContext
+                )
+            }
+        }
+        
+        self.currentTutorMessage = response
+        var meta: [String: String] = ["category": response.category, "inResponseTo": "voice_query"]
+        if let inTok = response.inputTokens ?? (TokenEstimator.estimate(query)) {
+            meta["input_tokens"] = String(inTok)
+        }
+        if let outTok = response.outputTokens {
+            meta["output_tokens"] = String(outTok)
+        }
+        self.logResearchEvent(.assistantResponseGenerated, durationMs: 0, metadata: meta)
+        self.speakAsynchronously(response)
+    }
+    
+    // MARK: - Manual Intent Actions
     
     func beginAssembly() {
+        let strategyRaw = UserDefaults.standard.string(forKey: "app_visual_history_strategy") ?? VisualHistoryStrategy.currentFrame.rawValue
+        let strategy = VisualHistoryStrategy(rawValue: strategyRaw) ?? .currentFrame
+        let n = UserDefaults.standard.integer(forKey: "app_last_n_frames")
+        let framesCount = n > 0 ? n : 5
+        let mode: InteractionMode = liveTutorEnabled ? .liveTutor : .manual
+        Task { [researchLogger, sId = session.id, pId = project.id.uuidString] in
+            _ = await researchLogger.startResearchSession(
+                sessionID: sId,
+                projectID: pId,
+                strategy: strategy,
+                lastNFrames: framesCount,
+                mode: mode
+            )
+        }
         logResearchEvent(.sessionStarted)
         withAnimation(.easeInOut(duration: 0.3)) {
             phase = .instruction
@@ -799,6 +949,7 @@ final class AssemblyViewModel: ObservableObject {
         
         Task { [weak self] in
             guard let self = self else { return }
+            let analysisStartTime = Date()
             guard let targetImage = self.capturedImage else {
                 let uncertainResult = VerificationResult(
                     status: .uncertain,
@@ -862,7 +1013,9 @@ final class AssemblyViewModel: ObservableObject {
             } else if result.isCorrect {
                 analysisMeta["error_class"] = "Nominal"
             }
-            self.logResearchEvent(verType, status: result.status.rawValue, metadata: analysisMeta)
+            let latencyMs = Int(Date().timeIntervalSince(analysisStartTime) * 1000)
+            self.logResearchEvent(verType, durationMs: latencyMs, status: result.status.rawValue, metadata: analysisMeta)
+            await self.researchLogger.samplePeakMemory(for: self.session.id)
             
             let comparison = StateComparison(
                 status: result.isCorrect ? .correct : (result.status == .uncertain ? .uncertain : .incorrect),
@@ -976,6 +1129,7 @@ final class AssemblyViewModel: ObservableObject {
             project.isActive = false
             persistSessionState()
             logResearchEvent(.sessionCompleted)
+            recordFrameMetricsAndEndSession()
             withAnimation(.easeInOut(duration: 0.4)) {
                 phase = .completed
             }

@@ -56,12 +56,13 @@ actor MockResearchLogger: ResearchLogging {
     }
     
     func startResearchSession(
+        sessionID: UUID? = nil,
         projectID: String,
-        strategy: VisualHistoryStrategy,
-        lastNFrames: Int?,
-        mode: InteractionMode
+        strategy: VisualHistoryStrategy = .currentFrame,
+        lastNFrames: Int? = nil,
+        mode: InteractionMode = .liveTutor
     ) async -> UUID {
-        let sid = UUID()
+        let sid = sessionID ?? UUID()
         let config = ResearchSessionConfig(
             id: sid,
             projectID: projectID,
@@ -77,7 +78,7 @@ actor MockResearchLogger: ResearchLogging {
             memoryAfterMB: nil,
             peakMemoryMB: 42.0,
             batteryCost: nil,
-            batteryLevelStart: nil,
+            batteryLevelStart: 0.95,
             batteryLevelEnd: nil,
             framesReceived: 0,
             framesProcessed: 0,
@@ -86,6 +87,41 @@ actor MockResearchLogger: ResearchLogging {
         )
         mockSessions[sid] = config
         return sid
+    }
+    
+    func recordFrameProcessing(
+        sessionID: UUID,
+        received: Int,
+        processed: Int,
+        includedInContext: Int,
+        dropped: Int
+    ) async {
+        guard var config = mockSessions[sessionID] else { return }
+        config.framesReceived += received
+        config.framesProcessed += processed
+        config.framesIncludedInModelContext += includedInContext
+        config.framesDropped += dropped
+        mockSessions[sessionID] = config
+    }
+    
+    func recordFrameProcessing(
+        sessionID: UUID,
+        received: Int,
+        processed: Int,
+        inContext: Int,
+        dropped: Int
+    ) async {
+        await recordFrameProcessing(
+            sessionID: sessionID,
+            received: received,
+            processed: processed,
+            includedInContext: inContext,
+            dropped: dropped
+        )
+    }
+    
+    func samplePeakMemory(for sessionID: UUID) async {
+        // Mock peak memory sampling
     }
     
     func endResearchSession(

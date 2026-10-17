@@ -122,4 +122,177 @@ final class ResearchInstrumentationTests: XCTestCase {
         XCTAssertFalse(csv.contains("password"))
         XCTAssertFalse(csv.contains("token"))
     }
+    
+    // MARK: - Test 5: Explicit Session ID & Lifecycle Integration
+    func testStartResearchSessionPreservesExplicitID() async {
+        let customSessionID = UUID()
+        let returnedID = await logger.startResearchSession(
+            sessionID: customSessionID,
+            projectID: projectID.uuidString,
+            strategy: .lastNFrames,
+            lastNFrames: 5,
+            mode: .liveTutor
+        )
+        
+        XCTAssertEqual(returnedID, customSessionID, "startResearchSession must reuse the explicit session ID")
+        
+        let config = await logger.getSessionConfig(for: customSessionID)
+        XCTAssertNotNil(config)
+        XCTAssertEqual(config?.projectID, projectID.uuidString)
+        XCTAssertEqual(config?.strategy, .lastNFrames)
+        XCTAssertEqual(config?.lastNFrames, 5)
+        XCTAssertNotNil(config?.memoryBeforeMB)
+    }
+    
+    // MARK: - Test 6: Frame Metrics Recording & Persistence
+    func testFrameMetricsRecordingAndEndSession() async {
+        let testSessionID = UUID()
+        _ = await logger.startResearchSession(
+            sessionID: testSessionID,
+            projectID: projectID.uuidString,
+            mode: .liveTutor
+        )
+        
+        await logger.recordFrameProcessing(
+            sessionID: testSessionID,
+            received: 120,
+            processed: 60,
+            includedInContext: 5,
+            dropped: 60
+        )
+        
+        let metrics = await logger.endResearchSession(sessionID: testSessionID, externalBatteryCost: 0.04)
+        
+        XCTAssertEqual(metrics.sessionID, testSessionID)
+        XCTAssertEqual(metrics.framesReceived, 120)
+        XCTAssertEqual(metrics.framesProcessed, 60)
+        XCTAssertEqual(metrics.framesIncludedInModelContext, 5)
+        XCTAssertEqual(metrics.framesDropped, 60)
+        XCTAssertEqual(metrics.batteryCost, 0.04)
+    }
+    
+    // MARK: - Test 7: Token Consumption Telemetry Aggregation
+    func testTokenTelemetryAggregation() async {
+        let testSessionID = UUID()
+        _ = await logger.startResearchSession(
+            sessionID: testSessionID,
+            projectID: projectID.uuidString,
+            mode: .liveTutor
+        )
+        
+        await logger.logEvent(ResearchEvent(
+            sessionID: testSessionID,
+            projectID: projectID,
+            stepID: step1ID,
+            mode: .liveTutor,
+            eventType: .assistantResponseGenerated,
+            durationMilliseconds: 250,
+            metadata: ["input_tokens": "85", "output_tokens": "22"]
+        ))
+        await logger.logEvent(ResearchEvent(
+            sessionID: testSessionID,
+            projectID: projectID,
+            stepID: step1ID,
+            mode: .liveTutor,
+            eventType: .assistantResponseGenerated,
+            durationMilliseconds: 180,
+            metadata: ["input_tokens": "110", "output_tokens": "35"]
+        ))
+        
+        let metrics = await logger.calculateMetrics(for: testSessionID)
+        
+        XCTAssertEqual(metrics.totalInputTokens, 195)
+        XCTAssertEqual(metrics.totalOutputTokens, 57)
+        XCTAssertEqual(metrics.totalTokens, 252)
+    }
+    
+    // MARK: - Test 8: Summary CSV 46-Column Completeness & Zero Blank Column Headers
+    func testSummaryCSVCompletenessAndZeroBlankColumns() async {
+        let testSessionID = UUID()
+        _ = await logger.startResearchSession(
+            sessionID: testSessionID,
+            projectID: projectID.uuidString,
+            mode: .liveTutor
+        )
+        
+        await logger.recordFrameProcessing(
+            sessionID: testSessionID,
+            received: 50,
+            processed: 25,
+            includedInContext: 5,
+            dropped: 25
+        )
+        
+        await logger.logEvent(ResearchEvent(
+            sessionID: testSessionID,
+            projectID: projectID,
+            stepID: step1ID,
+            mode: .liveTutor,
+            eventType: .stepStarted
+        ))
+        await logger.logEvent(ResearchEvent(
+            sessionID: testSessionID,
+            projectID: projectID,
+            stepID: step1ID,
+            mode: .liveTutor,
+            eventType: .verificationCorrect,
+            status: "correct"
+        ))
+        await logger.logEvent(ResearchEvent(
+            sessionID: testSessionID,
+            projectID: projectID,
+            stepID: step1ID,
+            mode: .liveTutor,
+            eventType: .stepCompleted
+        ))
+        
+        _ = await logger.endResearchSession(sessionID: testSessionID, externalBatteryCost: 0.02)
+        
+        let summaryCSV = await logger.exportSummaryCSV()
+        let lines = summaryCSV.components(separatedBy: "\n").filter { !$0.isEmpty }
+        
+        XCTAssertGreaterThanOrEqual(lines.count, 2, "Must contain header and at least one session data row")
+        let headerColumns = lines[0].components(separatedBy: ",")
+        XCTAssertEqual(headerColumns.count, 46, "Summary CSV header must contain exactly 46 telemetry columns")
+        XCTAssertTrue(headerColumns.contains("battery_level_delta"))
+        XCTAssertTrue(headerColumns.contains("energy_cost"))
+        XCTAssertTrue(headerColumns.contains("frames_received"))
+        
+        let dataColumns = lines[1].components(separatedBy: ",")
+        XCTAssertEqual(dataColumns.count, 46, "Summary CSV data row must have matching 46 column values")
+        
+        // Assert tabularRowValues matches 46 elements
+        let metrics = await logger.calculateMetrics(for: testSessionID)
+        XCTAssertEqual(metrics.tabularRowValues.count, 46)
+    }
+    
+    // MARK: - Test 9: Nominal Temporal Consistency Calculation
+    func testNominalTemporalConsistencyIsOne() async {
+        let testSessionID = UUID()
+        _ = await logger.startResearchSession(
+            sessionID: testSessionID,
+            projectID: projectID.uuidString,
+            mode: .liveTutor
+        )
+        
+        await logger.logEvent(ResearchEvent(
+            sessionID: testSessionID,
+            projectID: projectID,
+            stepID: step1ID,
+            mode: .liveTutor,
+            eventType: .verificationCorrect,
+            status: "correct"
+        ))
+        await logger.logEvent(ResearchEvent(
+            sessionID: testSessionID,
+            projectID: projectID,
+            stepID: step2ID,
+            mode: .liveTutor,
+            eventType: .verificationCorrect,
+            status: "correct"
+        ))
+        
+        let metrics = await logger.calculateMetrics(for: testSessionID)
+        XCTAssertEqual(metrics.temporalConsistency, 1.0, "Sessions with zero errors and verified steps must report 1.0 nominal consistency")
+    }
 }

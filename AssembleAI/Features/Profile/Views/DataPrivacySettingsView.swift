@@ -15,25 +15,19 @@ struct DataPrivacySettingsView: View {
     @ObservedObject var viewModel: ProfileViewModel
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: AppSpacing.lg) {
-                // Privacy Principle Card
-                privacyPrincipleCard
-                
-                // On-Device Storage Breakdown
-                storageBreakdownSection
-                
-                // Research Telemetry & Experiment Data Export
-                researchTelemetrySection
-                
-                // Danger Zone: Reset Local Data
-                managementSection
-            }
-            .padding(.horizontal, AppSpacing.screenEdge)
-            .padding(.top, AppSpacing.sm)
-            .padding(.bottom, AppSpacing.xl)
+        Form {
+            // Privacy Principle Card
+            privacyPrincipleCard
+            
+            // On-Device Storage Breakdown
+            storageBreakdownSection
+            
+            // Research Telemetry & Experiment Data Export
+            researchTelemetrySection
+            
+            // Danger Zone: Reset Local Data
+            managementSection
         }
-        .background(AppColors.groupedBackground.ignoresSafeArea())
         .navigationTitle("Data & Privacy")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $viewModel.isExportingTelemetry) {
@@ -81,56 +75,52 @@ struct DataPrivacySettingsView: View {
     // MARK: - Component Sections
     
     private var privacyPrincipleCard: some View {
-        HStack(spacing: AppSpacing.md) {
-            SemanticIconBadge(
-                iconName: "lock.shield.fill",
-                size: 34,
-                iconSize: 17,
-                color: AppColors.badgeGreen
-            )
-            
-            VStack(alignment: .leading, spacing: 3) {
-                Text("On-Device Privacy Guaranteed")
-                    .font(.headline)
-                    .foregroundColor(AppColors.primaryText)
-                Text("Camera frames and Vision OCR extractions are processed entirely on your device and never uploaded to external servers.")
-                    .font(.caption)
-                    .foregroundColor(AppColors.secondaryText)
-                    .lineSpacing(2)
+        Section {
+            HStack(spacing: AppSpacing.md) {
+                SemanticIconBadge(
+                    iconName: "lock.shield.fill",
+                    size: 34,
+                    iconSize: 17,
+                    color: AppColors.badgeGreen
+                )
+                
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("On-Device Privacy Guaranteed")
+                        .font(.headline)
+                        .foregroundColor(AppColors.primaryText)
+                    Text("Camera frames and Vision OCR extractions are processed entirely on your device and never uploaded to external servers.")
+                        .font(.caption)
+                        .foregroundColor(AppColors.secondaryText)
+                        .lineSpacing(2)
+                }
             }
+            .padding(.vertical, 4)
         }
-        .appCard()
     }
     
     private var storageBreakdownSection: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Text("Storage & Cache")
-                .standardSectionHeader()
+        Section {
+            storageRow(
+                icon: "cpu.fill",
+                color: AppColors.badgeBlue,
+                label: "Optical Guidance Cache",
+                detail: "In-Memory LRU Cache",
+                actionTitle: "Clear",
+                action: {
+                    viewModel.clearModelCache()
+                }
+            )
             
-            VStack(spacing: 0) {
-                storageRow(
-                    icon: "cpu.fill",
-                    color: AppColors.badgeBlue,
-                    label: "Optical Guidance Cache",
-                    detail: "In-Memory LRU Cache",
-                    actionTitle: "Clear",
-                    action: {
-                        viewModel.clearModelCache()
-                    }
-                )
-                
-                Divider().padding(.leading, AppSpacing.dividerLeadingInset)
-                
-                storageRow(
-                    icon: "internaldrive",
-                    color: AppColors.badgeGray,
-                    label: "Assembly Sessions",
-                    detail: "\(viewModel.completedSessionsCount) local records",
-                    actionTitle: nil,
-                    action: nil
-                )
-            }
-            .appCard(padding: 0)
+            storageRow(
+                icon: "internaldrive",
+                color: AppColors.badgeGray,
+                label: "Assembly Sessions",
+                detail: "\(viewModel.completedSessionsCount) local records",
+                actionTitle: nil,
+                action: nil
+            )
+        } header: {
+            Text("Storage & Cache")
         }
     }
     
@@ -207,27 +197,22 @@ struct DataPrivacySettingsView: View {
     }
     
     private var managementSection: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Text("Reset Local Data")
-                .standardSectionHeader()
-            
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                Button(action: {
-                    viewModel.showResetDataAlert = true
-                }) {
-                    HStack {
-                        Image(systemName: "trash.fill")
-                            .foregroundColor(AppColors.error)
-                        Text("Reset All Local Data & Sessions")
-                            .font(.body)
-                            .fontWeight(.medium)
-                            .foregroundColor(AppColors.error)
-                        Spacer()
-                    }
-                    .padding(AppSpacing.md)
+        Section {
+            Button(role: .destructive, action: {
+                viewModel.showResetDataAlert = true
+            }) {
+                HStack {
+                    Image(systemName: "trash.fill")
+                        .foregroundColor(AppColors.error)
+                    Text("Reset All Local Data & Sessions")
+                        .font(.body)
+                        .foregroundColor(AppColors.error)
                 }
             }
-            .appCard(borderColor: AppColors.error.opacity(0.3), padding: 0)
+        } header: {
+            Text("Reset Local Data")
+        } footer: {
+            Text("Permanently deletes cached frames, local benchmarks, and session records from this device.")
         }
     }
     
@@ -236,20 +221,20 @@ struct DataPrivacySettingsView: View {
     private func telemetryPill(icon: String, title: String, count: String) -> some View {
         HStack(spacing: 5) {
             Image(systemName: icon)
-                .font(.system(size: 10, weight: .bold))
+                .font(.caption2.weight(.bold))
                 .foregroundColor(.assembleBrandPrimary)
             Text(title)
-                .font(.system(size: 11, weight: .regular))
+                .font(.caption2)
                 .foregroundColor(AppColors.secondaryText)
             Text(count)
-                .font(.system(size: 11, weight: .bold))
+                .font(.caption2.weight(.bold))
                 .monospacedDigit()
                 .foregroundColor(AppColors.primaryText)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
         .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            RoundedRectangle(cornerRadius: AppRadius.xs, style: .continuous)
                 .fill(AppColors.tertiaryBackground)
         )
     }
@@ -284,7 +269,7 @@ struct DataPrivacySettingsView: View {
                         
                         if let b = badge {
                             Text(b)
-                                .font(.system(size: 8, weight: .bold))
+                                .font(.caption2.weight(.bold))
                                 .foregroundColor(.white)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
@@ -316,7 +301,7 @@ struct DataPrivacySettingsView: View {
         }
         .buttonStyle(ScaleButtonStyle())
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(title), \(subtitle)\(badge != nil ? ", \(badge!)" : "")")
+        .accessibilityLabel("\(title), \(subtitle)\(badge.map { ", \($0)" } ?? "")")
         .accessibilityHint(isLoading ? "Currently generating export." : "Double tap to export data.")
     }
     

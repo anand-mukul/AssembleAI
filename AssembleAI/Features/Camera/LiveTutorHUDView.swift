@@ -78,7 +78,7 @@ struct LiveTutorHUDView: View {
                 // Step Badge Pill
                 HStack(spacing: 4) {
                     Image(systemName: componentIcon(for: currentStep.title))
-                        .font(.system(size: 10, weight: .bold))
+                        .font(.caption2.weight(.bold))
                         .foregroundColor(Color.assembleBrandPrimary)
                     Text("STEP \(currentStep.stepOrder)")
                         .font(.caption2)
@@ -107,9 +107,9 @@ struct LiveTutorHUDView: View {
                     }) {
                         HStack(spacing: 3) {
                             Text("Why?")
-                                .font(.system(size: 11, weight: .semibold))
+                                .font(.caption.weight(.semibold))
                             Image(systemName: "questionmark.circle.fill")
-                                .font(.system(size: 10))
+                                .font(.caption2)
                         }
                         .foregroundColor(Color.assembleBrandPrimary)
                         .padding(.horizontal, 8)
@@ -117,7 +117,7 @@ struct LiveTutorHUDView: View {
                         .background(Capsule().fill(Color.assembleBrandPrimary.opacity(0.15)))
                         .overlay(Capsule().strokeBorder(Color.assembleBrandPrimary.opacity(0.3), lineWidth: 0.5))
                     }
-                    .buttonStyle(ScaleButtonStyle())
+                    .buttonStyle(ScaleButtonStyle(enableHaptic: false))
                     .accessibilityLabel("Why is this step wrong?")
                 }
                 
@@ -127,13 +127,13 @@ struct LiveTutorHUDView: View {
                     onTogglePause()
                 }) {
                     Image(systemName: isPaused ? "play.fill" : "pause.fill")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.caption.weight(.bold))
                         .foregroundColor(.white.opacity(0.9))
-                        .frame(width: 30, height: 30)
+                        .frame(width: 32, height: 32)
                         .background(Circle().fill(Color.white.opacity(0.12)))
                         .overlay(Circle().strokeBorder(Color.white.opacity(0.18), lineWidth: 0.5))
                 }
-                .buttonStyle(ScaleButtonStyle())
+                .buttonStyle(ScaleButtonStyle(enableHaptic: false))
                 .accessibilityLabel(isPaused ? "Resume Live Tutor" : "Pause Live Tutor")
             }
             
@@ -167,14 +167,14 @@ struct LiveTutorHUDView: View {
                                 .font(.subheadline.weight(.semibold))
                         } else {
                             Image(systemName: "mic.fill")
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(.subheadline.weight(.semibold))
                             Text("Talk to AssembleAI")
                                 .font(.subheadline.weight(.semibold))
                         }
                     }
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 44)
+                    .frame(minHeight: 44)
                     .background(
                         ZStack {
                             if isListening {
@@ -184,19 +184,18 @@ struct LiveTutorHUDView: View {
                                     endPoint: .trailing
                                 )
                             } else {
-                                RoundedRectangle(cornerRadius: 13, style: .continuous)
+                                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                                     .fill(Color.assembleBrandPrimary)
                             }
                         }
-                        .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 13, style: .continuous)
+                        RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                             .strokeBorder(Color.white.opacity(0.25), lineWidth: 0.5)
                     )
-                    .shadow(color: isListening ? AppColors.aiBlue.opacity(0.35) : Color.assembleBrandPrimary.opacity(0.28), radius: 8, x: 0, y: 3)
                 }
-                .buttonStyle(ScaleButtonStyle())
+                .buttonStyle(ScaleButtonStyle(enableHaptic: false))
                 .accessibilityLabel(isListening ? "Stop listening" : "Talk to AssembleAI")
                 
                 // Manual Snapshot Button
@@ -206,19 +205,19 @@ struct LiveTutorHUDView: View {
                         onManualFallback()
                     }) {
                         Image(systemName: "camera.viewfinder")
-                            .font(.system(size: 18, weight: .semibold))
+                            .font(.body.weight(.semibold))
                             .foregroundColor(.white.opacity(0.92))
                             .frame(width: 44, height: 44)
                             .background(
-                                RoundedRectangle(cornerRadius: 13, style: .continuous)
+                                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                                     .fill(Color.white.opacity(0.12))
                             )
                             .overlay(
-                                RoundedRectangle(cornerRadius: 13, style: .continuous)
+                                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
                                     .strokeBorder(Color.white.opacity(0.20), lineWidth: 0.5)
                             )
                     }
-                    .buttonStyle(ScaleButtonStyle())
+                    .buttonStyle(ScaleButtonStyle(enableHaptic: false))
                     .accessibilityLabel("Manual snapshot analysis")
                 }
             }
@@ -227,7 +226,7 @@ struct LiveTutorHUDView: View {
         .padding(.vertical, 14)
         .background(
             ZStack {
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                     .fill(Color.black.opacity(0.40))
                 RoundedRectangle(cornerRadius: 22, style: .continuous)
                     .fill(.ultraThinMaterial)

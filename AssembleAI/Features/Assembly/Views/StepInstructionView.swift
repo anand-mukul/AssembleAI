@@ -118,37 +118,16 @@ struct StepInstructionView: View {
         }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 0) {
-                Button(action: {
-                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                PrimaryButton(title: "Scan Setup", iconName: "viewfinder") {
                     onScanSetup()
-                }) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "viewfinder")
-                            .font(.system(size: 16, weight: .bold))
-                        Text("Scan Setup")
-                            .font(.system(size: 17, weight: .semibold))
-                    }
-                    .foregroundColor(AppColors.premiumButtonForeground)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 50)
-                    .background(
-                        Capsule(style: .continuous)
-                            .fill(AppColors.premiumButtonBackground)
-                            .shadow(color: Color.black.opacity(0.18), radius: 8, x: 0, y: 3)
-                    )
                 }
-                .buttonStyle(ScaleButtonStyle())
-                .touchTarget()
-                .accessibilityLabel("Scan setup with camera")
                 .padding(.horizontal, AppSpacing.screenEdge)
                 .padding(.top, AppSpacing.sm)
                 .padding(.bottom, AppSpacing.xs)
             }
-            .background(.ultraThinMaterial)
+            .background(.regularMaterial)
             .overlay(alignment: .top) {
-                Rectangle()
-                    .fill(AppColors.borderSubtle)
-                    .frame(height: 0.5)
+                Divider()
             }
         }
     }

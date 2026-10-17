@@ -180,7 +180,17 @@ actor ResearchCloudSyncService {
         row["memory_before_mb"] = metrics.memoryBeforeMB.map { round($0 * 10) / 10 } ?? 0.0
         row["memory_after_mb"] = metrics.memoryAfterMB.map { round($0 * 10) / 10 } ?? 0.0
         row["peak_memory_mb"] = metrics.peakMemoryMB.map { round($0 * 10) / 10 } ?? 0.0
-        if let battery = metrics.batteryCost {
+        if let bStart = metrics.batteryLevelStart {
+            row["battery_level_start"] = round(bStart * 1000) / 1000
+        }
+        if let bEnd = metrics.batteryLevelEnd {
+            row["battery_level_end"] = round(bEnd * 1000) / 1000
+        }
+        if let bDelta = metrics.batteryLevelDelta {
+            row["battery_level_delta"] = round(bDelta * 1000) / 1000
+        }
+        let batteryCost: Double? = metrics.batteryCost ?? metrics.batteryLevelDelta.map { Double($0) }
+        if let battery = batteryCost {
             row["battery_cost_pct"] = round(battery * 1000) / 10
         }
         
@@ -267,7 +277,8 @@ actor ResearchCloudSyncService {
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.setValue(AppConfig.supabaseAnonKey, forHTTPHeaderField: "apikey")
-            request.setValue("Bearer \(AppConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+            let token = await SupabaseManager.shared.currentAuthToken ?? AppConfig.supabaseAnonKey
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             request.setValue("resolution=merge-duplicates", forHTTPHeaderField: "Prefer")
             request.timeoutInterval = 15
             request.httpBody = try JSONSerialization.data(withJSONObject: payload, options: [])

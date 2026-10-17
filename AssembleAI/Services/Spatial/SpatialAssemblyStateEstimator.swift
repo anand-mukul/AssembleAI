@@ -27,11 +27,27 @@ nonisolated struct SpatialAssemblyStateEstimator: AssemblyStateEstimating {
     }
     
     func estimate(observation: VisualObservation) async throws -> ObservedAssemblyState {
+        try await estimate(observation: observation, for: nil)
+    }
+    
+    func estimate(observation: VisualObservation, for step: AssemblyStep?) async throws -> ObservedAssemblyState {
         // Resolve active calibration if provided (do not force phantom breadboard for non-electronics)
         let calibration = calibrationProvider?()
         
-        // 1. Detect spatial components
-        let spatialComponents = spatialDetector.detectComponents(in: observation, calibration: calibration)
+        let expectedComponents: [ComponentRequirement] = {
+            if let s = step {
+                return ExpectedAssemblyState.forStep(s).requiredComponents
+            }
+            return []
+        }()
+        
+        // 1. Detect spatial components dynamically using project context
+        let spatialComponents = spatialDetector.detectComponents(
+            in: observation,
+            calibration: calibration,
+            expectedComponents: expectedComponents,
+            activeStep: step
+        )
         
         var observedComponents: [ObservedComponent] = []
         var observedPositions: [ObservedPosition] = []
@@ -98,11 +114,15 @@ nonisolated struct SpatialAssemblyStateEstimator: AssemblyStateEstimating {
         // 3. Compute overall evidence confidence
         let confidenceScore: Double
         if observedComponents.isEmpty && observedPositions.isEmpty {
-            confidenceScore = 0.35 // Insufficient visual evidence
+            if !observation.classifications.isEmpty || observation.isHumanPresent {
+                confidenceScore = 0.65 // Taxonomical objects or hands visible in workspace
+            } else {
+                confidenceScore = 0.35 // Insufficient visual evidence
+            }
         } else {
             let compScores = observedComponents.map(\.confidence)
             let avgScore = compScores.reduce(0.0, +) / Double(max(1, compScores.count))
-            confidenceScore = min(0.98, max(0.40, avgScore))
+            confidenceScore = min(0.98, max(0.45, avgScore))
         }
         
         return ObservedAssemblyState(

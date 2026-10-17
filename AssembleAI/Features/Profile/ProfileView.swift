@@ -37,7 +37,7 @@ struct ProfileView: View {
         }
         .background(AppColors.groupedBackground.ignoresSafeArea())
         .navigationTitle("Profile")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Edit") {
@@ -82,12 +82,12 @@ struct ProfileView: View {
             Text("This will permanently delete your account, session records, and authentication tokens. This action cannot be undone.")
         }
         .task {
-            viewModel.updateUser(user: authService.currentUser)
+            viewModel.attachAuthService(authService)
             let sessionRepo = LocalFirstSessionRepository(modelContext: modelContext)
             await viewModel.loadSessionMetrics(sessionRepository: sessionRepo)
         }
-        .onChange(of: authService.currentUser) { _, newUser in
-            viewModel.updateUser(user: newUser)
+        .onChange(of: authService.currentUser) { _, _ in
+            viewModel.attachAuthService(authService)
         }
         .navigationDestination(for: ProfileNavigationDestination.self) { destination in
             switch destination {
@@ -126,16 +126,36 @@ struct ProfileView: View {
                     .foregroundColor(activeColor)
             }
             
-            // Name & Email
+            // Name & Email with Experience Badge & Bio
             VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                Text(viewModel.displayName)
-                    .font(.title3)
-                    .fontWeight(.bold)
-                    .foregroundColor(AppColors.primaryText)
+                HStack(spacing: AppSpacing.xs) {
+                    Text(viewModel.displayName)
+                        .font(.title3)
+                        .fontWeight(.bold)
+                        .foregroundColor(AppColors.primaryText)
+                    
+                    if !viewModel.experienceLevel.isEmpty {
+                        Text(viewModel.experienceLevel)
+                            .font(.caption2.weight(.semibold))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(activeColor.opacity(0.12))
+                            .foregroundColor(activeColor)
+                            .clipShape(Capsule())
+                    }
+                }
                 
                 Text(viewModel.email)
                     .font(.subheadline)
                     .foregroundColor(AppColors.secondaryText)
+                
+                if !viewModel.bio.isEmpty {
+                    Text(viewModel.bio)
+                        .font(.caption)
+                        .foregroundColor(AppColors.secondaryText)
+                        .lineLimit(2)
+                        .padding(.top, 2)
+                }
             }
             
             Spacer()

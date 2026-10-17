@@ -30,6 +30,8 @@ final class CameraService: NSObject, ObservableObject {
     @Published private(set) var isTorchSupported: Bool = false
     @Published var isTorchOn: Bool = false
     @Published var zoomFactor: CGFloat = 1.0
+    @Published private(set) var minZoomFactor: CGFloat = 0.5
+    @Published private(set) var maxZoomFactor: CGFloat = 5.0
     @Published private(set) var availableZoomFactors: [CGFloat] = [0.5, 1.0, 2.0]
     @Published private(set) var availableZoomOptions: [CameraZoomOption] = [
         CameraZoomOption(id: "1x", factor: 1.0, label: "1×")
@@ -50,7 +52,9 @@ final class CameraService: NSObject, ObservableObject {
     
     nonisolated private let broadcaster = FrameStreamBroadcaster()
     
+    private var isConfiguring = false
     private var isConfigured = false
+    private var activeDevice: AVCaptureDevice?
     private var photoContinuation: CheckedContinuation<UIImage, Error>? = nil
     private var simulatorFrameTask: Task<Void, Never>? = nil
     
@@ -131,33 +135,48 @@ final class CameraService: NSObject, ObservableObject {
         }
     }
     
-    /// Configures the AVCaptureSession with video input, photo output, and video data output on a background queue.
+    /// Configures the AVCaptureSession with multi-lens virtual devices, photo output, and video data output on a background queue.
     func configureSession() {
-        guard !isConfigured else { return }
+        guard !isConfigured, !isConfiguring else { return }
+        isConfiguring = true
         
         cameraQueue.async { [weak self, captureSession, photoOutput, videoOutput, videoQueue] in
             guard let self = self else { return }
             
             captureSession.beginConfiguration()
             
-            // Primary 48MP Wide Angle camera (standard 1x with macro autofocus across all iPhone Pro models)
-            let videoDevice: AVCaptureDevice? = {
-                if let wide = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) {
-                    return wide
-                }
-                let discovery = AVCaptureDevice.DiscoverySession(
-                    deviceTypes: [.builtInWideAngleCamera, .builtInDualWideCamera, .builtInDualCamera, .builtInTripleCamera],
-                    mediaType: .video,
-                    position: .back
-                )
-                return discovery.devices.first
-            }()
+            // Clean up any stale inputs and outputs before reconfiguring to prevent input collision
+            for input in captureSession.inputs {
+                captureSession.removeInput(input)
+            }
+            for output in captureSession.outputs {
+                captureSession.removeOutput(output)
+            }
+            
+            // Discovers the most capable multi-lens optical virtual device on modern iPhones down to single-lens fallback:
+            // 1. .builtInTripleCamera (iPhone 11-16 Pro models with Ultra-Wide, Wide, Telephoto and automatic macro switching)
+            // 2. .builtInDualWideCamera (standard iPhone 11-16 models with Ultra-Wide + Wide)
+            // 3. .builtInDualCamera (older dual camera setups with Wide + Telephoto)
+            // 4. .builtInWideAngleCamera (single-lens iPhone SE, XR, 8, etc.)
+            let deviceTypes: [AVCaptureDevice.DeviceType] = [
+                .builtInTripleCamera,
+                .builtInDualWideCamera,
+                .builtInDualCamera,
+                .builtInWideAngleCamera
+            ]
+            let discovery = AVCaptureDevice.DiscoverySession(
+                deviceTypes: deviceTypes,
+                mediaType: .video,
+                position: .back
+            )
+            let videoDevice = discovery.devices.first ?? AVCaptureDevice.default(for: .video)
             
             guard let device = videoDevice,
                   let videoInput = try? AVCaptureDeviceInput(device: device),
                   captureSession.canAddInput(videoInput) else {
                 
                 DispatchQueue.main.async {
+                    self.isConfiguring = false
                     #if targetEnvironment(simulator)
                     self.isCameraAvailable = false
                     self.errorMessage = "Simulator mode (optical simulation active)"
@@ -171,7 +190,6 @@ final class CameraService: NSObject, ObservableObject {
                 return
             }
             
-            // Enable macro auto-focus optimizations
             do {
                 try device.lockForConfiguration()
                 if device.isFocusModeSupported(.continuousAutoFocus) {
@@ -181,13 +199,10 @@ final class CameraService: NSObject, ObservableObject {
                     device.isSmoothAutoFocusEnabled = true
                 }
                 device.unlockForConfiguration()
-            } catch {
-                // Focus configuration fallback
-            }
+            } catch {}
             
             captureSession.addInput(videoInput)
             
-            // Set session preset after adding device input to ensure format compatibility
             if captureSession.canSetSessionPreset(.hd1920x1080) {
                 captureSession.sessionPreset = .hd1920x1080
             } else if captureSession.canSetSessionPreset(.high) {
@@ -196,12 +211,13 @@ final class CameraService: NSObject, ObservableObject {
                 captureSession.sessionPreset = .photo
             }
             
-            // Photo Output (for manual capture workflow — native resolution without setting maxPhotoDimensions)
             if captureSession.canAddOutput(photoOutput) {
                 captureSession.addOutput(photoOutput)
+                if let connection = photoOutput.connection(with: .video), connection.isVideoOrientationSupported {
+                    connection.videoOrientation = .portrait
+                }
             }
             
-            // Video Data Output (for continuous Live Tutor observation stream)
             if captureSession.canAddOutput(videoOutput) {
                 videoOutput.alwaysDiscardsLateVideoFrames = true
                 videoOutput.videoSettings = [
@@ -220,33 +236,43 @@ final class CameraService: NSObject, ObservableObject {
             captureSession.commitConfiguration()
             
             DispatchQueue.main.async {
+                self.activeDevice = device
+                self.isConfiguring = false
                 self.isConfigured = true
                 self.isCameraAvailable = true
                 self.errorMessage = nil
                 self.isTorchSupported = device.hasTorch
+                self.minZoomFactor = device.minAvailableVideoZoomFactor
+                self.maxZoomFactor = device.maxAvailableVideoZoomFactor
                 
-                // Dynamic lens discovery and zoom capabilities (C-3)
                 var options: [CameraZoomOption] = []
                 var factors: [CGFloat] = []
                 
                 let minZoom = device.minAvailableVideoZoomFactor
                 let maxZoom = device.maxAvailableVideoZoomFactor
                 
-                if minZoom <= 0.5 {
-                    options.append(CameraZoomOption(id: "0.5x", factor: 0.5, label: "0.5×"))
-                    factors.append(0.5)
+                if minZoom <= 0.6 {
+                    let ultraFactor = max(minZoom, 0.5)
+                    options.append(CameraZoomOption(id: "0.5x", factor: ultraFactor, label: "0.5×"))
+                    factors.append(ultraFactor)
                 }
+                
                 if minZoom <= 1.0 && maxZoom >= 1.0 {
                     options.append(CameraZoomOption(id: "1x", factor: 1.0, label: "1×"))
                     factors.append(1.0)
                 }
+                
                 if maxZoom >= 2.0 {
                     options.append(CameraZoomOption(id: "2x", factor: 2.0, label: "2×"))
                     factors.append(2.0)
                 }
+                
                 if maxZoom >= 5.0 {
                     options.append(CameraZoomOption(id: "5x", factor: 5.0, label: "5×"))
                     factors.append(5.0)
+                } else if maxZoom >= 3.0 {
+                    options.append(CameraZoomOption(id: "3x", factor: 3.0, label: "3×"))
+                    factors.append(3.0)
                 }
                 
                 if options.isEmpty {
@@ -331,7 +357,7 @@ final class CameraService: NSObject, ObservableObject {
     /// Toggles hardware torch/flashlight state if supported by device.
     func toggleTorch() {
         guard isTorchSupported,
-              let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
+              let device = activeDevice ?? AVCaptureDevice.default(for: .video),
               device.hasTorch else { return }
         
         do {
@@ -345,22 +371,29 @@ final class CameraService: NSObject, ObservableObject {
         }
     }
     
-    /// Sets camera optical zoom factor smoothly.
-    func setZoomFactor(_ factor: CGFloat) {
+    /// Sets camera optical zoom factor smoothly with optional animated ramping.
+    func setZoomFactor(_ factor: CGFloat, smooth: Bool = true) {
         guard isCameraAvailable else {
             self.zoomFactor = factor
             return
         }
         
-        guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else {
+        guard let device = activeDevice ?? AVCaptureDevice.default(for: .video) else {
             self.zoomFactor = factor
             return
         }
         
         do {
             try device.lockForConfiguration()
-            let clampedFactor = max(device.minAvailableVideoZoomFactor, min(factor, min(device.maxAvailableVideoZoomFactor, 5.0)))
-            device.videoZoomFactor = clampedFactor
+            let clampedFactor = max(device.minAvailableVideoZoomFactor, min(factor, min(device.maxAvailableVideoZoomFactor, 10.0)))
+            if smooth && device.isRampingVideoZoom {
+                device.cancelVideoZoomRamp()
+            }
+            if smooth {
+                device.ramp(toVideoZoomFactor: clampedFactor, withRate: 16.0)
+            } else {
+                device.videoZoomFactor = clampedFactor
+            }
             device.unlockForConfiguration()
             self.zoomFactor = clampedFactor
         } catch {
@@ -368,10 +401,8 @@ final class CameraService: NSObject, ObservableObject {
         }
     }
     
-    /// Captures a high-resolution photo from the active camera stream.
     func capturePhoto() async throws -> UIImage {
         guard isCameraAvailable && isSessionRunning else {
-            // Fallback for Simulator mode: return a generated high-quality camera test frame
             return createSimulatorTestImage()
         }
         
@@ -384,6 +415,9 @@ final class CameraService: NSObject, ObservableObject {
             
             self.cameraQueue.async { [weak self, photoOutput] in
                 guard let self = self else { return }
+                if let photoConnection = photoOutput.connection(with: .video), photoConnection.isVideoOrientationSupported {
+                    photoConnection.videoOrientation = .portrait
+                }
                 let settings = AVCapturePhotoSettings()
                 if photoOutput.supportedFlashModes.contains(.auto) {
                     settings.flashMode = .auto
@@ -398,11 +432,9 @@ final class CameraService: NSObject, ObservableObject {
         let size = CGSize(width: 1084, height: 812)
         let renderer = UIGraphicsImageRenderer(size: size)
         return renderer.image { ctx in
-            // Clean dark studio backdrop
             UIColor(red: 0.10, green: 0.10, blue: 0.12, alpha: 1.0).setFill()
             ctx.fill(CGRect(origin: .zero, size: size))
             
-            // Subtle optical center crosshair guide
             let center = CGPoint(x: size.width / 2, y: size.height / 2)
             UIColor(white: 1.0, alpha: 0.15).setStroke()
             ctx.cgContext.setLineWidth(1.0)

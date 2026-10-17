@@ -7,6 +7,21 @@ import SwiftUI
 
 /// Semantic Typography helpers following Apple Dynamic Type guidelines.
 enum AppTypography {
+    // MARK: - Native Dynamic Type Font Tokens
+    static let largeTitle: Font = .largeTitle.weight(.bold)
+    static let title: Font = .title.weight(.semibold)
+    static let title2: Font = .title2.weight(.bold)
+    static let title3: Font = .title3.weight(.semibold)
+    static let headline: Font = .headline
+    static let body: Font = .body
+    static let callout: Font = .callout
+    static let subheadline: Font = .subheadline
+    static let footnote: Font = .footnote
+    static let caption: Font = .caption
+    static let caption2: Font = .caption2.weight(.medium)
+    
+    // MARK: - Semantic Text Factory Methods
+    
     /// Large app titles (Welcome screen hero title, etc.)
     static func largeTitle(_ text: String) -> Text {
         Text(text)
@@ -52,10 +67,10 @@ enum AppTypography {
             .font(.caption)
     }
 
-    /// Monospaced technical tags and status codes
+    /// Monospaced technical tags and status codes scaling with Dynamic Type caption2
     static func monospacedTag(_ text: String) -> Text {
         Text(text)
-            .font(.system(size: 10, weight: .bold, design: .monospaced))
+            .font(.caption2.weight(.bold).monospaced())
     }
 }
 

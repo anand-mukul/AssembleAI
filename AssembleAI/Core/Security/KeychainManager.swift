@@ -19,7 +19,15 @@ final class KeychainManager: @unchecked Sendable {
     func save(key: String, value: String) -> Bool {
         guard let data = value.data(using: .utf8) else { return false }
         
-        let query: [String: Any] = [
+        let searchDictionary: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: key
+        ]
+        
+        SecItemDelete(searchDictionary as CFDictionary)
+        
+        let addDictionary: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: key,
@@ -27,8 +35,7 @@ final class KeychainManager: @unchecked Sendable {
             kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly
         ]
         
-        SecItemDelete(query as CFDictionary)
-        let status = SecItemAdd(query as CFDictionary, nil)
+        let status = SecItemAdd(addDictionary as CFDictionary, nil)
         return status == errSecSuccess
     }
     

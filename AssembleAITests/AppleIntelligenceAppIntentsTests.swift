@@ -147,11 +147,27 @@ final class AppleIntelligenceAppIntentsTests: XCTestCase {
         XCTAssertNotNil(result)
     }
     
-    // MARK: - Test 10: App Shortcuts Provider Exposes Registered Shortcuts
+    // MARK: - Test 10: Query Resistor Bands Intent Execution
+    @available(iOS 16.0, *)
+    func testQueryResistorBandsIntentExecution() async throws {
+        let intent = QueryResistorBandsIntent(resistanceText: "220 ohm")
+        let result = try await intent.perform()
+        XCTAssertNotNil(result)
+    }
+    
+    // MARK: - Test 11: Check Component Substitution Intent Execution
+    @available(iOS 16.0, *)
+    func testCheckComponentSubstitutionIntentExecution() async throws {
+        let intent = CheckComponentSubstitutionIntent(requestedComponent: "330 ohm")
+        let result = try await intent.perform()
+        XCTAssertNotNil(result)
+    }
+    
+    // MARK: - Test 12: App Shortcuts Provider Exposes Registered Shortcuts
     @available(iOS 16.0, *)
     func testAppShortcutsProviderDiscovery() {
         let shortcuts = AssembleAIShortcutsProvider.appShortcuts
-        XCTAssertEqual(shortcuts.count, 3)
+        XCTAssertEqual(shortcuts.count, 5)
     }
     #endif
 }

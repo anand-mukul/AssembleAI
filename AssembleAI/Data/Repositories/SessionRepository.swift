@@ -13,16 +13,20 @@ protocol SessionRepository: Sendable {
     func fetchActiveSession(projectId: UUID) async throws -> AssemblySession?
     func pauseOtherActiveSessions(except projectId: UUID) async throws
     func saveSession(_ session: AssemblySession) async throws
+    func syncWithCloud() async -> SyncEvent
 }
 
 @MainActor
 final class LocalFirstSessionRepository: SessionRepository {
     private let modelContext: ModelContext
-    private let supabaseService: SupabaseProjectService?
+    private let syncEngine: CloudSyncEngine
     
-    init(modelContext: ModelContext, supabaseService: SupabaseProjectService? = nil) {
+    init(
+        modelContext: ModelContext,
+        syncEngine: CloudSyncEngine? = nil
+    ) {
         self.modelContext = modelContext
-        self.supabaseService = supabaseService
+        self.syncEngine = syncEngine ?? CloudSyncEngine(backend: SupabaseCloudSyncBackend())
     }
     
     func fetchSessions(userId: UUID) async throws -> [AssemblySession] {
@@ -85,18 +89,59 @@ final class LocalFirstSessionRepository: SessionRepository {
             if let title = session.projectTitle {
                 existing.projectTitle = title
             }
+            existing.syncStateRaw = SyncState.pendingUpload.rawValue
             existing.updatedAt = Date()
         } else {
-            let localSession = LocalAssemblySession.fromDomainModel(session)
+            var localDomain = session
+            localDomain.syncState = .pendingUpload
+            let localSession = LocalAssemblySession.fromDomainModel(localDomain)
             modelContext.insert(localSession)
         }
         
         try modelContext.save()
         
-        if let supabaseService = supabaseService {
-            Task {
-                try? await supabaseService.saveSession(session)
+        // Asynchronously trigger cloud synchronization in the background
+        if AppConfig.isSupabaseConfigured {
+            Task { [weak self] in
+                _ = await self?.syncWithCloud()
             }
         }
+    }
+    
+    @discardableResult
+    func syncWithCloud() async -> SyncEvent {
+        guard AppConfig.isSupabaseConfigured else {
+            return .syncCompleted(recordsUploaded: 0, recordsDownloaded: 0)
+        }
+        
+        let descriptor = FetchDescriptor<LocalAssemblySession>()
+        guard let localEntities = try? modelContext.fetch(descriptor) else {
+            return .syncFailed(errorDescription: "Unable to read local SwiftData sessions.")
+        }
+        
+        let localDomain = localEntities.map { $0.toDomainModel() }
+        let (synced, event) = await syncEngine.synchronizeSessions(localSessions: localDomain)
+        
+        // Reconcile synced / updated sessions back into SwiftData
+        for session in synced {
+            let targetId = session.id
+            let fetchLocal = FetchDescriptor<LocalAssemblySession>(predicate: #Predicate<LocalAssemblySession> { $0.id == targetId })
+            if let existing = try? modelContext.fetch(fetchLocal).first {
+                existing.statusRaw = session.status.rawValue
+                existing.currentStepOrder = session.currentStepOrder
+                existing.completedAt = session.completedAt
+                existing.syncStateRaw = session.syncState.rawValue
+                existing.updatedAt = session.updatedAt
+                if let title = session.projectTitle {
+                    existing.projectTitle = title
+                }
+            } else {
+                let newLocal = LocalAssemblySession.fromDomainModel(session)
+                modelContext.insert(newLocal)
+            }
+        }
+        
+        try? modelContext.save()
+        return event
     }
 }

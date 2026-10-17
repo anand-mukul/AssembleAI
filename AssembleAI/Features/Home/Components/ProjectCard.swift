@@ -12,31 +12,21 @@ struct ProjectCard: View {
     
     var body: some View {
         Button(action: {
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
             onTap()
         }) {
             HStack(spacing: AppSpacing.md) {
                 // Category Symbol Icon Badge with Ambient Glow
                 ZStack {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    categoryColor.opacity(0.18),
-                                    categoryColor.opacity(0.06)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                    RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                        .fill(categoryColor.opacity(0.12))
                         .overlay(
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .strokeBorder(categoryColor.opacity(0.22), lineWidth: 0.5)
+                            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                                .strokeBorder(categoryColor.opacity(0.2), lineWidth: 0.5)
                         )
-                        .frame(width: 48, height: 48)
+                        .frame(width: 44, height: 44)
                     
                     Image(systemName: project.imageName ?? "cpu.fill")
-                        .font(.system(size: 22, weight: .medium))
+                        .font(.title3.weight(.medium))
                         .symbolRenderingMode(.hierarchical)
                         .foregroundColor(categoryColor)
                 }
@@ -45,7 +35,7 @@ struct ProjectCard: View {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(alignment: .firstTextBaseline) {
                         Text(project.title)
-                            .font(.system(size: 16, weight: .semibold, design: .rounded))
+                            .font(.headline)
                             .foregroundColor(AppColors.primaryText)
                             .lineLimit(1)
                         
@@ -55,7 +45,7 @@ struct ProjectCard: View {
                     }
                     
                     Text(project.subtitle)
-                        .font(.system(size: 13))
+                        .font(.subheadline)
                         .foregroundColor(AppColors.secondaryText)
                         .lineLimit(1)
                     
@@ -63,24 +53,24 @@ struct ProjectCard: View {
                     HStack(spacing: 8) {
                         HStack(spacing: 3) {
                             Image(systemName: "clock")
-                                .font(.system(size: 10, weight: .medium))
+                                .font(.caption2.weight(.medium))
                                 .foregroundColor(AppColors.tertiaryText)
                             Text("\(project.estimatedMinutes)m")
-                                .font(.system(size: 11, weight: .medium, design: .rounded))
+                                .font(.caption.weight(.medium))
                                 .monospacedDigit()
                                 .foregroundColor(AppColors.secondaryText)
                         }
                         
                         Text("•")
-                            .font(.system(size: 10))
+                            .font(.caption2)
                             .foregroundColor(AppColors.tertiaryText)
                         
                         HStack(spacing: 3) {
                             Image(systemName: "checklist")
-                                .font(.system(size: 10, weight: .medium))
+                                .font(.caption2.weight(.medium))
                                 .foregroundColor(AppColors.tertiaryText)
                             Text("\(project.completedSteps)/\(project.totalSteps) steps")
-                                .font(.system(size: 11, weight: .medium, design: .rounded))
+                                .font(.caption.weight(.medium))
                                 .monospacedDigit()
                                 .foregroundColor(AppColors.secondaryText)
                         }
@@ -88,7 +78,7 @@ struct ProjectCard: View {
                         Spacer()
                         
                         Text(project.progressText)
-                            .font(.system(size: 11, weight: .semibold, design: .rounded))
+                            .font(.caption.weight(.semibold))
                             .monospacedDigit()
                             .foregroundColor(project.isCompleted ? AppColors.success : categoryColor)
                     }
@@ -122,33 +112,23 @@ struct ProjectCard: View {
                 
                 // Trailing Chevron
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.footnote.weight(.semibold))
                     .foregroundColor(AppColors.tertiaryText.opacity(0.8))
                     .padding(.leading, 2)
             }
             .padding(AppSpacing.md)
             .background(
                 RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                    .fill(.ultraThinMaterial)
+                    .fill(AppColors.secondaryGroupedBackground)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                    .strokeBorder(
-                        LinearGradient(
-                            colors: [
-                                categoryColor.opacity(0.20),
-                                AppColors.borderSubtle
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 0.5
-                    )
+                    .strokeBorder(AppColors.borderSubtle, lineWidth: 0.5)
             )
-            .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 3)
+            .shadow(color: AppShadow.subtleColor, radius: 4, x: 0, y: 1)
             .contentShape(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous))
         }
-        .buttonStyle(ScaleButtonStyle())
+        .buttonStyle(ScaleButtonStyle(enableHaptic: false))
         .accessibilityElement(children: .combine)
         .accessibilityLabel(project.accessibilityLabelSummary)
         .accessibilityHint("Double tap to open project details.")

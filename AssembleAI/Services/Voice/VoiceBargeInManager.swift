@@ -29,11 +29,9 @@ final class VoiceBargeInManager: ObservableObject {
     func handleVADEvent(_ event: VADEvent) {
         switch event {
         case .speechStarted(let timestamp):
-            // Check if assistant is currently speaking
             Task { @MainActor in
                 let isSpeaking = await self.voiceOutput.state == .speaking
                 if isSpeaking {
-                    // Preempt and silence immediately
                     await self.voiceOutput.stop()
                     self.isBargeInActive = true
                     self.lastBargeInTimestamp = timestamp

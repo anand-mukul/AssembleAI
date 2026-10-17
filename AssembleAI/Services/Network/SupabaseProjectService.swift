@@ -105,8 +105,8 @@ actor SupabaseProjectService {
             
             let decoder = JSONDecoder()
             decoder.dateDecodingStrategy = .iso8601
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-            return try decoder.decode([Project].self, from: data)
+            let dtos = try decoder.decode([ProjectDTO].self, from: data)
+            return dtos.map { $0.toDomain() }
         } catch let error as DecodingError {
             throw ServiceError.decodingError(error.localizedDescription)
         } catch let error as ServiceError {
@@ -123,10 +123,10 @@ actor SupabaseProjectService {
         var request = await supabaseManager.prepareRequest(url: url, method: "POST")
         request.setValue("resolution=merge-duplicates", forHTTPHeaderField: "Prefer")
         
+        let dto = ProjectDTO(from: project)
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
-        encoder.keyEncodingStrategy = .convertToSnakeCase
-        request.httpBody = try encoder.encode(project)
+        request.httpBody = try encoder.encode(dto)
         
         let (_, response) = try await URLSession.shared.data(for: request)
         if let httpResponse = response as? HTTPURLResponse, !(200...299).contains(httpResponse.statusCode) {
@@ -159,15 +159,14 @@ actor SupabaseProjectService {
         guard let url = components.url else { throw ServiceError.invalidURL }
         
         let request = await supabaseManager.prepareRequest(url: url)
-        
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else { throw ServiceError.networkFailure("Invalid response") }
         guard httpResponse.statusCode == 200 else { throw ServiceError.serverError(httpResponse.statusCode) }
         
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        return try decoder.decode([AssemblyStep].self, from: data)
+        let dtos = try decoder.decode([AssemblyStepDTO].self, from: data)
+        return dtos.map { $0.toDomain() }
     }
     
     /// Upserts an AssemblyStep record into Supabase PostgreSQL.
@@ -177,10 +176,10 @@ actor SupabaseProjectService {
         var request = await supabaseManager.prepareRequest(url: url, method: "POST")
         request.setValue("resolution=merge-duplicates", forHTTPHeaderField: "Prefer")
         
+        let dto = AssemblyStepDTO(from: step)
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
-        encoder.keyEncodingStrategy = .convertToSnakeCase
-        request.httpBody = try encoder.encode(step)
+        request.httpBody = try encoder.encode(dto)
         
         let (_, response) = try await URLSession.shared.data(for: request)
         if let httpResponse = response as? HTTPURLResponse, !(200...299).contains(httpResponse.statusCode) {
@@ -206,8 +205,8 @@ actor SupabaseProjectService {
         
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        return try decoder.decode([Component].self, from: data)
+        let dtos = try decoder.decode([ComponentDTO].self, from: data)
+        return dtos.map { $0.toDomain() }
     }
     
     /// Upserts a Component record into Supabase PostgreSQL.
@@ -217,10 +216,10 @@ actor SupabaseProjectService {
         var request = await supabaseManager.prepareRequest(url: url, method: "POST")
         request.setValue("resolution=merge-duplicates", forHTTPHeaderField: "Prefer")
         
+        let dto = ComponentDTO(from: component)
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
-        encoder.keyEncodingStrategy = .convertToSnakeCase
-        request.httpBody = try encoder.encode(component)
+        request.httpBody = try encoder.encode(dto)
         
         let (_, response) = try await URLSession.shared.data(for: request)
         if let httpResponse = response as? HTTPURLResponse, !(200...299).contains(httpResponse.statusCode) {
@@ -258,7 +257,7 @@ actor SupabaseProjectService {
                     instruction: step.instruction,
                     expectedDurationMinutes: matchingBundledStep?.expectedDurationMinutes ?? 2,
                     visualContract: step.visualContract ?? matchingBundledStep?.visualContract,
-                    commonMistakes: matchingBundledStep?.commonMistakes ?? []
+                    commonMistakes: step.commonMistakes.isEmpty ? (matchingBundledStep?.commonMistakes ?? []) : step.commonMistakes
                 )
             }
             
@@ -307,7 +306,7 @@ actor SupabaseProjectService {
     
     /// Saves a full `AssemblyProject` into Supabase by saving the project, its components, and its steps.
     func saveFullAssemblyProject(_ project: AssemblyProject) async throws {
-        let ownerId = (await supabaseManager.currentUserId).flatMap { UUID(uuidString: $0) } ?? project.id
+        let ownerId = (await supabaseManager.currentUserId).flatMap { UUID(uuidString: $0) }
         let baseProject = Project(
             id: project.id,
             ownerId: ownerId,
@@ -344,7 +343,8 @@ actor SupabaseProjectService {
                 stepOrder: step.stepOrder,
                 title: step.title,
                 instruction: step.instruction,
-                visualContract: step.visualContract
+                visualContract: step.visualContract,
+                commonMistakes: step.commonMistakes
             )
             try await saveAssemblyStep(stepRecord)
         }
@@ -353,29 +353,33 @@ actor SupabaseProjectService {
     // MARK: - Assembly Sessions
     
     /// Fetches assembly sessions from Supabase.
-    func fetchSessions() async throws -> [AssemblySession] {
+    func fetchSessions(since: Date? = nil) async throws -> [AssemblySession] {
         guard AppConfig.isSupabaseConfigured else { return [] }
         guard let userId = await supabaseManager.currentUserId else {
             return [] // Not authenticated
         }
         var components = try endpointComponents(path: "/rest/v1/assembly_sessions")
-        components.queryItems = [
+        var queryItems = [
             URLQueryItem(name: "select", value: "*"),
             URLQueryItem(name: "user_id", value: "eq.\(userId)"),
-            URLQueryItem(name: "order", value: "started_at.desc")
+            URLQueryItem(name: "order", value: "updated_at.desc")
         ]
+        if let sinceDate = since {
+            let iso = ISO8601DateFormatter().string(from: sinceDate)
+            queryItems.append(URLQueryItem(name: "updated_at", value: "gte.\(iso)"))
+        }
+        components.queryItems = queryItems
         guard let url = components.url else { throw ServiceError.invalidURL }
         
         let request = await supabaseManager.prepareRequest(url: url)
-        
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else { throw ServiceError.networkFailure("Invalid response") }
         guard httpResponse.statusCode == 200 else { throw ServiceError.serverError(httpResponse.statusCode) }
         
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        return try decoder.decode([AssemblySession].self, from: data)
+        let dtos = try decoder.decode([AssemblySessionDTO].self, from: data)
+        return dtos.map { $0.toDomain() }
     }
     
     /// Upserts an AssemblySession record into Supabase PostgreSQL.
@@ -385,9 +389,165 @@ actor SupabaseProjectService {
         var request = await supabaseManager.prepareRequest(url: url, method: "POST")
         request.setValue("resolution=merge-duplicates", forHTTPHeaderField: "Prefer")
         
+        var adjustedSession = session
+        // If session userId is missing and user is logged in, attach current user ID
+        if adjustedSession.userId == nil, let currentUid = await supabaseManager.currentUserId, let parsedUid = UUID(uuidString: currentUid) {
+            adjustedSession.userId = parsedUid
+        }
+        
+        let dto = AssemblySessionDTO(from: adjustedSession)
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
-        encoder.keyEncodingStrategy = .convertToSnakeCase
+        request.httpBody = try encoder.encode(dto)
+        
+        let (_, response) = try await URLSession.shared.data(for: request)
+        if let httpResponse = response as? HTTPURLResponse, !(200...299).contains(httpResponse.statusCode) {
+            throw ServiceError.serverError(httpResponse.statusCode)
+        }
+    }
+    
+    /// Batch upserts assembly session records into Supabase PostgreSQL.
+    func saveSessions(_ sessions: [AssemblySession]) async throws -> [AssemblySession] {
+        guard !sessions.isEmpty else { return [] }
+        let url = try endpointURL(path: "/rest/v1/assembly_sessions")
+        
+        var request = await supabaseManager.prepareRequest(url: url, method: "POST")
+        request.setValue("resolution=merge-duplicates,return=representation", forHTTPHeaderField: "Prefer")
+        
+        let currentUid = await supabaseManager.currentUserId.flatMap { UUID(uuidString: $0) }
+        let dtos = sessions.map { session -> AssemblySessionDTO in
+            var adj = session
+            if adj.userId == nil, let uid = currentUid {
+                adj.userId = uid
+            }
+            return AssemblySessionDTO(from: adj)
+        }
+        
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        request.httpBody = try encoder.encode(dtos)
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+            let code = (response as? HTTPURLResponse)?.statusCode ?? -1
+            throw ServiceError.serverError(code)
+        }
+        
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        if let returnedDTOs = try? decoder.decode([AssemblySessionDTO].self, from: data), !returnedDTOs.isEmpty {
+            return returnedDTOs.map { $0.toDomain() }
+        }
+        return sessions
+    }
+    
+    /// Deletes an assembly session record from Supabase PostgreSQL.
+    func deleteSession(id: UUID) async throws {
+        var components = try endpointComponents(path: "/rest/v1/assembly_sessions")
+        components.queryItems = [URLQueryItem(name: "id", value: "eq.\(id.uuidString)")]
+        guard let url = components.url else { throw ServiceError.invalidURL }
+        
+        let request = await supabaseManager.prepareRequest(url: url, method: "DELETE")
+        let (_, response) = try await URLSession.shared.data(for: request)
+        if let httpResponse = response as? HTTPURLResponse, !(200...299).contains(httpResponse.statusCode) {
+            throw ServiceError.serverError(httpResponse.statusCode)
+        }
+    }
+    
+    // MARK: - User Profiles
+    
+    /// Fetches the user profile from Supabase PostgREST `public.profiles`.
+    func fetchProfile(userId: String) async throws -> ProfileDTO? {
+        var components = try endpointComponents(path: "/rest/v1/profiles")
+        components.queryItems = [
+            URLQueryItem(name: "id", value: "eq.\(userId)"),
+            URLQueryItem(name: "limit", value: "1")
+        ]
+        guard let url = components.url else { throw ServiceError.invalidURL }
+        
+        let request = await supabaseManager.prepareRequest(url: url)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            return nil
+        }
+        
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let profiles = try decoder.decode([ProfileDTO].self, from: data)
+        return profiles.first
+    }
+    
+    /// Updates or upserts a user profile record in Supabase PostgREST `public.profiles`.
+    func updateProfile(userId: String, profile: ProfileDTO) async throws {
+        var components = try endpointComponents(path: "/rest/v1/profiles")
+        components.queryItems = [URLQueryItem(name: "id", value: "eq.\(userId)")]
+        guard let url = components.url else { throw ServiceError.invalidURL }
+        
+        var request = await supabaseManager.prepareRequest(url: url, method: "PATCH")
+        request.setValue("return=minimal", forHTTPHeaderField: "Prefer")
+        
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        request.httpBody = try encoder.encode(profile)
+        
+        let (_, response) = try await URLSession.shared.data(for: request)
+        if let httpResponse = response as? HTTPURLResponse, !(200...299).contains(httpResponse.statusCode) {
+            throw ServiceError.serverError(httpResponse.statusCode)
+        }
+    }
+    
+    // MARK: - Attempts (Step-level Verification Telemetry)
+    
+    /// Records an assembly verification attempt in Supabase PostgREST `public.attempts`.
+    func saveAttempt(_ attempt: Attempt) async throws {
+        let url = try endpointURL(path: "/rest/v1/attempts")
+        
+        var request = await supabaseManager.prepareRequest(url: url, method: "POST")
+        request.setValue("resolution=merge-duplicates", forHTTPHeaderField: "Prefer")
+        
+        let dto = AttemptDTO(domain: attempt)
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        request.httpBody = try encoder.encode(dto)
+        
+        let (_, response) = try await URLSession.shared.data(for: request)
+        if let httpResponse = response as? HTTPURLResponse, !(200...299).contains(httpResponse.statusCode) {
+            throw ServiceError.serverError(httpResponse.statusCode)
+        }
+    }
+    
+    /// Fetches all verification attempts for an assembly session.
+    func fetchAttempts(sessionId: UUID) async throws -> [Attempt] {
+        var components = try endpointComponents(path: "/rest/v1/attempts")
+        components.queryItems = [
+            URLQueryItem(name: "session_id", value: "eq.\(sessionId.uuidString.lowercased())"),
+            URLQueryItem(name: "order", value: "attempt_number.asc")
+        ]
+        guard let url = components.url else { throw ServiceError.invalidURL }
+        
+        let request = await supabaseManager.prepareRequest(url: url)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            return []
+        }
+        
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let dtos = try decoder.decode([AttemptDTO].self, from: data)
+        return dtos.map { $0.toDomain() }
+    }
+    
+    // MARK: - Research Telemetry Sessions
+    
+    /// Inserts an empirical evaluation research session payload into Supabase PostgREST `public.research_sessions`.
+    func saveResearchSession(_ session: ResearchSessionDTO) async throws {
+        let url = try endpointURL(path: "/rest/v1/research_sessions")
+        
+        var request = await supabaseManager.prepareRequest(url: url, method: "POST")
+        request.setValue("resolution=merge-duplicates", forHTTPHeaderField: "Prefer")
+        
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
         request.httpBody = try encoder.encode(session)
         
         let (_, response) = try await URLSession.shared.data(for: request)
@@ -396,3 +556,4 @@ actor SupabaseProjectService {
         }
     }
 }
+

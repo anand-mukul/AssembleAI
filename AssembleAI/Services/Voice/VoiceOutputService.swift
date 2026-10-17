@@ -50,27 +50,22 @@ final class VoiceOutputService: NSObject, ObservableObject, VoiceOutputServicePr
         let cleanSpokenText = TutorResponse.stripEmojis(response.text)
         guard !cleanSpokenText.isEmpty else { return }
         
-        // 1. Duplicate Speech Suppression
         if let lastText = lastSpokenText, lastText == cleanSpokenText,
            let lastTime = lastSpokenTimestamp, Date().timeIntervalSince(lastTime) < 3.0 {
             return
         }
         
-        // 2. Priority Preemption Check
         if synthesizer.isSpeaking || activeContinuation != nil, let active = currentResponse {
             if response.priority >= active.priority {
-                // Higher or equal priority: interrupt and preempt current speech immediately
                 synthesizer.stopSpeaking(at: .immediate)
                 finishActiveUtterance()
             } else {
-                // Lower priority incoming speech while higher priority is speaking: drop lower priority
                 return
             }
         } else if activeContinuation != nil {
             finishActiveUtterance()
         }
         
-        // 3. Prepare AVSpeechUtterance with natural cadence
         let utterance = AVSpeechUtterance(string: cleanSpokenText)
         utterance.rate = min(configuration.rate, 0.49)
         utterance.pitchMultiplier = configuration.pitchMultiplier

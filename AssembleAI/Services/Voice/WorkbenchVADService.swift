@@ -53,7 +53,6 @@ final class WorkbenchVADService: @unchecked Sendable {
     private let lock = NSLock()
     private var configuration: WorkbenchVADConfiguration
     
-    // State Tracking
     private var isSpeechActive: Bool = false
     private var speechStartTime: Double? = nil
     private var lastSpeechTime: Double? = nil
@@ -75,7 +74,6 @@ final class WorkbenchVADService: @unchecked Sendable {
         let frameCount = Int(buffer.frameLength)
         guard frameCount > 0 else { return .silence }
         
-        // 1. Calculate RMS Energy
         var sumSquares: Float = 0.0
         var zeroCrossings = 0
         var prevSample: Float = channelData[0]
@@ -84,7 +82,6 @@ final class WorkbenchVADService: @unchecked Sendable {
             let sample = channelData[i]
             sumSquares += sample * sample
             
-            // Zero-crossing check
             if (sample >= 0 && prevSample < 0) || (sample < 0 && prevSample >= 0) {
                 zeroCrossings += 1
             }
@@ -95,16 +92,13 @@ final class WorkbenchVADService: @unchecked Sendable {
         let energyDb = Double(20.0 * log10(max(1e-5, rms)))
         let zcr = Double(zeroCrossings) / Double(frameCount)
         
-        // Adaptive noise floor tracking during quiet periods
         if energyDb < -45.0 && !isSpeechActive {
             estimatedNoiseFloorDb = 0.95 * estimatedNoiseFloorDb + 0.05 * energyDb
         }
         
-        // Effective speech threshold: configured threshold or 12dB above ambient noise floor
         let effectiveThreshold = max(configuration.speechThresholdDb, estimatedNoiseFloorDb + 12.0)
         let isFrameVoiced = (energyDb > effectiveThreshold) && (zcr < configuration.maxNoiseZeroCrossingRate)
         
-        // 2. State Machine
         if isFrameVoiced {
             lastSpeechTime = timestamp
             
@@ -124,7 +118,6 @@ final class WorkbenchVADService: @unchecked Sendable {
                 return .speechOngoing(duration: duration, energyDb: energyDb)
             }
         } else {
-            // Unvoiced frame
             if isSpeechActive {
                 let silenceDuration = timestamp - (lastSpeechTime ?? timestamp)
                 if silenceDuration >= configuration.trailingSilenceDurationSeconds {

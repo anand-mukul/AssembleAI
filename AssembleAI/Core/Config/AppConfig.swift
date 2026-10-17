@@ -7,9 +7,12 @@ import Foundation
 
 /// Centralized configuration provider for API endpoints, backend options, and runtime environments.
 enum AppConfig {
-    nonisolated static let appName = "AssembleAI"
-    nonisolated static let appVersion = "1.0.0"
-    nonisolated static let buildNumber = "1"
+    nonisolated static var appVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0"
+    }
+    nonisolated static var buildNumber: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
+    }
     
     /// Sanitizes configuration strings read from xcconfig/Info.plist/environment
     private nonisolated static func sanitizeConfigValue(_ value: String?) -> String? {

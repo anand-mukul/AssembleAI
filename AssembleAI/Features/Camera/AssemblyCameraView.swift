@@ -55,6 +55,7 @@ struct AssemblyCameraView: View {
     @State private var showDimLightPrompt = false
     @State private var pulseScale: CGFloat = 1.0
     @State private var showCalibrationCard = true
+    @State private var pinchBaseZoom: CGFloat = 1.0
     @State private var autoDismissTask: Task<Void, Never>? = nil
     
     var body: some View {
@@ -69,6 +70,16 @@ struct AssemblyCameraView: View {
                         .ignoresSafeArea()
                         .accessibilityElement(children: .ignore)
                         .accessibilityLabel("Live camera feed")
+                        .gesture(
+                            MagnificationGesture()
+                                .onChanged { scale in
+                                    let targetZoom = pinchBaseZoom * scale
+                                    cameraService.setZoomFactor(targetZoom, smooth: false)
+                                }
+                                .onEnded { _ in
+                                    pinchBaseZoom = cameraService.zoomFactor
+                                }
+                        )
                 } else {
                     simulatorOrPermissionViewfinder
                         .ignoresSafeArea()
@@ -154,7 +165,6 @@ struct AssemblyCameraView: View {
                     
                     Spacer()
                     
-                    // Floating Apple Intelligence Thinking Orb
                     if liveTutorEnabled {
                         ThinkingOrbView(status: liveStatus, diameter: 42)
                             .shadow(color: AppColors.glassShadow, radius: 12, x: 0, y: 4)
@@ -162,7 +172,6 @@ struct AssemblyCameraView: View {
                             .opacity(overlayVisible ? 1 : 0)
                             .scaleEffect(overlayVisible ? 1 : 0.85)
                         
-                        // Camera Optical Zoom Switcher (0.5× wide for furniture/engines, 2× macro for circuits)
                         cameraZoomSelector
                             .padding(.bottom, 8)
                             .opacity(overlayVisible ? 1 : 0)
@@ -294,7 +303,6 @@ struct AssemblyCameraView: View {
     
     private var topNavigationBar: some View {
         HStack(alignment: .center) {
-            // Circular Frosted Glass Back Button
             Button(action: {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 if liveTutorEnabled {
@@ -325,7 +333,6 @@ struct AssemblyCameraView: View {
             .buttonStyle(ScaleButtonStyle())
             .accessibilityLabel("Back")
             
-            // Hardware Torch / Flashlight Button
             if cameraService.isTorchSupported {
                 Button(action: {
                     UIImpactFeedbackGenerator(style: .medium).impactOccurred()
@@ -433,8 +440,9 @@ struct AssemblyCameraView: View {
             ForEach(cameraService.availableZoomOptions) { option in
                 Button(action: {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    pinchBaseZoom = option.factor
                     withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
-                        cameraService.setZoomFactor(option.factor)
+                        cameraService.setZoomFactor(option.factor, smooth: true)
                     }
                 }) {
                     Text(option.label)
@@ -518,12 +526,10 @@ struct AssemblyCameraView: View {
     
     private var cameraReticleOverlay: some View {
         ZStack {
-            // Elegant hairline corner crosshairs
             CameraCornersView()
                 .frame(width: 260, height: 200)
                 .foregroundColor(Color.white.opacity(0.65))
             
-            // Subtle optical center guide
             Image(systemName: "plus")
                 .font(.system(size: 11, weight: .ultraLight))
                 .foregroundColor(Color.white.opacity(0.35))
@@ -554,7 +560,7 @@ struct AssemblyCameraView: View {
         .accessibilityHidden(true)
     }
     
-    // MARK: - Legacy Bottom Action Bar
+    // MARK: - Action Bar
     
     private var bottomActionBar: some View {
         PrimaryButton(

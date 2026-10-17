@@ -53,6 +53,13 @@ create table if not exists public.profiles (
     full_name text,
     email text,
     avatar_url text,
+    avatar_symbol text default 'person.crop.circle.fill',
+    avatar_color_hex text default '#0A84FF',
+    bio text default '',
+    preferences jsonb default '{}'::jsonb,
+    experience_level text default 'Beginner',
+    total_assembly_minutes integer default 0,
+    completed_sessions_count integer default 0,
     is_admin boolean default false not null,
     created_at timestamptz default now() not null,
     updated_at timestamptz default now() not null
@@ -62,6 +69,13 @@ create table if not exists public.profiles (
 alter table public.profiles add column if not exists full_name text;
 alter table public.profiles add column if not exists email text;
 alter table public.profiles add column if not exists avatar_url text;
+alter table public.profiles add column if not exists avatar_symbol text default 'person.crop.circle.fill';
+alter table public.profiles add column if not exists avatar_color_hex text default '#0A84FF';
+alter table public.profiles add column if not exists bio text default '';
+alter table public.profiles add column if not exists preferences jsonb default '{}'::jsonb;
+alter table public.profiles add column if not exists experience_level text default 'Beginner';
+alter table public.profiles add column if not exists total_assembly_minutes integer default 0;
+alter table public.profiles add column if not exists completed_sessions_count integer default 0;
 alter table public.profiles add column if not exists is_admin boolean default false not null;
 alter table public.profiles add column if not exists created_at timestamptz default now() not null;
 alter table public.profiles add column if not exists updated_at timestamptz default now() not null;
@@ -84,9 +98,15 @@ grant execute on function public.is_admin() to authenticated;
 alter table public.profiles enable row level security;
 
 drop policy if exists "Users can view own profile" on public.profiles;
-create policy "Users can view own profile"
+drop policy if exists "Users can view profiles" on public.profiles;
+create policy "Users can view profiles"
     on public.profiles for select
-    using (auth.uid() = id);
+    using (auth.uid() = id or auth.role() = 'authenticated');
+
+drop policy if exists "Users can insert own profile" on public.profiles;
+create policy "Users can insert own profile"
+    on public.profiles for insert
+    with check (auth.uid() = id);
 
 drop policy if exists "Users can update own profile" on public.profiles;
 create policy "Users can update own profile"
@@ -108,12 +128,22 @@ security definer
 set search_path = public, auth
 as $$
 begin
-    insert into public.profiles (id, full_name, email, avatar_url, is_admin)
+    insert into public.profiles (
+        id, 
+        full_name, 
+        email, 
+        avatar_url, 
+        avatar_symbol, 
+        avatar_color_hex, 
+        is_admin
+    )
     values (
         new.id,
         coalesce(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
         new.email,
         new.raw_user_meta_data->>'avatar_url',
+        coalesce(new.raw_user_meta_data->>'avatar_symbol', 'person.crop.circle.fill'),
+        coalesce(new.raw_user_meta_data->>'avatar_color_hex', '#0A84FF'),
         false
     )
     on conflict (id) do update set
@@ -172,23 +202,23 @@ create policy "Users can view own or public projects"
     on public.projects for select
     using (auth.uid() = owner_id or is_public = true or owner_id is null);
 
-drop policy if exists "Users can insert own projects" on public.projects;
 drop policy if exists "Admins can insert projects" on public.projects;
-create policy "Admins can insert projects"
+drop policy if exists "Users can insert own projects" on public.projects;
+create policy "Users can insert own projects"
     on public.projects for insert
-    with check (public.is_admin());
+    with check (auth.uid() = owner_id or public.is_admin());
 
-drop policy if exists "Users can update own projects" on public.projects;
 drop policy if exists "Admins can update projects" on public.projects;
-create policy "Admins can update projects"
+drop policy if exists "Users can update own projects" on public.projects;
+create policy "Users can update own projects"
     on public.projects for update
-    using (public.is_admin());
+    using (auth.uid() = owner_id or public.is_admin());
 
-drop policy if exists "Users can delete own projects" on public.projects;
 drop policy if exists "Admins can delete projects" on public.projects;
-create policy "Admins can delete projects"
+drop policy if exists "Users can delete own projects" on public.projects;
+create policy "Users can delete own projects"
     on public.projects for delete
-    using (public.is_admin());
+    using (auth.uid() = owner_id or public.is_admin());
 
 drop trigger if exists set_projects_updated_at on public.projects;
 create trigger set_projects_updated_at
@@ -206,6 +236,7 @@ create table if not exists public.assembly_steps (
     instruction text default '',
     expected_state text default '{}',
     expected_duration_minutes integer default 2,
+    common_mistakes jsonb default '[]'::jsonb,
     created_at timestamptz default now() not null,
     updated_at timestamptz default now() not null
 );
@@ -217,6 +248,7 @@ alter table public.assembly_steps add column if not exists title text;
 alter table public.assembly_steps add column if not exists instruction text default '';
 alter table public.assembly_steps add column if not exists expected_state text default '{}';
 alter table public.assembly_steps add column if not exists expected_duration_minutes integer default 2;
+alter table public.assembly_steps add column if not exists common_mistakes jsonb default '[]'::jsonb;
 alter table public.assembly_steps add column if not exists created_at timestamptz default now() not null;
 alter table public.assembly_steps add column if not exists updated_at timestamptz default now() not null;
 
@@ -233,11 +265,17 @@ create policy "Users can view steps of accessible projects"
         )
     );
 
-drop policy if exists "Users can manage steps of own projects" on public.assembly_steps;
 drop policy if exists "Admins can manage assembly steps" on public.assembly_steps;
-create policy "Admins can manage assembly steps"
+drop policy if exists "Users can manage steps of own projects" on public.assembly_steps;
+create policy "Users can manage steps of own projects"
     on public.assembly_steps for all
-    using (public.is_admin());
+    using (
+        exists (
+            select 1 from public.projects
+            where projects.id = assembly_steps.project_id
+            and (projects.owner_id = auth.uid() or public.is_admin())
+        )
+    );
 
 drop trigger if exists set_assembly_steps_updated_at on public.assembly_steps;
 create trigger set_assembly_steps_updated_at
@@ -257,7 +295,8 @@ create table if not exists public.components (
     part_id text,
     is_required boolean default true,
     quantity integer default 1,
-    created_at timestamptz default now() not null
+    created_at timestamptz default now() not null,
+    updated_at timestamptz default now() not null
 );
 
 -- Idempotent column upgrades for components
@@ -270,6 +309,7 @@ alter table public.components add column if not exists part_id text;
 alter table public.components add column if not exists is_required boolean default true;
 alter table public.components add column if not exists quantity integer default 1;
 alter table public.components add column if not exists created_at timestamptz default now() not null;
+alter table public.components add column if not exists updated_at timestamptz default now() not null;
 
 alter table public.components enable row level security;
 
@@ -284,51 +324,69 @@ create policy "Users can view components of accessible projects"
         )
     );
 
-drop policy if exists "Users can manage components of own projects" on public.components;
 drop policy if exists "Admins can manage components" on public.components;
-create policy "Admins can manage components"
+drop policy if exists "Users can manage components of own projects" on public.components;
+create policy "Users can manage components of own projects"
     on public.components for all
-    using (public.is_admin());
+    using (
+        exists (
+            select 1 from public.projects
+            where projects.id = components.project_id
+            and (projects.owner_id = auth.uid() or public.is_admin())
+        )
+    );
 
 -- ============================================================================
 -- 5. Assembly Sessions Table
 -- ============================================================================
 create table if not exists public.assembly_sessions (
     id uuid primary key default gen_random_uuid(),
-    user_id uuid references auth.users(id) on delete cascade not null,
+    user_id uuid references auth.users(id) on delete cascade,
     project_id uuid references public.projects(id) on delete cascade not null,
+    project_title text default '',
     status text not null default 'in_progress',
     current_step_index integer default 0,
     current_step_order integer default 1,
+    completed_steps integer[] default '{}',
     attempts integer default 0,
     errors integer default 0,
+    sync_state text default 'synced',
     started_at timestamptz default now() not null,
     ended_at timestamptz,
     created_at timestamptz default now() not null,
     updated_at timestamptz default now() not null
 );
 
+-- Idempotent column upgrades for assembly_sessions
+alter table public.assembly_sessions add column if not exists user_id uuid references auth.users(id) on delete cascade;
+alter table public.assembly_sessions alter column user_id drop not null;
+alter table public.assembly_sessions add column if not exists project_title text default '';
+alter table public.assembly_sessions add column if not exists completed_steps integer[] default '{}';
+alter table public.assembly_sessions add column if not exists sync_state text default 'synced';
+alter table public.assembly_sessions add column if not exists current_step_order integer default 1;
+alter table public.assembly_sessions add column if not exists current_step_index integer default 0;
+
 alter table public.assembly_sessions enable row level security;
 
 drop policy if exists "Users can view own assembly sessions" on public.assembly_sessions;
 create policy "Users can view own assembly sessions"
     on public.assembly_sessions for select
-    using (auth.uid() = user_id);
+    using (auth.uid() = user_id or user_id is null);
 
 drop policy if exists "Users can insert own assembly sessions" on public.assembly_sessions;
 create policy "Users can insert own assembly sessions"
     on public.assembly_sessions for insert
-    with check (auth.uid() = user_id);
+    with check (auth.uid() = user_id or user_id is null);
 
 drop policy if exists "Users can update own assembly sessions" on public.assembly_sessions;
 create policy "Users can update own assembly sessions"
     on public.assembly_sessions for update
-    using (auth.uid() = user_id);
+    using (auth.uid() = user_id or user_id is null);
 
 drop policy if exists "Users can delete own assembly sessions" on public.assembly_sessions;
 create policy "Users can delete own assembly sessions"
     on public.assembly_sessions for delete
-    using (auth.uid() = user_id);
+    using (auth.uid() = user_id or user_id is null);
 
 drop trigger if exists set_assembly_sessions_updated_at on public.assembly_sessions;
 create trigger set_assembly_sessions_updated_at
@@ -359,7 +417,7 @@ create policy "Users can view attempts of own sessions"
         exists (
             select 1 from public.assembly_sessions
             where assembly_sessions.id = attempts.session_id
-            and assembly_sessions.user_id = auth.uid()
+            and (assembly_sessions.user_id = auth.uid() or assembly_sessions.user_id is null)
         )
     );
 
@@ -370,23 +428,76 @@ create policy "Users can insert attempts of own sessions"
         exists (
             select 1 from public.assembly_sessions
             where assembly_sessions.id = attempts.session_id
-            and assembly_sessions.user_id = auth.uid()
+            and (assembly_sessions.user_id = auth.uid() or assembly_sessions.user_id is null)
         )
     );
 
 -- ============================================================================
--- 7. High-Performance Indexes
+-- 7. Research Sessions Table (Autonomous Telemetry Benchmarks)
 -- ============================================================================
+create table if not exists public.research_sessions (
+    id uuid primary key default gen_random_uuid(),
+    user_id uuid references auth.users(id) on delete set null,
+    session_id uuid not null,
+    project_id text,
+    mode text,
+    visual_strategy text,
+    strategy_name text,
+    last_n_frames integer default 0,
+    task_completion_seconds double precision default 0.0,
+    completed_steps_count integer default 0,
+    total_verification_attempts integer default 0,
+    error_count integer default 0,
+    uncertain_count integer default 0,
+    total_correction_seconds double precision default 0.0,
+    intervention_count integer default 0,
+    user_question_count integer default 0,
+    nominal_count integer default 0,
+    e_pol_count integer default 0,
+    e_sub_count integer default 0,
+    e_off_count integer default 0,
+    e_seat_count integer default 0,
+    verification_accuracy_pct double precision default 0.0,
+    avg_latency_ms double precision default 0.0,
+    peak_memory_mb double precision default 0.0,
+    device_model text,
+    os_version text,
+    raw_payload jsonb default '{}'::jsonb,
+    started_at timestamptz default now() not null,
+    ended_at timestamptz default now() not null,
+    created_at timestamptz default now() not null
+);
+
+alter table public.research_sessions enable row level security;
+
+drop policy if exists "Users can view own research sessions" on public.research_sessions;
+create policy "Users can view own research sessions"
+    on public.research_sessions for select
+    using (auth.uid() = user_id or public.is_admin());
+
+drop policy if exists "Anyone authenticated can insert research sessions" on public.research_sessions;
+create policy "Anyone authenticated can insert research sessions"
+    on public.research_sessions for insert
+    with check (auth.role() = 'authenticated' or auth.role() = 'anon');
+
+-- ============================================================================
+-- 8. High-Performance Indexes
+-- ============================================================================
+create index if not exists idx_profiles_email on public.profiles(email);
 create index if not exists idx_projects_owner on public.projects(owner_id);
 create index if not exists idx_projects_updated_at on public.projects(updated_at desc);
+create index if not exists idx_projects_public_updated on public.projects(is_public, updated_at desc);
 create index if not exists idx_steps_project on public.assembly_steps(project_id, step_order);
 create index if not exists idx_components_project on public.components(project_id);
 create index if not exists idx_sessions_user_project on public.assembly_sessions(user_id, project_id);
+create index if not exists idx_sessions_user_status on public.assembly_sessions(user_id, status);
 create index if not exists idx_sessions_updated_at on public.assembly_sessions(updated_at desc);
 create index if not exists idx_attempts_session on public.attempts(session_id);
+create index if not exists idx_research_sessions_session on public.research_sessions(session_id);
+create index if not exists idx_research_sessions_user on public.research_sessions(user_id, created_at desc);
 
 -- ============================================================================
--- 8. Realtime Replication Publication
+-- 9. Realtime Replication Publication
 -- ============================================================================
 do $$
 begin
@@ -407,41 +518,73 @@ begin
     ) then
         alter publication supabase_realtime add table public.assembly_sessions;
     end if;
+
+    if not exists (
+        select 1 from pg_publication_tables 
+        where pubname = 'supabase_realtime' 
+        and schemaname = 'public' 
+        and tablename = 'profiles'
+    ) then
+        alter publication supabase_realtime add table public.profiles;
+    end if;
 end $$;
 
 -- ============================================================================
--- 9. Storage Buckets & Policies (Project Assets & Camera Frames)
+-- 10. Storage Buckets & Policies (Avatars, Project Assets & Verification)
 -- ============================================================================
 insert into storage.buckets (id, name, public)
 values 
+    ('avatars', 'avatars', true),
     ('project-assets', 'project-assets', false),
     ('verification-snapshots', 'verification-snapshots', false)
-on conflict (id) do update set public = false;
+on conflict (id) do update set public = excluded.public;
 
+-- Avatars bucket policies (public read, authenticated insert/update/delete)
+drop policy if exists "Avatars are publicly accessible" on storage.objects;
+create policy "Avatars are publicly accessible"
+    on storage.objects for select
+    using (bucket_id = 'avatars');
+
+drop policy if exists "Users can upload their own avatar" on storage.objects;
+create policy "Users can upload their own avatar"
+    on storage.objects for insert
+    with check (bucket_id = 'avatars' and auth.role() = 'authenticated');
+
+drop policy if exists "Users can update their own avatar" on storage.objects;
+create policy "Users can update their own avatar"
+    on storage.objects for update
+    using (bucket_id = 'avatars' and auth.role() = 'authenticated');
+
+drop policy if exists "Users can delete their own avatar" on storage.objects;
+create policy "Users can delete their own avatar"
+    on storage.objects for delete
+    using (bucket_id = 'avatars' and auth.role() = 'authenticated');
+
+-- Project Assets bucket policies
 drop policy if exists "Users can view own or authenticated project assets" on storage.objects;
 create policy "Users can view own or authenticated project assets"
     on storage.objects for select
     using (bucket_id = 'project-assets' and auth.role() = 'authenticated');
 
 drop policy if exists "Authenticated users can upload project assets" on storage.objects;
-drop policy if exists "Authenticated users can upload project assets" on storage.objects;
 drop policy if exists "Admins can upload project assets" on storage.objects;
 create policy "Admins can upload project assets"
     on storage.objects for insert
-    with check (bucket_id = 'project-assets' and public.is_admin());
+    with check (bucket_id = 'project-assets' and (public.is_admin() or auth.role() = 'authenticated'));
 
 drop policy if exists "Users can update own project assets" on storage.objects;
 drop policy if exists "Admins can update project assets" on storage.objects;
 create policy "Admins can update project assets"
     on storage.objects for update
-    using (bucket_id = 'project-assets' and public.is_admin());
+    using (bucket_id = 'project-assets' and (public.is_admin() or auth.role() = 'authenticated'));
 
 drop policy if exists "Users can delete own project assets" on storage.objects;
 drop policy if exists "Admins can delete project assets" on storage.objects;
 create policy "Admins can delete project assets"
     on storage.objects for delete
-    using (bucket_id = 'project-assets' and public.is_admin());
+    using (bucket_id = 'project-assets' and (public.is_admin() or auth.role() = 'authenticated'));
 
+-- Verification Snapshots bucket policies
 drop policy if exists "Users can view own verification snapshots" on storage.objects;
 create policy "Users can view own verification snapshots"
     on storage.objects for select

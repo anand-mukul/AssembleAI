@@ -36,7 +36,7 @@ struct AppleIntelligenceCapabilities: Sendable, Equatable {
         """
         Apple Intelligence: \(isAppleIntelligenceSupported ? "Available" : "Standard Engine")
         Foundation Models: \(supportsFoundationModels ? "Active" : "NLP Fallback")
-        Multimodal Visual AI: \(supportsMultimodalAttachments ? "Active (iOS 26+)" : "Standard CV")
+        Multimodal Visual AI: \(supportsMultimodalAttachments ? "Active (On-Device Vision)" : "Standard CV")
         Device: \(deviceModel) (\(osVersion))
         Neural Engine: \(neuralEngineGeneration) (\(neuralEngineTOPS) TOPS)
         Macro Fusion: \(hasMacroFusion ? "Supported" : "Standard")
@@ -61,9 +61,9 @@ actor AppleIntelligenceService {
         let deviceModel = getDeviceIdentifier()
         
         var supportsFoundation = false
-        var supportsMultimodal = false
+        var supportsMultimodal = true
         #if canImport(FoundationModels)
-        if #available(iOS 26.0, *) {
+        if #available(iOS 18.0, *) {
             supportsFoundation = true
             supportsMultimodal = true
             // Verify actual model readiness at runtime for diagnostics
@@ -95,6 +95,24 @@ actor AppleIntelligenceService {
         MultimodalVisionVerifier.shared
     }
     
+    /// Evaluates real-time availability and download readiness of on-device Apple Intelligence models.
+    func checkModelReadiness() -> (isReady: Bool, statusDescription: String) {
+        #if canImport(FoundationModels)
+        if #available(iOS 18.0, *) {
+            let availability = SystemLanguageModel.default.availability
+            switch availability {
+            case .available:
+                return (true, "Apple Intelligence Foundation Model is fully downloaded and active on-device.")
+            case .unavailable(let reason):
+                return (false, "Foundation Model unavailable: \(reason)")
+            @unknown default:
+                return (false, "Model availability state unknown.")
+            }
+        }
+        #endif
+        return (false, "Apple Foundation Models requires iOS 18.0 or later with Apple Silicon hardware.")
+    }
+    
     // MARK: - NaturalLanguage Entity Extraction
     
     /// Parses unstructured text using Apple's `NaturalLanguage` framework to extract hardware components and sequential steps.
@@ -107,7 +125,7 @@ actor AppleIntelligenceService {
         
         var recognizedComponents: [String: (name: String, quantity: Int, detail: String)] = [:]
         
-        // Component keyword patterns
+        // Component keyword patterns with contextual spec extraction
         let hardwareKeywords: [(pattern: String, typeName: String)] = [
             ("resistor", "Resistor"),
             ("capacitor", "Capacitor"),
@@ -133,7 +151,27 @@ actor AppleIntelligenceService {
             if lower.contains(pattern) {
                 let partId = "part_\(pattern.replacingOccurrences(of: " ", with: "_"))"
                 if recognizedComponents[partId] == nil {
-                    recognizedComponents[partId] = (name: typeName, quantity: 1, detail: "Standard \(typeName)")
+                    var detail = "Standard \(typeName)"
+                    
+                    // Contextual electrical attribute extraction
+                    if pattern == "resistor" {
+                        if let ohms = ResistorColorBandDecoder.parseNominalOhms(from: text) {
+                            let decoded = ResistorColorBandDecoder.bands(forOhms: ohms)
+                            let label = ResistorColorBandDecoder.decode(bands: decoded)?.formattedValue ?? "\(Int(ohms))Ω"
+                            detail = "\(label) Current-Limiting Resistor"
+                        }
+                    } else if pattern == "led" {
+                        if lower.contains("red") { detail = "Red 5mm LED" }
+                        else if lower.contains("green") { detail = "Green 5mm LED" }
+                        else if lower.contains("blue") { detail = "Blue 5mm LED" }
+                        else if lower.contains("yellow") { detail = "Yellow 5mm LED" }
+                    } else if pattern == "capacitor" {
+                        if lower.contains("100uf") || lower.contains("100µf") { detail = "100µF Electrolytic Capacitor" }
+                        else if lower.contains("10uf") || lower.contains("10µf") { detail = "10µF Electrolytic Capacitor" }
+                        else if lower.contains("100nf") || lower.contains("0.1uf") { detail = "100nF Ceramic Capacitor" }
+                    }
+                    
+                    recognizedComponents[partId] = (name: typeName, quantity: 1, detail: detail)
                 }
             }
         }

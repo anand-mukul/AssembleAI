@@ -118,11 +118,10 @@ struct MainTabView: View {
             .tag(4)
         }
         .tint(.assembleBrandPrimary)
+        .sensoryFeedback(.selection, trigger: selectedTab)
         .onAppear {
             let appearance = UITabBarAppearance()
             appearance.configureWithDefaultBackground()
-            appearance.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterial)
-            appearance.shadowColor = UIColor.separator.withAlphaComponent(0.2)
             UITabBar.appearance().standardAppearance = appearance
             UITabBar.appearance().scrollEdgeAppearance = appearance
         }

@@ -25,6 +25,7 @@ protocol AuthenticationService: ObservableObject {
     func continueAsGuest() async
     func signOut() async
     func deleteAccount() async throws
+    func updateUserProfile(name: String, avatarSymbol: String, avatarColorHex: String, bio: String?, experienceLevel: String?) async throws
     func clearError()
 }
 
@@ -32,4 +33,6 @@ extension AuthenticationService {
     func signInWithAppleCredential(userId: String, name: String?, email: String?) async throws {
         try await signInWithAppleCredential(userId: userId, name: name, email: email, idToken: nil)
     }
+    
+    func updateUserProfile(name: String, avatarSymbol: String, avatarColorHex: String, bio: String?, experienceLevel: String? = nil) async throws {}
 }

@@ -44,7 +44,12 @@ nonisolated struct StateAwareVerificationEngine: Sendable {
         step: AssemblyStep,
         calibration: BreadboardCalibration? = nil
     ) -> SpatialVerificationOutcome {
-        let activeCalibration = calibration ?? BreadboardCalibration.defaultCentered()
+        let activeCalibration: BreadboardCalibration? = {
+            if let contract = contract, !contract.pinPlacements.isEmpty {
+                return calibration ?? BreadboardCalibration.defaultCentered()
+            }
+            return calibration
+        }()
         
         // 1. Evidence Check: If overall confidence is below threshold, return uncertain
         if observedState.overallConfidence < configuration.minimumEvidenceConfidence {
@@ -82,11 +87,9 @@ nonisolated struct StateAwareVerificationEngine: Sendable {
         var moveGuidance: GuidanceOverlay? = nil
         var targetGuidance: GuidanceOverlay? = nil
         
-        // 2. Evaluate Pin Placements (Electronics Domain)
         for placement in contract.pinPlacements {
             expectedComponentsList.append("\(placement.partId) (\(placement.fromPin.label) to \(placement.toPin.label))")
             
-            // Look for matching detected position or component
             let matchingPos = observedState.detectedPositions.first { pos in
                 pos.componentID.localizedCaseInsensitiveContains(placement.partId) ||
                 pos.detectedDescription.localizedCaseInsensitiveContains(placement.fromPin.row)
@@ -95,18 +98,14 @@ nonisolated struct StateAwareVerificationEngine: Sendable {
             if let pos = matchingPos {
                 detectedComponentsList.append(pos.detectedDescription)
                 
-                // Parse detected pins from detected description if possible (e.g. "10E to 14F")
                 let detectedPins = parsePinLabels(from: pos.detectedDescription)
                 
                 if let detectedFrom = detectedPins.from, let detectedTo = detectedPins.to {
-                    // Check if placement matches expected exactly
                     let fromMatch = detectedFrom.row == placement.fromPin.row
                     let toMatch = detectedTo.row == placement.toPin.row
                     
                     if fromMatch && toMatch {
-                        // Correct bridging
                     } else {
-                        // Pin misalignment detected!
                         let deltaExplanation: String
                         let sourcePin: PinCoordinate
                         let targetPin: PinCoordinate
@@ -145,19 +144,21 @@ nonisolated struct StateAwareVerificationEngine: Sendable {
                         )
                         
                         // Construct move arrow overlay from detected position to target position
-                        let srcPoint = homographyService.projectPinToCamera(pin: sourcePin, calibration: activeCalibration)
-                        let dstPoint = homographyService.projectPinToCamera(pin: targetPin, calibration: activeCalibration)
-                        
-                        if let sp = srcPoint, let dp = dstPoint {
-                            let srcBox = CGRect(x: sp.x - 0.03, y: sp.y - 0.03, width: 0.06, height: 0.06)
-                            let dstBox = CGRect(x: dp.x - 0.03, y: dp.y - 0.03, width: 0.06, height: 0.06)
-                            moveGuidance = GuidanceOverlay(
-                                title: "Shift Component",
-                                message: correctiveAction,
-                                sourceRegion: srcBox,
-                                destinationRegion: dstBox,
-                                style: .move
-                            )
+                        if let cal = activeCalibration {
+                            let srcPoint = homographyService.projectPinToCamera(pin: sourcePin, calibration: cal)
+                            let dstPoint = homographyService.projectPinToCamera(pin: targetPin, calibration: cal)
+                            
+                            if let sp = srcPoint, let dp = dstPoint {
+                                let srcBox = CGRect(x: sp.x - 0.03, y: sp.y - 0.03, width: 0.06, height: 0.06)
+                                let dstBox = CGRect(x: dp.x - 0.03, y: dp.y - 0.03, width: 0.06, height: 0.06)
+                                moveGuidance = GuidanceOverlay(
+                                    title: "Shift Component",
+                                    message: correctiveAction,
+                                    sourceRegion: srcBox,
+                                    destinationRegion: dstBox,
+                                    style: .move
+                                )
+                            }
                         }
                     }
                 }
@@ -173,10 +174,10 @@ nonisolated struct StateAwareVerificationEngine: Sendable {
                 )
                 
                 // Provide target highlight box for expected pin placement
-                if let targetBox = homographyService.projectPinPlacementRegion(
+                if let cal = activeCalibration, let targetBox = homographyService.projectPinPlacementRegion(
                     from: placement.fromPin,
                     to: placement.toPin,
-                    calibration: activeCalibration
+                    calibration: cal
                 ) {
                     targetGuidance = GuidanceOverlay(
                         title: "Target Slot",
@@ -188,10 +189,8 @@ nonisolated struct StateAwareVerificationEngine: Sendable {
             }
         }
         
-        // 3. Evaluate Orientation Constraints (Polarity, Notches)
         for constraint in contract.orientationConstraints {
             if constraint.markerType == .polarityStripe {
-                // E.g., capacitor polarity
                 let hasReversedMistake = issues.contains { $0.explanation.localizedCaseInsensitiveContains("polarity") }
                 if hasReversedMistake {
                     issues.append(
@@ -206,19 +205,33 @@ nonisolated struct StateAwareVerificationEngine: Sendable {
             }
         }
         
-        // 4. Evaluate Spatial Placements (Physical / Furniture Domain)
         for spatial in contract.spatialPlacements {
             expectedComponentsList.append("\(spatial.partId) at \(spatial.locationDescription)")
             
+            let spatialKey = spatial.partId.replacingOccurrences(of: "part_", with: "").lowercased()
             let matched = observedState.detectedPositions.contains { pos in
-                pos.componentID.localizedCaseInsensitiveContains(spatial.partId) ||
-                pos.detectedDescription.localizedCaseInsensitiveContains(spatial.partId)
+                let desc = pos.detectedDescription.lowercased()
+                let cid = pos.componentID.lowercased()
+                return cid.contains(spatialKey) || desc.contains(spatialKey) || spatialKey.contains(cid)
             } || observedState.detectedComponents.contains { comp in
-                comp.name.localizedCaseInsensitiveContains(spatial.partId) ||
-                comp.identifier?.localizedCaseInsensitiveContains(spatial.partId) == true
+                let name = comp.name.lowercased()
+                let ident = (comp.identifier ?? "").lowercased()
+                if name.contains(spatialKey) || ident.contains(spatialKey) || (!ident.isEmpty && spatialKey.contains(ident)) {
+                    return true
+                }
+                for category in HardwareCategory.allCases {
+                    let spatialMatches = category.keywords.contains { spatialKey.contains($0) || $0.contains(spatialKey) }
+                    let compMatches = category.keywords.contains { name.contains($0) || ident.contains($0) }
+                    if spatialMatches && compMatches {
+                        return true
+                    }
+                }
+                return false
             }
             
-            if !matched {
+            if matched {
+                detectedComponentsList.append("\(spatial.partId) (placed)")
+            } else {
                 issues.append(
                     StateIssue(
                         type: .missingComponent,
@@ -227,6 +240,15 @@ nonisolated struct StateAwareVerificationEngine: Sendable {
                         severity: .high
                     )
                 )
+                
+                if targetGuidance == nil {
+                    targetGuidance = GuidanceOverlay(
+                        title: "Target Position",
+                        message: "Align \(VisualContract.friendlyName(for: spatial.partId)) at \(spatial.locationDescription)",
+                        targetRegion: CGRect(x: 0.25, y: 0.25, width: 0.50, height: 0.50),
+                        style: .target
+                    )
+                }
             }
         }
         
@@ -273,7 +295,6 @@ nonisolated struct StateAwareVerificationEngine: Sendable {
             }
         }
         
-        // 5. Final Status Determination
         let status: VerificationStatus
         let explanationText: String
         let finalOverlay: GuidanceOverlay?
@@ -286,9 +307,8 @@ nonisolated struct StateAwareVerificationEngine: Sendable {
                 message: "Placement verified correctly.",
                 style: .success
             )
-        } else if !issues.isEmpty {
+        } else if let primary = issues.first {
             status = .incorrect
-            let primary = issues.first!
             explanationText = primary.explanation
             finalOverlay = moveGuidance ?? targetGuidance ?? GuidanceOverlay(
                 title: primary.title,
@@ -315,7 +335,6 @@ nonisolated struct StateAwareVerificationEngine: Sendable {
     // MARK: - Private Helpers
     
     private func parsePinLabels(from text: String) -> (from: PinCoordinate?, to: PinCoordinate?) {
-        // Looks for patterns like "10E to 15F" or "10E"
         let parts = text.components(separatedBy: " to ")
         if parts.count >= 2 {
             return (

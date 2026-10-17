@@ -6,6 +6,8 @@
 import SwiftUI
 import AuthenticationServices
 
+import CryptoKit
+
 /// Apple HIG compliant Sign in with Apple screen with full concurrency safety and simulator fallback support.
 @MainActor
 struct SignInWithAppleView: View {
@@ -18,6 +20,7 @@ struct SignInWithAppleView: View {
     @State private var showErrorAlert = false
     @State private var errorMessage = ""
     @State private var isProcessing = false
+    @State private var currentNonce: String? = nil
     
     var body: some View {
         ZStack {
@@ -64,7 +67,10 @@ struct SignInWithAppleView: View {
                             .frame(height: AppSpacing.buttonHeight)
                     } else {
                         SignInWithAppleButton(.signIn) { request in
+                            let rawNonce = randomNonceString()
+                            self.currentNonce = rawNonce
                             request.requestedScopes = [.fullName, .email]
+                            request.nonce = sha256(rawNonce)
                         } onCompletion: { result in
                             handleAppleSignInCompletion(result)
                         }
@@ -124,7 +130,8 @@ struct SignInWithAppleView: View {
                             userId: userIdentifier,
                             name: fullName.isEmpty ? nil : fullName,
                             email: email,
-                            idToken: idTokenString
+                            idToken: idTokenString,
+                            nonce: currentNonce
                         )
                         isProcessing = false
                         router.transitionToHome()
@@ -144,6 +151,26 @@ struct SignInWithAppleView: View {
                 }
             }
         }
+    }
+    
+    private func randomNonceString(length: Int = 32) -> String {
+        precondition(length > 0)
+        var randomBytes = [UInt8](repeating: 0, count: length)
+        let errorCode = SecRandomCopyBytes(kSecRandomDefault, randomBytes.count, &randomBytes)
+        if errorCode != errSecSuccess {
+            return UUID().uuidString.replacingOccurrences(of: "-", with: "")
+        }
+        let charset: [Character] = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
+        let nonce = randomBytes.map { byte in
+            charset[Int(byte) % charset.count]
+        }
+        return String(nonce)
+    }
+    
+    private func sha256(_ input: String) -> String {
+        let inputData = Data(input.utf8)
+        let hashedData = SHA256.hash(data: inputData)
+        return hashedData.compactMap { String(format: "%02x", $0) }.joined()
     }
 }
 

@@ -66,26 +66,11 @@ struct AddProjectSheet: View {
         .presentationDragIndicator(.visible)
         .presentationCornerRadius(28)
         .fullScreenCover(isPresented: $showCreator) {
-            ProjectCreatorView()
+            ProjectCreatorView(initialMode: .manual)
         }
         .fullScreenCover(isPresented: $showImporter) {
-            ImportGuideSheetView()
+            ProjectCreatorView(initialMode: .importGuide)
         }
-    }
-}
-
-/// Convenience wrapper that opens ProjectCreatorView pre-configured for import mode.
-struct ImportGuideSheetView: View {
-    @StateObject private var viewModel: ProjectCreatorViewModel
-    
-    init() {
-        let vm = ProjectCreatorViewModel()
-        vm.creationMode = .importGuide
-        _viewModel = StateObject(wrappedValue: vm)
-    }
-    
-    var body: some View {
-        ProjectCreatorView()
     }
 }
 

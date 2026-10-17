@@ -124,11 +124,17 @@ nonisolated enum ComponentType: String, CaseIterable, Codable, Hashable, Equatab
     case camLock = "cam_lock"
     case hinge = "hinge"
     case rail = "rail"
+    case bearing = "bearing"
+    case gear = "gear"
+    case belt = "belt"
+    case pipe = "pipe"
+    case tool = "tool"
     
     /// Whether this component type belongs to the electronics domain.
     var isElectronics: Bool {
         switch self {
-        case .screw, .bolt, .nut, .bracket, .panel, .shelf, .dowel, .camLock, .hinge, .rail:
+        case .screw, .bolt, .nut, .bracket, .panel, .shelf, .dowel, .camLock, .hinge, .rail,
+             .bearing, .gear, .belt, .pipe, .tool:
             return false
         default:
             return true

@@ -25,7 +25,7 @@ struct HistoryView: View {
         }
         .background(AppColors.groupedBackground.ignoresSafeArea())
         .navigationTitle("History")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
     }
     
     // MARK: - Session List
@@ -70,7 +70,6 @@ struct HistoryView: View {
         }()
         
         return Button(action: {
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
             Task {
                 let repo = ProjectRepositoryFactory.resolve()
                 let full = (try? await repo.fetchProject(byId: session.projectId)) ?? project
@@ -153,47 +152,26 @@ struct HistoryView: View {
             }
             .appCard()
         }
-        .buttonStyle(ScaleButtonStyle())
+        .buttonStyle(ScaleButtonStyle(enableHaptic: false))
     }
     
-    // MARK: - Empty State
+    // MARK: - Empty State (Apple HIG ContentUnavailableView)
     
     private var emptyHistoryView: some View {
-        VStack(spacing: AppSpacing.md) {
-            Spacer()
-            
-            AnimatedHeaderIcon(
-                iconName: "clock.arrow.circlepath",
-                iconSize: 32,
-                circleDiameter: 68
-            )
-            
-            VStack(spacing: AppSpacing.xs) {
-                Text("No Assembly History Yet")
-                    .font(.title3)
-                    .fontWeight(.bold)
-                    .foregroundColor(AppColors.primaryText)
-                    .accessibilityAddTraits(.isHeader)
-                
-                Text("When you start building and verifying physical hardware with your camera, your session history and accuracy metrics will appear here.")
-                    .font(.subheadline)
-                    .foregroundColor(AppColors.secondaryText)
-                    .multilineTextAlignment(.center)
-                    .adaptiveMultiline(alignment: .center)
-                    .padding(.horizontal, AppSpacing.lg)
-            }
-            
+        ContentUnavailableView {
+            Label("No Assembly History Yet", systemImage: "clock.arrow.circlepath")
+        } description: {
+            Text("When you start building and verifying physical hardware with your camera, your session history and accuracy metrics will appear here.")
+        } actions: {
             if let onBrowseProjects = onBrowseProjects {
-                PrimaryButton(title: "Explore Projects", iconName: "folder.fill") {
+                Button("Explore Projects") {
                     onBrowseProjects()
                 }
-                .frame(maxWidth: 220)
-                .padding(.top, AppSpacing.xs)
+                .buttonStyle(.borderedProminent)
+                .tint(.assembleBrandPrimary)
             }
-            
-            Spacer()
         }
-        .padding(.horizontal, AppSpacing.screenEdge)
+        .padding(.top, AppSpacing.xl)
     }
     
     private func findProject(for id: UUID) -> AssemblyProject? {

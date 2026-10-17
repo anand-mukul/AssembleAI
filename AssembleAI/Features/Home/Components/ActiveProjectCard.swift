@@ -25,7 +25,7 @@ struct ActiveProjectCard: View {
                         .animation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true), value: isPulsing)
                     
                     Text("In Progress")
-                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .font(.caption.weight(.semibold))
                         .foregroundColor(AppColors.primaryText)
                 }
                 .padding(.horizontal, 10)
@@ -47,11 +47,11 @@ struct ActiveProjectCard: View {
             // Project Title & Subtitle
             VStack(alignment: .leading, spacing: 4) {
                 Text(project.title)
-                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .font(.title3.weight(.bold))
                     .foregroundColor(AppColors.primaryText)
                 
                 Text(project.subtitle)
-                    .font(.system(size: 14))
+                    .font(.subheadline)
                     .foregroundColor(AppColors.secondaryText)
                     .lineLimit(2)
             }
@@ -60,13 +60,13 @@ struct ActiveProjectCard: View {
             VStack(spacing: 6) {
                 HStack {
                     Text("Step \(project.completedSteps + 1) of \(project.totalSteps)")
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .font(.subheadline.weight(.medium))
                         .foregroundColor(AppColors.primaryText)
                     
                     Spacer()
                     
                     Text(project.progressText)
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .font(.subheadline.weight(.semibold))
                         .monospacedDigit()
                         .foregroundColor(.assembleBrandPrimary)
                 }
@@ -83,7 +83,7 @@ struct ActiveProjectCard: View {
                                 LinearGradient(
                                     colors: [
                                         .assembleBrandPrimary,
-                                        Color(red: 0.20, green: 0.70, blue: 0.95)
+                                        Color.assembleBrandPrimary.opacity(0.8)
                                     ],
                                     startPoint: .leading,
                                     endPoint: .trailing
@@ -100,15 +100,15 @@ struct ActiveProjectCard: View {
             if let nextAction = project.nextAction, !nextAction.isEmpty {
                 HStack(alignment: .center, spacing: AppSpacing.xs) {
                     Image(systemName: "arrow.right.circle.fill")
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.footnote.weight(.medium))
                         .foregroundColor(.assembleBrandPrimary)
                     
                     HStack(spacing: 4) {
                         Text("Next:")
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .font(.caption.weight(.semibold))
                             .foregroundColor(AppColors.primaryText)
                         Text(nextAction)
-                            .font(.system(size: 12))
+                            .font(.caption)
                             .foregroundColor(AppColors.secondaryText)
                             .lineLimit(1)
                     }
@@ -131,23 +131,13 @@ struct ActiveProjectCard: View {
         .padding(AppSpacing.cardPadding)
         .background(
             RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                .fill(.ultraThinMaterial)
+                .fill(AppColors.secondaryGroupedBackground)
         )
         .overlay(
             RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
-                .strokeBorder(
-                    LinearGradient(
-                        colors: [
-                            Color.assembleBrandPrimary.opacity(0.25),
-                            AppColors.borderSubtle
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 0.5
-                )
+                .strokeBorder(AppColors.borderSubtle, lineWidth: 0.5)
         )
-        .shadow(color: Color.black.opacity(0.06), radius: 12, x: 0, y: 4)
+        .shadow(color: AppShadow.subtleColor, radius: 4, x: 0, y: 1)
         .contentShape(RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous))
         .onAppear {
             isPulsing = true

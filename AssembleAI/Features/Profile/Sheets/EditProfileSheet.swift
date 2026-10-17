@@ -11,8 +11,12 @@ struct EditProfileSheet: View {
     @ObservedObject var viewModel: ProfileViewModel
     
     @State private var tempName: String = ""
+    @State private var tempBio: String = ""
+    @State private var selectedExperience: String = "Beginner"
     @State private var selectedAvatar: String = "person.crop.circle.fill"
     @State private var selectedColorHex: String = "#0A84FF"
+    
+    private let experienceLevels = ["Beginner", "Intermediate", "Advanced"]
     
     var body: some View {
         NavigationStack {
@@ -58,6 +62,48 @@ struct EditProfileSheet: View {
                         .overlay(
                             RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
                                 .strokeBorder(AppColors.borderSubtle, lineWidth: 0.5)
+                        )
+                    }
+                    
+                    // Bio Field Card
+                    VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                        Text("Bio")
+                            .standardSectionHeader()
+                        
+                        HStack(spacing: AppSpacing.sm) {
+                            Image(systemName: "text.quote")
+                                .foregroundColor(AppColors.tertiaryText)
+                            
+                            TextField("Share a short bio or lab specialty", text: $tempBio)
+                                .font(.body)
+                                .foregroundColor(AppColors.primaryText)
+                        }
+                        .padding(AppSpacing.md)
+                        .background(
+                            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                                .fill(AppColors.secondaryGroupedBackground)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                                .strokeBorder(AppColors.borderSubtle, lineWidth: 0.5)
+                        )
+                    }
+                    
+                    // Experience Level Card
+                    VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                        Text("Experience Level")
+                            .standardSectionHeader()
+                        
+                        Picker("Experience Level", selection: $selectedExperience) {
+                            ForEach(experienceLevels, id: \.self) { level in
+                                Text(level).tag(level)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .padding(AppSpacing.xs)
+                        .background(
+                            RoundedRectangle(cornerRadius: AppRadius.card, style: .continuous)
+                                .fill(AppColors.secondaryGroupedBackground)
                         )
                     }
                     
@@ -145,7 +191,9 @@ struct EditProfileSheet: View {
                         viewModel.saveProfile(
                             newName: tempName,
                             newAvatar: selectedAvatar,
-                            newColorHex: selectedColorHex
+                            newColorHex: selectedColorHex,
+                            newBio: tempBio,
+                            newExperienceLevel: selectedExperience
                         )
                         dismiss()
                     }
@@ -155,6 +203,8 @@ struct EditProfileSheet: View {
             }
             .onAppear {
                 self.tempName = viewModel.displayName
+                self.tempBio = viewModel.bio
+                self.selectedExperience = viewModel.experienceLevel
                 self.selectedAvatar = viewModel.avatarSymbol
                 self.selectedColorHex = viewModel.avatarColorHex
             }

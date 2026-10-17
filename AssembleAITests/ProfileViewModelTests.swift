@@ -108,4 +108,29 @@ final class ProfileViewModelTests: XCTestCase {
         try? await Task.sleep(nanoseconds: 100_000_000)
         XCTAssertTrue(viewModel.isExportingTelemetry)
     }
+    
+    // MARK: - Test 6: Profile Customization & Sync
+    func testProfileCustomizationAndSync() async {
+        viewModel.saveProfile(
+            newName: "Senior Hardware Engineer",
+            newAvatar: "cpu.fill",
+            newColorHex: "#30D158",
+            newBio: "Embedded circuits & robotics builder",
+            newExperienceLevel: "Advanced"
+        )
+        
+        XCTAssertEqual(viewModel.displayName, "Senior Hardware Engineer")
+        XCTAssertEqual(viewModel.avatarSymbol, "cpu.fill")
+        XCTAssertEqual(viewModel.avatarColorHex, "#30D158")
+        XCTAssertEqual(viewModel.bio, "Embedded circuits & robotics builder")
+        XCTAssertEqual(viewModel.experienceLevel, "Advanced")
+        
+        // Ensure user model reflects updated values
+        XCTAssertEqual(viewModel.user?.displayName, "Senior Hardware Engineer")
+        XCTAssertEqual(viewModel.user?.avatarSymbol, "cpu.fill")
+        XCTAssertEqual(viewModel.user?.avatarColorHex, "#30D158")
+        XCTAssertEqual(viewModel.user?.bio, "Embedded circuits & robotics builder")
+        XCTAssertEqual(viewModel.user?.experienceLevel, "Advanced")
+    }
 }
+

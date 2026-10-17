@@ -267,17 +267,11 @@ struct VerificationResultView: View {
         .padding(.horizontal, AppSpacing.screenEdge)
         .padding(.top, 12)
         .padding(.bottom, 12)
-        .background(
-            Rectangle()
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    Rectangle()
-                        .frame(height: 0.5)
-                        .foregroundColor(AppColors.separator),
-                    alignment: .top
-                )
-                .ignoresSafeArea(edges: .bottom)
-        )
+        .background(.regularMaterial)
+        .overlay(alignment: .top) {
+            Divider()
+        }
+        .ignoresSafeArea(edges: .bottom)
     }
     
     // MARK: - Outcome State Helpers

@@ -47,7 +47,7 @@ actor VisionService: VisionAnalyzing {
         }
         
         let imageSize = CGSize(width: cgImage.width, height: cgImage.height)
-        let (texts, regions) = try await performVisionRequests(on: cgImage)
+        let (texts, regions, classifications, humans) = try await performVisionRequests(on: cgImage)
         
         try Task.checkCancellation()
         
@@ -58,6 +58,8 @@ actor VisionService: VisionAnalyzing {
             imageSize: imageSize,
             detectedText: texts,
             regions: regions,
+            classifications: classifications,
+            detectedHumans: humans,
             timestamp: Date(),
             processingTimeMs: elapsedTimeMs
         )
@@ -85,7 +87,7 @@ actor VisionService: VisionAnalyzing {
         }
         
         let imageSize = CGSize(width: width, height: height)
-        let (texts, regions) = try await performVisionRequests(on: frame, orientation: orientation)
+        let (texts, regions, classifications, humans) = try await performVisionRequests(on: frame, orientation: orientation)
         
         try Task.checkCancellation()
         
@@ -103,6 +105,8 @@ actor VisionService: VisionAnalyzing {
             imageSize: imageSize,
             detectedText: texts,
             regions: regions,
+            classifications: classifications,
+            detectedHumans: humans,
             timestamp: observationTimestamp,
             processingTimeMs: elapsedTimeMs
         )
@@ -143,6 +147,8 @@ actor VisionService: VisionAnalyzing {
                             ),
                             detectedText: [DetectedText](),
                             regions: [],
+                            classifications: [],
+                            detectedHumans: [],
                             processingTimeMs: 0.0
                         )
                         continuation.yield(empty)
@@ -177,14 +183,17 @@ actor VisionService: VisionAnalyzing {
     
     // MARK: - Private Vision Execution Helpers
     
-    /// Executes both OCR and Rectangle detection in a single Vision request handler pass on a CVPixelBuffer.
+    /// Executes OCR, Rectangle detection, Salient Object detection, Taxonomical Classification, and Human Presence detection
+    /// in a single fused Vision request handler pass on a CVPixelBuffer.
     private func performVisionRequests(
         on pixelBuffer: CVPixelBuffer,
         orientation: CGImagePropertyOrientation
-    ) async throws -> (texts: [DetectedText], regions: [DetectedRegion]) {
+    ) async throws -> (texts: [DetectedText], regions: [DetectedRegion], classifications: [DetectedClassification], humans: [CGRect]) {
         try await withCheckedThrowingContinuation { continuation in
             var detectedTexts: [DetectedText] = []
             var detectedRegions: [DetectedRegion] = []
+            var detectedClassifications: [DetectedClassification] = []
+            var detectedHumans: [CGRect] = []
             
             let textRequest = VNRecognizeTextRequest { request, error in
                 guard error == nil, let observations = request.results as? [VNRecognizedTextObservation] else {
@@ -206,37 +215,88 @@ actor VisionService: VisionAnalyzing {
                 guard error == nil, let observations = request.results as? [VNRectangleObservation] else {
                     return
                 }
-                detectedRegions = observations.enumerated().map { (index, obs) in
-                    DetectedRegion(
-                        label: "Component Slot #\(index + 1)",
-                        confidence: obs.confidence,
-                        boundingBox: obs.boundingBox
+                for (index, obs) in observations.enumerated() {
+                    detectedRegions.append(
+                        DetectedRegion(
+                            label: "Boundary Slot #\(index + 1)",
+                            confidence: obs.confidence,
+                            boundingBox: obs.boundingBox
+                        )
                     )
                 }
             }
             rectRequest.minimumSize = 0.08
-            rectRequest.maximumObservations = 10
+            rectRequest.maximumObservations = 6
             rectRequest.minimumConfidence = 0.50
             rectRequest.minimumAspectRatio = 0.15
             rectRequest.maximumAspectRatio = 1.0
             
+            let classifyRequest = VNClassifyImageRequest { request, error in
+                guard error == nil, let observations = request.results as? [VNClassificationObservation] else {
+                    return
+                }
+                detectedClassifications = observations
+                    .filter { $0.confidence >= 0.15 }
+                    .prefix(12)
+                    .map { DetectedClassification(identifier: $0.identifier, confidence: $0.confidence) }
+            }
+            
+            let humanRequest = VNDetectHumanRectanglesRequest { request, error in
+                guard error == nil, let observations = request.results as? [VNHumanObservation] else {
+                    return
+                }
+                detectedHumans = observations.map { $0.boundingBox }
+            }
+            
+            let saliencyRequest = VNGenerateObjectnessBasedSaliencyImageRequest { request, error in
+                guard error == nil, let results = request.results as? [VNSaliencyImageObservation] else {
+                    return
+                }
+                for obs in results {
+                    let salients = obs.salientObjects ?? []
+                    for (idx, obj) in salients.enumerated() {
+                        let box = obj.boundingBox
+                        guard box.width >= 0.03, box.height >= 0.03, box.width <= 0.95, box.height <= 0.95 else { continue }
+                        let aspect = box.height > 0 ? box.width / box.height : 1.0
+                        let label: String
+                        if aspect > 2.5 || aspect < 0.4 {
+                            label = "Lead / Wire Line"
+                        } else if box.width > 0.4 || box.height > 0.4 {
+                            label = "Main Workpiece / Panel"
+                        } else {
+                            label = "Physical Part #\(idx + 1)"
+                        }
+                        detectedRegions.append(
+                            DetectedRegion(
+                                label: label,
+                                confidence: obj.confidence,
+                                boundingBox: box
+                            )
+                        )
+                    }
+                }
+            }
+            
             let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: orientation, options: [:])
             do {
-                try handler.perform([textRequest, rectRequest])
-                continuation.resume(returning: (detectedTexts, detectedRegions))
+                try handler.perform([textRequest, rectRequest, classifyRequest, humanRequest, saliencyRequest])
+                continuation.resume(returning: (detectedTexts, detectedRegions, detectedClassifications, detectedHumans))
             } catch {
                 continuation.resume(throwing: error)
             }
         }
     }
     
-    /// Executes both OCR and Rectangle detection in a single Vision request handler pass on a CGImage.
+    /// Executes OCR, Rectangle detection, Salient Object detection, Taxonomical Classification, and Human Presence detection
+    /// in a single fused Vision request handler pass on a CGImage.
     private func performVisionRequests(
         on cgImage: CGImage
-    ) async throws -> (texts: [DetectedText], regions: [DetectedRegion]) {
+    ) async throws -> (texts: [DetectedText], regions: [DetectedRegion], classifications: [DetectedClassification], humans: [CGRect]) {
         try await withCheckedThrowingContinuation { continuation in
             var detectedTexts: [DetectedText] = []
             var detectedRegions: [DetectedRegion] = []
+            var detectedClassifications: [DetectedClassification] = []
+            var detectedHumans: [CGRect] = []
             
             let textRequest = VNRecognizeTextRequest { request, error in
                 guard error == nil, let observations = request.results as? [VNRecognizedTextObservation] else {
@@ -258,24 +318,72 @@ actor VisionService: VisionAnalyzing {
                 guard error == nil, let observations = request.results as? [VNRectangleObservation] else {
                     return
                 }
-                detectedRegions = observations.enumerated().map { (index, obs) in
-                    DetectedRegion(
-                        label: "Component Slot #\(index + 1)",
-                        confidence: obs.confidence,
-                        boundingBox: obs.boundingBox
+                for (index, obs) in observations.enumerated() {
+                    detectedRegions.append(
+                        DetectedRegion(
+                            label: "Boundary Slot #\(index + 1)",
+                            confidence: obs.confidence,
+                            boundingBox: obs.boundingBox
+                        )
                     )
                 }
             }
             rectRequest.minimumSize = 0.08
-            rectRequest.maximumObservations = 10
+            rectRequest.maximumObservations = 6
             rectRequest.minimumConfidence = 0.50
             rectRequest.minimumAspectRatio = 0.15
             rectRequest.maximumAspectRatio = 1.0
             
+            let classifyRequest = VNClassifyImageRequest { request, error in
+                guard error == nil, let observations = request.results as? [VNClassificationObservation] else {
+                    return
+                }
+                detectedClassifications = observations
+                    .filter { $0.confidence >= 0.15 }
+                    .prefix(12)
+                    .map { DetectedClassification(identifier: $0.identifier, confidence: $0.confidence) }
+            }
+            
+            let humanRequest = VNDetectHumanRectanglesRequest { request, error in
+                guard error == nil, let observations = request.results as? [VNHumanObservation] else {
+                    return
+                }
+                detectedHumans = observations.map { $0.boundingBox }
+            }
+            
+            let saliencyRequest = VNGenerateObjectnessBasedSaliencyImageRequest { request, error in
+                guard error == nil, let results = request.results as? [VNSaliencyImageObservation] else {
+                    return
+                }
+                for obs in results {
+                    let salients = obs.salientObjects ?? []
+                    for (idx, obj) in salients.enumerated() {
+                        let box = obj.boundingBox
+                        guard box.width >= 0.03, box.height >= 0.03, box.width <= 0.95, box.height <= 0.95 else { continue }
+                        let aspect = box.height > 0 ? box.width / box.height : 1.0
+                        let label: String
+                        if aspect > 2.5 || aspect < 0.4 {
+                            label = "Lead / Wire Line"
+                        } else if box.width > 0.4 || box.height > 0.4 {
+                            label = "Main Workpiece / Panel"
+                        } else {
+                            label = "Physical Part #\(idx + 1)"
+                        }
+                        detectedRegions.append(
+                            DetectedRegion(
+                                label: label,
+                                confidence: obj.confidence,
+                                boundingBox: box
+                            )
+                        )
+                    }
+                }
+            }
+            
             let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
             do {
-                try handler.perform([textRequest, rectRequest])
-                continuation.resume(returning: (detectedTexts, detectedRegions))
+                try handler.perform([textRequest, rectRequest, classifyRequest, humanRequest, saliencyRequest])
+                continuation.resume(returning: (detectedTexts, detectedRegions, detectedClassifications, detectedHumans))
             } catch {
                 continuation.resume(throwing: error)
             }

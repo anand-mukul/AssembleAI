@@ -9,6 +9,15 @@ import Foundation
 protocol AssemblyStateEstimating: Sendable {
     /// Converts a low-level `VisualObservation` into a higher-level domain `ObservedAssemblyState`.
     func estimate(observation: VisualObservation) async throws -> ObservedAssemblyState
+    
+    /// Converts a low-level `VisualObservation` into a domain state guided by the active assembly step context.
+    func estimate(observation: VisualObservation, for step: AssemblyStep?) async throws -> ObservedAssemblyState
+}
+
+extension AssemblyStateEstimating {
+    func estimate(observation: VisualObservation, for step: AssemblyStep?) async throws -> ObservedAssemblyState {
+        try await estimate(observation: observation)
+    }
 }
 
 /// Legacy naive OCR-based state estimator.

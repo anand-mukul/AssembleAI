@@ -8,7 +8,13 @@ import SwiftUI
 /// Multi-step project creation flow supporting both manual entry and AI-assisted guide import.
 struct ProjectCreatorView: View {
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var viewModel = ProjectCreatorViewModel()
+    @StateObject private var viewModel: ProjectCreatorViewModel
+    
+    init(initialMode: ProjectCreatorViewModel.CreationMode = .manual) {
+        let vm = ProjectCreatorViewModel()
+        vm.creationMode = initialMode
+        _viewModel = StateObject(wrappedValue: vm)
+    }
     
     var body: some View {
         NavigationStack {

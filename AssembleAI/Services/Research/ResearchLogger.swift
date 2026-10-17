@@ -418,6 +418,7 @@ nonisolated struct ResearchSessionMetrics: Codable, Sendable, Equatable {
             "memory_after_mb",
             "peak_memory_mb",
             "energy_cost",
+            "battery_level_delta",
             "frames_received",
             "frames_processed",
             "frames_in_context",
@@ -432,7 +433,7 @@ nonisolated struct ResearchSessionMetrics: Codable, Sendable, Equatable {
         let endStr = endedAt.map { isoFormatter.string(from: $0) } ?? ""
         
         var values: [String] = []
-        values.reserveCapacity(45)
+        values.reserveCapacity(46)
         
         // 1. Session Metadata
         values.append("\(schemaVersion)")
@@ -485,7 +486,9 @@ nonisolated struct ResearchSessionMetrics: Codable, Sendable, Equatable {
         values.append(memoryBeforeMB.map { String(format: "%.2f", $0) } ?? "")
         values.append(memoryAfterMB.map { String(format: "%.2f", $0) } ?? "")
         values.append(peakMemoryMB.map { String(format: "%.2f", $0) } ?? "")
-        values.append(batteryCost.map { String(format: "%.4f", $0) } ?? "")
+        let effectiveEnergyCost = batteryCost ?? (batteryLevelDelta.map { Double($0) })
+        values.append(effectiveEnergyCost.map { String(format: "%.4f", $0) } ?? "")
+        values.append(batteryLevelDelta.map { String(format: "%.2f", $0) } ?? "")
         
         // 7. Visual Frame Pipeline
         values.append("\(framesReceived)")
@@ -508,7 +511,7 @@ nonisolated struct ResearchSessionMetrics: Codable, Sendable, Equatable {
         let endStr = endedAt.map { isoFormatter.string(from: $0) } ?? ""
         
         var values: [Any] = []
-        values.reserveCapacity(45)
+        values.reserveCapacity(46)
         
         // 1. Session Metadata (Cols 1-10)
         values.append(schemaVersion)
@@ -557,13 +560,15 @@ nonisolated struct ResearchSessionMetrics: Codable, Sendable, Equatable {
         values.append(avgProgressionLatencyMs)
         values.append(avgInterventionLatencyMs)
         
-        // 6. Memory & Energy (Cols 38-41)
+        // 6. Memory & Energy (Cols 38-42)
         values.append(memoryBeforeMB.map { round($0 * 100) / 100 } ?? 0.0)
         values.append(memoryAfterMB.map { round($0 * 100) / 100 } ?? 0.0)
         values.append(peakMemoryMB.map { round($0 * 100) / 100 } ?? 0.0)
-        values.append(batteryCost.map { round($0 * 10000) / 10000 } ?? 0.0)
+        let effectiveEnergyCost = batteryCost ?? (batteryLevelDelta.map { Double($0) })
+        values.append(effectiveEnergyCost.map { round($0 * 10000) / 10000 } ?? 0.0)
+        values.append(batteryLevelDelta.map { round(Double($0) * 100) / 100 } ?? 0.0)
         
-        // 7. Visual Frame Pipeline (Cols 42-45)
+        // 7. Visual Frame Pipeline (Cols 43-46)
         values.append(framesReceived)
         values.append(framesProcessed)
         values.append(framesIncludedInModelContext)
@@ -586,6 +591,7 @@ protocol ResearchLogging: Sendable {
     
     // Research Session Lifecycle & Persistence Extensions
     func startResearchSession(
+        sessionID: UUID?,
         projectID: String,
         strategy: VisualHistoryStrategy,
         lastNFrames: Int?,
@@ -600,6 +606,17 @@ protocol ResearchLogging: Sendable {
     func getSessionConfig(for sessionID: UUID) async -> ResearchSessionConfig?
     func fetchAllSessions() async -> [ResearchSessionConfig]
     func getTelemetryStats() async -> (sessionCount: Int, eventCount: Int)
+    
+    // Frame and Memory Tracking
+    func recordFrameProcessing(
+        sessionID: UUID,
+        received: Int,
+        processed: Int,
+        includedInContext: Int,
+        dropped: Int
+    ) async
+    
+    func samplePeakMemory(for sessionID: UUID) async
     
     // Disk Export Methods
     func exportCSVFile(for sessionID: UUID?) async throws -> URL
@@ -621,13 +638,79 @@ extension ResearchLogging {
     func startResearchSession(
         projectID: String,
         strategy: VisualHistoryStrategy,
-        lastNFrames: Int? = nil
+        lastNFrames: Int? = nil,
+        mode: InteractionMode = .liveTutor
     ) async -> UUID {
-        await startResearchSession(projectID: projectID, strategy: strategy, lastNFrames: lastNFrames, mode: .liveTutor)
+        await startResearchSession(sessionID: nil, projectID: projectID, strategy: strategy, lastNFrames: lastNFrames, mode: mode)
+    }
+    
+    func startResearchSession(
+        projectID: String,
+        strategy: VisualHistoryStrategy,
+        lastNFrames: Int?
+    ) async -> UUID {
+        await startResearchSession(sessionID: nil, projectID: projectID, strategy: strategy, lastNFrames: lastNFrames, mode: .liveTutor)
+    }
+    
+    func startResearchSession(
+        sessionID: UUID?,
+        projectID: String,
+        strategy: VisualHistoryStrategy,
+        lastNFrames: Int? = nil,
+        mode: InteractionMode = .liveTutor
+    ) async -> UUID {
+        await startResearchSession(sessionID: sessionID, projectID: projectID, strategy: strategy, lastNFrames: lastNFrames, mode: mode)
     }
     
     func endResearchSession(sessionID: UUID) async -> ResearchSessionMetrics {
         await endResearchSession(sessionID: sessionID, externalBatteryCost: nil)
+    }
+    
+    func recordFrameProcessing(
+        sessionID: UUID,
+        received: Int = 0,
+        processed: Int = 0,
+        includedInContext: Int = 0,
+        dropped: Int = 0
+    ) async {
+        // default no-op for mock compatibility
+    }
+    
+    func recordFrameProcessing(
+        sessionID: UUID,
+        received: Int = 0,
+        processed: Int = 0,
+        inContext: Int = 0,
+        dropped: Int = 0
+    ) async {
+        await recordFrameProcessing(
+            sessionID: sessionID,
+            received: received,
+            processed: processed,
+            includedInContext: inContext,
+            dropped: dropped
+        )
+    }
+    
+    func startResearchSession(
+        sessionID: UUID? = nil,
+        projectID: String,
+        strategy: String,
+        lastNFrames: Int? = nil,
+        mode: InteractionMode = .liveTutor
+    ) async -> UUID {
+        let stratEnum = VisualHistoryStrategy(rawValue: strategy) ?? .currentFrame
+        return await startResearchSession(
+            sessionID: sessionID,
+            projectID: projectID,
+            strategy: stratEnum,
+            lastNFrames: lastNFrames,
+            mode: mode
+        )
+    }
+    
+    func samplePeakMemory(for sessionID: UUID) async {
+        // default no-op for mock compatibility
     }
     
     /// Returns calculated metrics for a session (alias for `calculateMetrics(for:)`).
@@ -655,7 +738,11 @@ actor ResearchLogger: ResearchLogging {
     @MainActor
     private static func sampleBatteryLevel() -> Float? {
         #if canImport(UIKit)
-        return UIDevice.current.isBatteryMonitoringEnabled ? UIDevice.current.batteryLevel : nil
+        if !UIDevice.current.isBatteryMonitoringEnabled {
+            UIDevice.current.isBatteryMonitoringEnabled = true
+        }
+        let level = UIDevice.current.batteryLevel
+        return level >= 0 ? level : nil
         #else
         return nil
         #endif
@@ -703,17 +790,18 @@ actor ResearchLogger: ResearchLogging {
     /// Starts a new experimental research session with the specified visual history strategy.
     /// Records initial memory snapshot and emits a `.sessionStarted` event.
     func startResearchSession(
+        sessionID: UUID? = nil,
         projectID: String,
         strategy: VisualHistoryStrategy,
         lastNFrames: Int? = nil,
         mode: InteractionMode = .liveTutor
     ) async -> UUID {
-        let sessionID = UUID()
+        let sid = sessionID ?? UUID()
         let mem = MemorySampler.currentResidentMemoryMB()
         let battery = await Self.sampleBatteryLevel()
         
         let config = ResearchSessionConfig(
-            id: sessionID,
+            id: sid,
             projectID: projectID,
             interactionMode: mode,
             strategy: strategy,
@@ -735,12 +823,12 @@ actor ResearchLogger: ResearchLogging {
             framesDropped: 0
         )
         
-        sessions[sessionID] = config
+        sessions[sid] = config
         persistSessions()
         
         let projectUUID = UUID(uuidString: projectID) ?? UUID()
         let startEvent = ResearchEvent(
-            sessionID: sessionID,
+            sessionID: sid,
             projectID: projectUUID,
             mode: mode,
             eventType: .sessionStarted,
@@ -753,7 +841,7 @@ actor ResearchLogger: ResearchLogging {
         )
         logEvent(startEvent)
         
-        return sessionID
+        return sid
     }
     
     /// Completes an active research run, records final memory and optional battery cost,
@@ -847,6 +935,39 @@ actor ResearchLogger: ResearchLogging {
             sessions[sessionID] = config
             persistSessions()
         }
+    }
+    
+    func recordFrameProcessing(
+        sessionID: UUID,
+        received: Int = 0,
+        processed: Int = 0,
+        inContext: Int = 0,
+        dropped: Int = 0
+    ) {
+        recordFrameProcessing(
+            sessionID: sessionID,
+            received: received,
+            processed: processed,
+            includedInContext: inContext,
+            dropped: dropped
+        )
+    }
+    
+    func startResearchSession(
+        sessionID: UUID? = nil,
+        projectID: String,
+        strategy: String,
+        lastNFrames: Int? = nil,
+        mode: InteractionMode = .liveTutor
+    ) async -> UUID {
+        let stratEnum = VisualHistoryStrategy(rawValue: strategy) ?? .currentFrame
+        return await startResearchSession(
+            sessionID: sessionID,
+            projectID: projectID,
+            strategy: stratEnum,
+            lastNFrames: lastNFrames,
+            mode: mode
+        )
     }
     
     /// Samples resident memory and updates peak memory if higher than previous reading.
@@ -1000,6 +1121,10 @@ actor ResearchLogger: ResearchLogging {
         let totalTime: Double
         if let start = startEvent, let end = endEvent {
             totalTime = max(0.0, end.timestamp.timeIntervalSince(start.timestamp))
+        } else if let s = startedAt, let e = endedAt {
+            totalTime = max(0.0, e.timeIntervalSince(s))
+        } else if let s = startedAt {
+            totalTime = max(0.0, Date().timeIntervalSince(s))
         } else {
             totalTime = 0.0
         }
@@ -1085,7 +1210,9 @@ actor ResearchLogger: ResearchLogging {
         // a verificationCorrect was immediately followed by verificationIncorrect/intervention on the same step.
         var falsePositiveCount = 0
         for stepID in stepIDs {
-            let stepVerEvents = sessionEvents.filter { $0.stepID == stepID && ($0.eventType == .verificationCorrect || $0.eventType == .verificationIncorrect || $0.eventType == .verificationUncertain || $0.eventType == .interventionTriggered) }
+            let stepVerEvents = sessionEvents.filter {
+                $0.stepID == stepID && ($0.eventType == .verificationCorrect || $0.eventType == .verificationIncorrect || $0.eventType == .verificationUncertain || $0.eventType == .interventionTriggered)
+            }.sorted { $0.sequence < $1.sequence }
             for i in 0..<stepVerEvents.count {
                 let ev = stepVerEvents[i]
                 if ev.eventType == .verificationCorrect || (ev.eventType == .verificationCompleted && ev.verificationStatus == "correct") {
@@ -1155,6 +1282,8 @@ actor ResearchLogger: ResearchLogging {
         let temporalConsistency: Double?
         if totalTransitions > 0 {
             temporalConsistency = Double(consistentTransitions) / Double(totalTransitions)
+        } else if totalVerifications > 0 && incorrectEvents.isEmpty {
+            temporalConsistency = 1.0
         } else {
             temporalConsistency = nil
         }
@@ -1191,7 +1320,7 @@ actor ResearchLogger: ResearchLogging {
         let batteryCost = config?.batteryCost
         let batteryDelta: Float?
         if let bStart = config?.batteryLevelStart, let bEnd = config?.batteryLevelEnd, bStart >= 0, bEnd >= 0 {
-            batteryDelta = (bStart - bEnd) * 100.0
+            batteryDelta = max(0.0, (bStart - bEnd) * 100.0)
         } else {
             batteryDelta = nil
         }
@@ -1479,9 +1608,9 @@ actor ResearchLogger: ResearchLogging {
 // MARK: - Developer Documentation & Usage Examples
 
 /*
- =========================================================================================
+ -----------------------------------------------------------------------------------------
  ASSEMBLEAI RESEARCH TELEMETRY SYSTEM DEVELOPER GUIDE
- =========================================================================================
+ -----------------------------------------------------------------------------------------
  
  1. HOW TO START A RESEARCH SESSION:
  ----------------------------------
@@ -1560,5 +1689,5 @@ actor ResearchLogger: ResearchLogging {
  // Present natively in SwiftUI or UIKit:
  let activityVC = UIActivityViewController(activityItems: [summaryURL], applicationActivities: nil)
  
- =========================================================================================
+ -----------------------------------------------------------------------------------------
  */

@@ -168,4 +168,166 @@ final class ConversationalTutorTests: XCTestCase {
         let clearedCtx = await mockProvider.lastReceivedContext
         XCTAssertNil(clearedCtx)
     }
+    
+    // MARK: - Test 8: Foundation Models Tool Calling — Resistor Color Bands
+    func testToolCallingResistorColorBands() {
+        let tools = FoundationModelsToolCallingService()
+        
+        // 220 ohm
+        let info220 = tools.queryResistorBands(query: "220 ohm")
+        XCTAssertNotNil(info220)
+        XCTAssertEqual(info220?.nominalOhms, 220.0)
+        XCTAssertEqual(info220?.bands, ["red", "red", "brown", "gold"])
+        
+        // 10k ohm
+        let info10k = tools.queryResistorBands(query: "10k")
+        XCTAssertNotNil(info10k)
+        XCTAssertEqual(info10k?.nominalOhms, 10_000.0)
+        XCTAssertEqual(info10k?.bands, ["brown", "black", "orange", "gold"])
+    }
+    
+    // MARK: - Test 9: Foundation Models Tool Calling — Breadboard Continuity
+    func testToolCallingBreadboardContinuity() {
+        let tools = FoundationModelsToolCallingService()
+        
+        // Same row, same bank (10A and 10E) -> connected
+        let c1 = tools.queryBreadboardContinuity(pin1: "10A", pin2: "10E")
+        XCTAssertTrue(c1.isConnected)
+        
+        // Same row, separated by center trough (10A and 10F) -> disconnected
+        let c2 = tools.queryBreadboardContinuity(pin1: "10A", pin2: "10F")
+        XCTAssertFalse(c2.isConnected)
+        XCTAssertTrue(c2.explanation.contains("trough") || c2.explanation.contains("divider"))
+        
+        // Different rows (10A and 12A) -> disconnected
+        let c3 = tools.queryBreadboardContinuity(pin1: "10A", pin2: "12A")
+        XCTAssertFalse(c3.isConnected)
+        
+        // Power rail short check (+ and -) -> false with dead short warning
+        let c4 = tools.queryBreadboardContinuity(pin1: "+", pin2: "-")
+        XCTAssertFalse(c4.isConnected)
+        XCTAssertTrue(c4.explanation.contains("SHORT"))
+    }
+    
+    // MARK: - Test 10: Foundation Models Tool Calling — Component Substitution
+    func testToolCallingComponentSubstitution() {
+        let tools = FoundationModelsToolCallingService()
+        
+        // Safe substitution: 330 ohm for 220 ohm step
+        let subSafe = tools.queryComponentSubstitution(requestedPart: "330 ohm", targetStep: step1)
+        XCTAssertTrue(subSafe.isViable)
+        XCTAssertTrue(subSafe.explanation.contains("viable substitute"))
+        
+        // Dangerous substitution: 10 ohm (excessive current)
+        let subUnsafe = tools.queryComponentSubstitution(requestedPart: "10 ohm", targetStep: step1)
+        XCTAssertFalse(subUnsafe.isViable)
+        XCTAssertTrue(subUnsafe.explanation.contains("Unsafe substitution"))
+        
+        // Transistor substitution: BC547 for 2N2222
+        let stepTransistor = AssemblyStep(projectId: UUID(), stepOrder: 1, title: "Insert 2N2222 Transistor", instruction: "Place NPN transistor")
+        let subTransistor = tools.queryComponentSubstitution(requestedPart: "can i use BC547", targetStep: stepTransistor)
+        XCTAssertTrue(subTransistor.isViable)
+        XCTAssertTrue(subTransistor.explanation.contains("pinout"))
+    }
+    
+    // MARK: - Test 11: Hybrid Tutor Answers Resistor Color Bands Query
+    func testHybridTutorAnswersResistorQuery() async {
+        let context = AssistantContext(currentStep: step1)
+        let response = await hybridProvider.answerUserQuestion(
+            query: "what are the color bands for 220 ohm?",
+            intent: .askSpecs(query: "what are the color bands for 220 ohm?"),
+            context: context
+        )
+        
+        XCTAssertNotNil(response)
+        XCTAssertTrue(response.text.contains("Red, Red, Brown") || response.text.contains("220"))
+    }
+    
+    // MARK: - Test 12: Hybrid Tutor Answers Substitution Query
+    func testHybridTutorAnswersSubstitutionQuery() async {
+        let context = AssistantContext(currentStep: step1)
+        let response = await hybridProvider.answerUserQuestion(
+            query: "can I use a 330 ohm resistor instead?",
+            intent: .askSubstitution(partQuery: "can I use a 330 ohm resistor instead?"),
+            context: context
+        )
+        
+        XCTAssertNotNil(response)
+        XCTAssertTrue(response.text.contains("safe substitute") || response.text.contains("330"))
+    }
+    
+    // MARK: - Test 13: Universal Physical Tool Calling — Fastener Count Verification
+    func testToolCallingFastenerCountVerification() {
+        let tools = FoundationModelsToolCallingService()
+        
+        // Full count satisfied
+        let full = tools.queryFastenerCount(expectedCount: 4, observedCount: 4, partName: "M4x12mm Hex Bolt")
+        XCTAssertTrue(full.isCountMatched)
+        XCTAssertEqual(full.count, 4)
+        XCTAssertTrue(full.explanation.contains("All 4 M4x12mm Hex Bolt elements are placed"))
+        
+        // Missing fasteners
+        let partial = tools.queryFastenerCount(expectedCount: 4, observedCount: 2, partName: "Cam Lock Pin")
+        XCTAssertFalse(partial.isCountMatched)
+        XCTAssertEqual(partial.count, 2)
+        XCTAssertTrue(partial.explanation.contains("Missing 2 Cam Lock Pin fastener(s)"))
+    }
+    
+    // MARK: - Test 14: Universal Physical Tool Calling — Joint Alignment Analysis
+    func testToolCallingJointAlignment() {
+        let tools = FoundationModelsToolCallingService()
+        
+        // Well-aligned joint (within 5° tolerance)
+        let aligned = tools.queryJointAlignment(jointDescription: "Corner Leg Joint", expectedAngleDegrees: 90.0, observedAngleDegrees: 91.2)
+        XCTAssertTrue(aligned.isAligned)
+        XCTAssertTrue(aligned.guidance.contains("square and aligned within 5° tolerance"))
+        
+        // Misaligned joint (> 5° tolerance)
+        let misaligned = tools.queryJointAlignment(jointDescription: "Cabinet Side Panel", expectedAngleDegrees: 90.0, observedAngleDegrees: 82.0)
+        XCTAssertFalse(misaligned.isAligned)
+        XCTAssertTrue(misaligned.guidance.contains("misaligned by 8.0°"))
+        XCTAssertTrue(misaligned.guidance.contains("flush before tightening"))
+    }
+    
+    // MARK: - Test 15: Universal Physical Tool Calling — Fastener Tool Recommendation
+    func testToolCallingFastenerToolRecommendation() {
+        let tools = FoundationModelsToolCallingService()
+        
+        // Cam lock recommendation
+        let camRec = tools.queryFastenerToolRecommendation(fastenerType: "cam lock fastener", sizeDescription: "15mm")
+        XCTAssertTrue(camRec.toolName.contains("Screwdriver"))
+        XCTAssertTrue(camRec.usageTip.contains("Do NOT use an impact drill"))
+        
+        // Allen / Hex key recommendation for M5
+        let hexRec = tools.queryFastenerToolRecommendation(fastenerType: "socket head bolt", sizeDescription: "M5x20mm")
+        XCTAssertEqual(hexRec.toolName, "Hex / Allen Key")
+        XCTAssertEqual(hexRec.bitSize, "4mm")
+        XCTAssertTrue(hexRec.usageTip.contains("quarter turn"))
+        
+        // Wooden dowel recommendation
+        let dowelRec = tools.queryFastenerToolRecommendation(fastenerType: "wooden dowel pin", sizeDescription: "8x30mm")
+        XCTAssertTrue(dowelRec.toolName.contains("Rubber Mallet"))
+        XCTAssertTrue(dowelRec.usageTip.contains("Never hit directly with a metal hammer"))
+    }
+    
+    // MARK: - Test 16: Universal Physical Tool Calling — Mechanical Kinematics
+    func testToolCallingMechanicalKinematics() {
+        let tools = FoundationModelsToolCallingService()
+        
+        // Gear mesh clearance
+        let gearInfo = tools.queryMechanicalKinematics(component: "Spur Gear Mesh")
+        XCTAssertTrue(gearInfo.alignmentRule.contains("pitch diameter"))
+        XCTAssertTrue(gearInfo.clearanceRecommendation.contains("paper slip test"))
+        
+        // Timing belt tension
+        let beltInfo = tools.queryMechanicalKinematics(component: "GT2 Timing Belt")
+        XCTAssertTrue(beltInfo.alignmentRule.contains("extrusion rails"))
+        XCTAssertTrue(beltInfo.clearanceRecommendation.contains("plucked (~100–120Hz)"))
+        
+        // Ball bearing press force rule
+        let bearingInfo = tools.queryMechanicalKinematics(component: "608ZZ Ball Bearing")
+        XCTAssertTrue(bearingInfo.alignmentRule.contains("outer ring"))
+        XCTAssertTrue(bearingInfo.safetyNote.contains("rolling balls"))
+    }
 }
+

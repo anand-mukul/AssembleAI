@@ -93,10 +93,8 @@ nonisolated struct AssemblyStateComparator: Sendable {
         observed: ObservedAssemblyState,
         hasAcousticCorroboration: Bool = false
     ) -> StateComparison {
-        // Effective confidence factoring multimodal acoustic snap corroboration
         let boostedConfidence = hasAcousticCorroboration ? min(0.98, observed.overallConfidence + 0.15) : observed.overallConfidence
         
-        // 1. Evidence Check: If observed confidence is below threshold, return `.uncertain`
         if boostedConfidence < configuration.minimumEvidenceConfidence {
             return StateComparison(
                 status: .uncertain,
@@ -116,7 +114,6 @@ nonisolated struct AssemblyStateComparator: Sendable {
         var issues: [StateIssue] = []
         var matchedComponents: [String] = []
         
-        // 2. Component Presence Check (Universal Semantic & Category-Aware Matching)
         for reqComp in expected.requiredComponents {
             let matches = observed.detectedComponents.filter { obs in
                 if let id = obs.identifier {
@@ -128,7 +125,6 @@ nonisolated struct AssemblyStateComparator: Sendable {
                     return true
                 }
                 
-                // Universal token-aware category matching for physical electronics & mechanical hardware (H-2)
                 for category in HardwareCategory.allCases {
                     let reqMatches = matchesComponentCategory(text: reqComp.name, identifier: reqComp.identifier, keywords: category.keywords)
                     let obsMatches = matchesComponentCategory(text: obs.name, identifier: obs.identifier ?? "", keywords: category.keywords)
@@ -154,7 +150,6 @@ nonisolated struct AssemblyStateComparator: Sendable {
             }
         }
         
-        // 3. Position Verification (Physical spatial placements & electronics pin positions)
         if !expected.requiredPositions.isEmpty {
             for reqPos in expected.requiredPositions {
                 let matchingPos = observed.detectedPositions.first { obsPos in
@@ -184,7 +179,6 @@ nonisolated struct AssemblyStateComparator: Sendable {
             }
         }
         
-        // 4. Unexpected Component Check
         for obsComp in observed.detectedComponents {
             if obsComp.identifier == nil && obsComp.confidence <= 0.40 {
                 issues.append(
@@ -198,7 +192,6 @@ nonisolated struct AssemblyStateComparator: Sendable {
             }
         }
         
-        // 5. Connection Rail Check (Circuits, Wiring Harnesses, Plumbing)
         for reqConn in expected.requiredConnections {
             let matchingConn = observed.detectedConnections.first { obs in
                 obs.from.localizedCaseInsensitiveContains(reqConn.from) && obs.to.localizedCaseInsensitiveContains(reqConn.to)
@@ -228,7 +221,6 @@ nonisolated struct AssemblyStateComparator: Sendable {
             }
         }
         
-        // 6. Final Status Determination
         let hasHighSeverityIssues = issues.contains { $0.severity == .high || $0.severity == .critical }
         let status: ComparisonStatus
         
@@ -251,9 +243,9 @@ nonisolated struct AssemblyStateComparator: Sendable {
     }
 }
 
-// MARK: - Hardware Category Token Matching (H-2)
+// MARK: - Hardware Category Token Matching
 
-private nonisolated enum HardwareCategory: CaseIterable {
+nonisolated enum HardwareCategory: CaseIterable {
     case resistor
     case led
     case capacitor
@@ -265,6 +257,8 @@ private nonisolated enum HardwareCategory: CaseIterable {
     case structuralPanel
     case bracket
     case conduit
+    case motionMechanism
+    case tool
     
     nonisolated var keywords: [String] {
         switch self {
@@ -276,9 +270,11 @@ private nonisolated enum HardwareCategory: CaseIterable {
         case .dowel: return ["dowel", "peg"]
         case .camLock: return ["cam", "camlock", "disc"]
         case .fastener: return ["screw", "bolt", "nut", "washer", "nail", "fastener"]
-        case .structuralPanel: return ["panel", "shelf", "plank", "board"]
+        case .structuralPanel: return ["panel", "shelf", "plank", "board", "extrusion", "rail"]
         case .bracket: return ["bracket", "mount", "frame", "hinge"]
         case .conduit: return ["pipe", "hose", "tube", "manifold", "valve"]
+        case .motionMechanism: return ["bearing", "gear", "belt", "pulley", "motor", "stepper", "servo"]
+        case .tool: return ["tool", "allen", "hex", "wrench", "screwdriver", "spanner", "caliper"]
         }
     }
 }

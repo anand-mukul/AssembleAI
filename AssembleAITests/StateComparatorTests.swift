@@ -183,7 +183,7 @@ final class StateComparatorTests: XCTestCase {
         XCTAssertEqual(resultWithAcoustic.status, .correct)
     }
     
-    // MARK: - Test 8: False Positive Prevention with Tokenized Matching (H-2)
+    // MARK: - False Positive Prevention with Tokenized Matching
     func testFalsePositivePreventionWithTokenizedMatching() {
         let expected = ExpectedAssemblyState(
             stepID: UUID(),
@@ -207,6 +207,31 @@ final class StateComparatorTests: XCTestCase {
         )
         let resultRealCap = comparator.compare(expected: expected, observed: observedRealCap)
         XCTAssertEqual(resultRealCap.status, .correct)
+    }
+    
+    // MARK: - Furniture Domain Physical Comparison
+    func testFurnitureDowelAndPanelCorrectComparison() {
+        let expected = ExpectedAssemblyState(
+            stepID: UUID(),
+            stepOrder: 1,
+            requiredComponents: [
+                ExpectedComponent(identifier: "part_dowel_8mm", name: "Wooden Dowels"),
+                ExpectedComponent(identifier: "part_side_panel", name: "Side Panel")
+            ]
+        )
+        
+        let observed = ObservedAssemblyState(
+            detectedComponents: [
+                ObservedComponent(identifier: "part_dowel_8mm", name: "Wooden Dowels", confidence: 0.91),
+                ObservedComponent(identifier: "part_side_panel", name: "Side Panel", confidence: 0.94)
+            ],
+            overallConfidence: 0.93
+        )
+        
+        let result = comparator.compare(expected: expected, observed: observed)
+        XCTAssertEqual(result.status, .correct)
+        XCTAssertTrue(result.issues.isEmpty)
+        XCTAssertEqual(result.matchedComponents.count, 2)
     }
 }
 

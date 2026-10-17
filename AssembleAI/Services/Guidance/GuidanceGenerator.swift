@@ -64,7 +64,7 @@ nonisolated struct RuleBasedGuidanceGenerator: GuidanceGenerating {
             let missingName = expectedState.requiredComponents.first(where: { req in
                 !observedState.detectedComponents.contains(where: { $0.identifier == req.identifier || $0.name.localizedCaseInsensitiveContains(req.name) })
             })?.name
-            let actionText = missingName != nil ? "Place \(missingName!) into the workspace." : "Insert the required component into the target area."
+            let actionText = missingName.map { "Place \($0) into the workspace." } ?? "Insert the required component into the target area."
             return GuidanceResponse(
                 title: issue.title.isEmpty ? "Missing component" : issue.title,
                 explanation: issue.explanation,
@@ -161,7 +161,7 @@ typealias MockGuidanceGenerator = RuleBasedGuidanceGenerator
 /// HARD ARCHITECTURAL RULE:
 /// The language model is used ONLY for generating human-readable explanations.
 /// It NEVER decides correctness — correctness is determined deterministically by `AssemblyStateComparator`.
-@available(iOS 26.0, *)
+@available(iOS 18.0, *)
 actor FoundationModelGuidanceGenerator: GuidanceGenerating {
     private let fallback = RuleBasedGuidanceGenerator()
     
@@ -234,7 +234,7 @@ nonisolated struct HybridGuidanceGenerator: GuidanceGenerating {
         observedState: ObservedAssemblyState
     ) async throws -> GuidanceResponse {
         #if canImport(FoundationModels)
-        if #available(iOS 26.0, *) {
+        if #available(iOS 18.0, *) {
             let generator = FoundationModelGuidanceGenerator()
             do {
                 return try await generator.generateGuidance(issue: issue, expectedState: expectedState, observedState: observedState)
@@ -254,7 +254,7 @@ nonisolated struct HybridGuidanceGenerator: GuidanceGenerating {
         issue: StateIssue
     ) async throws -> String {
         #if canImport(FoundationModels)
-        if #available(iOS 26.0, *) {
+        if #available(iOS 18.0, *) {
             let generator = FoundationModelGuidanceGenerator()
             do {
                 return try await generator.generateWhyExplanation(step: step, issue: issue)

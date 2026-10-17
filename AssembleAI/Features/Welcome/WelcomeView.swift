@@ -27,7 +27,7 @@ struct WelcomeView: View {
                     // Hero Typography
                     VStack(spacing: AppSpacing.xs) {
                         Text("Build with precision.")
-                            .font(.system(size: 32, weight: .bold))
+                            .font(.largeTitle.weight(.bold))
                             .foregroundColor(AppColors.primaryText)
                             .multilineTextAlignment(.center)
                             .lineLimit(1)
@@ -120,11 +120,10 @@ struct WelcomeView: View {
         .padding(.horizontal, AppSpacing.screenEdge)
         .padding(.top, AppSpacing.md)
         .padding(.bottom, AppSpacing.sm)
-        .background(
-            Rectangle()
-                .fill(.ultraThinMaterial)
-                .ignoresSafeArea(edges: .bottom)
-        )
+        .background(.regularMaterial)
+        .overlay(alignment: .top) {
+            Divider()
+        }
     }
 }
 

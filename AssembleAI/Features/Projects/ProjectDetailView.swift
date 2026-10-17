@@ -209,7 +209,7 @@ struct ProjectDetailView: View {
                     ZStack {
                         Circle()
                             .stroke(AppColors.tertiaryText.opacity(0.2), lineWidth: 3)
-                            .frame(width: 34, height: 34)
+                            .frame(width: 36, height: 36)
                         
                         Circle()
                             .trim(from: 0, to: max(0.02, CGFloat(project.progress)))
@@ -218,16 +218,17 @@ struct ProjectDetailView: View {
                                 style: StrokeStyle(lineWidth: 3, lineCap: .round)
                             )
                             .rotationEffect(.degrees(-90))
-                            .frame(width: 34, height: 34)
+                            .frame(width: 36, height: 36)
                             .animation(.spring(response: 0.4, dampingFraction: 0.8), value: project.progress)
                         
                         if project.isCompleted {
                             Image(systemName: "checkmark")
-                                .font(.system(size: 11, weight: .bold))
+                                .font(.caption.weight(.bold))
                                 .foregroundColor(AppColors.success)
                         } else {
                             Text("\(Int(project.progress * 100))%")
-                                .font(.system(size: 9, weight: .bold, design: .rounded))
+                                .font(.caption2.weight(.bold))
+                                .monospacedDigit()
                                 .foregroundColor(AppColors.primaryText)
                         }
                     }
@@ -255,27 +256,29 @@ struct ProjectDetailView: View {
                 }) {
                     HStack(spacing: 6) {
                         Image(systemName: ctaButtonIcon)
-                            .font(.system(size: 14, weight: .bold))
+                            .font(.subheadline.weight(.bold))
                         Text(ctaButtonTitle)
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(.subheadline.weight(.semibold))
                     }
-                    .foregroundColor(AppColors.premiumButtonForeground)
+                    .foregroundColor(.white)
                     .padding(.horizontal, AppSpacing.md)
-                    .frame(height: 46)
+                    .frame(minHeight: 44)
                     .background(
                         Capsule(style: .continuous)
-                            .fill(AppColors.premiumButtonBackground)
-                            .shadow(color: Color.assembleBrandPrimary.opacity(0.35), radius: 8, x: 0, y: 3)
+                            .fill(Color.assembleBrandPrimary)
                     )
                 }
-                .buttonStyle(ScaleButtonStyle())
+                .buttonStyle(ScaleButtonStyle(enableHaptic: false))
                 .touchTarget()
                 .accessibilityLabel("\(ctaButtonTitle). \(dockTitle), \(dockSubtitle)")
             }
             .padding(.horizontal, AppSpacing.screenEdge)
             .padding(.top, 10)
-            .padding(.bottom, 6)
-            .background(.ultraThinMaterial)
+            .padding(.bottom, 8)
+            .background(.regularMaterial)
+            .overlay(alignment: .top) {
+                Divider()
+            }
         }
     }
     

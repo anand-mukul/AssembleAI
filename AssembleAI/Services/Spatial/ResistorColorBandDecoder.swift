@@ -238,4 +238,40 @@ nonisolated struct ResistorColorBandDecoder: Sendable {
             return (false, "Color bands do not match: expected \(expBands.joined(separator: "-")), found \(detectedBands.joined(separator: "-")).")
         }
     }
+    
+    /// Computes standard 4-band EIA color names dynamically for a given resistance value in ohms.
+    static func bands(forOhms ohms: Double) -> [String] {
+        guard ohms > 0 else { return [] }
+        var value = ohms
+        var exponent = 0
+        while value >= 100.0 {
+            value /= 10.0
+            exponent += 1
+        }
+        while value < 10.0 && exponent > 0 {
+            value *= 10.0
+            exponent -= 1
+        }
+        let intVal = Int(round(value))
+        let d1 = min(9, max(0, intVal / 10))
+        let d2 = min(9, max(0, intVal % 10))
+        
+        func colorName(digit: Int) -> String {
+            switch digit {
+            case 0: return "black"
+            case 1: return "brown"
+            case 2: return "red"
+            case 3: return "orange"
+            case 4: return "yellow"
+            case 5: return "green"
+            case 6: return "blue"
+            case 7: return "violet"
+            case 8: return "gray"
+            case 9: return "white"
+            default: return "gold"
+            }
+        }
+        return [colorName(digit: d1), colorName(digit: d2), colorName(digit: exponent), "gold"]
+    }
 }
+

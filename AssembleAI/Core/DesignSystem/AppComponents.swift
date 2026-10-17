@@ -170,13 +170,15 @@ struct PrimaryButton: View {
                     Text(title)
                         .font(.body)
                         .fontWeight(.semibold)
-                        .lineLimit(1)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.center)
                         .minimumScaleFactor(0.85)
                 }
             }
             .foregroundColor(AppColors.premiumButtonForeground)
+            .padding(.horizontal, AppSpacing.md)
             .frame(maxWidth: .infinity)
-            .frame(height: 50)
+            .frame(minHeight: 50)
             .background(
                 Capsule(style: .continuous)
                     .fill(isDisabled ? AppColors.tertiaryText.opacity(0.3) : AppColors.premiumButtonBackground)
@@ -213,12 +215,14 @@ struct SecondaryButton: View {
                 Text(title)
                     .font(.body)
                     .fontWeight(.medium)
-                    .lineLimit(1)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
                     .minimumScaleFactor(0.85)
             }
             .foregroundColor(AppColors.primaryText)
+            .padding(.horizontal, AppSpacing.md)
             .frame(maxWidth: .infinity)
-            .frame(height: 50)
+            .frame(minHeight: 50)
             .background(
                 Capsule(style: .continuous)
                     .fill(AppColors.secondaryGroupedBackground)
