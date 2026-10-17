@@ -38,12 +38,25 @@ final class AudioSessionCoordinator: NSObject, ObservableObject {
             // - defaultToSpeaker: plays through device speakers rather than phone earpiece
             // - allowBluetoothHFP: supports hands-free Bluetooth headsets / AirPods
             // - duckOthers: lowers background music/podcasts
-            try session.setCategory(
-                .playAndRecord,
-                mode: .spokenAudio,
-                options: [.defaultToSpeaker, .allowBluetoothHFP, .duckOthers]
-            )
-            try session.setActive(true, options: .notifyOthersOnDeactivation)
+            var activeError: Error?
+            let semaphore = DispatchSemaphore(value: 0)
+            DispatchQueue.global(qos: .userInitiated).async {
+                do {
+                    try session.setCategory(
+                        .playAndRecord,
+                        mode: .spokenAudio,
+                        options: [.defaultToSpeaker, .allowBluetoothHFP, .duckOthers]
+                    )
+                    try session.setActive(true, options: .notifyOthersOnDeactivation)
+                } catch {
+                    activeError = error
+                }
+                semaphore.signal()
+            }
+            semaphore.wait()
+            if let activeError = activeError {
+                throw activeError
+            }
             self.isSessionActive = true
             self.lastErrorMessage = nil
         } catch {
@@ -57,12 +70,16 @@ final class AudioSessionCoordinator: NSObject, ObservableObject {
     func deactivateSession() {
         #if os(iOS)
         let session = AVAudioSession.sharedInstance()
-        do {
-            try session.setActive(false, options: .notifyOthersOnDeactivation)
-            self.isSessionActive = false
-        } catch {
-            self.lastErrorMessage = error.localizedDescription
+        DispatchQueue.global(qos: .userInitiated).async {
+            do {
+                try session.setActive(false, options: .notifyOthersOnDeactivation)
+            } catch {
+                DispatchQueue.main.async {
+                    self.lastErrorMessage = error.localizedDescription
+                }
+            }
         }
+        self.isSessionActive = false
         #endif
     }
     

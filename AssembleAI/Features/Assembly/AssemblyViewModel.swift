@@ -663,6 +663,9 @@ final class AssemblyViewModel: ObservableObject {
         hesitationTask?.cancel()
         hesitationTask = nil
         transitioningStepID = nil
+        if liveStatus == .speaking || liveStatus == .listening {
+            liveStatus = isLivePaused ? .paused : .live
+        }
         Task { [voiceOutput, voiceInput] in
             await voiceOutput.stop()
             await voiceInput.stopListening()
